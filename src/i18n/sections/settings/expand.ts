@@ -16,6 +16,8 @@ export type SettingsExpandText = {
   tuckStyles: { edge: string; line: string; hidden: string };
   /** How much of the island the "edge" tuck leaves on screen. */
   tuckEdgeHeight: string;
+  /** General → Tuck: the tucked look is set on the appearance page. */
+  tuckLookHint: string;
   /** Unit after the number fields. */
   secondsUnit: string;
   /** Ctrl + mouse wheel over the open island switches its page. */
@@ -36,6 +38,7 @@ export const zhCN: SettingsExpandText = {
   tuckStyle: "贴边样式",
   tuckStyles: { edge: "露边", line: "细线", hidden: "隐藏" },
   tuckEdgeHeight: "露出高度",
+  tuckLookHint: "贴边后的样子在「外观 → 贴边隐藏」里设置。",
   secondsUnit: "秒",
   ctrlWheel: "Ctrl + 滚轮切换页面",
   ctrlWheelHint: "展开时按住 Ctrl 滚动鼠标滚轮，按顶栏顺序切到上一页或下一页。",
@@ -54,6 +57,7 @@ export const en: SettingsExpandText = {
   tuckStyle: "Tucked look",
   tuckStyles: { edge: "Edge", line: "Line", hidden: "Hidden" },
   tuckEdgeHeight: "Visible edge",
+  tuckLookHint: "How the tucked island looks is under Appearance → Tuck to the edge.",
   secondsUnit: "s",
   ctrlWheel: "Ctrl + wheel switches pages",
   ctrlWheelHint: "On the open island, hold Ctrl and turn the mouse wheel to go to the previous or next page in the header's order.",

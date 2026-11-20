@@ -36,6 +36,7 @@ export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
  * preset changes only these, so todo and tuck behavior chosen on the general page survive.
+ * The tucked look joined them when it moved to the appearance page (2026-11-19).
  * The top margin (general page) and the idle todo count (todos page) are not among them,
  * so presets saved with those values no longer move the island or change the count.
  */
@@ -53,11 +54,14 @@ export const APPEARANCE_SETTING_KEYS = [
   "collapsedWidth",
   "collapsedHeight",
   "expandedScale",
+  "islandShape",
   "islandCornerRadius",
   "collapsedCornerRadius",
   "islandCornerShape",
   "topEdgeShoulders",
   "topEdgeShoulderSize",
+  "tuckStyle",
+  "tuckEdgeHeight",
   "maxPanelHeight",
   "taskTextColor",
   "pageTextColor",

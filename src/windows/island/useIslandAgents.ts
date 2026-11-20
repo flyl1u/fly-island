@@ -6,6 +6,7 @@ import { useIslandAgentSessions } from "../../features/agent-status/useIslandAge
 import { useAgentUsages } from "../../features/agent-status/useAgentUsages";
 import { filterQuotaUsages } from "../../features/agent-status/usage";
 import { useWorkbuddyUsage } from "../../features/agent-status/useWorkbuddyUsage";
+import { useNativeAgents } from "../../features/agent-status/nativeAgents";
 
 const NO_QUOTA_RINGS: readonly AgentQuotaSource[] = [];
 
@@ -23,6 +24,8 @@ export function useIslandAgents(settings: IslandSettings) {
     settings.agentStatusEnabled && settings.agentTitleEnabled,
   );
 
+  // Plugin-market agents are offered like the others once installed and switched on.
+  const native = useNativeAgents(settings);
   const shown = settings.agentShowUsage ? settings.agentQuotaSources : NO_QUOTA_RINGS;
   const watchesQuota = settings.agentQuotaAlertPercent > 0;
   const alertSources = {
@@ -30,12 +33,16 @@ export function useIslandAgents(settings: IslandSettings) {
     codex: watchesQuota && settings.agentShowCodex,
     dsh: watchesQuota && settings.agentShowDsh,
     workbuddy: watchesQuota && settings.agentShowWorkbuddy,
+    kimiCode: watchesQuota && native.kimiCode,
+    zcode: watchesQuota && native.zcode,
   };
   // Read once for both rings and alerts. Either setting can need the data independently.
   const usages = useAgentUsages(settings.agentStatusEnabled, {
     claudeCode: shown.includes("claudeCode") || alertSources.claudeCode,
     codex: shown.includes("codex") || alertSources.codex,
     dsh: shown.includes("dsh") || alertSources.dsh,
+    kimiCode: native.kimiCode && (shown.includes("kimiCode") || alertSources.kimiCode),
+    zcode: native.zcode && (shown.includes("zcode") || alertSources.zcode),
   });
   const { state: workbuddy } = useWorkbuddyUsage(settings.agentStatusEnabled && (shown.includes("workbuddy") || alertSources.workbuddy));
   const workbuddyUsage = workbuddy.status === "connected" ? workbuddy.usage : null;
@@ -43,14 +50,16 @@ export function useIslandAgents(settings: IslandSettings) {
     ...usages,
     workbuddy: workbuddyUsage,
   }, shown), [usages, workbuddyUsage, shown]);
-  const { claudeCode, codex, dsh, workbuddy: watchesWorkbuddy } = alertSources;
+  const { claudeCode, codex, dsh, workbuddy: watchesWorkbuddy, kimiCode, zcode } = alertSources;
   const alertUsages = useMemo(() => ({
     claude: claudeCode ? usages.claude : null,
     codex: codex ? usages.codex : null,
     dsh: dsh ? usages.dsh : null,
     workbuddy: watchesWorkbuddy ? workbuddyUsage : null,
+    kimi: kimiCode ? usages.kimi : null,
+    zcode: zcode ? usages.zcode : null,
     readAt: usages.readAt,
-  }), [usages.claude, usages.codex, usages.dsh, usages.readAt, claudeCode, codex, dsh, workbuddyUsage, watchesWorkbuddy]);
+  }), [usages.claude, usages.codex, usages.dsh, usages.kimi, usages.zcode, usages.readAt, claudeCode, codex, dsh, kimiCode, zcode, workbuddyUsage, watchesWorkbuddy]);
 
   return { agentStatus, ...sessions, agentSession, agentUsages, alertUsages };
 }

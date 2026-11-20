@@ -1,4 +1,4 @@
-// node scripts/measure-island-motion.mjs [runs] [--trace] [--profile] [--gpu] [--frames] [--scale=1.1] — how
+// node scripts/measure-island-motion.mjs [runs] [--trace] [--profile] [--gpu] [--frames] [--scale=1.1] [--material=liquidGlass] — how
 // smoothly the island opens, closes and switches pages.
 //
 // Builds the island tour (tests/regression/island-tour.html: the real island with its native
@@ -11,7 +11,8 @@
 // intervals (median, 95th percentile, longest), frames over 25ms (dropped), and main-thread time.
 // Headless Chrome paints in software, so absolute numbers are worse than in WebView2; compare runs
 // of this script with each other, before and after a change. --trace also records a Chrome trace
-// and lists where the main thread, the raster threads and the GPU process spent their time.
+// and lists where the main thread, the raster threads and the GPU process spent their time, and
+// the paint time per element (which one is drawn again on every frame).
 // Page switches ("switch") click from each page's dot to the next one with the island open.
 // --profile builds without minifying and lists the script functions that took the most time.
 // --gpu draws on the graphics card (Direct3D, as WebView2 does) instead of in software, so the
@@ -99,7 +100,10 @@ const server = createServer((request, response) => {
 await new Promise((resolve) => server.listen(0, resolve));
 // --scale=1.1 opens the island at another expanded size (Settings → Appearance).
 const scale = process.argv.find((arg) => arg.startsWith("--scale="))?.slice(8);
-const tourUrl = `http://localhost:${server.address().port}/tests/regression/island-tour.html${scale ? `?scale=${scale}` : ""}`;
+// --material=liquidGlass / frostedGlass measures a glass island (its rim, grain and shadow layers).
+const material = process.argv.find((arg) => arg.startsWith("--material="))?.slice(11);
+const query = new URLSearchParams({ ...(scale ? { scale } : {}), ...(material ? { material } : {}) }).toString();
+const tourUrl = `http://localhost:${server.address().port}/tests/regression/island-tour.html${query ? `?${query}` : ""}`;
 
 await withRegressionBrowser(root, "island-tour.html", async ({ session }) => {
   await session.send("Performance.enable");
@@ -209,6 +213,31 @@ await withRegressionBrowser(root, "island-tour.html", async ({ session }) => {
       const key = `${thread.replace(/\d+$/, "")} · ${event.name}`;
       totals.set(key, (totals.get(key) ?? 0) + event.dur / 1000);
     }
+    // Paint time per layer root: which element is drawn again on every frame, and how costly
+    // each time (a glass island's paint cost several times the classic one's, 2026-11-18).
+    const byNode = new Map();
+    for (const event of traceEvents) {
+      if (event.name !== "Paint" || !event.dur) continue;
+      const id = event.args?.data?.nodeId;
+      const entry = byNode.get(id) ?? { ms: 0, count: 0 };
+      entry.ms += event.dur / 1000;
+      entry.count += 1;
+      byNode.set(id, entry);
+    }
+    await session.send("DOM.getDocument", { depth: -1 });
+    const painted = [];
+    for (const [id, entry] of byNode) {
+      let element = String(id);
+      try {
+        const { node } = await session.send("DOM.describeNode", { backendNodeId: id });
+        element = `${node.localName} ${(node.attributes ?? []).join(" ").slice(0, 90)}`;
+      } catch {
+        // A node gone since (a closed page) keeps its id.
+      }
+      painted.push({ element, ms: +entry.ms.toFixed(1), count: entry.count, msEach: +(entry.ms / entry.count).toFixed(2) });
+    }
+    console.log("Paint by element, ms in total:");
+    console.table(painted.sort((a, b) => b.ms - a.ms).slice(0, 12));
     const cycles = PAGES.length * (RUNS * 3 + 3) + 2;
     console.log("Trace, ms per open, close or switch:");
     console.table([...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([name, ms]) => ({ name, ms: +(ms / cycles).toFixed(1) })));

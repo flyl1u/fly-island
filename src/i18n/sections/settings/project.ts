@@ -61,6 +61,15 @@ export type SettingsProjectText = {
     done: string;
     error: (reason: string) => string;
     disabled: string;
+    /** The beta row: try a beta, or (running one) go back to the latest stable release. */
+    beta: string;
+    betaHint: string;
+    betaTry: string;
+    noBeta: string;
+    betaRunning: (version: string) => string;
+    restoreHint: string;
+    restore: string;
+    restoreLatest: string;
   };
 };
 
@@ -118,6 +127,14 @@ export const zhCN: SettingsProjectText = {
     done: "安装程序已启动",
     error: (reason) => `出错了：${reason}`,
     disabled: "这个版本不能应用内更新",
+    beta: "测试版",
+    betaHint: "提前体验还在测试的新功能，可能不够稳定；随时可以还原到正式版。",
+    betaTry: "下载测试版",
+    noBeta: "暂时没有比当前更新的测试版",
+    betaRunning: (version) => `正在使用测试版 v${version}`,
+    restoreHint: "会继续收到新的测试版；想回去时，还原到正式版的最新版本。",
+    restore: "还原到正式版",
+    restoreLatest: "已是正式版的最新版本",
   },
 };
 
@@ -175,5 +192,13 @@ export const en: SettingsProjectText = {
     done: "The installer has started",
     error: (reason) => `Something went wrong: ${reason}`,
     disabled: "This build can't update itself",
+    beta: "Beta",
+    betaHint: "Try new features before they ship; they may be less stable. You can go back to the stable release any time.",
+    betaTry: "Get the beta",
+    noBeta: "There's no beta newer than this version",
+    betaRunning: (version) => `Running beta v${version}`,
+    restoreHint: "New betas keep coming; go back to the latest stable release whenever you like.",
+    restore: "Back to stable",
+    restoreLatest: "Already on the latest stable release",
   },
 };

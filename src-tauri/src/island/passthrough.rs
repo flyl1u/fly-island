@@ -6,9 +6,12 @@ use windows::Win32::Foundation::HWND;
 
 use super::{
     geometry::{tucked_top_offset, STAGE_WINDOW_WIDTH},
-    state::{game_quiet, read_window_state, CornerShape, IslandWindowState},
+    state::{game_quiet, read_window_state, CornerShape, IslandMode, IslandWindowState},
 };
 use crate::win32;
+
+/// Logical px beside the collapsed bar that still count as on it, before the island scale.
+const COLLAPSED_HIT_SLOP: f64 = 4.0;
 
 // Mirrored by ISLAND_HOVER_CHANGED_EVENT in src/windows/island/api.ts. The payload says
 // whether the cursor is over the island shape. The webview's own mouseleave is unreliable
@@ -99,6 +102,21 @@ pub(super) fn point_in_island(state: IslandWindowState, physical_scale: f64, loc
     let island_top = 0.0;
     let radius = state.bottom_corner_radius() * state.active_scale() * physical_scale;
     let top_radius = state.top_corner_radius() * state.active_scale() * physical_scale;
+
+    // The collapsed bar takes its whole box and a little beside it, rounded corners included. The
+    // first button and the last sit in those corners, and some users found the left half of the
+    // Agent icon and the minimize button did nothing (2026-11-19): with the corners cut exactly,
+    // a click a pixel or two off the curve fell through to the window behind.
+    if matches!(state.mode, IslandMode::Collapsed) && !state.is_tucked {
+        let slop = COLLAPSED_HIT_SLOP * state.active_scale() * physical_scale;
+        if local_x >= island_left - slop
+            && local_x <= island_left + island_width + slop
+            && local_y >= island_top
+            && local_y <= island_top + island_height
+        {
+            return true;
+        }
+    }
 
     point_in_notch(
         local_x,

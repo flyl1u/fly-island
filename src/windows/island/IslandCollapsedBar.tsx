@@ -14,7 +14,8 @@ import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 import { MessageNoticeReader } from "../../features/messages/MessageNoticeReader";
 // After CollapsedMessageContent, matching the original stylesheet order.
 import { MusicWaveButton } from "../../features/media/MusicWaveButton";
-import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
+import { isOfficeSource, messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
+import { openOfficeClient } from "../../features/messages/office-im/useOfficeIm";
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import { MailOtpCode } from "../../features/messages/mail/MailOtpCode";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
@@ -124,6 +125,10 @@ export function IslandCollapsedBar({
   const openPreview = (shown: MessagePreview) => {
     const source = shown.source;
     if (source === "plugin") { onOpenMessages(source); return; }
+    if (isOfficeSource(source)) {
+      void openOfficeClient(source).catch(() => onOpenMessages(source));
+      return;
+    }
     if (source === "qqMail" && qqMail.preview) {
       onOpenMessages("qqMail");
       void qqMail.readMail(qqMail.preview, qqMail.previewAccount);

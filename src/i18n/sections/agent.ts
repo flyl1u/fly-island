@@ -87,6 +87,8 @@ export type AgentText = {
     updated: (ago: string, source: string) => string;
     /** Claude desktop's usage history as the source of the numbers. */
     fromClaudeDesktop: string;
+    fromKimi: string;
+    fromZcode: string;
     /** One window on the quota rings' card: "5 小时 剩余 96%（已用 4%）". */
     left: (window: string, left: number, used: number) => string;
     /** Which ring is which, first on the card. */
@@ -202,7 +204,7 @@ export const zhCN: AgentText = {
       network: { short: "无法连接", detail: "连不上 DeepSeek，请检查网络或代理，稍后会自动重试。" },
       auth: { short: "凭据失效", detail: "DeepSeek 拒绝了 DSH 的凭据，请在 DSH 里重新登录或更换 API key。" },
       http: { short: "服务出错", detail: "DeepSeek 余额接口返回错误，稍后会自动重试。" },
-      format: { short: "无法识别", detail: "余额接口返回的格式无法识别，可能需要更新 FocuSD Island。" },
+      format: { short: "无法识别", detail: "余额接口返回的格式无法识别，可能需要更新 Fly Island。" },
     },
     workbuddy: {
       label: "WorkBuddy 积分",
@@ -222,6 +224,8 @@ export const zhCN: AgentText = {
     fromCodex: "来自 Codex 会话记录",
     updated: (ago, source) => `${ago} · ${source}`,
     fromClaudeDesktop: "来自 Claude 桌面版",
+    fromKimi: "来自 Kimi Code 官网用量",
+    fromZcode: "来自 Z Code 官网用量",
     left: (window, left, used) => `${window} 剩余 ${left}%（已用 ${used}%）`,
     ringsLegend: "外圈 5 小时 · 内圈 7 天 · 显示剩余额度",
     rings: (label, windows) => [label, ...windows].join("；"),
@@ -333,7 +337,7 @@ export const en: AgentText = {
       network: { short: "Offline", detail: "Can't reach DeepSeek. Check your network or proxy; it retries shortly." },
       auth: { short: "Expired", detail: "DeepSeek rejected DSH's credential. Sign in again or replace the API key in DSH." },
       http: { short: "Server error", detail: "DeepSeek's balance endpoint returned an error; it retries shortly." },
-      format: { short: "Unrecognized", detail: "The balance response was not recognized; FocuSD Island may need an update." },
+      format: { short: "Unrecognized", detail: "The balance response was not recognized; Fly Island may need an update." },
     },
     workbuddy: {
       label: "WorkBuddy credits",
@@ -352,6 +356,8 @@ export const en: AgentText = {
     fromCodex: "from Codex's session logs",
     updated: (ago, source) => `${ago} · ${source}`,
     fromClaudeDesktop: "from the Claude desktop app",
+    fromKimi: "from Kimi Code's usage service",
+    fromZcode: "from Z Code's usage service",
     left: (window, left, used) => `${window} ${left}% left (${used}% used)`,
     ringsLegend: "Outer ring 5h · inner ring 7d · showing what is left",
     rings: (label, windows) => [label, ...windows].join("; "),

@@ -3,8 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { DEFAULT_SETTINGS } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
+import { shapedSettings } from "../../features/appearance/islandShape";
 import * as islandApi from "./api";
 import { clearIslandPosition } from "./storage";
+import { setIslandTopEdgeCapsule } from "./topEdge";
 import { useIslandPosition } from "./useIslandPosition";
 import { useGlassCapture } from "./useGlassCapture";
 import { useNativeLayout } from "./useNativeLayout";
@@ -53,12 +55,14 @@ export function useIslandWindow({
       nextIsTucked: boolean,
       nextNotice: IslandNotice,
     ) => {
+      // The capsule floats below the top edge as a pill (islandShape.ts).
+      const shaped = shapedSettings(nextSettings);
       try {
         const glassState = await islandApi.setIslandInteraction({
           mode: nextMode,
           collapsedScale: nextSettings.collapsedScale,
           expandedScale: nextSettings.expandedScale,
-          marginY: nextSettings.marginY,
+          marginY: shaped.marginY,
           expandedHeight: nextExpandedHeight,
           collapsedWidth: nextCollapsedWidth,
           collapsedHeight: nextSettings.collapsedHeight,
@@ -72,7 +76,7 @@ export function useIslandWindow({
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
           cornerRadius: nextSettings.islandCornerRadius,
-          collapsedCornerRadius: nextSettings.collapsedCornerRadius,
+          collapsedCornerRadius: shaped.collapsedCornerRadius,
           cornerShape: nextSettings.islandCornerShape,
           monitorFollow: nextSettings.islandMonitor,
           noticeWidth: nextNotice.width,
@@ -128,6 +132,7 @@ export function useIslandWindow({
     }
   }, [islandPositionRef, setIsPositionDetached, setSettings, settings, syncNativeLayout]);
   useSettingsPositionReset(resetIslandPosition);
+  useEffect(() => setIslandTopEdgeCapsule(settings.islandShape === "capsule"), [settings.islandShape]);
 
   // One native call at a time, and only the latest state once it returns. An Agent page that
   // opens measures its card row several times in a few frames; sending each height as its own
@@ -168,6 +173,7 @@ export function useIslandWindow({
     settings.tuckStyle,
     settings.tuckEdgeHeight,
     settings.marginY,
+    settings.islandShape,
     settings.material,
     settings.glassIntensity,
     settings.islandBackgroundColor,

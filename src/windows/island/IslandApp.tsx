@@ -21,6 +21,7 @@ import type { TodoItem } from "../../features/todos/types";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
 import { getIslandStageStyle } from "./stageStyle";
+import { shapedSettings } from "../../features/appearance/islandShape";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useMessageNotice } from "./useMessageNotice";
 import { useGameMode } from "./useGameMode";
@@ -165,7 +166,7 @@ export function IslandApp() {
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
   const stageStyle = useMemo(
-    () => getIslandStageStyle(settings, colors, notice.size?.width ?? collapsedIslandWidth, expandedIslandHeight, notice.size?.height),
+    () => getIslandStageStyle(shapedSettings(settings), colors, notice.size?.width ?? collapsedIslandWidth, expandedIslandHeight, notice.size?.height),
     [collapsedIslandWidth, colors, expandedIslandHeight, settings, notice.size],
   );
 
@@ -239,6 +240,7 @@ export function IslandApp() {
         topEdgeShoulders={settings.topEdgeShoulders}
         positionLocked={settings.positionLocked}
         isDetached={isPositionDetached || settings.marginY > 0}
+        islandShape={settings.islandShape}
         showTitle={settings.showTitle}
         showCollapsedText={settings.showCollapsedText}
         collapsedTaskTitle={collapsedTaskTitle}

@@ -12,7 +12,11 @@ export type SettingsAgentText = {
   sessionTitleSection: string;
   sessionTitle: string;
   sessionTitleHint: string;
-  sources: { title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string };
+  sources: {
+    title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string;
+    /** Agents installed from the plugin market; their rows appear only once installed. */
+    native: Record<"cursor" | "kimiCode" | "hermes" | "zcode", string>;
+  };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
   workbuddy: {
     signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string;
@@ -55,7 +59,7 @@ export const zhCN: SettingsAgentText = {
   scriptsDir: "脚本目录",
   sessionTitleSection: "小岛显示",
   sessionTitle: "运行时在小岛显示会话标题",
-  sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex、DSH 和 WorkBuddy 的本地会话记录，不需要安装钩子。",
+  sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex、DSH、WorkBuddy 和插件市场里装上的 Agent 的本地会话记录，不需要安装钩子。",
   sources: {
     title: "会话来源",
     claudeCode: "Claude Code",
@@ -65,8 +69,14 @@ export const zhCN: SettingsAgentText = {
     dsh: "DeepSeek Harness（DSH）",
     dshHint: "读取桌面端的会话记录。点击会话可打开 DSH 主窗口。",
     workbuddy: "WorkBuddy",
-    workbuddyHint: "读取桌面端的会话记录。点击会话可打开 WorkBuddy。" },
-  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy" } },
+    workbuddyHint: "读取桌面端的会话记录。点击会话可打开 WorkBuddy。",
+    native: {
+      cursor: "只读取 Cursor 本机的 Agent 对话。点击会话可切到对应的 Cursor 窗口。",
+      kimiCode: "读取 Kimi Code CLI 的会话记录，并在 Agent 页显示套餐额度环。",
+      hermes: "只读取 Hermes Agent 的会话记录。",
+      zcode: "用 Z Code 客户端的登录，在 Agent 页显示套餐额度环。",
+    } },
+  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
   workbuddy: {
     signedOut: "未登录 WorkBuddy",
     loginRequired: "WorkBuddy 登录已过期",
@@ -113,7 +123,7 @@ export const en: SettingsAgentText = {
   scriptsDir: "Scripts folder",
   sessionTitleSection: "On the island",
   sessionTitle: "Show the session title while running",
-  sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from local Claude Code, Codex, DSH and WorkBuddy session records, so no hooks are needed.",
+  sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from the local session records of Claude Code, Codex, DSH, WorkBuddy and the agents installed from the plugin market, so no hooks are needed.",
   sources: {
     title: "Session sources",
     claudeCode: "Claude Code",
@@ -123,8 +133,14 @@ export const en: SettingsAgentText = {
     dsh: "DeepSeek Harness (DSH)",
     dshHint: "Reads local desktop sessions. Select a session to open the DSH window.",
     workbuddy: "WorkBuddy",
-    workbuddyHint: "Reads local desktop sessions. Select a session to open WorkBuddy." },
-  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy" } },
+    workbuddyHint: "Reads local desktop sessions. Select a session to open WorkBuddy.",
+    native: {
+      cursor: "Reads Cursor's local agent chats, read-only. Select a session to bring its Cursor window forward.",
+      kimiCode: "Reads Kimi Code CLI sessions and shows its plan's quota rings on the Agent page.",
+      hermes: "Reads Hermes Agent sessions, read-only.",
+      zcode: "Shows Z Code's plan quota rings on the Agent page, using the Z Code app's sign-in.",
+    } },
+  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
   workbuddy: {
     signedOut: "Not signed in to WorkBuddy",
     loginRequired: "WorkBuddy sign-in expired",

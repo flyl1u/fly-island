@@ -192,7 +192,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       const label = [...document.querySelectorAll<HTMLLabelElement>("label")].find((item) => item.textContent === name);
       return label ? document.getElementById(label.htmlFor) as HTMLInputElement | null : null;
     };
-    const fontSlider = inputNamed("岛屿字号")!;
+    const fontSlider = inputNamed("字号")!;
     const collapsedSample = element<HTMLElement>(".island-preview__island--collapsed");
     const expandedSample = element<HTMLElement>(".agent-page-preview__title");
     const getSize = (sample: HTMLElement) => parseFloat(getComputedStyle(sample).fontSize);
@@ -203,10 +203,10 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await act(async () => window.dispatchEvent(new PointerEvent("pointerup")));
     check(storedSettings().islandFontPercent === 120, "Releasing the font slider saves the new size");
     const autoWidth = inputNamed("自动宽度")!;
-    check(autoWidth.checked && !inputNamed("刘海宽度"), "The notch uses automatic width by default");
+    check(autoWidth.checked && !inputNamed("宽度"), "The notch uses automatic width by default");
     await act(async () => autoWidth.click());
-    const widthInput = inputNamed("刘海宽度")!;
-    const heightInput = inputNamed("刘海高度")!;
+    const widthInput = inputNamed("宽度")!;
+    const heightInput = inputNamed("高度")!;
     // DOMRect subtracts translated coordinates; compare at Chromium's layout precision
     // so a 0.000004px subtraction error does not look like an independent size change.
     const notchSize = () => {

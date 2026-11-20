@@ -134,10 +134,12 @@
   mask-image: linear-gradient(transparent 2px, #000 30px);
 }
 
-/* Its shadow falls below the island only: a halo climbing the sides to the screen edge parted them too. */
+/* Open, its shadow is .island__glass-shadow, which already falls below the island only (a halo
+   climbing the sides to the screen edge parted them). A shadow on the shape itself was painted
+   again, a 40px blur round a smooth corner, on every frame of the spring (2026-11-18). */
 :root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass),
 :root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass) {
-  box-shadow: 0 22px 40px -18px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+  box-shadow: none;
 }
 
 :root[data-island-top-edge="attached"] .island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)),

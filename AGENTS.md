@@ -10,7 +10,11 @@
 
 ## 项目概览
 
-FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具，以透明、无边框、始终置顶的 Tauri 悬浮岛形式运行。主要功能：待办、每日笔记与归档，外观设置与预设，媒体控制，剪贴板历史，快捷翻译，QQ 通知、QQ 邮箱和微信提醒，AI 代理状态，以及自动更新。
+**Fly Island**（仓库名、安装包名 `fly-island`）是 Windows 优先的桌面效率工具，以透明、无边框、始终置顶的 Tauri 悬浮岛形式运行。主要功能：待办、每日笔记与归档，外观设置与预设，媒体控制，剪贴板历史，快捷翻译，QQ 通知、QQ 邮箱和微信提醒，AI 代理状态，以及自动更新。
+
+**命名**：产品名一律写 **Fly Island**（文件名、包名、链接里写 `fly-island`）。README、文章、发布说明、安装包、界面文案和新代码里都不要再写旧名 FocuSD。旧名只留在不能改的对外契约里（`com.focusd.island`、`focusd-island-*` localStorage key、开机自启值 `FocuSD Island`、`focusd-agent-*` hook 脚本、`FOCUSD_*` 环境变量等，见下文「对外契约」），看到这些不要据此把产品叫成 FocuSD。
+
+**配图**：写 README、文章、发布说明时，只用 README 当前引用的图片；仓库外或 git 历史里的旧截图、旧宣传素材都已过时，不要拿来参考。
 
 应用有四个窗口，前端通过同一入口的 `?window=` 参数分发：
 
@@ -45,7 +49,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── web-demo/            # 官网的小岛实时演示：真实 IslandApp + 演示数据 mock + 模拟鼠标；`pnpm build:web-demo` 构建，官网仓库的 scripts/sync-island-demo.mjs 同步过去
 ├── tests/               # unit/ 前端单元测试、scripts/ 脚本测试（node:test，*.test.mjs）；regression/ 浏览器回归页（*.html + *.tsx）
 ├── scripts/             # release/ 发布、签名与 latest.json 生成；根目录放开发流程脚本：行数检查、浏览器回归页运行器（run-regression.mjs）、dev 前停止运行中的岛屿
-├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，investigations/ 排查与验收记录，releases/ 发布说明，reviews/ 评审记录，assets/ 演示视频与图片
+├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，investigations/ 排查记录，releases/ 发布说明（v3 起），assets/ README 配图
 ├── DESIGN.md            # 已确认的界面设计约定：全局方向；各区域的约定在 docs/design/
 └── README*.md           # 中英文项目说明
 ```

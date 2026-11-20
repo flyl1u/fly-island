@@ -83,6 +83,20 @@ pub struct AgentSessionSummary {
     pub(super) context_tokens: Option<u64>,
 }
 
+impl AgentSessionSummary {
+    /// A finished session with nothing known yet: the base the Cursor, Kimi Code and Hermes
+    /// readers fill in with `..AgentSessionSummary::blank(provider, id)`.
+    pub(super) fn blank(provider: &'static str, session_id: String) -> Self {
+        Self {
+            provider, session_id, cwd: None, title: None, model: None, effort: None, phase: "completed",
+            last_message: None, reply_marker: None, reply_asks: false, updated_at: 0, last_completed_at: None,
+            host: None, turn_started_at: None, owner_prompt_at: None, last_prompt: None, current_tool: None,
+            permission_mode: None, subagents: 0, background_tasks: 0, compacting: false, todos: None,
+            closed: false, remote_host: None, context_tokens: None,
+        }
+    }
+}
+
 /// Where the newest turn of a session stands, before the age of the file is considered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(super) enum TurnState {

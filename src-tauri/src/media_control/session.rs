@@ -26,7 +26,9 @@ use super::service::*;
 use super::timeline::{self, TimelineSample};
 use crate::win32;
 
-pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
+/// Covers are shrunk before they reach the page (`cover.rs`), so a large original is read once
+/// rather than refused and asked for again.
+pub(super) const MAX_THUMBNAIL_BYTES: u64 = 32_000_000;
 /// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
 pub(super) const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 
@@ -37,20 +39,34 @@ pub(super) struct CachedThumbnail {
     pub(super) value: Option<String>,
     pub(super) first_read_ms: i64,
     pub(super) last_read_ms: i64,
+    /// Reads in a row that found no cover for this track.
+    pub(super) misses: u32,
 }
 
-/// How often a missing or still-settling cover is read again.
-const THUMBNAIL_RETRY_MS: i64 = 1_000;
 /// After a track change, how long the cover keeps being re-read: some players (NetEase with
 /// InfLink-rs) publish the new title first and the new cover a moment later.
 const THUMBNAIL_SETTLE_MS: i64 = 5_000;
+/// How often a cover is read again while it settles.
+const THUMBNAIL_SETTLE_RETRY_MS: i64 = 2_000;
+/// The longest wait before a missing cover is asked for again.
+const THUMBNAIL_MAX_RETRY_MS: i64 = 30_000;
+
+/// The wait before a missing cover is read again: 1 s, then twice as long each time, up to 30 s.
+/// Asking every second for as long as the track played had the player copy its cover over and
+/// over (issue #93).
+fn missing_cover_retry_ms(misses: u32) -> i64 {
+    (500_i64 << misses.min(6)).min(THUMBNAIL_MAX_RETRY_MS)
+}
 
 /// Whether the cached cover can be used as is. A missing cover used to be cached for the whole
-/// track, so a cover that arrived after the title never showed; it is now retried every second.
+/// track, so a cover that arrived after the title never showed; it is retried, less and less often.
 pub(super) fn thumbnail_is_fresh(entry: &CachedThumbnail, key: &str, now_ms: i64) -> bool {
     if entry.key != key { return false; }
-    if now_ms - entry.last_read_ms < THUMBNAIL_RETRY_MS { return true; }
-    entry.value.is_some() && now_ms - entry.first_read_ms >= THUMBNAIL_SETTLE_MS
+    let since = now_ms - entry.last_read_ms;
+    match entry.value {
+        None => since < missing_cover_retry_ms(entry.misses),
+        Some(_) => since < THUMBNAIL_SETTLE_RETRY_MS || now_ms - entry.first_read_ms >= THUMBNAIL_SETTLE_MS,
+    }
 }
 
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
@@ -579,19 +595,21 @@ pub(super) fn cached_thumbnail(
             if thumbnail_is_fresh(entry, &key, now) {
                 return entry.value.clone();
             }
-            if entry.key == key { previous = Some((entry.value.clone(), entry.first_read_ms)); }
+            if entry.key == key { previous = Some((entry.value.clone(), entry.first_read_ms, entry.misses)); }
         }
     }
 
     let read = read_reference().and_then(|reference| read_thumbnail(&reference));
+    let found = read.is_some();
     // A re-read that finds nothing keeps the cover already shown for this track.
-    let (value, first_read_ms) = match previous {
-        Some((old, first)) => (read.or(old), first),
-        None => (read, now),
+    let (value, first_read_ms, misses) = match previous {
+        Some((old, first, misses)) => (read.or(old), first, misses),
+        None => (read, now, 0),
     };
+    let misses = if found { 0 } else { misses.saturating_add(1) };
 
     if let Ok(mut guard) = cache.lock() {
-        *guard = Some(CachedThumbnail { key, value: value.clone(), first_read_ms, last_read_ms: now });
+        *guard = Some(CachedThumbnail { key, value: value.clone(), first_read_ms, last_read_ms: now, misses });
     }
 
     value
@@ -612,6 +630,7 @@ pub(super) fn read_thumbnail(reference: &IRandomAccessStreamReference) -> Option
     if buffer.is_empty() {
         return None;
     }
+    let buffer = super::cover::shrink(buffer);
 
     // Detect the image type from the bytes rather than the stream's reported
     // content type: some apps (e.g. NetEase Cloud Music) report a comma-joined
@@ -730,14 +749,18 @@ mod tests {
 
     #[test]
     fn a_missing_or_new_cover_is_read_again() {
-        let entry = |value: Option<&str>, first: i64, last: i64| CachedThumbnail {
-            key: "app|song|artist".into(), value: value.map(str::to_string), first_read_ms: first, last_read_ms: last,
+        let entry = |value: Option<&str>, first: i64, last: i64, misses: u32| CachedThumbnail {
+            key: "app|song|artist".into(), value: value.map(str::to_string), first_read_ms: first, last_read_ms: last, misses,
         };
-        assert!(!thumbnail_is_fresh(&entry(Some("x"), 0, 0), "app|other|artist", 100), "another track reads its own cover");
-        assert!(thumbnail_is_fresh(&entry(None, 0, 0), "app|song|artist", 999), "at most one read a second");
-        assert!(!thumbnail_is_fresh(&entry(None, 0, 0), "app|song|artist", 60_000), "a missing cover keeps being retried");
-        assert!(!thumbnail_is_fresh(&entry(Some("x"), 0, 2_000), "app|song|artist", 3_000), "a new track's cover settles for a few seconds");
-        assert!(thumbnail_is_fresh(&entry(Some("x"), 0, 5_000), "app|song|artist", 60_000), "a settled cover is reused");
+        assert!(!thumbnail_is_fresh(&entry(Some("x"), 0, 0, 0), "app|other|artist", 100), "another track reads its own cover");
+        assert!(thumbnail_is_fresh(&entry(None, 0, 0, 1), "app|song|artist", 999), "at most one read a second");
+        assert!(!thumbnail_is_fresh(&entry(None, 0, 0, 1), "app|song|artist", 1_000), "a missing cover is retried");
+        assert!(thumbnail_is_fresh(&entry(None, 0, 0, 4), "app|song|artist", 7_000), "less often each time it is still missing");
+        assert!(thumbnail_is_fresh(&entry(None, 0, 0, 20), "app|song|artist", 29_000), "but at least every 30 s");
+        assert!(!thumbnail_is_fresh(&entry(None, 0, 0, 20), "app|song|artist", 30_000), "but at least every 30 s");
+        assert!(thumbnail_is_fresh(&entry(Some("x"), 0, 2_000, 0), "app|song|artist", 3_000), "a settling cover is read every 2 s");
+        assert!(!thumbnail_is_fresh(&entry(Some("x"), 0, 2_000, 0), "app|song|artist", 4_000), "a new track's cover settles for a few seconds");
+        assert!(thumbnail_is_fresh(&entry(Some("x"), 0, 5_000, 0), "app|song|artist", 60_000), "a settled cover is reused");
     }
 
     #[test]

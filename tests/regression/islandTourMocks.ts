@@ -84,6 +84,30 @@ export const TOUR_SESSIONS: AgentSessionSummary[] = [
   },
 ];
 
+/** Sessions of the plugin-market agents, listed only when the island asks for them (`native`). */
+const TOUR_NATIVE_SESSIONS: AgentSessionSummary[] = [
+  {
+    provider: "cursor", sessionId: "c", cwd: "E:\\Projects\\fly-island-website", title: "官网首页动效",
+    model: "composer-2.5", effort: null, phase: "completed", updatedAt: now - 6 * 60_000, turnStartedAt: now - 9 * 60_000,
+    host: { name: "Cursor", exe: null, kind: "editor" }, lastMessage: "首页的岛屿演示已经换成实时版本。",
+  },
+  {
+    provider: "kimiCode", sessionId: "k", cwd: "E:\\Projects\\notes", title: "整理周报",
+    model: null, effort: null, phase: "running", updatedAt: now - 40_000, turnStartedAt: now - 120_000,
+    host: { name: "Kimi Code", exe: null, kind: "terminal" }, lastMessage: "正在汇总本周提交记录。",
+  },
+];
+
+export function tourSessions(native: unknown): AgentSessionSummary[] {
+  const wanted = Array.isArray(native) ? native : [];
+  return [...TOUR_SESSIONS, ...TOUR_NATIVE_SESSIONS.filter((session) => wanted.includes(session.provider))];
+}
+
+export const TOUR_KIMI_USAGE = {
+  updatedAt: now, plan: null, models: [], source: "kimi",
+  fiveHour: { name: "", used: 18, resetsAt: now + 3 * 3_600_000 }, sevenDay: { name: "", used: 42, resetsAt: now + 4 * 86_400_000 },
+};
+
 export const TOUR_TODOS = [
   { id: "t1", title: "把音乐页重做一遍", completed: false, createdAt: now - 3_600_000 },
   { id: "t2", title: "回复设计评审邮件", completed: false, createdAt: now - 3_000_000 },

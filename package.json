@@ -1,7 +1,7 @@
 {
-  "name": "focusd-island",
+  "name": "fly-island",
   "private": true,
-  "version": "3.2.6",
+  "version": "3.2.8-beta",
   "type": "module",
   "scripts": {
     "dev": "vite",

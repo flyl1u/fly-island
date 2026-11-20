@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
+import { shapedSettings } from "../../features/appearance/islandShape";
 import * as islandApi from "./api";
 
 /** Pushes scale and margin changes to the native window, at most one call in flight per frame. */
@@ -21,7 +22,7 @@ export function useNativeLayout(settings: IslandSettings) {
       await islandApi.setIslandLayout({
         collapsedScale: nextSettings.collapsedScale,
         expandedScale: nextSettings.expandedScale,
-        marginY: nextSettings.marginY,
+        marginY: shapedSettings(nextSettings).marginY,
       });
     } catch (error) {
       console.error("Failed to sync island layout", error);
@@ -71,10 +72,10 @@ export function useNativeLayout(settings: IslandSettings) {
 
   useEffect(() => {
     scheduleNativeLayout(settings);
-    // Only the margin needs this path: scale changes already reach the native side
+    // Only the margin (which the shape decides too) needs this path: scale changes already reach the native side
     // through set_island_interaction in useIslandWindow.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.marginY, scheduleNativeLayout]);
+  }, [settings.marginY, settings.islandShape, scheduleNativeLayout]);
 
   return syncNativeLayout;
 }

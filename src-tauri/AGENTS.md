@@ -6,7 +6,7 @@
 
 ```text
 src-tauri/src/
-├── main.rs                  # 只调用 focusd_island_lib::run()
+├── main.rs                  # 只调用 fly_island_lib::run()
 ├── lib.rs                   # 只有 mod 声明和 run()：插件、setup、托盘、collect_commands!（汇总各模块的 tauri_commands!）
 ├── tray.rs                  # 托盘菜单与事件：文字跟随岛屿语言（命令 set_tray_language），显示 / 隐藏合成一项，按岛屿当前是否可见显示
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
@@ -16,6 +16,7 @@ src-tauri/src/
 │                            #   reply_marker.rs：可选的回复状态标记（B9），增删 CLAUDE.md 里岛屿自己的那段说明、识别回复末行的标记
 │                            #   dsh_desktop.rs / dsh_sessions.rs / dsh_credentials.rs / dsh_usage.rs：DSH 桌面端本地会话检查点、只读凭据与官方余额查询
 │                            #   workbuddy_sessions.rs：WorkBuddy 桌面端本地会话记录；workbuddy_connection.rs / workbuddy_usage.rs：WorkBuddy 官网独立登录窗口、积分汇总与内存缓存
+├── app_log/                 # 问题排查日志（默认关闭）：开启后把标准错误接到管道写入 logs/，前端的报错经 append_app_log 写入；file.rs 负责一份备份的轮转
 ├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出、不合成 Alt 键地聚焦自己的窗口（window_focus）
 ├── clipboard_history/
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
@@ -35,7 +36,7 @@ src-tauri/src/
                              # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
                              # notification_state（前台是否有全屏程序）、shell_open（不弹系统错误框地打开协议）、
                              # task_switcher（让主窗口不进 Alt+Tab）、known_folder（下载文件夹等已知文件夹）、
-                             # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、uia_tabs / uia_list、caption_close、taskbar
+                             # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、std_handle（重定向标准错误、本地时间）、uia_tabs / uia_list、caption_close、taskbar
 ```
 
 ## lib.rs 与模块组织

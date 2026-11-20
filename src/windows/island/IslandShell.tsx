@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { CollapsedItem, CollapsedSlot, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
+import type { CollapsedItem, CollapsedSlot, IslandShape, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import type { MessagePreview, MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -27,6 +27,7 @@ import "./IslandPageText.css";
 import "./IslandGlass.css";
 import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
+import { usePendingOfficeSource } from "../../features/messages/office-im/useOfficeIm";
 
 type IslandShellProps = {
   qqMail: MailController;
@@ -48,7 +49,9 @@ type IslandShellProps = {
   tuckStyle: TuckStyle;
   topEdgeShoulders: boolean;
   positionLocked: boolean;
+  /** Moved away from its default place by a drag or the margin; a capsule floats without that. */
   isDetached: boolean;
+  islandShape?: IslandShape;
   showTitle: boolean;
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
@@ -114,6 +117,7 @@ export function IslandShell({
   topEdgeShoulders,
   positionLocked,
   isDetached,
+  islandShape = "notch",
   showTitle,
   showCollapsedText,
   collapsedTaskTitle,
@@ -160,16 +164,18 @@ export function IslandShell({
   const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
+  const officePending = usePendingOfficeSource();
   const className = [
     "island",
     `island--${mode}`,
     `island--${page}`,
     `island--material-${material}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
-    isDetached ? "island--detached" : "island--docked",
+    isDetached || islandShape === "capsule" ? "island--detached" : "island--docked",
+    islandShape === "capsule" ? "island--capsule" : "",
     isTucked ? "island--tucked" : "",
     tuckMorphClass,
-    topEdgeShoulders ? "island--shoulders" : "",
+    topEdgeShoulders && islandShape !== "capsule" ? "island--shoulders" : "",
     glass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
     notice && !isExpanded ? "island--notice" : "",
@@ -270,6 +276,7 @@ export function IslandShell({
             agentStatusLabel={agentStatusLabel}
             qqNotificationCount={qqNotificationCount}
             wechatPending={wechatPending}
+            officePending={officePending}
             onPageChange={onPageChange}
             onCollapse={onCollapse}
             onOpenSettings={onOpenSettings}

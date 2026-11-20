@@ -183,6 +183,14 @@
 }
 
 /*
+ * The capsule (islandShape.ts) collapses to a true pill: its radius is half the bar's height, and
+ * the ends stay round whatever corner shape the open island uses.
+ */
+.island--capsule.island--collapsed:not(.island--tucked) {
+  --island-corner-shape: round;
+}
+
+/*
  * The collapsed bar and the page panel, each at its own fixed scale. The 6px slide is a translate
  * in front of that scale: it moves the layer without drawing it again, and as the scale itself
  * never animates the text is drawn at its final size and stays sharp.

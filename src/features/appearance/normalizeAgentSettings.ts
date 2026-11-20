@@ -15,9 +15,13 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentShowCodex,
     agentShowDsh,
     agentShowWorkbuddy,
+    agentShowCursor: settings?.agentShowCursor !== false,
+    agentShowKimiCode: settings?.agentShowKimiCode !== false,
+    agentShowHermes: settings?.agentShowHermes !== false,
+    agentShowZcode: settings?.agentShowZcode !== false,
     agentQuotaSources: Array.isArray(quotaSources)
       ? AGENT_QUOTA_SOURCES.filter((source) => quotaSources.includes(source))
-      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy })[source]),
+      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy, kimiCode: true, zcode: true })[source]),
     agentSessionSort: oneOf(AGENT_SESSION_SORTS, settings?.agentSessionSort, DEFAULT_SETTINGS.agentSessionSort),
     agentSessionGroup: oneOf(AGENT_SESSION_GROUPS, settings?.agentSessionGroup, DEFAULT_SETTINGS.agentSessionGroup),
     agentAlertCompleted: settings?.agentAlertCompleted !== false,

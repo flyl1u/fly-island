@@ -12,12 +12,17 @@
 
 ## 更新通道
 
-设置里**没有通道选项**（2026-11-11 用户要求去掉「测试版」）：小岛只检查稳定版。3.0.2 及更早的「关于」页有「稳定版 / 测试版」下拉，存在 `focusd-island-update-channel`；现在不再读这个 key，以前选过测试版的用户（包括正在用 beta 版本的）也按稳定版检查，等稳定版高于当前版本时收到更新。原生命令 `updater_check` 仍接受 `channel` 参数，前端固定传 `"stable"`。
+**测试版（2026-11-18 用户要求恢复，取代 2026-11-11 去掉测试版的决定）**：发布测试版不会推送给任何人。设置 →「关于」→ 更新组里有一行「测试版」：
+
+- 正式版用户点「下载测试版」，查一次 beta 通道；有比当前新的测试版就照常下载，在同一组的「立即安装」安装（自动更新开着时，小岛空闲也会装上）；没有就显示「暂时没有比当前更新的测试版」。
+- 正在用测试版（版本号带 `-`）时，这一行变成「正在使用测试版 vX」和「还原到正式版」：查稳定版清单并允许降级（`updater_check` 的 `allowDowngrade`，任何不同的版本都算更新），下载后安装正式版的最新版本。NSIS 的 `allowDowngrades` 保持默认开启，所以能装回旧版本。
+- 测试版用户的自动检查和「检查更新」走 beta 通道（清单取不到时退回稳定版），所以会继续收到新的测试版，也会收到更高的正式版。正式版用户的自动检查只看稳定版；他们主动找来的测试版下载好之前，不会被定时检查覆盖。
+- 前端逻辑在 `src/features/updater/updateChannel.ts`（目标 `stable` / `beta` / `restore`）和 `updaterController.ts` 的 `switchChannel`。3.0.2 及更早版本存在 `focusd-island-update-channel` 里的旧选择仍然不读。
 
 下面是两个通道本身，旧客户端仍在使用：
 
 - **稳定版**读 `plugins.updater.endpoints`，即 `releases/latest/download/latest.json`。GitHub 的 latest 永远不会是 Pre-release，而 beta 版都发成 Pre-release。0.3.0 及更早的客户端没有通道设置，也只读这里。
-- **测试版**（3.0.2 及更早、选过测试版的客户端）读同一组镜像下的 `releases/download/beta-channel/latest.json`（由 `src-tauri/src/system/update_channel.rs` 从稳定端点换算），全部取不到时再退回稳定版端点，所以 beta 清单缺失或下载失败时，测试版用户仍能收到正式版。`beta-channel` 是一个固定的 Pre-release，只放这份清单，**不要删除**。
+- **测试版**（在「关于」里要测试版的用户、正在用测试版的客户端，以及 3.0.2 及更早选过测试版的客户端）读同一组镜像下的 `releases/download/beta-channel/latest.json`（由 `src-tauri/src/system/update_channel.rs` 从稳定端点换算），全部取不到时再退回稳定版端点，所以 beta 清单缺失或下载失败时，测试版用户仍能收到正式版。`beta-channel` 是一个固定的 Pre-release，只放这份清单，**不要删除**。
 - 每次 `pnpm release`（正式版和 beta 版都算）发布后会刷新 `beta-channel` 上的清单，除非它已经指向更新的版本。所以测试版用户也会收到正式版；从测试版切回稳定版不会降级，要等稳定版追上当前版本才收到更新。
 
 版本号带 `-`（如 `0.3.1-beta.1`）就算 beta：`release.mjs` 会把它发成 Pre-release、不设为 latest，判断与比较在 `scripts/release/channel.mjs`。
@@ -158,7 +163,7 @@ CI 也可以复用同样的步骤：在仓库 Secrets 里存 `TAURI_UPDATER_PUBK
 
 ## 撤回有问题的版本
 
-已经装上的版本没法从远处卸载，能做的是让还没更新的人不再收到它，再尽快发一个修好的版本。客户端只会升级、不会降级，所以"退回上一版"对已更新的人无效，修复只能靠更高的版本号。
+已经装上的版本没法从远处卸载，能做的是让还没更新的人不再收到它，再尽快发一个修好的版本。客户端自动检查只会升级、不会降级，所以"退回上一版"对已更新的人无效，修复只能靠更高的版本号（测试版用户可以在「关于」里手动还原到正式版）。
 
 **测试版（beta）有问题**：把 beta 通道的清单换回上一个好的版本。
 

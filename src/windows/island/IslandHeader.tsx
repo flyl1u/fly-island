@@ -6,7 +6,7 @@ import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
-import type { MessageSource } from "../../features/messages/messagePreview";
+import type { MessageSource, OfficeSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
@@ -27,6 +27,8 @@ type IslandHeaderProps = {
   agentStatusLabel: string;
   qqNotificationCount: number;
   wechatPending: boolean;
+  /** The first switched-on office client (DingTalk, Feishu, WeCom) with a new reminder. */
+  officePending: OfficeSource | null;
   onPageChange: (page: IslandPage) => void;
   onCollapse: () => void;
   onOpenSettings: () => void;
@@ -57,6 +59,7 @@ export function IslandHeader({
   agentStatusLabel,
   qqNotificationCount,
   wechatPending,
+  officePending,
   onPageChange,
   onCollapse,
   onOpenSettings,
@@ -69,10 +72,11 @@ export function IslandHeader({
 }: IslandHeaderProps) {
   const t = useTranslation();
   // A red dot leads to the community group in About until it has been opened.
-  const communityPending = useCommunityInvite().pending;
+  const community = useCommunityInvite();
+  const communityPending = community.pending;
   const updatePending = useUpdatePending();
   const showIcons = pageButtonStyle === "icon";
-  const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
+  const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending, officePending && t.messages.sourceLabels[officePending]);
   // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
   // Translation has one while it is on, also when it opens in its own window.
   const dots = pageOrder.filter((dot) => (dot === "translation" ? onOpenTranslator !== null : features[dot]));
@@ -181,11 +185,11 @@ export function IslandHeader({
             data-tip={t.messages.title}
             onClick={(event) => {
               event.stopPropagation();
-              onOpenMessages(wechatPending ? "wechat" : "qq");
+              onOpenMessages(wechatPending ? "wechat" : officePending ?? "qq");
             }}
           >
             {showIcons && <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
-            {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
+            {(qqNotificationCount > 0 || wechatPending || officePending) && <span className="island-message-button__dot" aria-hidden="true" />}
           </button>
         )}
       </div>
@@ -207,6 +211,8 @@ export function IslandHeader({
           aria-pressed={page === "settings"}
           onClick={(event) => {
             event.stopPropagation();
+            // The community dot is a one-time hint: the first click on it clears it for good.
+            if (communityPending) community.markSeen();
             onOpenSettings();
           }}
         >

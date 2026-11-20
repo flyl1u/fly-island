@@ -40,6 +40,7 @@ export const PAGES = [
   "island-tour.html?test=1&scale=0.85&tuck=line&shoulders=1",
   "island-tour.html?test=1&scale=1.2&tuck=hidden&shoulders=1",
   "island-tour.html?test=1&scale=1.2&notch=1&font=120",
+  // The capsule shape (?capsule=1&tuck=line) waits for CAPSULE_SHAPE_ENABLED in islandShape.ts.
   // The light scheme, and a white island picked in the dark scheme (its text turns dark).
   "island-tour.html?test=1&theme=light",
   "island-tour.html?test=1&bg=FFFFFF",

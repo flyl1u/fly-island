@@ -2,7 +2,7 @@
 import type { AgentUsage } from "./api";
 import { isStale, type AgentUsages } from "./usage.ts";
 
-export type QuotaAgent = "claude" | "codex" | "dsh" | "workbuddy";
+export type QuotaAgent = "claude" | "codex" | "dsh" | "workbuddy" | "kimi" | "zcode";
 export type QuotaWindow = "fiveHour" | "sevenDay" | "balance";
 
 /** Usage reached the alert level (`low`), or a limit that had reached it reset (`reset`). */
@@ -31,7 +31,7 @@ const WINDOWS = ["fiveHour", "sevenDay"] as const;
 export function takeQuotaAlerts(state: QuotaState, usages: AgentUsages, percent: number, now: number): QuotaAlert[] {
   if (percent <= 0) return [];
   const alerts: QuotaAlert[] = [];
-  const read: [QuotaAgent, AgentUsage | null][] = [["claude", usages.claude], ["codex", usages.codex]];
+  const read: [QuotaAgent, AgentUsage | null][] = [["claude", usages.claude], ["codex", usages.codex], ["kimi", usages.kimi ?? null], ["zcode", usages.zcode ?? null]];
   for (const [agent, usage] of read) {
     if (!usage || isStale(usage, now)) continue;
     for (const window of WINDOWS) {

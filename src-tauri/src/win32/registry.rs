@@ -5,7 +5,10 @@
 
 use windows::{
     core::HSTRING,
-    Win32::System::Registry::{RegGetValueW, HKEY, RRF_RT_REG_SZ},
+    Win32::{
+        Foundation::ERROR_FILE_NOT_FOUND,
+        System::Registry::{RegDeleteKeyValueW, RegGetValueW, RegSetKeyValueW, HKEY, REG_SZ, RRF_RT_REG_SZ},
+    },
 };
 
 /// UTF-16 units read per value, including the terminating NUL. Longer values
@@ -44,6 +47,29 @@ pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<Strin
 }
 
 
+
+/// Writes `data` as the `REG_SZ` value `value` under `root\subkey`, creating the key if needed.
+pub(crate) fn write_string(root: HKEY, subkey: &str, value: &str, data: &str) -> windows::core::Result<()> {
+    let subkey = HSTRING::from(subkey);
+    let value = HSTRING::from(value);
+    let wide: Vec<u16> = data.encode_utf16().chain(std::iter::once(0)).collect();
+    let bytes = u32::try_from(wide.len() * 2).map_err(|_| windows::core::Error::from(windows::Win32::Foundation::E_INVALIDARG))?;
+    // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the call, and
+    // `wide` is a NUL-terminated buffer of exactly `bytes` bytes that RegSetKeyValueW only reads.
+    unsafe { RegSetKeyValueW(root, &subkey, &value, REG_SZ.0, Some(wide.as_ptr().cast()), bytes) }.ok()
+}
+
+/// Deletes the value `value` under `root\subkey`; a value or key that is already gone is fine.
+pub(crate) fn delete_value(root: HKEY, subkey: &str, value: &str) -> windows::core::Result<()> {
+    let subkey = HSTRING::from(subkey);
+    let value = HSTRING::from(value);
+    // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the call.
+    let result = unsafe { RegDeleteKeyValueW(root, &subkey, &value) };
+    if result == ERROR_FILE_NOT_FOUND {
+        return Ok(());
+    }
+    result.ok()
+}
 
 /// The executable in an uninstall entry's `DisplayIcon` value, which may be quoted and end
 /// with an icon index: `"C:\App\App.exe",0` → `C:\App\App.exe`.
