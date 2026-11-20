@@ -534,6 +534,28 @@ mod tests {
     }
 
     #[test]
+    fn a_flash_explained_by_an_official_account_gives_no_plain_reminder() {
+        let official = |body: &str| {
+            vec![conversations::parse_row(ListRow {
+                key: "notifymessage".into(),
+                name: format!("服务通知\n{body}\n12:30"),
+                selected: false,
+            })
+            .unwrap()]
+        };
+        let now = Instant::now();
+        let mut schedule = ReadSchedule::new(now);
+        schedule.sampled(ReadTrigger::Poll, Some(official("旧通知")), now);
+        schedule.attention(now);
+        let due = now + SETTLE;
+        let trigger = schedule.next(due).unwrap();
+        assert!(schedule
+            .sampled(trigger, Some(official("新通知")), due)
+            .is_none());
+        assert!(schedule.flash.is_none());
+    }
+
+    #[test]
     fn a_flash_on_leaving_wechat_is_read_before_rebasing() {
         let now = Instant::now();
         let mut schedule = ReadSchedule::new(now);
