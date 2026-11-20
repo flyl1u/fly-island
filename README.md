@@ -109,7 +109,7 @@ AI 要执行命令、改文件时，直接在岛上点「允许」或「拒绝�
 
 ## 几乎不占资源
 
-一直开着也不用心疼：在任务管理器里，fly-island 只占 0.3% 左右的内存。
+一直开着也不用心疼：在任务管理器里，fly-island 只占 0.3% 左右的内存（在一台约15GB的Windows笔记本上的测试），当打开听歌软件、下载插件时，占用会视情况稍微变高
 
 <p align="center"><img src="docs/assets/screenshots/memory.webp" alt="任务管理器里 fly-island 的内存占用约 0.3%" width="620"></p>
 
