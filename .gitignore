@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 dist-web-demo
+build
+.cache
 src-tauri/target
 src-tauri/gen
 src-tauri/tauri.release.conf.json
@@ -25,6 +27,10 @@ src-tauri/tauri.release.conf.json
 *.key.pub
 *.dpapi
 *.local
+# A local .env holds secrets; none belong to the repo.
+.env
+.env.local
+.env.*.local
 
 # Local Claude Code skills. This machine only; not part of the repo.
 .claude/
