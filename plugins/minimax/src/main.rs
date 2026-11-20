@@ -11,6 +11,12 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use windows::core::BOOL;
+use windows::Win32::Foundation::{HWND, LPARAM};
+use windows::Win32::UI::WindowsAndMessaging::{
+    EnumWindows, GetWindowTextLengthW, GetWindowTextW, IsWindowVisible, SetForegroundWindow,
+    ShowWindow, SW_RESTORE,
+};
 
 /// 一次最多发布多少条会话：能看清同时在跑的几件事，又不挤满列表。
 const MAX_SESSIONS: usize = 12;
@@ -242,7 +248,7 @@ fn poll(settings: &Value) -> Result<Value, String> {
             "cwd": row.cwd,
             "status": live,
             "updatedAt": row.updated,
-            "action": null
+            "action": "open"
         }));
     }
     Ok(json!({ "quota": quotas, "sessions": sessions, "notifications": notifications }))
@@ -253,12 +259,194 @@ fn main() {
         Duration::from_secs(60),
         poll,
         |id, _| match id {
-            "refresh" => Ok(json!(true)),
+            // 点会话时把 MiniMax Code 切到前台：宿主只传动作 id，播件只管把窗口叫出来。
+            "open" if focus_window() => Ok(json!(true)),
+            "open" => Err("MiniMax Code 窗口没有打开".to_owned()),
+            "install-hooks" => install_hooks().map(|()| json!(true)),
+            "remove-hooks" => remove_hooks().map(|()| json!(true)),
             _ => Err("Unknown action".into()),
         },
     );
     if result.is_err() {
         std::process::exit(1);
+    }
+}
+
+
+/// MiniMax Code 的主窗口：标题里带应用名；最小化的先恢复，再提到前台。
+fn focus_window() -> bool {
+    let mut found = false;
+    let _ = unsafe { EnumWindows(Some(visit_window), LPARAM(&mut found as *mut bool as isize)) };
+    found
+}
+
+unsafe extern "system" fn visit_window(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    let found = &mut *(lparam.0 as *mut bool);
+    if !IsWindowVisible(hwnd).as_bool() {
+        return true.into();
+    }
+    let length = GetWindowTextLengthW(hwnd);
+    if length <= 0 {
+        return true.into();
+    }
+    let mut buffer = vec![0u16; length as usize + 1];
+    let written = GetWindowTextW(hwnd, &mut buffer);
+    if written <= 0 {
+        return true.into();
+    }
+    if !String::from_utf16_lossy(&buffer[..written as usize]).contains("MiniMax Code") {
+        return true.into();
+    }
+    let _ = ShowWindow(hwnd, SW_RESTORE);
+    let _ = SetForegroundWindow(hwnd);
+    *found = true;
+    false.into()
+}
+
+/// 我们写进 hooks.json 的名字都带这个前缀，移除时只认它们。
+const HOOK_PREFIX: &str = "小岛 · ";
+const RECORD_HOOK: &str = "小岛 · 记录等待审批";
+const CLEAR_HOOK: &str = "小岛 · 清掉审批标记";
+/// 标记脚本编译进 exe：插件包装好就自带，不用额外分发文件。
+const MARKER_SCRIPT: &str = include_str!("../hooks/approval-marker.ps1");
+
+fn minimax_dir() -> Option<PathBuf> {
+    home().map(|dir| dir.join(".minimax"))
+}
+
+fn marker_dir() -> Option<PathBuf> {
+    std::env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .map(|dir| dir.join("fly-island-minimax"))
+}
+
+/// 把标记脚本写到本地目录；PowerShell 5.1 需要 BOM 才按 UTF-8 读中文注释。
+fn install_marker_script(dir: &Path) -> Result<PathBuf, String> {
+    std::fs::create_dir_all(dir).map_err(|error| format!("创建目录失败：{error}"))?;
+    let path = dir.join("approval-marker.ps1");
+    let mut bytes = vec![0xEF, 0xBB, 0xBF];
+    bytes.extend_from_slice(MARKER_SCRIPT.trim_start_matches('\u{feff}').as_bytes());
+    std::fs::write(&path, bytes).map_err(|error| format!("写入脚本失败：{error}"))?;
+    Ok(path)
+}
+
+fn write_hooks(path: &Path, root: &Value) -> Result<(), String> {
+    let body = serde_json::to_vec_pretty(root).map_err(|error| format!("序列化失败：{error}"))?;
+    std::fs::write(path, body).map_err(|error| format!("写入 hooks.json 失败：{error}"))
+}
+
+fn install_hooks() -> Result<(), String> {
+    let dir = marker_dir().ok_or("找不到本地应用数据目录")?;
+    let script = install_marker_script(&dir)?;
+    let marker = dir.join("approvals.json");
+    let hooks = minimax_dir()
+        .ok_or("找不到 MiniMax Code 配置目录")?
+        .join("hooks.json");
+    let mut root = if hooks.exists() {
+        read_json(&hooks, 256 * 1024)?
+    } else {
+        json!({ "enabled": true, "hooks": {} })
+    };
+    if !root.is_object() {
+        return Err("hooks.json 不是 JSON 对象".to_owned());
+    }
+    root["enabled"] = json!(true);
+    merge_hooks(&mut root, &script, &marker);
+    write_hooks(&hooks, &root)
+}
+
+fn remove_hooks() -> Result<(), String> {
+    let Some(hooks) = minimax_dir().map(|dir| dir.join("hooks.json")) else {
+        return Ok(());
+    };
+    if !hooks.exists() {
+        return Ok(());
+    }
+    let mut root = read_json(&hooks, 256 * 1024)?;
+    drop_hooks(&mut root);
+    write_hooks(&hooks, &root)
+}
+
+/// 只加我们自己的两组：审批时记一笔，工具跑完或一轮结束时清掉。
+fn merge_hooks(root: &mut Value, script: &Path, marker: &Path) {
+    let script = script.display();
+    let marker = marker.display();
+    set_handler(
+        root,
+        "PermissionRequest",
+        json!({
+            "type": "command",
+            "name": RECORD_HOOK,
+            "command": format!("powershell -NoProfile -ExecutionPolicy Bypass -File \"{script}\""),
+            "commandWindows": format!("powershell -NoProfile -ExecutionPolicy Bypass -File \"{script}\""),
+            "timeout": 5
+        }),
+    );
+    let clear = json!({
+        "type": "command",
+        "name": CLEAR_HOOK,
+        "command": format!("cmd /c if exist \"{marker}\" del /q \"{marker}\""),
+        "commandWindows": format!("cmd /c if exist \"{marker}\" del /q \"{marker}\""),
+        "timeout": 3
+    });
+    for event in ["PostToolUse", "Stop", "UserPromptSubmit"] {
+        set_handler(root, event, clear.clone());
+    }
+}
+
+/// 同名就替换、否则新起一组；用户自己的其它钩子原样保留。
+fn set_handler(root: &mut Value, event: &str, handler: Value) {
+    if !root["hooks"].is_object() {
+        root["hooks"] = json!({});
+    }
+    if !root["hooks"][event].is_array() {
+        root["hooks"][event] = json!([]);
+    }
+    let Some(groups) = root["hooks"][event].as_array_mut() else {
+        return;
+    };
+    for group in groups.iter_mut() {
+        let Some(handlers) = group["hooks"].as_array_mut() else {
+            continue;
+        };
+        if let Some(slot) = handlers.iter_mut().find(|item| item["name"] == handler["name"]) {
+            *slot = handler.clone();
+            return;
+        }
+    }
+    groups.push(json!({ "hooks": [handler] }));
+}
+
+/// 只摘掉带我们前缀的处理器，空掉的组和事件一并清走。
+fn drop_hooks(root: &mut Value) {
+    if !root["hooks"].is_object() {
+        return;
+    }
+    let events: Vec<String> = root["hooks"]
+        .as_object()
+        .map(|hooks| hooks.keys().cloned().collect())
+        .unwrap_or_default();
+    for event in events {
+        let empty = {
+            let Some(groups) = root["hooks"][&event].as_array_mut() else {
+                continue;
+            };
+            groups.retain_mut(|group| {
+                let Some(handlers) = group["hooks"].as_array_mut() else {
+                    return true;
+                };
+                handlers.retain(|item| {
+                    item["name"].as_str().is_none_or(|name| !name.starts_with(HOOK_PREFIX))
+                });
+                !handlers.is_empty()
+            });
+            groups.is_empty()
+        };
+        if empty {
+            if let Some(hooks) = root["hooks"].as_object_mut() {
+                hooks.remove(&event);
+            }
+        }
     }
 }
 
@@ -316,6 +504,66 @@ mod tests {
         assert_eq!(todo_progress_in(&root, history), Some((2, 3)));
         assert_eq!(todo_progress_in(&root, "2026/11/20/absent"), None);
         std::fs::remove_dir_all(&root).ok();
+    }
+
+    fn ours(root: &Value, event: &str) -> usize {
+        root["hooks"][event]
+            .as_array()
+            .map(|groups| {
+                groups.iter()
+                    .flat_map(|group| group["hooks"].as_array().into_iter().flatten())
+                    .filter(|item| item["name"].as_str().unwrap_or_default().starts_with(HOOK_PREFIX))
+                    .count()
+            })
+            .unwrap_or(0)
+    }
+
+    fn user_hook_present(root: &Value, event: &str, name: &str) -> bool {
+        root["hooks"][event]
+            .as_array()
+            .is_some_and(|groups| groups.iter().any(|group| {
+                group["hooks"].as_array().is_some_and(|handlers| handlers.iter().any(|item| item["name"] == name))
+            }))
+    }
+
+    #[test]
+    fn hook_install_adds_once_and_keeps_the_users_own_hooks() {
+        let mut root = json!({
+            "enabled": true,
+            "hooks": {
+                "PermissionRequest": [{ "hooks": [{ "type": "command", "name": "用户的钩子", "command": "echo hi" }] }],
+                "Stop": [{ "hooks": [{ "type": "command", "name": "用户的停止钩子", "command": "echo bye" }] }]
+            }
+        });
+        let script = Path::new("C:/x/approval-marker.ps1");
+        let marker = Path::new("C:/x/approvals.json");
+        merge_hooks(&mut root, script, marker);
+        merge_hooks(&mut root, script, marker);
+        for event in ["PermissionRequest", "PostToolUse", "Stop", "UserPromptSubmit"] {
+            assert_eq!(ours(&root, event), 1, "{event}");
+        }
+        assert!(user_hook_present(&root, "PermissionRequest", "用户的钩子"));
+        assert!(user_hook_present(&root, "Stop", "用户的停止钩子"));
+        assert_eq!(root["enabled"], true);
+    }
+
+    #[test]
+    fn hook_removal_leaves_the_users_own_hooks_alone() {
+        let mut root = json!({
+            "enabled": true,
+            "hooks": {
+                "PermissionRequest": [{ "hooks": [{ "type": "command", "name": "用户的钩子", "command": "echo hi" }] }],
+                "Stop": [{ "hooks": [{ "type": "command", "name": "用户的停止钩子", "command": "echo bye" }] }]
+            }
+        });
+        merge_hooks(&mut root, Path::new("C:/x/a.ps1"), Path::new("C:/x/b.json"));
+        drop_hooks(&mut root);
+        for event in ["PermissionRequest", "PostToolUse", "Stop", "UserPromptSubmit"] {
+            assert_eq!(ours(&root, event), 0, "{event}");
+        }
+        assert!(user_hook_present(&root, "PermissionRequest", "用户的钩子"));
+        assert!(user_hook_present(&root, "Stop", "用户的停止钩子"));
+        assert!(root["hooks"].get("PostToolUse").is_none(), "只属于我们的事件整条清掉");
     }
 
     #[test]

@@ -1044,6 +1044,7 @@ dependencies = [
  "rusqlite",
  "serde_json",
  "ureq",
+ "windows",
 ]
 
 [[package]]
