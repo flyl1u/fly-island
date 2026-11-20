@@ -45,6 +45,8 @@ export const PAGES = [
   // The capsule shape (?capsule=1&tuck=line) waits for CAPSULE_SHAPE_ENABLED in islandShape.ts.
   // The light scheme, and a white island picked in the dark scheme (its text turns dark).
   "island-tour.html?test=1&theme=light",
+  "island-tour.html?test=1&clockWeather=1&notch=1&font=120&features=enabled",
+  "island-tour.html?test=1&clockWeather=1&theme=light&features=enabled",
   "island-tour.html?test=1&bg=FFFFFF",
   "island-tour.html?test=1&material=liquidGlass",
   "island-tour.html?test=1&theme=light&material=liquidGlass",
@@ -69,6 +71,7 @@ export const PAGES = [
   "plugins-settings.html?lang=en&features=enabled",
   "settings.html?test=1",
   "settings.html?test=1&features=enabled",
+  "settings.html?test=1&clockWeather=1&features=enabled",
   "settings-sidebar.html",
   "settings-sidebar.html?features=enabled",
   "settings-sync.html",

@@ -27,6 +27,7 @@ src-tauri/src/
 ├── mail/                    # 邮箱（命令名仍为 *_qq_mail）：附件（attachments.rs）、命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/        # QQ 通知监听；repair-qq-notification-registration.ps1 编入二进制，也可手动运行
 ├── wechat_reminders/        # source.rs 统一微信进程解析、窗口选择和任务栏提醒（被示例复用）；可选的 UI Automation 摘要与 Qt 标志恢复
+├── weather/                 # 时间与天气：Open-Meteo 城市搜索与当前天气异步命令，不自动定位、不写原生数据文件
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）
 ├── settings_window/         # 设置窗口：按需创建与显示（mod.rs）；sizing.rs 按屏幕缩放窗口尺寸，剪贴板窗口共用
 ├── clipboard_window/        # 剪贴板历史独立窗口：按需创建、显示、关闭与位置记忆

@@ -1,4 +1,5 @@
 import { act } from "react";
+import { checkCollapsedLayout } from "./settingsCollapsedLayout";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 
 const element = <T extends HTMLElement>(selector: string) => {
@@ -187,6 +188,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as Partial<typeof DEFAULT_SETTINGS>;
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
     await openPage("appearance");
+    await checkCollapsedLayout(check);
     await checkColorInputs(check);
     const colorsBeforeReset = storedColors();
     // Expanded size: a slider from 0.85x to 1.2x, stored as the scale once the thumb is let go,

@@ -1,40 +1,37 @@
 /* Appearance → On the island: a collapsed island drawn at its real size to arrange by hand. */
 .collapsed-layout {
   display: grid;
-  place-items: center;
+  place-items: start center;
+  container-type: inline-size;
+  min-width: 0;
+  min-height: calc(56px + var(--preview-collapsed-height) * 1px * var(--preview-collapsed-scale));
   padding: 22px 12px 18px;
 }
 
 .collapsed-layout__island {
-  width: min(340px, 100%);
-  height: 38px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  color: var(--color-fg-strong);
-  background: color-mix(in srgb, #f4f4f7 calc(var(--is-light) * 100%), #050505);
-  border-radius: 0 0 22px 22px;
-  corner-shape: superellipse(1.6);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, calc(0.35 - var(--is-light) * 0.25)), inset 0 0 0 1px var(--color-white-a08);
+  position: relative;
+  flex: none;
+  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
+  gap: calc(6 * var(--c));
+  padding: 0 calc(12 * var(--c));
 }
 
 .collapsed-layout__slot {
-  height: 28px;
-  min-width: 28px;
+  height: min(28px, 100%);
+  min-width: calc(28 * var(--c));
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 0 6px;
+  gap: calc(4 * var(--c));
+  padding: 0 calc(6 * var(--c));
   color: inherit;
   background: transparent;
   border: 0;
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
   font: inherit;
-  font-size: calc(11px * var(--island-font-scale, 1));
+  font-size: calc(11 * var(--c) * var(--preview-font-scale));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   cursor: grab;
@@ -56,7 +53,7 @@
   z-index: 1;
   cursor: grabbing;
   background: rgba(var(--overlay-rgb), 0.16);
-  transform: scale(1.08);
+
 }
 
 /* A switched-off feature keeps its place, greyed. */
@@ -69,20 +66,21 @@
   min-width: 0;
   flex: 1;
   justify-content: flex-start;
-  gap: 10px;
+  gap: calc(10 * var(--c));
   overflow: hidden;
-  color: rgba(var(--overlay-rgb), 0.72);
-  font-size: calc(13px * var(--island-font-scale, 1));
+  color: var(--preview-text);
+  font-size: calc(13 * var(--c) * var(--preview-font-scale));
   white-space: nowrap;
 }
 
 .collapsed-layout__pulse {
-  width: 9px;
-  height: 9px;
+  width: calc(9 * var(--c));
+  height: calc(9 * var(--c));
   flex: none;
   border-radius: var(--radius-pill);
-  background: var(--color-agent-idle);
-  box-shadow: 0 0 10px rgba(53, 233, 133, 0.6);
+  background: var(--preview-pulse);
+  box-shadow: 0 0 10px var(--preview-pulse-glow);
+  filter: brightness(var(--preview-pulse-brightness));
 }
 
 .collapsed-layout__slot--shelf {
@@ -95,9 +93,9 @@
 
 /* The running-session count: a blue pill, as on the island. */
 .collapsed-layout__slot--agents:not(.collapsed-layout__slot--tuck) {
-  min-width: 20px;
-  height: 20px;
-  margin: 0 4px;
+  min-width: calc(20 * var(--c));
+  height: calc(20 * var(--c));
+  margin: 0 calc(4 * var(--c));
   padding: 0 6px;
   border-radius: var(--radius-pill);
   background: rgba(61, 139, 255, 0.32);
@@ -107,9 +105,18 @@
 /* With the AI Agent switch off it is the tuck dot. */
 .collapsed-layout__slot--tuck::after {
   content: "";
-  width: 12px;
-  height: 12px;
+  width: calc(12 * var(--c));
+  height: calc(12 * var(--c));
   border-radius: var(--radius-pill);
   background: rgba(186, 186, 186, 0.38);
   border: 1px solid rgba(var(--overlay-rgb), 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsed-layout__slot { transition: none; }
+}
+
+.collapsed-layout__slot svg {
+  width: calc(15 * var(--c));
+  height: calc(15 * var(--c));
 }
