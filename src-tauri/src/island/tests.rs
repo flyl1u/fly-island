@@ -73,6 +73,68 @@ fn custom_position_survives_tuck_and_reveal() {
 }
 
 #[test]
+fn tucking_remembers_the_actual_normal_position_instead_of_stale_drag_coordinates() {
+    for (x, top) in [(420, 0), (-1700, -1080), (2500, 72)] {
+        let mut island = IslandWindowState {
+            custom_position: Some(IslandPosition { x, y: top + 180 }),
+            ..IslandWindowState::default()
+        };
+        // A non-drag OS move (or a just-snapped drop) changed the window, not its cached y.
+        assert_eq!(resolve_stage_position(island, 100, top, top - 28).1, top + 180);
+        island.custom_position = position_before_tuck(island, PhysicalPosition::new(x, top), None, 7);
+        island.is_tucked = true;
+        assert_eq!(resolve_stage_position(island, 100, top, top - 28), (x, top - 28));
+        island.is_tucked = false;
+        assert_eq!(resolve_stage_position(island, 100, top, top - 28), (x, top));
+    }
+}
+
+#[test]
+fn retucking_mid_reveal_keeps_the_slide_destination_and_floating_positions() {
+    let island = IslandWindowState {
+        custom_position: Some(IslandPosition { x: -900, y: 180 }),
+        ..IslandWindowState::default()
+    };
+    let at = |y| Some(IslandPosition { x: -900, y });
+    assert_eq!(position_before_tuck(island, PhysicalPosition::new(-900, 20), Some((7, (-900, 180))), 7), at(180));
+    assert_eq!(position_before_tuck(island, PhysicalPosition::new(-900, 180), None, 7), at(180));
+    assert_eq!(position_before_tuck(island, PhysicalPosition::new(-900, 180), Some((6, (-900, 20))), 7), at(180));
+    assert_eq!(position_before_tuck(IslandWindowState::default(), PhysicalPosition::new(20, 20), None, 7), None);
+}
+
+#[test]
+fn reveal_coordinates_do_not_scale_again_or_depend_on_stage_height() {
+    for dpi in [1.0, 1.25, 1.5, 1.75] {
+        for monitor_top in [-1080, 0, 300] {
+          for top_inset in [0, (48.0_f64 * dpi).round() as i32] {
+            let top = monitor_top + top_inset;
+            for scale in [0.75, 1.0, 1.4] {
+                for height in [220.0, 450.0, 800.0] {
+                    for style in [TuckStyle::Edge, TuckStyle::Line, TuckStyle::Hidden] {
+                        let mut island = IslandWindowState {
+                            collapsed_scale: scale, expanded_scale: 1.2, expanded_height: height,
+                            tuck_style: style, ..IslandWindowState::default()
+                        };
+                        let (normal_y, tucked_y) = stage_top_positions(island, monitor_top, top_inset, dpi);
+                        assert_eq!(normal_y, top, "taskbar inset is already physical, not scaled twice");
+                        assert_eq!(resolve_stage_position(island, -900, top, tucked_y), (-900, top));
+                        island.is_tucked = true;
+                        assert_eq!(resolve_stage_position(island, -900, top, tucked_y), (-900, tucked_y));
+                        island.custom_position = Some(IslandPosition { x: -700, y: top });
+                        island.is_tucked = false;
+                        assert_eq!(resolve_stage_position(island, -900, top, tucked_y), (-700, top));
+                        island.mode = IslandMode::Expanded;
+                        island.notice_size = Some((520.0, 180.0));
+                        assert_eq!(resolve_stage_position(island, -900, top, tucked_y), (-700, top));
+                    }
+                }
+            }
+          }
+        }
+    }
+}
+
+#[test]
 fn notch_has_flat_top_and_rounded_bottom_at_all_scales() {
     for scale in [0.75, DEFAULT_COLLAPSED_SCALE, 1.0, 1.4, 2.1] {
         for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
