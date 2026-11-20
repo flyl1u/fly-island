@@ -1,10 +1,11 @@
 //! History service, clipboard reads and writes, and the clipboard listener window.
 
 use arboard::{Clipboard, ImageData};
-use image::RgbaImage;
+use image::{ImageReader, RgbaImage};
 use std::{
     borrow::Cow,
     fs,
+    path::Path,
     sync::{
         mpsc::{self, SyncSender},
         Mutex, OnceLock,
@@ -70,6 +71,7 @@ enum ClipboardCapture {
         width: usize,
         height: usize,
         rgba: Vec<u8>,
+        files: Option<Vec<String>>,
     },
     Files {
         hash: String,
@@ -132,7 +134,19 @@ impl ClipboardHistoryService {
                 let rgba = image::open(&image.original_path)
                     .map_err(|error| format!("Failed to load clipboard image: {error}"))?
                     .to_rgba8();
-                write_clipboard_image(rgba.width() as usize, rgba.height() as usize, &rgba)?;
+                let files = item.files.as_deref().filter(|files| {
+                    image_file_list_is_valid(files)
+                });
+                if let Some(files) = files {
+                    write_clipboard_image_with_files(
+                        rgba.width() as usize,
+                        rgba.height() as usize,
+                        &rgba,
+                        files,
+                    )?;
+                } else {
+                    write_clipboard_image(rgba.width() as usize, rgba.height() as usize, &rgba)?;
+                }
             }
         }
 
@@ -356,6 +370,7 @@ impl ClipboardHistoryService {
                 width,
                 height,
                 rgba,
+                files,
             } => {
                 let image = self.persist_image(&hash, width, height, rgba)?;
                 ClipboardHistoryItem {
@@ -369,7 +384,7 @@ impl ClipboardHistoryService {
                     preview: format!("{width} x {height} image"),
                     text: None,
                     image: Some(image),
-                    files: None,
+                    files,
                 }
             }
         };
@@ -487,12 +502,14 @@ impl ClipboardCapture {
 fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCapture>, String> {
     let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
 
-    // Files first: Explorer puts only CF_HDROP, but some programs add the names as text too.
+    // Files first: Explorer puts only CF_HDROP, but some programs add paths alongside image data.
     if let Ok(files) = clipboard.get().file_list() {
         let paths: Vec<String> = files.iter().map(|path| path.to_string_lossy().to_string()).filter(|path| !path.is_empty()).collect();
         if !paths.is_empty() {
-            let hash = hash_bytes([b"files:", paths.join("
-").as_bytes()].concat().as_slice());
+            if let Some(capture) = capture_image_files(&mut clipboard, &paths, capture_images) {
+                return Ok(Some(capture));
+            }
+            let hash = hash_file_paths(&paths);
             return Ok(Some(ClipboardCapture::Files { hash, paths }));
         }
     }
@@ -521,11 +538,68 @@ fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCaptur
                 width: image.width,
                 height: image.height,
                 rgba: image.bytes.into_owned(),
+                files: None,
             }));
         }
     }
 
     Ok(None)
+}
+
+const IMAGE_FILE_EXTENSIONS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
+
+fn hash_file_paths(paths: &[String]) -> String {
+    hash_bytes([b"files:", paths.join("\r\n").as_bytes()].concat().as_slice())
+}
+
+/// A file-list capture is shown as an image only when it is one bounded image file: several
+/// files would show one picture for all of them, so they stay a file item.
+fn image_file_list_is_valid(paths: &[String]) -> bool {
+    paths.len() == 1
+        && paths.iter().all(|path| {
+            let path = Path::new(path);
+            let Some(extension) = path.extension().and_then(|extension| extension.to_str()) else {
+                return false;
+            };
+            let is_image_extension = IMAGE_FILE_EXTENSIONS
+                .iter()
+                .any(|allowed| extension.eq_ignore_ascii_case(allowed));
+            is_image_extension
+                && fs::metadata(path).is_ok_and(|metadata| {
+                    metadata.is_file() && metadata.len() <= MAX_IMAGE_PNG_BYTES as u64
+                })
+        })
+}
+
+fn capture_image_files(
+    clipboard: &mut Clipboard,
+    paths: &[String],
+    capture_images: bool,
+) -> Option<ClipboardCapture> {
+    if !capture_images || !image_file_list_is_valid(paths) {
+        return None;
+    }
+
+    let image = clipboard
+        .get()
+        .image()
+        .ok()
+        .map(|image| (image.width, image.height, image.bytes.into_owned()))
+        .or_else(|| load_image_file(paths.first()?));
+    let (width, height, rgba) = image?;
+
+    Some(ClipboardCapture::Image {
+        hash: hash_file_paths(paths),
+        width,
+        height,
+        rgba,
+        files: Some(paths.to_vec()),
+    })
+}
+
+fn load_image_file(path: &str) -> Option<(usize, usize, Vec<u8>)> {
+    let image = ImageReader::open(path).ok()?.decode().ok()?.to_rgba8();
+    Some((image.width() as usize, image.height() as usize, image.into_raw()))
 }
 
 fn write_clipboard_text(text: &str) -> Result<(), String> {
@@ -568,6 +642,29 @@ fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Resu
                 bytes: Cow::Owned(image.as_raw().clone()),
             })
             .map_err(|error| format!("Failed to set clipboard image: {error}"))
+    })
+}
+
+fn write_clipboard_image_with_files(
+    width: usize,
+    height: usize,
+    image: &RgbaImage,
+    files: &[String],
+) -> Result<(), String> {
+    retry_clipboard_write("set clipboard image and files", || {
+        Clipboard::new()
+            .map_err(|error| format!("Failed to open clipboard: {error}"))?
+            .set_image(ImageData {
+                width,
+                height,
+                bytes: Cow::Owned(image.as_raw().clone()),
+            })
+            .map_err(|error| format!("Failed to set clipboard image: {error}"))?;
+
+        let _clipboard = clipboard_win::Clipboard::new_attempts(10)
+            .map_err(|error| format!("Failed to open clipboard for files: {error}"))?;
+        clipboard_win::raw::set_file_list(files)
+            .map_err(|error| format!("Failed to set clipboard files: {error}"))
     })
 }
 
@@ -689,3 +786,7 @@ impl WindowMessages for ClipboardWindow {
         None
     }
 }
+
+#[cfg(test)]
+#[path = "service_tests.rs"]
+mod tests;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { readClipboardThumbnail, type ClipboardHistoryItem } from "./api";
+import { clipboardItemKind } from "./kind";
 import { cachedThumbnail, loadThumbnail } from "./thumbnailCache";
 
 type Thumbnail = { id: string; url: string | null; failed: boolean };
@@ -10,7 +11,7 @@ type Thumbnail = { id: string; url: string | null; failed: boolean };
  */
 export function useClipboardThumbnail(item: ClipboardHistoryItem) {
   const inline = item.image?.thumbnailDataUrl || null;
-  const id = item.kind === "image" && !inline ? item.id : null;
+  const id = clipboardItemKind(item) === "image" && !inline ? item.id : null;
   const [loaded, setLoaded] = useState<Thumbnail | null>(null);
 
   useEffect(() => {
