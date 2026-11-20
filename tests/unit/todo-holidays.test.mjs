@@ -1,7 +1,83 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { holidayOn } from "../../src/features/todos/holidays.ts";
+import { COVERED_YEARS, holidayOn, yearPlan } from "../../src/features/todos/holidays.ts";
 import { en, zhCN } from "../../src/i18n/sections/notebook.ts";
+
+/** Every YYYY-MM-DD of a year, walked in UTC so no timezone shifts a day. */
+function daysOfYear(year) {
+  const days = [];
+  for (let cursor = Date.UTC(year, 0, 1); cursor < Date.UTC(year + 1, 0, 1); cursor += 86_400_000) {
+    const date = new Date(cursor);
+    days.push(`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`);
+  }
+  return days;
+}
+
+test("every covered year names the six holidays the notice always lists", () => {
+  assert.ok(COVERED_YEARS.length > 0, "at least one year has data");
+  for (const year of COVERED_YEARS) {
+    const names = new Set();
+    for (const date of daysOfYear(year)) {
+      const mark = holidayOn(date);
+      if (mark?.kind === "off" && mark.name) names.add(mark.name);
+    }
+    for (const required of ["newYear", "springFestival", "qingming", "labour", "dragonBoat", "nationalDay"]) {
+      assert.ok(names.has(required), `${year} is missing ${required}`);
+    }
+  }
+});
+
+test("a break is one unbroken run of days off", () => {
+  for (const year of COVERED_YEARS) {
+    const days = daysOfYear(year).map((date) => holidayOn(date));
+    // Every day between a named day and the next named or unmarked day must be off.
+    days.forEach((mark, index) => {
+      if (mark?.kind !== "off" || mark.name) return;
+      const previous = days[index - 1];
+      assert.equal(previous?.kind, "off", `${year} day ${index + 1}: a break day must be preceded by one`);
+    });
+  }
+});
+
+test("a named day opens its break and never repeats inside it", () => {
+  for (const year of COVERED_YEARS) {
+    const days = daysOfYear(year);
+    const names = [];
+    days.forEach((date, index) => {
+      const mark = holidayOn(date);
+      if (mark?.kind === "off" && mark.name) names.push(mark.name);
+    });
+    assert.equal(new Set(names).size, names.length, `${year} repeats a holiday name`);
+  }
+});
+
+test("two holidays never start on the same day", () => {
+  for (const year of COVERED_YEARS) {
+    const starts = daysOfYear(year).filter((date) => {
+      const mark = holidayOn(date);
+      return mark?.kind === "off" && mark.name;
+    });
+    assert.equal(new Set(starts).size, starts.length, `${year} starts two breaks on one day`);
+  }
+});
+
+test("the raw plan keeps every entry inside its year and out of the breaks", () => {
+  for (const year of COVERED_YEARS) {
+    const plan = yearPlan(year);
+    assert.ok(plan, `${year} should have a plan`);
+    for (const span of plan.breaks) {
+      const last = span.to ?? span.from;
+      assert.equal(Number(span.from.slice(0, 4)), year, `${span.name} starts outside ${year}`);
+      assert.equal(Number(last.slice(0, 4)), year, `${span.name} ends outside ${year}`);
+      assert.ok(span.from <= last, `${span.name} ends before it starts`);
+    }
+    for (const date of plan.workdays) {
+      assert.equal(Number(date.slice(0, 4)), year, `${date} is filed under ${year}`);
+      const clash = plan.breaks.some((span) => date >= span.from && date <= (span.to ?? span.from));
+      assert.ok(!clash, `${date} cannot be both a day off and a workday`);
+    }
+  }
+});
 
 test("a break names its first day and marks the rest as off", () => {
   assert.deepEqual(holidayOn("2026-01-01"), { kind: "off", name: "newYear" });
