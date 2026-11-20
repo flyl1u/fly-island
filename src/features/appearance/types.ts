@@ -212,6 +212,8 @@ export type IslandSettings = {
   lyricsChinese: boolean;
   /** Fill word-timed lyrics as they are sung, in both island states. */
   lyricWordFill: boolean;
+  /** With online lyrics, also ask Apple Music for its own word-timed lyrics. */
+  lyricsAppleMusic: boolean;
   /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
   lyricsOffsetMs: number;
   mailEnabled: boolean;
