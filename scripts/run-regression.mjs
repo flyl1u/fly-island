@@ -69,6 +69,8 @@ export const PAGES = [
   "plugins-settings.html?lang=en",
   "plugins-settings.html?features=enabled",
   "plugins-settings.html?lang=en&features=enabled",
+  "zcode-api-key-settings.html",
+  "zcode-api-key-settings.html?lang=en",
   "settings.html?test=1",
   "settings.html?test=1&features=enabled",
   "settings.html?test=1&clockWeather=1&features=enabled",

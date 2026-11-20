@@ -1,0 +1,59 @@
+.zcode-api-key__form {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.zcode-api-key__input {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.zcode-api-key__visibility {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--corner-md);
+  cursor: pointer;
+}
+
+.zcode-api-key__visibility:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-white-a08);
+}
+
+.zcode-api-key__visibility:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.zcode-api-key__visibility:disabled {
+  opacity: 0.5;
+}
+
+.zcode-api-key__actions {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.zcode-api-key__feedback {
+  min-width: 0;
+  flex: 1 1 220px;
+  color: var(--color-text-subtle);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.zcode-api-key__feedback--error {
+  color: var(--color-error-text);
+}
