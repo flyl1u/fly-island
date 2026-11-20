@@ -27,7 +27,7 @@ function SungWords({ words, positionMs, playing }: { words: LyricWord[]; positio
 /**
  * Three lines of synced lyrics: the one being sung, large and bright, between
  * the one before and the one after. A line with a translation shows it under itself in place
- * of the next line. `offsetMs` moves the lyrics later (positive) or earlier.
+ * of the next line. `offsetMs` moves the lyrics on (positive, the words run ahead) or back.
  */
 export function LyricsView({ lines, mediaState, offsetMs, onPosition, wordFillEnabled = true }: {
   lines: LyricLine[]; mediaState: MediaState; offsetMs: number; onPosition?: (ms: number) => void; wordFillEnabled?: boolean;
@@ -45,7 +45,7 @@ export function LyricsView({ lines, mediaState, offsetMs, onPosition, wordFillEn
     // 校准落在歌词时刻加偏移的位置，和当前歌词时钟保持同一坐标系。
     return clickable ? <button type="button" key={`${at}:${translation}`} className={`lyrics-view__line ${className} lyrics-view__line--clickable`}
       aria-label={(hasTimeline(mediaState) ? t.music.seekLine : t.music.calibrateLine)(line.text)}
-      onClick={() => onPosition(Math.max(0, line.timeMs + offsetMs))}>{content}</button>
+      onClick={() => onPosition(Math.max(0, line.timeMs - offsetMs))}>{content}</button>
       : <span key={`${at}:${translation}`} className={`lyrics-view__line ${className}`} aria-hidden={className.endsWith("--side") ? true : undefined}>{content}</span>;
   };
 

@@ -8,7 +8,7 @@ const LONG_PRESS_MS = 600;
 const FAST_STEP_MS = 5000;
 
 /**
- * Moves this song's lyrics earlier or later in half-second steps, next to the music page's
+ * Moves this song's lyrics on or back in half-second steps, next to the music page's
  * settings button; the value between them resets to 0 when clicked.
  * Holding a button down moves the lyrics five seconds at a time, for the songs whose official
  * lyrics sit well away from the music.
@@ -54,7 +54,7 @@ export function LyricsOffsetControl({ offsetMs, onChange }: { offsetMs: number; 
 
   return (
     <span className="lyrics-offset" role="group" aria-label={text.label}>
-      {stepButton(-SONG_OFFSET_STEP_MS, text.earlier)}
+      {stepButton(SONG_OFFSET_STEP_MS, text.slower)}
       <button
         type="button"
         className="lyrics-offset__value"
@@ -65,7 +65,7 @@ export function LyricsOffsetControl({ offsetMs, onChange }: { offsetMs: number; 
       >
         {offsetMs === 0 ? "0s" : `${seconds > 0 ? "+" : ""}${seconds}s`}
       </button>
-      {stepButton(SONG_OFFSET_STEP_MS, text.later)}
+      {stepButton(-SONG_OFFSET_STEP_MS, text.faster)}
     </span>
   );
 }
