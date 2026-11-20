@@ -14,9 +14,7 @@ use std::{
 
 /// 一次最多发布多少条会话：能看清同时在跑的几件事，又不挤满列表。
 const MAX_SESSIONS: usize = 12;
-/// 结束的会话只在这段时间内出现，避免历史任务每轮都显示成「刚完成」。
-const COMPLETED_WINDOW_MS: i64 = 10 * 60 * 1000;
-/// 只往回查一天，长期不动的历史会话不参与。
+/// 只往回查一天；更早的会话交给宿主的时间窗口处理。
 const LOOKBACK_MS: i64 = 24 * 60 * 60 * 1000;
 /// 只读 messages.jsonl 的尾部，任务清单一般就在最近几轮里。
 const TAIL_BYTES: u64 = 256 * 1024;
@@ -148,12 +146,12 @@ fn recent_sessions(now_ms: i64) -> Vec<SessionRow> {
     rows
 }
 
-/// 只把真正在跑、刚出错或刚结束的会话交给宿主；历史会话不重复冒充「刚完成」。
-fn live_status(status: &str, updated: i64, now_ms: i64) -> Option<&'static str> {
+/// 宿主按真实 updatedAt 和设置里的时间窗口决定显示多久，插件只负责如实翻译状态。
+fn live_status(status: &str) -> Option<&'static str> {
     match status {
         "started" => Some("running"),
         "error" => Some("waiting"),
-        "idle" | "aborted" if now_ms - updated <= COMPLETED_WINDOW_MS => Some("completed"),
+        "idle" | "aborted" => Some("completed"),
         _ => None,
     }
 }
@@ -208,7 +206,7 @@ fn poll(settings: &Value) -> Result<Value, String> {
     let mut sessions = Vec::new();
     let mut notifications = Vec::new();
     for row in recent_sessions(now_ms).into_iter() {
-        let Some(live) = live_status(&row.status, row.updated, now_ms) else { continue };
+        let Some(live) = live_status(&row.status) else { continue };
         if sessions.len() >= MAX_SESSIONS {
             break;
         }
@@ -295,13 +293,12 @@ mod tests {
     }
 
     #[test]
-    fn only_live_sessions_reach_the_island() {
-        let now = 1_800_000_000_000;
-        assert_eq!(live_status("started", now - 60_000, now), Some("running"));
-        assert_eq!(live_status("error", now - 60_000, now), Some("waiting"));
-        assert_eq!(live_status("idle", now - 60_000, now), Some("completed"));
-        assert_eq!(live_status("idle", now - COMPLETED_WINDOW_MS - 1, now), None);
-        assert_eq!(live_status("aborted", now - 86_400_000, now), None);
+    fn live_status_is_honest_and_leaves_aging_to_the_host() {
+        assert_eq!(live_status("started"), Some("running"));
+        assert_eq!(live_status("error"), Some("waiting"));
+        assert_eq!(live_status("idle"), Some("completed"));
+        assert_eq!(live_status("aborted"), Some("completed"));
+        assert_eq!(live_status("weird"), None);
     }
 
     #[test]
