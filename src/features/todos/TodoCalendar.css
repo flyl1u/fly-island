@@ -57,7 +57,6 @@
   grid-auto-rows: 28px;
   grid-template-rows: 18px;
   column-gap: 1px;
-  row-gap: 1px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: var(--color-white-a18) transparent;
@@ -72,23 +71,12 @@
   text-align: center;
 }
 
-/* Saturday and Sunday read red, the way the days themselves do. */
-.todo-calendar__weekday--rest {
-  color: var(--color-danger);
-}
-
-/*
- * A cell holds the number over a caption (a holiday name or the lunar day), with the
- * day-off badge pinned to its top-right corner. The month grid may never scroll, so the
- * whole six-week month has to fit the island's calendar height.
- */
 .todo-calendar__day {
-  position: relative;
   display: grid;
-  grid-template-rows: 18px 10px;
+  grid-template-rows: 21px 3px;
   justify-items: center;
   align-content: center;
-  gap: 0;
+  gap: 3px;
   padding: 0;
   color: var(--text-1);
   background: transparent;
@@ -99,50 +87,47 @@
 }
 
 .todo-calendar__number {
-  width: 18px;
-  height: 18px;
+  width: 21px;
+  height: 21px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-pill);
-  font-size: calc(10.5px * var(--island-font-scale, 1));
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-variant-numeric: tabular-nums;
   line-height: 1;
   transition: background-color 140ms ease, box-shadow 140ms ease;
 }
 
-/* Hover and press wash the whole cell, not just the number. */
-.todo-calendar__day::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: var(--corner-xs);
-  background: transparent;
-  pointer-events: none;
+.todo-calendar__day:hover .todo-calendar__number {
+  background: var(--color-white-a08);
 }
 
 .todo-calendar__day--outside {
   color: var(--text-placeholder);
 }
 
-/* A chosen day outlines the whole cell — number and caption together — today included. */
-.todo-calendar__day[aria-pressed="true"] {
-  border-radius: var(--corner-xs);
+.todo-calendar__day[aria-pressed="true"] .todo-calendar__number {
+  color: var(--color-accent);
   box-shadow: inset 0 0 0 1.5px var(--color-accent);
 }
 
-.todo-calendar__day:hover::after {
-  background: var(--color-white-a08);
-}
-
-.todo-calendar__day:active::after {
-  background: var(--color-white-a16);
-}
-
+.todo-calendar__day:active .todo-calendar__number,
 .todo-calendar__nav button:active:not(:disabled) {
   background: var(--color-white-a16);
 }
 
-/* Today carries a corner badge instead of an outline, so a day off keeps its red number. */
+.todo-calendar__day--today .todo-calendar__number,
+.todo-calendar__day--today:hover .todo-calendar__number,
+.todo-calendar__day--today[aria-pressed="true"] .todo-calendar__number {
+  color: var(--color-black);
+  background: var(--color-accent);
+  font-weight: 700;
+}
+
+/* Today and chosen: a ring around the filled circle. */
+.todo-calendar__day--today[aria-pressed="true"] .todo-calendar__number {
+  box-shadow: 0 0 0 1px var(--color-surface-dark), 0 0 0 2px var(--color-accent);
+}
 
 .todo-calendar__day:focus-visible,
 .todo-calendar__nav button:focus-visible {
@@ -150,106 +135,14 @@
   outline-offset: -2px;
 }
 
-/* The row under the number: a holiday name or the lunar day, plus one todo dot. */
-.todo-calendar__caption {
-  min-width: 0;
-  max-width: 100%;
-  /* The number circle carries empty space below its glyph; lift the caption into it. */
-  margin-top: -1px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-}
-
-.todo-calendar__holiday {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text-3);
-  font-size: calc(8px * var(--island-font-scale, 1));
-  line-height: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/*
- * A day off reads red the way Chinese calendars mark it. The wash fills the cell; the
- * grid gaps keep neighbouring weekend days from merging into one block.
- */
-.todo-calendar__day--rest::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--color-danger) 22%, transparent);
-  border-radius: calc(2px * var(--corner-scale));
-  pointer-events: none;
-}
-
-/* Above the wash. */
-.todo-calendar__number,
-.todo-calendar__caption {
-  position: relative;
-  z-index: 1;
-}
-
-/* Today keeps its accent circle even on a day off. */
-.todo-calendar__day--rest:not(.todo-calendar__day--today) .todo-calendar__number {
-  color: var(--color-danger);
-}
-
-.todo-calendar__day--rest .todo-calendar__holiday {
-  color: var(--color-danger);
-  opacity: 0.85;
-}
-
-.todo-calendar__day--work .todo-calendar__number,
-.todo-calendar__day--work .todo-calendar__holiday {
-  color: var(--text-3);
-}
-
-.todo-calendar__day--outside .todo-calendar__holiday {
-  opacity: 0.45;
-}
-
-/* Pinned into the cell's top-right corner, small enough to sit beside the number circle. */
-.todo-calendar__badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  min-width: 8px;
-  height: 8px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  color: var(--color-white);
-  background: var(--color-danger);
-  border-radius: 1.5px;
-  font-family: var(--font-ui);
-  font-size: calc(7px * var(--island-font-scale, 1));
-  font-weight: 700;
-  line-height: 1;
-}
-
-.todo-calendar__day--work .todo-calendar__badge {
-  color: var(--text-1);
-  background: var(--color-white-a18);
-}
-
-/* Today's badge is blue: it labels the day itself, not what kind of day it is. */
-.todo-calendar__day--today .todo-calendar__badge {
-  color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
-}
-
 .todo-calendar__dots {
-  flex: 0 0 auto;
   display: flex;
-  gap: 1px;
+  gap: 2px;
 }
 
 .todo-calendar__dot {
-  width: 2.5px;
-  height: 2.5px;
+  width: 3px;
+  height: 3px;
   border-radius: var(--radius-pill);
 }
 

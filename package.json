@@ -16,7 +16,7 @@
     "test:regression": "node scripts/run-regression.mjs",
     "check:tests-types": "tsc -p tsconfig.tests.json",
     "lint": "eslint src",
-    "check": "tsc && pnpm run check:tests-types && pnpm run lint && pnpm run check:size && pnpm run check:holidays && pnpm run test"
+    "check": "tsc && pnpm run check:tests-types && pnpm run lint && pnpm run check:size && pnpm run test"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

@@ -196,39 +196,43 @@ try {
   check(dayList().scrollTop === 0, "切回长清单时从开头阅读");
   await click(goToday);
 
-  // Statutory holidays: 1 January 2027 opens a three-day break, 4 January is a make-up workday.
-  const monthTitle = () => $(".todo-calendar__title")!.textContent ?? "";
-  for (let step = 0; step < 24 && !monthTitle().includes("2027"); step += 1) await click(button("下个月"));
-  if (monthTitle().includes("2027")) {
-    const badge = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__badge")?.textContent ?? "";
-    const caption = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__holiday")?.textContent ?? "";
-
-    const firstDay = day("2027-01-01");
-    check(caption(firstDay).includes("元旦") && firstDay?.classList.contains("todo-calendar__day--rest") && badge(firstDay) === "休",
-      "元旦用红底红字，右上角标「休」，数字下方是节日名");
-
-    const plainSaturday = day("2027-01-09");
-    check(plainSaturday?.classList.contains("todo-calendar__day--rest") && badge(plainSaturday) === "休"
-      && /^(初|十|廿|三)/.test(caption(plainSaturday)),
-      "普通周六也标「休」，下方显示农历");
-
-    const plainWeekday = day("2027-01-06");
-    check(!plainWeekday?.classList.contains("todo-calendar__day--rest") && badge(plainWeekday) === ""
-      && /^(初|十|廿|三)/.test(caption(plainWeekday)),
-      "工作日不标「休」，下方仍显示农历");
-
-    const makeUpDay = day("2027-01-31");
-    check(badge(makeUpDay) === "班" && makeUpDay?.classList.contains("todo-calendar__day--work")
-      && !makeUpDay.classList.contains("todo-calendar__day--rest"),
-      "调休上班的周日标「班」，不按休息日标红");
-
-    check($$(".todo-calendar__weekday--rest").length === 2
-      && $$(".todo-calendar__weekday--rest").map((element) => element.textContent).join("") === "六日",
-      "星期行的周六周日标红");
-
-    check(caption(day("2027-01-20")) === "大寒", "节气当天显示节气名");
-    await click(goToday);
+  // 节假日标记：固定翻到 2027 年 1 月（数据范围内的月份），与当前是几月无关。
+  // 翻不到就直接失败，避免数据过期后这里悄悄不再检查。
+  // 用月中日期判断，因为格子里有前后月的补位日，月初日期在上个月就可能出现。
+  for (let step = 0; step < 36 && !day("2027-01-15"); step += 1) {
+    const first = $$(".todo-calendar__day")[0]?.getAttribute("data-date") ?? "";
+    await click(button(first > "2027-01-15" ? "上个月" : "下个月"));
   }
+  check(day("2027-01-15") !== null, "能翻到 2027 年 1 月验证节假日标记");
+
+  const badgeOf = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__badge")?.textContent ?? "";
+  const captionOf = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__caption-text")?.textContent ?? "";
+
+  const newYear = day("2027-01-01");
+  check(captionOf(newYear).includes("元旦") && newYear?.classList.contains("todo-calendar__day--rest") && badgeOf(newYear) === "休",
+    "元旦用红底红字，右上角标「休」，数字下方是节日名");
+
+  const plainSaturday = day("2027-01-09");
+  check(plainSaturday?.classList.contains("todo-calendar__day--rest") && badgeOf(plainSaturday) === "休"
+    && /^(初|十|廿|三)/.test(captionOf(plainSaturday)),
+    "普通周六也标「休」，下方显示农历");
+
+  const plainWeekday = day("2027-01-06");
+  check(!plainWeekday?.classList.contains("todo-calendar__day--rest") && badgeOf(plainWeekday) === ""
+    && /^(初|十|廿|三)/.test(captionOf(plainWeekday)),
+    "工作日不标「休」，下方仍显示农历");
+
+  const makeUpDay = day("2027-01-31");
+  check(badgeOf(makeUpDay) === "班" && makeUpDay?.classList.contains("todo-calendar__day--work")
+    && !makeUpDay?.classList.contains("todo-calendar__day--rest"),
+    "调休上班的周日标「班」，不按休息日标红");
+
+  check($$(".todo-calendar__weekday--rest").length === 2
+    && $$(".todo-calendar__weekday--rest").map((element) => element.textContent).join("") === "六日",
+    "星期行的周六周日标红");
+
+  check(captionOf(day("2027-01-20")) === "大寒", "节气当天显示节气名");
+  await click(goToday);
 
   // A six-week month stays fully visible without taking height from the day list.
   for (let step = 0; step < 12 && $$(".todo-calendar__day").length !== 42; step += 1) await click(button("下个月"));

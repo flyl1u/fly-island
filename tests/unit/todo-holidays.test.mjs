@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { COVERED_YEARS, holidayOn, yearPlan } from "../../src/features/todos/holidays.ts";
-import { en, zhCN } from "../../src/i18n/sections/notebook.ts";
+import { COVERED_YEARS, holidayOn, yearPlan } from "../../src/features/todos/calendar-marks/holidays.ts";
+import { TEXT } from "../../src/features/todos/calendar-marks/text.ts";
 
 /** Every YYYY-MM-DD of a year, walked in UTC so no timezone shifts a day. */
 function daysOfYear(year) {
@@ -111,21 +111,15 @@ test("days outside the covered years carry no mark", () => {
   assert.equal(holidayOn("2026-11-19"), undefined);
 });
 
-test("every holiday key has a name in both languages", () => {
+test("every holiday has a caption", () => {
   const keys = [
-    "2026-01-01",
-    "2026-02-15",
-    "2026-04-04",
-    "2026-05-01",
-    "2026-06-19",
-    "2026-09-25",
-    "2026-10-01",
+    "2026-01-01", "2026-02-15", "2026-04-04", "2026-05-01",
+    "2026-06-19", "2026-09-25", "2026-10-01",
   ].map((date) => holidayOn(date)?.name);
 
   assert.equal(keys.length, 7);
   for (const key of keys) {
-    assert.ok(key, "each sample date should name its holiday");
-    assert.ok(zhCN.holidayNames[key], `${key} is missing from zhCN`);
-    assert.ok(en.holidayNames[key], `${key} is missing from en`);
+    assert.ok(key, "每个样例日期都应该对应一个节日");
+    assert.ok(TEXT.holidayNames[key], `${key} 缺少文案`);
   }
 });

@@ -1,4 +1,4 @@
-import { addDays } from "./schedule.ts";
+import { addDays } from "../schedule.ts";
 
 /**
  * Statutory holidays in mainland China. The State Council publishes the arrangement for the

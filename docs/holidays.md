@@ -6,7 +6,7 @@
 
 | 数据 | 文件 | 是否要逐年更新 |
 |---|---|---|
-| 法定节假日、调休上班日 | `src/features/todos/holidays.ts` | **要**，每年 11 月 |
+| 法定节假日、调休上班日 | `src/features/todos/calendar-marks/holidays.ts` | **要**，每年 11 月 |
 | 二十四节气 | `src/features/todos/solarTerms.ts` | 不用，公式覆盖 1900–2100 |
 | 农历日 | `src/features/todos/lunar.ts` | 不用，数据表覆盖 1900–2100 |
 | 纪念日 | `src/features/todos/memorials.ts` | 不用，都是固定公历日期 |
@@ -15,7 +15,7 @@
 
 ## 怎么加一年
 
-打开 `src/features/todos/holidays.ts`，在 `PLANS` 里按年份加一块。以通知原文为例：
+打开 `src/features/todos/calendar-marks/holidays.ts`，在 `PLANS` 里按年份加一块。以通知原文为例：
 
 > 一、元旦：1 月 1 日（周四）至 3 日（周六）放假调休，共 3 天。1 月 4 日（周日）上班。
 
@@ -35,7 +35,7 @@
 
 1. 在 `PLANS` 对象末尾加一个 `年份: { breaks, workdays }`；
 2. 把通知里每个「放假」段落写成一条 `breaks`，每个「××日上班」写进 `workdays`；
-3. 跑 `pnpm check`：其中的 `check:holidays` 确认数据已覆盖到需要的年份，单元测试确认格式没有抄错。
+3. 跑 `node scripts/check-holidays.mjs` 确认覆盖到需要的年份，再跑 `pnpm test` 确认格式没抄错。
 
 ## 字段说明
 
@@ -73,7 +73,7 @@
 
 数据没覆盖的年份，月历照常显示数字和农历，只是没有节假日标记——不会报错，也不会串到相邻年份。这是刻意的：宁可少标，也不标错。
 
-为此 `pnpm check:holidays`（已并入 `pnpm check`）会在每年 11 月之后要求数据覆盖到次年，缺了就直接失败，把「悄悄没标记」变成一条明确的报错。它也可以手动指定年月来验证边界：
+`scripts/check-holidays.mjs` 会告诉你还差哪一年。它**不参与 `pnpm check`**，因为结果取决于当天日期：如果让它在每年 11 月后失败，所有贡献者的提交前检查都会被一个与本次改动无关的原因卡住。它只提示、不报错，需要自己记得跑。也可以手动指定年月来验证边界：
 
 ```bash
 node scripts/check-holidays.mjs 2027 12   # 模拟 2027 年 12 月：会要求 2028 年数据
@@ -83,6 +83,6 @@ node scripts/check-holidays.mjs 2027 12   # 模拟 2027 年 12 月：会要求 2
 
 The second line under a date shows the first of: holiday name, solar term, observance, lunar day. Red wash, red number and the 休 badge mark days off.
 
-Only `src/features/todos/holidays.ts` needs a yearly edit. The State Council publishes the next year's arrangement each November; add one `YYYY: { breaks, workdays }` block to `PLANS`, copy each 放假 range into `breaks` and each 上班 day into `workdays`, then run `pnpm test`. Solar terms, lunar dates and the fixed-date observances are computed or listed elsewhere and never need updating.
+Only `src/features/todos/calendar-marks/holidays.ts` needs a yearly edit. The State Council publishes the next year's arrangement each November; add one `YYYY: { breaks, workdays }` block to `PLANS`, copy each 放假 range into `breaks` and each 上班 day into `workdays`, then run `node scripts/check-holidays.mjs` and `pnpm test`. Solar terms, lunar dates and the fixed-date observances are computed or listed elsewhere and never need updating.
 
 `breaks[].name` must be a key in `notebook.holidayNames`; a new key also needs `zhCN` and `en` entries. National Day and Mid-Autumn that fall together are a single `nationalDay` range, and the Spring Festival range already starts on New Year's Eve as published.

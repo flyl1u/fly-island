@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { lunarDay } from "../../src/features/todos/lunar.ts";
+import { lunarDay } from "../../src/features/todos/calendar-marks/lunar.ts";
 
 test("known lunar dates land on the right day", () => {
   // Spring Festival, Mid-Autumn and Dragon Boat, all first or fifteenth days.
