@@ -12,6 +12,7 @@
     "tauri": "tauri",
     "test": "node --test \"tests/**/*.test.mjs\"",
     "check:size": "node scripts/check-file-size.mjs",
+    "check:holidays": "node scripts/check-holidays.mjs",
     "test:regression": "node scripts/run-regression.mjs",
     "check:tests-types": "tsc -p tsconfig.tests.json",
     "lint": "eslint src",
