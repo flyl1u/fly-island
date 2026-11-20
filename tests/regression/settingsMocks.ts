@@ -21,7 +21,7 @@ const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot
 let mailboxes: MailSnapshot[] = [mailbox("demo@qq.com"), mailbox("louis@163.com", { status: "authRequired", enabled: false, unreadCount: null })];
 let replyMarkerOn = false;
 let zcodeApiKeySettings = { platform: "bigmodel", hasKey: false, maskedKey: null as string | null };
-export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-island-reply-marker.md", content: "<!-- focusd-island: reply marker v2 -->\n## Reply status marker" };
+export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\fly-island-reply-marker.md", content: "<!-- fly-island: reply marker v2 -->\n## Reply status marker" };
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
 export const translationShortcutCalls: string[] = [];
@@ -69,7 +69,7 @@ mockIPC((command, payload) => {
     case "set_clipboard_history_settings":
       clipboardSettings = { ...clipboardSettings, ...(args.settings as object | undefined) };
       return { settings: clipboardSettings, items: [] };
-    case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\agent-status.json" };
+    case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.flyisland.app\\agent-status.json" };
     case "get_zcode_api_key_settings": return zcodeApiKeySettings;
     case "save_zcode_api_key_settings":
       zcodeApiKeySettings = {

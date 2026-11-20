@@ -39,7 +39,7 @@ async function frame() {
 
 try {
   // 本回归页只使用自己的测试数据。
-  localStorage.setItem("focusd-island-todos", JSON.stringify(["a", "b", "c"].map((id) => ({
+  localStorage.setItem("fly-island-todos", JSON.stringify(["a", "b", "c"].map((id) => ({
     id, title: id, completed: false, createdAt: 0,
   }))));
   await act(async () => {
@@ -59,7 +59,7 @@ try {
   check(row("a").style.transform.includes("translateY"), "被拖行通过内联变换跟手");
   await pointer("a", "pointerup", y);
   check(order() === "b,c,a" && JSON.stringify(moves) === '[["a",2]]', "松手按最终 index 提交");
-  check(JSON.parse(localStorage.getItem("focusd-island-todos")!).map((item: { id: string }) => item.id).join(",") === "b,c,a", "松手顺序持久化");
+  check(JSON.parse(localStorage.getItem("fly-island-todos")!).map((item: { id: string }) => item.id).join(",") === "b,c,a", "松手顺序持久化");
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 220)); });
   check(!row("a").style.transform && row("a").getAnimations().length === 0, "落位结束清理变换");
   moves = [];

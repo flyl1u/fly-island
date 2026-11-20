@@ -12,7 +12,7 @@ import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const RealDate = Date;
 let now = new RealDate().setHours(12, 0, 0, 0);
 class FakeDate extends RealDate {
@@ -36,13 +36,13 @@ window.clearInterval = (id?: number) => { if (id !== undefined && ticks.delete(i
 for (const key of original.keys()) localStorage.removeItem(key);
 const today = getLocalDateString();
 const initial = [{ id: "a", title: "Alpha", completed: false, createdAt: 7 }, { id: "b", title: "Beta", completed: false, createdAt: 8 }];
-localStorage.setItem("focusd-island-current-date", today);
-localStorage.setItem("focusd-island-todos", JSON.stringify(initial));
-localStorage.setItem("focusd-island-save-directory", "D:/notes");
-localStorage.setItem("focusd-island-last-saved-signature", getTodoSignature(today, initial, ""));
-localStorage.setItem("focusd-island-active-todos", '["a"]');
-localStorage.setItem("focusd-island-todo-timers", JSON.stringify([{ todoId: "a", endsAt: now + 3600000, durationMinutes: 60, notified: false }]));
-localStorage.setItem("focusd-island-scheduled-todos", JSON.stringify([{ id: "later", title: "Future", date: "2099-01-01", createdAt: 9 }]));
+localStorage.setItem("fly-island-current-date", today);
+localStorage.setItem("fly-island-todos", JSON.stringify(initial));
+localStorage.setItem("fly-island-save-directory", "D:/notes");
+localStorage.setItem("fly-island-last-saved-signature", getTodoSignature(today, initial, ""));
+localStorage.setItem("fly-island-active-todos", '["a"]');
+localStorage.setItem("fly-island-todo-timers", JSON.stringify([{ todoId: "a", endsAt: now + 3600000, durationMinutes: 60, notified: false }]));
+localStorage.setItem("fly-island-scheduled-todos", JSON.stringify([{ id: "later", title: "Future", date: "2099-01-01", createdAt: 9 }]));
 let version = 0;
 let reads = 0;
 let writes = 0;
@@ -103,7 +103,7 @@ try {
   check(model!.todos[1].id === "a" && model!.todos[1].createdAt === 7 && model!.timers[0]?.endsAt === timerEnd,
     "Matching preserves ID, creation time and the running countdown");
   check(model!.notebookProps.dailyNote === "## Notes\nFrom editor" && model!.notebookProps.scheduledTodos[0].id === "later", "Daily note imports and future scheduled tasks stay separate");
-  check(JSON.parse(localStorage.getItem("focusd-island-todos")!)[0].id === "b", "Imported tasks persist in the existing localStorage format");
+  check(JSON.parse(localStorage.getItem("fly-island-todos")!)[0].id === "b", "Imported tasks persist in the existing localStorage format");
   const before = writes;
   await stable();
   check(writes === before, "Imported content does not loop back into another save");
@@ -154,6 +154,6 @@ try {
   Object.defineProperty(window, "Date", { configurable: true, value: RealDate });
   window.setInterval = realInterval;
   window.clearInterval = realClear;
-  for (const key of Object.keys(localStorage).filter(key => key.startsWith("focusd-island-"))) if (!original.has(key)) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter(key => key.startsWith("fly-island-"))) if (!original.has(key)) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 }

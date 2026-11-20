@@ -4,14 +4,14 @@ export { parsePanelPreview } from "./panelPreview.ts";
 export type { PanelPreviewMode } from "./panelPreview";
 
 // Whether settings open in their own window instead of as a page of the island.
-export const DETACHED_SETTINGS_STORAGE_KEY = "focusd-island-detached-settings";
+export const DETACHED_SETTINGS_STORAGE_KEY = "fly-island-detached-settings";
 
 export function loadDetachedSettings(): boolean {
   return readString(DETACHED_SETTINGS_STORAGE_KEY) !== "false";
 }
 
 /** Told within the window that saved the choice; other windows get a storage event. */
-export const DETACHED_SETTINGS_CHANGED_EVENT = "focusd-detached-settings-changed";
+export const DETACHED_SETTINGS_CHANGED_EVENT = "fly-island-detached-settings-changed";
 
 /** Returns false when the choice could not be stored. */
 export function saveDetachedSettings(detached: boolean): boolean {
@@ -20,8 +20,8 @@ export function saveDetachedSettings(detached: boolean): boolean {
   return true;
 }
 
-export const TRAY_VISIBLE_STORAGE_KEY = "focusd-island-tray-visible";
-export const TRAY_VISIBLE_CHANGED_EVENT = "focusd-tray-visible-changed";
+export const TRAY_VISIBLE_STORAGE_KEY = "fly-island-tray-visible";
+export const TRAY_VISIBLE_CHANGED_EVENT = "fly-island-tray-visible-changed";
 
 /** Only an explicit false hides the icon, including when storage is unavailable. */
 export function loadTrayVisible(): boolean {
@@ -38,7 +38,7 @@ export function saveTrayVisible(visible: boolean): boolean {
 }
 
 // Main island -> settings window request to reveal a section; survives the window being created.
-export const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
+export const SETTINGS_FOCUS_STORAGE_KEY = "fly-island-settings-focus";
 
 export type SettingsFocusSection = "savePath" | "translation" | "music" | "mail" | "updates";
 
@@ -79,7 +79,7 @@ export function requestSettingsFocus(section: SettingsFocusSection) {
 // Settings window -> island: put the island back at the top center of the primary
 // screen, as its own reset button does. The time makes every request a change that
 // fires a storage event, and lets a leftover from an earlier session be ignored.
-export const ISLAND_POSITION_RESET_STORAGE_KEY = "focusd-island-position-reset";
+export const ISLAND_POSITION_RESET_STORAGE_KEY = "fly-island-position-reset";
 
 const POSITION_RESET_MAX_AGE_MS = 5_000;
 
@@ -104,7 +104,7 @@ export function isFreshPositionReset(stored: string | null, now = Date.now()) {
 // Settings window -> island: show the island expanded or collapsed while a size slider
 // moves, so the change is visible. Each request carries a fresh time, which also makes
 // every write a change that fires a storage event in the island window.
-export const PANEL_PREVIEW_STORAGE_KEY = "focusd-island-panel-preview";
+export const PANEL_PREVIEW_STORAGE_KEY = "fly-island-panel-preview";
 
 export function requestPanelPreview(mode: PanelPreviewMode) {
   writeJson(PANEL_PREVIEW_STORAGE_KEY, { mode, requestedAt: Date.now() });

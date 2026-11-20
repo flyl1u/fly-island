@@ -5,7 +5,7 @@ import en from "./locales/en.ts";
 
 export type { LocaleCode, Translations };
 
-export const LOCALE_STORAGE_KEY = "focusd-island-locale";
+export const LOCALE_STORAGE_KEY = "fly-island-locale";
 
 export const TRANSLATIONS: Record<LocaleCode, Translations> = {
   "zh-CN": zhCN,

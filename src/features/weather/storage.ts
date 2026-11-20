@@ -4,8 +4,8 @@ import {
   type ClockWeatherSettings, type WeatherCache, type WeatherLocation,
 } from "./model.ts";
 
-export const CLOCK_WEATHER_KEY = "focusd-island-clock-weather";
-export const WEATHER_CACHE_KEY = "focusd-island-weather-cache";
+export const CLOCK_WEATHER_KEY = "fly-island-clock-weather";
+export const WEATHER_CACHE_KEY = "fly-island-weather-cache";
 export const loadClockWeatherSettings = () => normalizeClockWeatherSettings(readJson(CLOCK_WEATHER_KEY));
 export type ClockWeatherSettingsUpdate = Partial<Pick<ClockWeatherSettings, "showClock" | "showWeather">> & { location?: WeatherLocation };
 

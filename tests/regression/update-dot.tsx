@@ -15,7 +15,7 @@ import { syncUpdateTodo } from "../../src/features/todos/updateTodo";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
 const en = query.get("lang") === "en";
-const keys = ["focusd-island-locale"];
+const keys = ["fly-island-locale"];
 const original = keys.map((key) => localStorage.getItem(key));
 localStorage.setItem(keys[0], en ? "en" : "zh-CN");
 window.addEventListener("beforeunload", () => keys.forEach((key, index) => {
@@ -46,7 +46,7 @@ let snapshot: UpdateState = { stage: "available", version: "3.0.9", nextVersion:
   total: 100, detail: "", dismissed: false, autoUpdate: true, target: "stable" };
 async function update(patch: Partial<UpdateState>) {
   snapshot = { ...snapshot, ...patch };
-  await act(async () => { await emit("focusd-update-state", snapshot); });
+  await act(async () => { await emit("fly-island-update-state", snapshot); });
 }
 function Fixture() {
   const [page, changePage] = useState<IslandPage>("todo");

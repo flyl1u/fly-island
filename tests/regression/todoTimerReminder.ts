@@ -16,15 +16,15 @@ export async function checkTodoReminders(actions: Actions, check: (condition: un
   const chimes = () => new Promise<void>((resolve) => { setTimeout(resolve, 1_500); });
   const stored = () => JSON.parse(localStorage.getItem(TODO_TIMER_STORAGE_KEY) ?? "null") as TodoTimer | null;
   const configure = async (patch: Record<string, unknown>) => act(async () => {
-    localStorage.setItem("focusd-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("focusd-island-settings")!), ...patch }));
-    window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings" }));
+    localStorage.setItem("fly-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("fly-island-settings")!), ...patch }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "fly-island-settings" }));
   });
-  localStorage.setItem("focusd-island-todos", JSON.stringify([
+  localStorage.setItem("fly-island-todos", JSON.stringify([
     { id: "reminder", title: "核对发布说明和录屏中的每一步", completed: false, createdAt: Date.now() },
     { id: "second", title: "Prepare the English release notes", completed: false, createdAt: Date.now() },
   ]));
-  localStorage.removeItem("focusd-island-active-todos"); localStorage.removeItem("focusd-island-active-todo");
-  localStorage.removeItem("focusd-island-todo-timers"); localStorage.removeItem(TODO_TIMER_STORAGE_KEY);
+  localStorage.removeItem("fly-island-active-todos"); localStorage.removeItem("fly-island-active-todo");
+  localStorage.removeItem("fly-island-todo-timers"); localStorage.removeItem(TODO_TIMER_STORAGE_KEY);
   await configure({ todoTimerEnabled: true, todoTimerReminder: true, todoTimerReminderSound: false, rotateTodos: false });
   await mount(); await open(); await choose("reminder"); await pick(10);
   const picker = document.querySelector<HTMLElement>(".todo-duration-picker")!;

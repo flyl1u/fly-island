@@ -46,7 +46,7 @@ export function isUnseen(session: AgentSessionSummary, turns: SeenTurns) {
   return recent && turns.seen[sessionKey(session)] !== turnOf(session);
 }
 
-export const SEEN_TURNS_STORAGE_KEY = "focusd-island-agent-seen-turns";
+export const SEEN_TURNS_STORAGE_KEY = "fly-island-agent-seen-turns";
 /** Older entries are dropped past this many. */
 export const MAX_SEEN = 300;
 

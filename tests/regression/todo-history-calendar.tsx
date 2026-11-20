@@ -20,9 +20,9 @@ mockIPC(() => null);
 const ISLAND_CHROME = 86;
 
 // The page writes the island's own keys; whatever the browser profile had comes back on leaving.
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 window.addEventListener("beforeunload", () => {
-  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 });
 for (const key of original.keys()) localStorage.removeItem(key);
@@ -37,15 +37,15 @@ const lastYear = addDays(today, -400);
 const later = addDays(today, 3);
 const item = (id: string, title: string, completed = false) => ({ id, title, completed, createdAt: 0 });
 localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
-localStorage.setItem("focusd-island-current-date", today);
-localStorage.setItem("focusd-island-save-directory", "");
-localStorage.setItem("focusd-island-todos", JSON.stringify([
+localStorage.setItem("fly-island-current-date", today);
+localStorage.setItem("fly-island-save-directory", "");
+localStorage.setItem("fly-island-todos", JSON.stringify([
   item("t1", "核对这周的录屏素材"),
   item("t2", "给演示稿补上封面"),
   item("t3", "约下周的评审时间"),
   item("t4", "备份项目文件", true),
 ]));
-localStorage.setItem("focusd-island-scheduled-todos", JSON.stringify([{ id: "s1", title: "三天后交材料", date: later, createdAt: 0 }]));
+localStorage.setItem("fly-island-scheduled-todos", JSON.stringify([{ id: "s1", title: "三天后交材料", date: later, createdAt: 0 }]));
 const archives = [
   { date: yesterday, todos: [item("y1", "写周报"), item("y2", "回邮件", true)], dailyNote: "", savedAt: 0, savedToDisk: false },
   { date: older, todos: [item("o1", "整理桌面", true)], dailyNote: "旧笔记", savedAt: 0, savedToDisk: true, filePath: "D:\\Notes\\x.md" },
@@ -59,7 +59,7 @@ const archives = [
   { date: oldEarlier, todos: [item("e1", "讨论拍摄提纲")], dailyNote: "", savedAt: 0, savedToDisk: false },
   { date: lastYear, todos: [item("l1", "去年的记录")], dailyNote: "", savedAt: 0, savedToDisk: false },
 ];
-localStorage.setItem("focusd-island-archives", JSON.stringify(archives));
+localStorage.setItem("fly-island-archives", JSON.stringify(archives));
 
 function Harness() {
   const { notebookProps } = useTodos({ carryOverIncompleteTodos: false, onStartTodo: () => {}, onMissingSaveDirectory: () => {} });
@@ -164,11 +164,11 @@ try {
   check(input.placeholder === "添加待办", "输入框写着\"添加待办\"");
   await type(input, "带上合同");
   await act(async () => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); });
-  const stored = JSON.parse(localStorage.getItem("focusd-island-scheduled-todos") ?? "[]") as { title: string; date: string }[];
+  const stored = JSON.parse(localStorage.getItem("fly-island-scheduled-todos") ?? "[]") as { title: string; date: string }[];
   check(stored.some((todo) => todo.title === "带上合同" && todo.date === later) && $$(".todo-day-row--scheduled").length === 2,
     "在以后的日子输入待办并回车，安排到那一天");
   await click(button("删除已安排的待办：带上合同"));
-  check($$(".todo-day-row--scheduled").length === 1 && !localStorage.getItem("focusd-island-scheduled-todos")!.includes("带上合同"),
+  check($$(".todo-day-row--scheduled").length === 1 && !localStorage.getItem("fly-island-scheduled-todos")!.includes("带上合同"),
     "可以在当天的清单删除已安排待办");
 
   for (let step = 0; step < 3 && !day(older); step += 1) await click(button("上个月"));
@@ -204,7 +204,7 @@ try {
   await click(segment("today"));
   check(todayTitles().includes("写周报") && $<HTMLProgressElement>(".todo-notebook progress")?.max === 5, "回到待办页时总数包含恢复的待办");
 
-  const archived = JSON.parse(localStorage.getItem("focusd-island-archives") ?? "[]") as typeof archives;
+  const archived = JSON.parse(localStorage.getItem("fly-island-archives") ?? "[]") as typeof archives;
   check(archived.length === archives.length && archived.every((entry, index) => entry.date === archives[index].date &&
     JSON.stringify(entry.todos) === JSON.stringify(archives[index].todos) && entry.dailyNote === archives[index].dailyNote), "归档数据原样保留");
 

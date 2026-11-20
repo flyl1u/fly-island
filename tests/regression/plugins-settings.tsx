@@ -148,7 +148,7 @@ try {
     await act(async () => requests[requests.length - 1].reject("HTTP 404 https://github.com/releases/missing")); await wait();
     check(document.body.textContent?.includes(t.unavailable) && !document.body.textContent?.includes("HTTP 404"), "索引失败只显示翻译后的简短状态");
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-    const next = "D:\\FocuSD\\artifacts\\plugins\\plugins-index.json";
+    const next = "D:\\Fly Island\\artifacts\\plugins\\plugins-index.json";
     await act(async () => { setter.call(input, next); input.dispatchEvent(new Event("input", { bubbles: true })); });
     const beforeSave = requests.length;
     await act(async () => button(t.save).click()); await wait();

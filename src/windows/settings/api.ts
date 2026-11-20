@@ -7,7 +7,7 @@ import { loadDetachedSettings, requestSettingsFocus, type SettingsFocusSection }
 // and other windows ask the island to open settings where the user keeps them.
 export const SETTINGS_OPEN_REQUESTED_EVENT = "settings-open-requested";
 /** Same-window request from a part of the island to open its settings page. */
-export const OPEN_SETTINGS_PAGE_EVENT = "focusd-open-settings-page";
+export const OPEN_SETTINGS_PAGE_EVENT = "fly-island-open-settings-page";
 // Mirrors src-tauri/src/tray.rs. Timeout fallback does not emit a saved preference.
 export const TRAY_VISIBILITY_EVENT = "tray-visibility-changed";
 export const TRAY_CHECK_UPDATES_EVENT = "tray-check-updates";

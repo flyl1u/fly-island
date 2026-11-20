@@ -125,7 +125,7 @@ export type ReplyMarkerState = {
   installed: boolean;
   /** An older wording, or the block still in CLAUDE.md; switching on again replaces it. */
   outdated: boolean;
-  /** The rules file, ~/.claude/rules/focusd-island-reply-marker.md. */
+  /** The rules file, ~/.claude/rules/fly-island-reply-marker.md. */
   path: string;
   /** What switching on writes there. */
   content: string;

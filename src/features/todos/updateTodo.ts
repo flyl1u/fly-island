@@ -1,7 +1,7 @@
 import type { TodoItem } from "./types";
 export type { TodoItem } from "./types";
 
-export const UPDATE_TODO_ID = "focusd-island-update-todo";
+export const UPDATE_TODO_ID = "fly-island-update-todo";
 
 export type UpdateTodoState = {
   stage: string;

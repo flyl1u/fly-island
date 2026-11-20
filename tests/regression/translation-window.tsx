@@ -10,7 +10,7 @@ import { I18nProvider } from "../../src/i18n";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
 const theme = query.get("theme") ?? "dark";
-localStorage.setItem("focusd-island-settings", JSON.stringify({ colorScheme: theme }));
+localStorage.setItem("fly-island-settings", JSON.stringify({ colorScheme: theme }));
 mockWindows("translation");
 mockIPC((command) => {
   switch (command) {

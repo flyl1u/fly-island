@@ -2,7 +2,7 @@ import { readJson, writeJson } from "../../lib/storage.ts";
 import type { MessageSource } from "./messagePreview.ts";
 
 /** The Messages page's tab order, as rearranged by press-and-hold dragging. */
-export const MESSAGE_SOURCE_ORDER_KEY = "focusd-island-message-source-order";
+export const MESSAGE_SOURCE_ORDER_KEY = "fly-island-message-source-order";
 
 export const DEFAULT_SOURCE_ORDER: readonly MessageSource[] = ["wechat", "qq", "qqMail", "dingtalk", "feishu", "wecom", "plugin"];
 

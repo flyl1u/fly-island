@@ -17,7 +17,7 @@ Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
 const en = query.get("lang") === "en";
 const preview = query.has("view");
-const keys = ["focusd-island-locale", "focusd-island-qq-mail-settings", "focusd-island-qq-notification-access-requested"];
+const keys = ["fly-island-locale", "fly-island-qq-mail-settings", "fly-island-qq-notification-access-requested"];
 const original = keys.map((key) => localStorage.getItem(key));
 window.addEventListener("beforeunload", () => keys.forEach((key, index) => {
   if (original[index] === null) localStorage.removeItem(key); else localStorage.setItem(key, original[index]!);

@@ -2,7 +2,7 @@ import { readJson, writeJson } from "../../../lib/storage.ts";
 import { OFFICE_SOURCES, type OfficeSource } from "../messagePreview.ts";
 
 /** Whether each installed office client's reminders are on (`{ dingtalk, feishu, wecom }`, default on). */
-export const OFFICE_IM_ENABLED_KEY = "focusd-island-office-im-enabled";
+export const OFFICE_IM_ENABLED_KEY = "fly-island-office-im-enabled";
 
 export type OfficeImEnabled = Readonly<Record<OfficeSource, boolean>>;
 

@@ -2,8 +2,8 @@ import { readJson, writeJson } from "../../../lib/storage.ts";
 import { isNativePluginId, NATIVE_PLUGIN_IDS, type NativePluginId } from "./catalog.ts";
 
 /** Installed built-in plugins, as a list of ids in the order they were installed. */
-export const NATIVE_PLUGINS_KEY = "focusd-island-native-plugins";
-export const DISABLED_NATIVE_PLUGINS_KEY = "focusd-island-native-plugins-disabled";
+export const NATIVE_PLUGINS_KEY = "fly-island-native-plugins";
+export const DISABLED_NATIVE_PLUGINS_KEY = "fly-island-native-plugins-disabled";
 
 type NativePluginFlags = Readonly<Record<NativePluginId, boolean>>;
 export type InstalledNativePlugins = NativePluginFlags;

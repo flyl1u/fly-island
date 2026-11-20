@@ -13,9 +13,9 @@ import type { IslandInteraction } from "../../src/windows/island/api";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 window.addEventListener("beforeunload", () => {
-  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 });
 for (const key of original.keys()) localStorage.removeItem(key);
@@ -25,7 +25,7 @@ let settings = { messageAutoExpand: true, messageExpandMaxWidth: 520, messageExp
   autoTuck: false, autoCollapseSeconds: 0, revealOnMessage: false, agentStatusEnabled: false,
   musicEnabled: false, shelfEnabled: false, colorScheme: params.get("theme") ?? "dark",
   collapsedScale: Number(params.get("scale") ?? 1), islandFontPercent: 120 };
-localStorage.setItem("focusd-island-settings", JSON.stringify(settings));
+localStorage.setItem("fly-island-settings", JSON.stringify(settings));
 let revision = 0;
 const calls: { command: string; args: Record<string, unknown> }[] = [];
 let latestNative: IslandInteraction | null = null;
@@ -64,8 +64,8 @@ const body = () => document.querySelector<HTMLElement>(".message-notice__body")!
 const click = (selector: string) => act(async () => { document.querySelector<HTMLElement>(selector)!.click(); });
 const configure = (patch: Partial<typeof settings>) => act(async () => {
   settings = { ...settings, ...patch };
-  localStorage.setItem("focusd-island-settings", JSON.stringify(settings));
-  window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings" }));
+  localStorage.setItem("fly-island-settings", JSON.stringify(settings));
+  window.dispatchEvent(new StorageEvent("storage", { key: "fly-island-settings" }));
 });
 const qq = async (text: string) => act(async () => {
   await emit("qq-notifications-changed", { snapshot: { revision: ++revision, enabled: true, status: "listening", items: [{ id: String(revision), title: "项目组", body: text, createdAt: Date.now() }], error: null }, newestId: String(revision), windowVisible: true });

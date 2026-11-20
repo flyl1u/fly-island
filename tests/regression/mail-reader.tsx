@@ -20,7 +20,7 @@ const params = new URLSearchParams(location.search);
 const state = params.get("state") ?? "qq";
 const now = Date.now();
 const wechatMessage = { id: "wechat-1", receivedAt: now - 120_000, contact: "项目群", body: "小林: 下午开会吗？" };
-const keys = ["focusd-island-qq-mail-settings", "focusd-island-qq-mail-remote-images", "focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested"];
+const keys = ["fly-island-qq-mail-settings", "fly-island-qq-mail-remote-images", "fly-island-qq-notifications-enabled", "fly-island-wechat-reminders-enabled", "fly-island-qq-notification-access-requested"];
 const original = keys.map(key => localStorage.getItem(key));
 keys.forEach(key => localStorage.removeItem(key));
 const calls: { command: string; args: Record<string, unknown> }[] = [];

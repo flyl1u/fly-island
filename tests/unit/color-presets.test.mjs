@@ -90,13 +90,13 @@ test("loading skips invalid records, duplicate ids/colors, caps at eight, and tr
   assert.equal(normalizeColorPresets(entries).length, 1);
   assert.equal(normalizeColorPresets(Array.from({ length: 10 }, (_, index) => ({ id: String(index), ...palette(index) }))).length, 8);
   withStorage((values, block) => {
-    values.set("focusd-island-setting-presets", "retired");
+    values.set("fly-island-setting-presets", "retired");
     assert.deepEqual(loadColorPresets(), []);
     values.set(COLOR_PRESETS_KEY, "{broken");
     assert.deepEqual(loadColorPresets(), []);
     assert.equal(saveColorPresets(addColorPreset([], colors, "one")), true);
     assert.equal(loadColorPresets()[0].islandBackgroundColor, "#2F2F37");
-    assert.equal(values.get("focusd-island-setting-presets"), "retired");
+    assert.equal(values.get("fly-island-setting-presets"), "retired");
     block();
     assert.deepEqual(loadColorPresets(), []);
     assert.equal(saveColorPresets([]), false);

@@ -2,7 +2,7 @@ import { readString, writeString } from "../../lib/storage.ts";
 import type { IslandPage } from "./types";
 
 /** The page the island had open when it was last used; a click on the collapsed text reopens it. */
-export const LAST_PAGE_KEY = "focusd-island-last-page";
+export const LAST_PAGE_KEY = "fly-island-last-page";
 
 // Clipboard and settings open in their own windows when detached, so they are not remembered.
 const REMEMBERED_PAGES: readonly IslandPage[] = ["todo", "music", "shelf", "qq", "agents", "translation"];
