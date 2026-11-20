@@ -30,6 +30,7 @@ async function controller({
   version = "0.2.11",
   windowKind = null,
   autoUpdate = true,
+  autostart = false,
   proxies = [],
 } = {}) {
   const exports = {};
@@ -50,6 +51,7 @@ async function controller({
         calls.push(command);
         const send = (event) => args.onEvent.onmessage(event);
         if (command === "updater_configured") return configured;
+        if (command === "is_autostart_launch") return autostart;
         if (command === "get_updater_proxy") return proxies.shift() ?? null;
         if (command === "updater_check") {
           proxiesSeen.push(args.proxy);
@@ -132,6 +134,14 @@ test("startup checks the running version's channel and downloads without install
   assert.equal(state.nextVersion, "0.3.0");
   assert.equal(state.downloaded, 10);
   assert.ok(!updater.calls.includes("updater_install"), "nothing installs until the user agrees");
+});
+
+test("autostart waits for startup services before its first update check", async () => {
+  const updater = await controller({ autostart: true });
+  assert.ok(!updater.calls.includes("updater_check"));
+  assert.deepEqual(updater.pendingDelays(), [schedule.AUTOSTART_CHECK_DELAY_MS]);
+  await updater.fireTimer();
+  assert.equal(updater.calls.filter((command) => command === "updater_check").length, 1);
 });
 
 test("installing a downloaded update goes straight to the installer", async () => {

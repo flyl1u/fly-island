@@ -29,6 +29,10 @@ export function isUpdaterConfigured() {
   return invoke<boolean>("updater_configured");
 }
 
+export function isAutostartLaunch() {
+  return invoke<boolean>("is_autostart_launch");
+}
+
 export function getUpdaterProxy() {
   return invoke<string | null>("get_updater_proxy");
 }
