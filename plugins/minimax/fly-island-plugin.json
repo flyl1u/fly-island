@@ -26,6 +26,8 @@
       "type": "select",
       "default": "60",
       "options": [
+        { "value": "10", "label": { "zh-CN": "10 秒", "en": "10 seconds" } },
+        { "value": "15", "label": { "zh-CN": "15 秒", "en": "15 seconds" } },
         { "value": "30", "label": { "zh-CN": "30 秒", "en": "30 seconds" } },
         { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
         { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
