@@ -82,4 +82,4 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 
 前端 `features/weather/storage.ts` 通过安全读写保存 WebView2 localStorage：`focusd-island-clock-weather` 存两个显示开关和用户选择的城市名/经纬度，`focusd-island-weather-cache` 存一条城市坐标、摄氏温度、WMO code、观测时间与获取时间（Unix 毫秒）。安装记录沿用 `focusd-island-native-plugins` 的 `clockWeather` id；卸载仅移除安装态，保留偏好和缓存。缓存超过三小时不显示。
 
-Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；城市搜索结果质量不足时会向 `nominatim.openstreetmap.org` 补充一项。仍不写应用数据文件、凭据或用户位置记录，也不使用 IP 自动定位。前端订阅在关闭天气或卸载后停止刷新；同窗口共享请求和缓存。说明见 [时间与天气](../plugins/clock-weather.md)。
+Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；城市搜索结果质量不足时会向 `nominatim.openstreetmap.org` 补充一项。用户点击定位时才同时请求 Windows Geolocator 和 `ipwho.is` 的网络大致位置；Windows 坐标用 Nominatim 反向解析城市。坐标只发给这些地理编码/天气服务，不写应用数据文件、凭据或独立位置记录，也不在后台自动定位。前端订阅在关闭天气或卸载后停止刷新；同窗口共享请求和缓存。说明见 [时间与天气](../plugins/clock-weather.md)。

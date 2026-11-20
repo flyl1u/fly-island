@@ -231,4 +231,5 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 ## 时间与天气命令（2026-11-20）
 
 - `search_weather_cities({ name, language }) → { name, latitude, longitude }[]`：name 为去空白后 2–100 字符的城市名，language 为 `zh` 或 `en`（其它值按 en）；最多八项，按行政级别与人口排序，过滤低质量同名点，显示名合并城市、行政区、国家并去重；Open-Meteo 结果质量不足时用 Nominatim 补充一项。
-- `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。命令异步请求 Open-Meteo，不新增事件、权限或原生持久化文件。
+- `locate_weather({ language }) → { location: { name, latitude, longitude }, source: "windows" | "ip" }`：只在用户点击时同时请求 Windows Geolocator 和 `ipwho.is` 网络粗定位；Windows 有坐标时用 Nominatim 反向解析城市，否则用 `ipwho.is` 返回的本地化城市名。坐标不写入 Rust 文件或独立位置记录，错误由前端显示可操作提示。
+- `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。天气与地理编码命令异步请求固定 HTTPS 服务，不新增事件、Tauri 权限或原生持久化文件。

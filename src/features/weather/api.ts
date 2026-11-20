@@ -5,6 +5,13 @@ import type { WeatherLocation, WeatherReading } from "./model";
 export function searchWeatherCities(name: string, language: "zh-CN" | "en"): Promise<WeatherLocation[]> {
   return invoke("search_weather_cities", { name, language: language === "zh-CN" ? "zh" : "en" });
 }
+
+export type WeatherLocationSource = "windows" | "ip";
+export type LocatedWeather = { location: WeatherLocation; source: WeatherLocationSource };
+
+export function locateWeather(language: "zh-CN" | "en"): Promise<LocatedWeather> {
+  return invoke("locate_weather", { language: language === "zh-CN" ? "zh" : "en" });
+}
 export function getCurrentWeather(latitude: number, longitude: number): Promise<WeatherReading> {
   return invoke("get_current_weather", { latitude, longitude });
 }

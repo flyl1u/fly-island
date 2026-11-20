@@ -1,8 +1,11 @@
 use reqwest::{redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use std::{
+    sync::mpsc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use tauri::AppHandle;
+use windows::Devices::Geolocation::{GeolocationAccessStatus, Geolocator};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +24,12 @@ pub struct CurrentWeather {
     fetched_at: u64,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocatedWeather {
+    location: WeatherCity,
+    source: String,
+}
 
 #[derive(Deserialize)]
 struct Geocoding {
@@ -92,6 +101,55 @@ async fn response(request: reqwest::RequestBuilder) -> Result<Vec<u8>, String> {
     Ok(data)
 }
 
+async fn main_thread_value<T, F>(app: &AppHandle, callback: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce() -> windows::core::Result<T> + Send + 'static,
+{
+    let (sender, receiver) = mpsc::sync_channel(1);
+    app.run_on_main_thread(move || {
+        let _ = sender.send(callback());
+    })
+    .map_err(|error| format!("Could not start Windows location: {error}"))?;
+    tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(Duration::from_secs(5)))
+        .await
+        .map_err(|error| format!("Windows location thread failed: {error}"))?
+        .map_err(|error| format!("Could not start Windows location: {error}"))?
+        .map_err(|error| format!("Windows location request failed: {error}"))
+}
+
+async fn windows_coordinates(app: &AppHandle) -> Result<(f64, f64), String> {
+    let access_operation = main_thread_value(app, Geolocator::RequestAccessAsync).await?;
+    let access = tokio::time::timeout(Duration::from_secs(10), access_operation)
+        .await
+        .map_err(|_| "Windows location permission request timed out.".to_string())?
+        .map_err(|error| format!("Windows location permission request failed: {error}"))?;
+    if access != GeolocationAccessStatus::Allowed {
+        return Err("Windows location is disabled or permission was denied.".into());
+    }
+    let position_operation = main_thread_value(app, || {
+        let locator = Geolocator::new()?;
+        locator.GetGeopositionAsync()
+    })
+    .await?;
+    let position = tokio::time::timeout(Duration::from_secs(8), position_operation)
+        .await
+        .map_err(|_| "Windows location request timed out.".to_string())?
+        .map_err(|error| format!("Windows location request failed: {error}"))?;
+    let point = position
+        .Coordinate()
+        .and_then(|coordinate| coordinate.Point())
+        .and_then(|point| point.Position())
+        .map_err(|error| format!("Windows location returned no coordinates: {error}"))?;
+    coordinates(point.Latitude, point.Longitude)?;
+    Ok((point.Latitude, point.Longitude))
+}
+
+#[derive(Deserialize)]
+struct NominatimResponse {
+    address: Option<NominatimAddress>,
+}
+
 #[derive(Deserialize)]
 struct NominatimAddress {
     city: Option<String>,
@@ -136,6 +194,36 @@ fn address_city(
         latitude,
         longitude,
     })
+}
+
+async fn reverse_geocode(
+    latitude: f64,
+    longitude: f64,
+    language: &str,
+) -> Result<Option<WeatherCity>, String> {
+    let mut url = reqwest::Url::parse("https://nominatim.openstreetmap.org/reverse")
+        .map_err(|error| error.to_string())?;
+    url.query_pairs_mut().extend_pairs([
+        ("format", "jsonv2"),
+        ("zoom", "10"),
+        ("lat", &latitude.to_string()),
+        ("lon", &longitude.to_string()),
+        (
+            "accept-language",
+            if language == "zh" { "zh-CN" } else { "en" },
+        ),
+    ]);
+    let data = response(
+        client()?
+            .get(url)
+            .header("User-Agent", "Fly-Island weather location"),
+    )
+    .await?;
+    let result: NominatimResponse = serde_json::from_slice(&data)
+        .map_err(|error| format!("Invalid reverse geocoding result: {error}"))?;
+    Ok(result
+        .address
+        .and_then(|address| address_city(address, latitude, longitude, language)))
 }
 
 #[derive(Deserialize)]
@@ -203,6 +291,60 @@ async fn supplement_city_search(
         }
     }
     Ok(None)
+}
+
+#[derive(Deserialize)]
+struct IpLocation {
+    #[serde(default)]
+    success: bool,
+    city: Option<String>,
+    region: Option<String>,
+    country: Option<String>,
+    latitude: f64,
+    longitude: f64,
+}
+
+async fn ip_weather_location(language: &str) -> Result<WeatherCity, String> {
+    // ipwho.is localizes names itself, so the city needs no second (slow) reverse-geocoding request.
+    let url = if language == "zh" {
+        "https://ipwho.is/?lang=zh-CN"
+    } else {
+        "https://ipwho.is/"
+    };
+    let data = response(
+        client()?
+            .get(url)
+            .header("User-Agent", "Fly-Island weather location"),
+    )
+    .await?;
+    let result: IpLocation = serde_json::from_slice(&data)
+        .map_err(|error| format!("Invalid network location result: {error}"))?;
+    if !result.success {
+        return Err("The network location service did not return a location.".into());
+    }
+    coordinates(result.latitude, result.longitude)?;
+    if let Some(location) = ip_city(&result, language) {
+        return Ok(location);
+    }
+    reverse_geocode(result.latitude, result.longitude, language)
+        .await?
+        .ok_or_else(|| "The network location service returned no city.".into())
+}
+
+fn ip_city(result: &IpLocation, language: &str) -> Option<WeatherCity> {
+    let mut parts = vec![clean_name(result.city.as_deref(), language)?];
+    for part in [result.region.as_deref(), result.country.as_deref()] {
+        if let Some(part) = clean_name(part, language) {
+            if !parts.iter().any(|known| name_key(known) == name_key(&part)) {
+                parts.push(part);
+            }
+        }
+    }
+    Some(WeatherCity {
+        name: parts.join(" · "),
+        latitude: result.latitude,
+        longitude: result.longitude,
+    })
 }
 
 struct RankedCity {
@@ -448,6 +590,34 @@ pub async fn search_weather_cities(
 }
 
 #[tauri::command]
+pub async fn locate_weather(app: AppHandle, language: String) -> Result<LocatedWeather, String> {
+    let language = if language == "zh" { "zh" } else { "en" };
+    // Ask the network in parallel: when Windows location is off or slow, its answer is already here.
+    let network = tauri::async_runtime::spawn(ip_weather_location(language));
+    if let Ok((latitude, longitude)) = windows_coordinates(&app).await {
+        if let Ok(Some(location)) = reverse_geocode(latitude, longitude, language).await {
+            network.abort();
+            return Ok(LocatedWeather {
+                location,
+                source: "windows".into(),
+            });
+        }
+    }
+    let network = network
+        .await
+        .map_err(|error| format!("Network location task failed: {error}"))?;
+    let location = network.map_err(|error| {
+        format!(
+            "Unable to determine your location. Turn on Windows location in Settings and try again. {error}"
+        )
+    })?;
+    Ok(LocatedWeather {
+        location,
+        source: "ip".into(),
+    })
+}
+
+#[tauri::command]
 pub async fn get_current_weather(latitude: f64, longitude: f64) -> Result<CurrentWeather, String> {
     coordinates(latitude, longitude)?;
     let mut url = reqwest::Url::parse("https://api.open-meteo.com/v1/forecast")
@@ -469,7 +639,7 @@ pub async fn get_current_weather(latitude: f64, longitude: f64) -> Result<Curren
 
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
-        $next!([$($done)* crate::weather::search_weather_cities, crate::weather::get_current_weather,] $($rest)*)
+        $next!([$($done)* crate::weather::search_weather_cities, crate::weather::locate_weather, crate::weather::get_current_weather,] $($rest)*)
     };
 }
 pub(crate) use tauri_commands;
@@ -477,6 +647,20 @@ pub(crate) use tauri_commands;
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn network_location_uses_localized_names_without_repeats() {
+        let ip = |city: Option<&str>| IpLocation {
+            success: true,
+            city: city.map(str::to_string),
+            region: Some("广东省".into()),
+            country: Some("中国".into()),
+            latitude: 22.54,
+            longitude: 114.06,
+        };
+        let city = ip_city(&ip(Some("深圳市")), "zh").expect("city");
+        assert_eq!(city.name, "深圳市 · 广东省 · 中国");
+        assert!(ip_city(&ip(None), "zh").is_none());
+    }
     #[test]
     fn validates_coordinates() {
         assert!(coordinates(90.0, -180.0).is_ok());
