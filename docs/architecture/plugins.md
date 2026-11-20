@@ -10,7 +10,7 @@ API v1 已实现为独立进程平台，协议见 [API](../plugins/api.md)。没
 
 前端 `features/plugins/` 提供类型化 IPC、共享快照与 manifest 设置行。额度和会话适配在 `features/agent-status/PluginQuotaRings.tsx`、`pluginSessions.ts`；消息在 `features/messages/PluginMessagesPanel.tsx` 和 `pluginNotifications.ts`。原有渲染组件继续负责视觉、列表和预览仲裁。
 
-默认索引 `https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json`；环境变量 FOCUSD_PLUGINS_INDEX 优先，其次显式开发模式配置，最后默认。插件的可执行文件和 API schema 都经维护者 review；权限是声明，没有把普通进程称为沙箱。
+默认索引 `https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json`；环境变量 FLY_ISLAND_PLUGINS_INDEX 优先，其次显式开发模式配置，最后默认。插件的可执行文件和 API schema 都经维护者 review；权限是声明，没有把普通进程称为沙箱。
 
 ## 内置时间与天气（2026-11-19）
 
