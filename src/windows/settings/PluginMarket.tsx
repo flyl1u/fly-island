@@ -35,9 +35,8 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     }
     setNativePluginInstalled(id, true);
   };
-  return <><section className="plugin-market" aria-labelledby="plugin-market-title">
+  return <><section className="plugin-market" aria-label={t.title}>
     <header className="plugin-market__header">
-      <h2 id="plugin-market-title" className="plugin-market__title">{t.title}</h2>
       <p className="plugin-market__hint">{t.hint}</p>
     </header>
     <ul className="plugin-market__grid">

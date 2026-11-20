@@ -8,7 +8,7 @@ import { useTranslation } from "../../i18n";
 
 const SPEC_URL = "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md";
 
-/** The public development guide is available before plugin execution ships. */
+/** The public plugin development guide, below the market. */
 export function PluginDevelopmentPage() {
   const t = useTranslation().settings.plugins;
   const [failed, setFailed] = useState(false);
@@ -19,8 +19,7 @@ export function PluginDevelopmentPage() {
   };
 
   return <section className="settings-section settings-section--list plugin-development">
-    <SettingsGroup title={t.plan} footer={failed ? <p role="alert">{t.openGuideFailed}</p> : undefined}>
-      <SettingsRow title={t.comingSoon} description={t.invitation} />
+    <SettingsGroup footer={failed ? <p role="alert">{t.openGuideFailed}</p> : undefined}>
       <SettingsRow title={t.guide} description={t.guideHint}>
         <div>
           <SettingsLinkButton onClick={() => { void openSpec(); }}>
