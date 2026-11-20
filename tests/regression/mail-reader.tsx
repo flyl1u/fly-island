@@ -11,6 +11,9 @@ import { useWeChatReminders } from "../../src/features/messages/wechat/WeChatRem
 import { MessagesPanel, messagePanelHeight, type MessageView } from "../../src/features/messages/Messages";
 import "../../src/windows/island/IslandApp.css";
 import { MAIL_OTP_ENABLED } from "../../src/features/releaseFlags.ts";
+import { useTuckPeek } from "../../src/windows/island/useTuckPeek";
+import { hasIslandSelection } from "../../src/windows/island/useHoverFocus";
+import { shouldPreventContextMenu } from "../../src/lib/contextMenu";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
@@ -65,6 +68,8 @@ mockIPC((command, payload) => {
 }, { shouldMockEvents: true });
 
 function Fixture() {
+  // The real island observes every press/release, even outside a peek.
+  useTuckPeek(false, () => {});
   mail = useMail(false);
   const qqNotifications = useQQNotifications(false);
   const wechatReminders = useWeChatReminders(false);
@@ -82,6 +87,23 @@ const button = (label: string) => {
   return result[0];
 };
 const click = async (label: string) => { await act(async () => { button(label).click(); }); };
+const checkSelection = async (selector: string) => {
+  const element = document.querySelector<HTMLElement>(selector)!;
+  await act(async () => { element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 })); });
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const selection = window.getSelection()!;
+  selection.removeAllRanges(); selection.addRange(range);
+  const selected = selection.toString();
+  const anchor = selection.anchorNode;
+  await act(async () => { element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, button: 0 })); });
+  check(selected && selection.toString() === selected && selection.anchorNode === anchor, `${selector} 松开鼠标重渲染后保留原节点和选区`);
+  check(hasIslandSelection() && !shouldPreventContextMenu(element, Boolean(selection.toString())), `${selector} 选区保留键盘焦点和原生右键复制入口`);
+  const opened = calls.filter(call => call.command === "plugin:opener|open_url").length;
+  await act(async () => { element.querySelector<HTMLAnchorElement>("a[href]")?.click(); });
+  check(calls.filter(call => call.command === "plugin:opener|open_url").length === opened, "有选区时点击链接不打开网页");
+  selection.removeAllRanges();
+};
 const deferred = () => {
   let resolve!: (value: MailContent) => void;
   const promise = new Promise<MailContent>(done => { resolve = done; });
@@ -194,6 +216,9 @@ try {
     check(!document.querySelector(".qq-mail-remote") && !document.querySelector('.qq-panel__header [aria-label="远程图片"]') && readerActions?.textContent?.includes("在网页打开"), "阅读页没有远程图片开关，右上动作在同一组里");
     check(!body.querySelector('a[href^="javascript"]'), "邮件不能执行危险链接");
     check(!Reflect.get(window, "readerPwned"), "邮件脚本没有执行");
+    await checkSelection(".qq-mail-body");
+    await checkSelection(".qq-mail-reader__subject");
+    await checkSelection(".qq-mail-reader__meta > span");
     await act(async () => { body.querySelector<HTMLAnchorElement>('a[href="https://example.com/report"]')!.click(); });
     check(calls.some(call => call.command === "plugin:opener|open_url" && call.args.url === "https://example.com/report"), "正文中的网页链接通过系统浏览器打开");
     check(mail!.snapshot.unreadCount === 3 && mail!.snapshot.items[0].unread, "阅读保持未读状态和角标数量");
@@ -205,6 +230,7 @@ try {
     readBehavior = async id => ({ id, attachments: [], contentType: "text/plain", content: '<img src=x onerror=alert(1)>\n纯文本邮件' });
     await click("阅读邮件：项目周报与下周安排，未读");
     check(document.querySelector(".qq-mail-body--text")?.textContent?.includes("<img") && !document.querySelector(".qq-mail-body img"), "纯文本邮件按文字显示，不解释为 HTML");
+    await checkSelection(".qq-mail-body--text");
     await click("返回列表");
     check(view! === "qqMail", "从邮箱列表进入后返回邮箱列表");
     check((document.activeElement as HTMLElement)?.dataset.mailId === "7:20", "返回邮箱列表时恢复原邮件的键盘焦点");
