@@ -46,7 +46,7 @@ pub fn run() {
     }
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = island::show_island(app);
+            tray::on_relaunch(app);
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -141,6 +141,7 @@ pub fn run() {
             clipboard_history;
             translation;
             settings_window
+            ; tray
             ; clipboard_window
             ; app_log
             ; config_transfer

@@ -60,6 +60,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-position` | `windows/island/storage.ts` |
 | `focusd-island-music-sources`（`{ id, label, archived? }[]`，按顺序；`archived: true` 表示已归档，不出现在顺序里、再次出现时不追加；旧数据无该字段即未归档。2026-11-14 起） | `features/media/storage.ts` |
 | `focusd-island-music-shortcuts`（`{ playPause, previous, next }`，均为空字符串或组合键） | `features/media/storage.ts` |
+| `focusd-island-tray-visible`（`"true"` / `"false"`；只有 `"false"` 隐藏托盘图标，缺失或其他值按显示） | `windows/settings/storage.ts` |
 | `focusd-island-last-page`（`todo` / `music` / `shelf` / `qq` / `agents` / `translation` 之一，岛上最后打开的页面；收起的岛点文字时回到它。`clipboard` 与 `settings` 不记录；缺失或非法回退 `todo`。2026-11-14 起） | `windows/island/lastPage.ts` |
 | `focusd-island-media-diagnostics-dismissed`（字符串数组，每项为小写 sourceAppId + `\u001f` + 非 ok 的 status；损坏或旧格式回退空数组） | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
@@ -123,6 +124,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `office-im-changed`（载荷 `OfficeImSnapshot`：`revision` 与 `dingtalk` / `feishu` / `wecom` 各自的 `enabled`、`status`、`pending`、`lastAttentionAt`、`error`） | `office_im/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
+| `tray-visibility-changed`（载荷布尔值：从托盘菜单「隐藏托盘图标」或设置开关改变后的可见性；启动超时兜底显示不发） / `tray-check-updates`（无载荷：托盘「检查更新」，主窗口打开设置的更新部分并检查） | `tray.rs`、前端 `windows/settings/api.ts` | 广播 / `main` |
 | `settings-open-requested`（无载荷：托盘、翻译窗口或独立设置窗口要打开设置，主窗口按 `focusd-island-detached-settings` 决定打开岛上的设置页还是独立窗口） | `settings_window/mod.rs`、前端 `windows/settings/api.ts` | `main` |
 | `focusd-update-state` / `focusd-update-request`（更新状态由主窗口广播；独立设置窗口用后者请求 `snapshot` / `check` / `install` / `dismiss`，以及 `{ action: "auto", enabled }` 切换自动更新（2026-11-13 起）；3.0.2 及更早还有 `channel`。状态里多了 `autoUpdate` 布尔字段） | `features/updater/updaterController.ts` | 广播 / `main` |
 | `agent-approval-requested`（载荷 `{ id, agent, kind, sessionId, cwd, toolName, toolInput, permissionSuggestions, receivedAt }`：一个会话等你在岛上审批的工具调用（`kind: "permission"`），或要你回答的 AskUserQuestion（`kind: "question"`，`toolInput.questions`），同一会话同时只发一条） | `agent_approval/mod.rs` | 广播 |
@@ -135,6 +137,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 新增 `save_todo_markdown_if_unchanged({ directory, date, content, expectedVersion, recoveryContent })`，返回 `{ saved, snapshot }`，snapshot 与读取命令同型。版本不符（包括文件不存在/被新建）时 `saved: false` 并返回新快照，不写入；在 Windows 写入/删除排他锁内比较和写入。`recoveryContent` 为 null 时普通写入，否则先在同一目录创建两侧冲突副本。恢复副本是 `YYYY-MM-DD.conflict-<Unix 纳秒>-island.md` / `-file.md`，不被当作每日文件读取。既有 `save_todo_markdown` 契约和关闭开关时的行为不变；本应用命令不需要额外插件权限。
 
 - 测试版通道（2026-11-18）：`updater_check` 新增可选参数 `allowDowngrade`（缺省 false，与旧版相同）；为 true 时清单里任何不同的版本都算更新，用于从测试版还原到正式版。`channel` 仍为 `"stable"` / `"beta"`。主窗口与设置窗口之间的 `focusd-update-request` 新增 action `beta`、`restore`，`focusd-update-state` 新增字段 `target`。无新增 localStorage key。
+- 托盘（2026-11-19）：新增命令 `set_tray_language({ language })`（`"en"` 为英文，其余为中文）与 `set_tray_visible({ visible })`。托盘图标启动时先隐藏，主窗口同步 `focusd-island-tray-visible` 后决定显示与否；3 秒内没有同步时兜底显示。托盘隐藏时再次启动 Fly Island 会额外打开设置。无新增应用数据文件。
 - 问题排查日志（2026-11-18）：新增命令 `get_app_log_state()`、`set_app_log_enabled({ enabled })`（都返回 `{ enabled, path, bytes }`）、`append_app_log({ entries: [{ level: "error" | "warn", message }] })`、`open_app_log_folder()`、`clear_app_log()`，事件 `app-log-changed`（payload 为是否开启）。应用数据目录新增 `app-log.json` 与 `logs/focusd-island.log`、`logs/focusd-island.1.log`。无新增 localStorage key。
 - `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。
 - `focusd-island-settings` 新增 `topEdgeShoulders`（boolean，默认 false）和 `topEdgeShoulderSize`（整数 4–20px，默认 10）；无效或缺失回退默认，大小超界夹取，只影响贴顶的装饰外形，不增加原生点击区域。属于外观字段，恢复默认外观会一并复位。
