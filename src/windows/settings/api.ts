@@ -74,6 +74,10 @@ export function readLaunchAtStartup() {
   return invoke<boolean>("get_launch_at_startup");
 }
 
+export function readLaunchAtStartupDisabled() {
+  return invoke<boolean>("is_launch_at_startup_disabled");
+}
+
 export function saveLaunchAtStartup(enabled: boolean) {
   return invoke("set_launch_at_startup", { enabled });
 }

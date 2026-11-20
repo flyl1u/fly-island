@@ -13,6 +13,7 @@ export function BehaviorSettingsSection({
   locale,
   detachedSettings,
   onLaunchAtStartupChange,
+  launchAtStartupDisabled,
   onLocaleChange,
   onDetachedSettingsChange,
   children,
@@ -23,6 +24,8 @@ export function BehaviorSettingsSection({
   onDetachedSettingsChange: (detached: boolean) => void;
   locale: LocaleCode;
   onLaunchAtStartupChange: (enabled: boolean) => void;
+  /** Windows Startup Apps can keep the Run value while preventing it from launching. */
+  launchAtStartupDisabled: boolean;
   onLocaleChange: (locale: LocaleCode) => void;
   children?: ReactNode;
 }) {
@@ -32,6 +35,7 @@ export function BehaviorSettingsSection({
     <SettingsGroup title={t.settings.behavior.title}>
       <SettingsToggleRow
         title={t.settings.layout.launchAtStartup}
+        description={launchAtStartupDisabled ? t.settings.layout.launchAtStartupDisabledHint : undefined}
         checked={launchAtStartup}
         onChange={onLaunchAtStartupChange}
       />

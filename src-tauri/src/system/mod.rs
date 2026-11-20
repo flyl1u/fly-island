@@ -44,6 +44,8 @@ macro_rules! tauri_commands {
             crate::system::fullscreen::get_foreground_fullscreen,
             crate::system::startup::get_launch_at_startup,
             crate::system::startup::set_launch_at_startup,
+            crate::system::startup::is_launch_at_startup_disabled,
+            crate::system::startup::is_autostart_launch,
             crate::system::updater::get_updater_proxy,
             crate::system::updater::updater_configured,
             crate::system::update_channel::updater_check,
