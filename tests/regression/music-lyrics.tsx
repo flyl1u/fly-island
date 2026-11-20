@@ -10,6 +10,7 @@ import { I18nProvider } from "../../src/i18n";
 import type { MediaState } from "../../src/features/media/api";
 import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
 import { MusicPlayerPanel } from "../../src/features/media/MusicPlayerPanel";
+import { forgetLyrics } from "../../src/features/media/lyrics/useLyrics";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 localStorage.setItem("focusd-island-locale", "zh-CN");
@@ -137,8 +138,9 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
   await render(track("晴天", 500));
   check(lines().join("|") === "|♪|故事的小黄花", "前奏时中间显示音符，第一句在下面等着");
 
-  await render(track("晴天", 6000), { ...ONLINE, lyricsOffsetMs: 2000 });
-  check(lines()[1] === "故事的小黄花", "推后 2 秒时仍显示上一句");
+  // 负的歌词偏移让歌词慢下来，所以这一句还在唱。
+  await render(track("晴天", 6000), { ...ONLINE, lyricsOffsetMs: -2000 });
+  check(lines()[1] === "故事的小黄花", "歌词慢 2 秒时仍显示上一句");
   await render(track("晴天", 4500, true));
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 900)); });
   check(lines()[1] === "从出生那年就飘着", "播放时在两次读取之间按时间往下走");
@@ -172,8 +174,8 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
   await act(async () => offsetButtons[2].click());
   await act(async () => offsetButtons[2].click());
   await act(async () => offsetButtons[2].click());
-  check(offsetButtons[1].textContent === "+1.5s" && lines()[1] === "♪", "推后 1.5 秒后，2 秒时还没到第一句");
-  check(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}")[Object.keys(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}"))[0]] === 1500, "这首歌的调整按歌存下来");
+  check(offsetButtons[1].textContent === "-1.5s" && lines()[1] === "♪", "歌词慢 1.5 秒后，2 秒时还没到第一句");
+  check(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}")[Object.keys(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}"))[0]] === -1500, "这首歌的调整按歌存下来");
   await act(async () => offsetButtons[1].click());
   check(offsetButtons[1].textContent === "0s" && lines()[1] === "Oh I believe", "点中间的数字恢复为 0");
   localStorage.removeItem("focusd-island-lyrics-offsets");
@@ -294,8 +296,13 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
     "没有在播放时是一张静止的唱片和一句说明，没有空的封面、进度条和播放键");
   check(document.querySelector<HTMLButtonElement>(".music-idle__resume")?.textContent === "继续播放" && fixture.scrollWidth <= fixture.clientWidth,
     "空状态只留一个“继续播放”，不撑宽页面");
-  // Leave the page on a playing song with lyrics, for a look by eye.
+  // The Apple Music token was saved or cleared: the answer held in memory is dropped and the
+  // song is asked about again (the native side drops the cached Apple lyrics with it).
   await render(track("晴天", 6000, true));
+  const beforeForget = queries.length;
+  await act(async () => { forgetLyrics(); });
+  await settle(80);
+  check(queries.length === beforeForget + 1, "换了 Apple Music 令牌后，内存里的歌词丢掉并重新查一次");
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

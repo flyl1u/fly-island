@@ -134,3 +134,4 @@ export function withTranslations(lines: LyricLine[], translation: LyricLine[]): 
 export function wordFill(word: LyricWord, positionMs: number) {
   return { delayMs: Math.round(word.startMs - positionMs), durationMs: Math.max(1, word.endMs - word.startMs) };
 }
+

@@ -27,6 +27,7 @@ test("the line being sung is the last one that started", () => {
   assert.equal(lineIndexAt([], 1000), -1);
 });
 
+
 test("the position moves on from Windows' reading only while playing", () => {
   const state = { positionMs: 10_000, durationMs: 11_000, updatedAt: 1000, playbackStatus: "playing" };
   assert.equal(playbackPosition(state, 1500), 10_500);

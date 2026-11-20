@@ -59,7 +59,8 @@ if (preview) {
   await render({ positionMs: 1500, updatedAt: Date.now() }); await tick();
   check(words()[0].style.animationDelay === "-500ms", "同一句内 seek 立即重建动画起点");
   await render({ positionMs: 2000, updatedAt: Date.now() }, true, true, 500);
-  check(words()[0].style.animationDelay === "-500ms", "歌词校准同时移动逐字时间");
+  // 正的歌词偏移让歌词提前，所以这一句更早开始填充（上限外的旧方向是 -500ms）。
+  check(words()[0].style.animationDelay === "-1500ms", "歌词校准同时移动逐字时间");
 
   await render({ positionMs: 1000, updatedAt: Date.now(), playbackStatus: "playing" }); await tick();
   const word = words()[0]; const box = text().getBoundingClientRect();

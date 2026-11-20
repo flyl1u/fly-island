@@ -13,6 +13,10 @@ import { useClipboardHistory } from "../../features/clipboard/useClipboardHistor
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
+import { useLyrics } from "../../features/media/lyrics/useLyrics";
+import { songOffsetKey } from "../../features/media/lyrics/lrc";
+import { useLyricClock } from "../../features/media/lyrics/useLyricClock";
+import { useSongOffset } from "../../features/media/lyrics/useSongOffset";
 import type { TodoItem } from "../../features/todos/types";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
@@ -76,6 +80,17 @@ export function IslandApp() {
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
+  // The collapsed island is as wide as the lyric it shows right now: a short line keeps the
+  // island's usual width, a long one widens it up to the width the settings allow.
+  const { lines: lyricLines } = useLyrics(media.mediaState, settings);
+  const [songOffsetMs] = useSongOffset(lyricLines ? songOffsetKey(media.mediaState) : null);
+  const { index: lyricIndex } = useLyricClock(
+    lyricLines, media.mediaState, settings.lyricsOffsetMs + songOffsetMs, mode === "collapsed");
+  const lyricText = useMemo(
+    () => (lyricLines && lyricIndex >= 0 ? lyricLines[lyricIndex].text
+      : [media.mediaState.title, media.mediaState.artist].filter(Boolean).join(" · ")),
+    [lyricLines, lyricIndex, media.mediaState.artist, media.mediaState.title],
+  );
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
   const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer } =
     useCollapsedTodo(
@@ -85,7 +100,8 @@ export function IslandApp() {
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
       { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
-        activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [] },
+        activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
+        lyricText },
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;

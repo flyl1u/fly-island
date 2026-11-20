@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  MAX_AUTO_COLLAPSED_ISLAND_WIDTH,
   MAX_COLLAPSED_ISLAND_WIDTH,
   MIN_COLLAPSED_ISLAND_WIDTH,
   alignCollapsedIslandWidth,
@@ -25,16 +26,35 @@ function withStorage(entries, run) {
 
 test("the collapsed island grows with its text between the min and max widths", () => {
   assert.equal(getCollapsedIslandWidth(""), MIN_COLLAPSED_ISLAND_WIDTH);
-  assert.equal(getCollapsedIslandWidth("x".repeat(200)), MAX_COLLAPSED_ISLAND_WIDTH);
+  assert.equal(getCollapsedIslandWidth("x".repeat(200)), MAX_AUTO_COLLAPSED_ISLAND_WIDTH);
   const mid = getCollapsedIslandWidth("abcdefg");
   assert.ok(mid > MIN_COLLAPSED_ISLAND_WIDTH && mid < MAX_COLLAPSED_ISLAND_WIDTH, String(mid));
   assert.equal(Number.isInteger(mid), true);
 });
 
+test("a long lyric line widens the collapsed island, but never past the max", () => {
+  // The lyric decides the width now, so a long line is not cut short inside a narrow island.
+  const short = getCollapsedIslandWidth("短句");
+  const long = getCollapsedIslandWidth("这是一句很长的歌词".repeat(4));
+  assert.ok(short >= MIN_COLLAPSED_ISLAND_WIDTH && short < long);
+  assert.equal(long, MAX_AUTO_COLLAPSED_ISLAND_WIDTH);
+});
+
 test("plugin slots widen the collapsed island by the width they need, up to the max", () => {
   assert.equal(getCollapsedIslandWidth("", 42), MIN_COLLAPSED_ISLAND_WIDTH + 42);
   assert.equal(getCollapsedIslandWidth("", -10), MIN_COLLAPSED_ISLAND_WIDTH);
-  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), MAX_COLLAPSED_ISLAND_WIDTH);
+  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), MAX_AUTO_COLLAPSED_ISLAND_WIDTH);
+});
+
+test("a lyric may widen the collapsed island to the width the settings allow", () => {
+  // The lyric gets the whole width the user may pick (480), not the auto width's default (340).
+  assert.equal(getCollapsedIslandWidth("这".repeat(40), 0, 1, MAX_COLLAPSED_ISLAND_WIDTH), MAX_COLLAPSED_ISLAND_WIDTH);
+  // A short line keeps the width it had before.
+  assert.equal(getCollapsedIslandWidth("这".repeat(12), 0, 1, MAX_COLLAPSED_ISLAND_WIDTH), MAX_AUTO_COLLAPSED_ISLAND_WIDTH);
+  // A todo title or an agent session keeps the ordinary auto width: only the lyric widens.
+  assert.equal(getCollapsedIslandWidth("这".repeat(40)), MAX_AUTO_COLLAPSED_ISLAND_WIDTH);
+  // The cover beside the lyric comes out of that width, never past the ceiling.
+  assert.equal(getCollapsedIslandWidth("这".repeat(40), 30, 1, MAX_COLLAPSED_ISLAND_WIDTH), MAX_COLLAPSED_ISLAND_WIDTH);
 });
 
 test("the todo list scrolls after as many rows as fit under the max panel height", () => {

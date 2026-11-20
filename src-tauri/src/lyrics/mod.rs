@@ -6,6 +6,7 @@
 //! `lyrics-cache/` in the app data folder, so a track is asked for once. The text is returned as
 //! LRC, with the translation as a second LRC when the source has one; the island parses both.
 
+mod applemusic;
 mod found;
 mod krc;
 mod kugou;
@@ -19,6 +20,7 @@ mod qrc_cipher;
 mod soda_cache;
 mod soda_lmdb;
 mod soda_msgpack;
+mod ttml;
 mod word_formats;
 
 use std::{
@@ -28,13 +30,16 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 use found::FoundLyrics;
 use matching::{cache_key, named_in_simplified, stable_hash, traditional_chars};
 use crate::win32::chinese::to_simplified;
 
 const CACHE_DIR_NAME: &str = "lyrics-cache";
+/// Told to the island when the Apple Music token is replaced or cleared: the answers it holds
+/// were asked with the old token and have to be asked again.
+const APPLE_MUSIC_TOKEN_CHANGED: &str = "apple-music-token-changed";
 /// A track no source had lyrics for is asked about again after a week.
 const MISSING_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 /// Past this many cached tracks, the oldest are removed.
@@ -67,12 +72,15 @@ pub struct LyricsQuery {
     source_app_id: Option<String>,
     #[serde(default)]
     word_fill: bool,
+    /// Whether the user turned the official Apple Music lyrics on.
+    #[serde(default)]
+    apple_music: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Lyrics {
-    /// "local", "lrclib", "kugou" or "netease".
+    /// "local", "lrclib", "kugou", "netease" or "applemusic".
     source: &'static str,
     /// Synced lyrics in LRC format.
     lrc: String,
@@ -116,6 +124,7 @@ fn source_name(name: &str) -> &'static str {
         "netease" => "netease",
         "qqmusic" => "qqmusic",
         "soda" => "soda",
+        "applemusic" => "applemusic",
         _ => "lrclib",
     }
 }
@@ -199,9 +208,25 @@ fn for_display(source: &'static str, found: FoundLyrics, title: &str, artist: &s
     Lyrics { source, lrc: simplify(found.lrc), translation: found.translation.map(simplify), duration_ms: found.duration_ms }
 }
 
+/// Whether the player is Apple Music, by the signs the media session gives.
+fn is_apple_music(source_app_id: Option<&str>) -> bool {
+    let player = source_app_id.unwrap_or_default().to_ascii_lowercase();
+    ["applemusic", "apple.music", "music.ui"].iter().any(|sign| player.contains(sign))
+}
+
+/// The online sources to ask, in order. Apple's own lyrics come first when the player is
+/// Apple Music and the user turned them on; the rest is by the song.
+fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
+    let mut order = source_order_by_song(query);
+    if query.apple_music && is_apple_music(query.source_app_id.as_deref()) {
+        order.insert(0, "applemusic");
+    }
+    order
+}
+
 /// The online sources to ask, in order. A song named in Chinese asks Kugou and NetEase first,
 /// as LRCLIB has few Chinese songs; a NetEase song the player named asks NetEase first.
-fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
+fn source_order_by_song(query: &LyricsQuery) -> Vec<&'static str> {
     if !query.chinese {
         return vec!["lrclib"];
     }
@@ -217,6 +242,50 @@ fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
     }
 }
 
+/// The cache key as it was before the recording and player were part of it.
+fn cache_base_key(query: &LyricsQuery) -> String {
+    let mut key = cache_key(&query.title, &query.artist, query.duration_ms);
+    if query.chinese {
+        key.push_str("\u{1f}cn");
+    }
+    key
+}
+
+/// The cache key of this request: the old key plus the recording and the player it came from.
+fn cache_scoped_key(query: &LyricsQuery, has_token: bool) -> String {
+    let mut key = cache_base_key(query);
+    key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
+    if query.word_fill { key.push_str("\u{1f}words"); }
+    // Apple's own lyrics get their own key, or a cached lyric from another source would
+    // keep being served and the setting would look like it had no effect. The lead is part
+    // of the key: lyrics cached before it changed keep the old times. So is the token: without
+    // one Apple is not asked, and the "no lyrics" answer written then must not hide the real
+    // one for the week a miss is kept.
+    if query.apple_music && is_apple_music(query.source_app_id.as_deref()) {
+        key.push_str(&format!("\u{1f}apple\u{1f}lead{}", ttml::LEAD_MS));
+        if !has_token {
+            key.push_str("\u{1f}notoken");
+        }
+    }
+    key
+}
+
+/// Whether Apple's own lyrics may be shown now: the setting is on, the player is Apple Music,
+/// and a token is stored. Answers cached before the Apple key had a segment of its own live
+/// under the plain key, so without this check a turned-off setting, or a removed token, still
+/// served Apple's lyrics.
+fn serves_apple_lyrics(query: &LyricsQuery, has_token: bool) -> bool {
+    query.apple_music && is_apple_music(query.source_app_id.as_deref()) && has_token
+}
+
+/// A cached answer, unless it is Apple's lyrics and they may not be used now: then it is a miss.
+fn cache_answer(cached: Option<Option<Answer>>, apple_allowed: bool) -> Option<Option<Answer>> {
+    match cached {
+        Some(Some((source, _))) if source == "applemusic" && !apple_allowed => None,
+        other => other,
+    }
+}
+
 /// The first source that has lyrics. `Err` only when every source asked failed to answer.
 async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
     let (title, artist) = (query.title.as_str(), query.artist.as_str());
@@ -228,6 +297,11 @@ async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
             "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
             "netease" => netease::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
             "qqmusic" => qqmusic::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
+            // Without a token the source is simply not turned on.
+            "applemusic" => match applemusic::read_token() {
+                Some(token) => applemusic::fetch(title, artist, query.album.as_str(), query.duration_ms, &token).await,
+                None => Ok(None),
+            },
             _ => lrclib::fetch(title, artist, &query.album, query.duration_ms).await,
         };
         match result {
@@ -279,16 +353,13 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     }
     let cache_dir = app.path().app_data_dir().map_err(|error| error.to_string())?.join(CACHE_DIR_NAME);
     // A miss with LRCLIB alone says nothing about the Chinese sources.
-    let mut key = cache_key(&query.title, &query.artist, query.duration_ms);
-    if query.chinese {
-        key.push_str("\u{1f}cn");
-    }
-    let legacy_key = key.clone();
-    // Preserve the old key for fallback; scope new entries to the actual recording and player id.
-    key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
-    if query.word_fill { key.push_str("\u{1f}words"); }
+    let legacy_key = cache_base_key(&query);
+    let has_token = applemusic::read_token().is_some();
+    let key = cache_scoped_key(&query, has_token);
     let now = now_secs();
-    let cached = read_cache(&cache_dir, &key, now).or_else(|| read_cache(&cache_dir, &legacy_key, now));
+    let apple_allowed = serves_apple_lyrics(&query, has_token);
+    let cached = cache_answer(read_cache(&cache_dir, &key, now), apple_allowed)
+        .or_else(|| cache_answer(read_cache(&cache_dir, &legacy_key, now), apple_allowed));
     let fresh = fs::read_to_string(cache_path(&cache_dir, &key)).ok()
         .and_then(|text| serde_json::from_str::<CacheEntry>(&text).ok())
         .is_some_and(|entry| entry.key == key && entry.schema_version >= 3
@@ -307,92 +378,40 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     Ok(answer.map(|(source, found)| for_display(source, found, &query.title, &query.artist)))
 }
 
+/// Keeps the user's Apple Music media token, so the official lyrics can be asked for.
+#[tauri::command]
+pub async fn set_apple_music_token(app: AppHandle, token: String) -> Result<(), String> {
+    applemusic::write_token(&token)?;
+    let _ = app.emit_to(crate::island::WINDOW_LABEL, APPLE_MUSIC_TOKEN_CHANGED, ());
+    Ok(())
+}
+
+/// Forgets the user's Apple Music media token.
+#[tauri::command]
+pub async fn clear_apple_music_token(app: AppHandle) -> Result<(), String> {
+    applemusic::clear_token()?;
+    let _ = app.emit_to(crate::island::WINDOW_LABEL, APPLE_MUSIC_TOKEN_CHANGED, ());
+    Ok(())
+}
+
+/// Whether an Apple Music media token is stored.
+#[tauri::command]
+pub async fn has_apple_music_token() -> bool {
+    applemusic::read_token().is_some()
+}
+
 /// This module's Tauri commands, chained into `lib.rs`'s `generate_handler!`.
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
             crate::lyrics::get_lyrics,
+            crate::lyrics::set_apple_music_token,
+            crate::lyrics::clear_apple_music_token,
+            crate::lyrics::has_apple_music_token,
         ] $($rest)*)
     };
 }
 pub(crate) use tauri_commands;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn found(lrc: &str, translation: Option<&str>) -> FoundLyrics {
-        FoundLyrics { lrc: lrc.into(), translation: translation.map(Into::into), duration_ms: None }
-    }
-
-    #[test]
-    fn the_cache_keeps_lyrics_with_their_source_and_recent_misses() {
-        let dir = std::env::temp_dir().join(format!("focusd-lyrics-cache-{}", std::process::id()));
-        let now = 1_800_000_000;
-        assert_eq!(read_cache(&dir, "a", now), None);
-        write_cache(&dir, "a", Some(&("kugou", found("[00:01.00]x", Some("[00:01.00]译")))), now);
-        write_cache(&dir, "b", None, now);
-        assert_eq!(read_cache(&dir, "a", now + 999_999_999), Some(Some(("kugou", found("[00:01.00]x", Some("[00:01.00]译"))))));
-        assert_eq!(read_cache(&dir, "b", now + 60), Some(None));
-        // A miss is asked about again after a week.
-        assert_eq!(read_cache(&dir, "b", now + MISSING_TTL.as_secs()), None);
-        // Entries without a source came from LRCLIB.
-        fs::write(cache_path(&dir, "old"), r#"{"key":"old","lrc":"[00:01.00]y","durations":true,"fetchedAt":1}"#).unwrap();
-        assert_eq!(read_cache(&dir, "old", now), Some(Some(("lrclib", found("[00:01.00]y", None)))));
-        // The song's length is kept; lyrics cached before lengths were are fetched again.
-        let timed = FoundLyrics { duration_ms: Some(246_000), ..found("[00:01.00]t", None) };
-        write_cache(&dir, "t", Some(&("netease", timed.clone())), now);
-        assert_eq!(read_cache(&dir, "t", now), Some(Some(("netease", timed))));
-        fs::write(cache_path(&dir, "untimed"), r#"{"key":"untimed","lrc":"[00:01.00]u","source":"netease","fetchedAt":1}"#).unwrap();
-        assert_eq!(read_cache(&dir, "untimed", now), None);
-        // Kugou lyrics cached before word times were kept are fetched again.
-        fs::write(cache_path(&dir, "k"), r#"{"key":"k","lrc":"[00:01.00]z","source":"kugou","fetchedAt":1}"#).unwrap();
-        assert_eq!(read_cache(&dir, "k", now), None);
-        fs::remove_dir_all(&dir).unwrap();
-    }
-
-    #[test]
-    fn traditional_lyrics_are_shown_simplified_for_a_track_named_in_simplified() {
-        let lrc = "[00:31.50] 劃一根火柴 將慵倦的夜點亮";
-        let shown = for_display("lrclib", found(lrc, Some("[00:31.50] 劃一根火柴 將慵倦的夜點亮")), "余香", "张小九");
-        assert_eq!(shown.lrc, "[00:31.50] 划一根火柴 将慵倦的夜点亮");
-        assert_eq!(shown.translation.as_deref(), Some("[00:31.50] 划一根火柴 将慵倦的夜点亮"));
-        assert_eq!(for_display("lrclib", found(lrc, None), "餘香", "張小九").lrc, lrc);
-    }
-
-    #[test]
-    fn chinese_songs_ask_the_chinese_sources_first() {
-        let query = |title: &str, chinese: bool, track_id: Option<&str>| LyricsQuery {
-            title: title.into(),
-            artist: String::new(),
-            album: String::new(),
-            duration_ms: 0,
-            folder: String::new(),
-            online: true,
-            chinese,
-            track_id: track_id.map(Into::into),
-            source_app_id: None,
-            word_fill: false,
-        };
-        assert_eq!(source_order(&query("余香", false, None)), ["lrclib"]);
-        assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "qqmusic", "lrclib"]);
-        assert_eq!(source_order(&query("Yesterday", true, None)), ["lrclib", "kugou", "netease", "qqmusic"]);
-        assert_eq!(source_order(&query("Yesterday", true, Some("NCM-1"))), ["netease", "kugou", "qqmusic", "lrclib"]);
-        assert_eq!(source_order(&query("Yesterday", true, Some("QQ-123")))[0], "qqmusic");
-    }
-
-    #[test]
-    fn pruning_keeps_the_newest_files() {
-        let dir = std::env::temp_dir().join(format!("focusd-lyrics-prune-{}", std::process::id()));
-        fs::create_dir_all(&dir).unwrap();
-        for name in ["1", "2", "3"] {
-            fs::write(dir.join(name), name).unwrap();
-            std::thread::sleep(Duration::from_millis(20));
-        }
-        prune_cache(&dir, 2);
-        let mut left: Vec<String> = fs::read_dir(&dir).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into()).collect();
-        left.sort();
-        assert_eq!(left, ["2", "3"]);
-        fs::remove_dir_all(&dir).unwrap();
-    }
-}
+mod tests;

@@ -5,16 +5,13 @@ import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
 import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
-import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
+import { alignCollapsedIslandWidth, getCollapsedIslandWidth, MAX_AUTO_COLLAPSED_ISLAND_WIDTH, MAX_COLLAPSED_ISLAND_WIDTH } from "./layout";
 import { pickCollapsedItem } from "./collapsedItem";
 import { selectRotatingTodos } from "../../features/todos/todoRotation";
 import type { TodoRotationDisplay } from "./CollapsedTodoContent";
 
 // Stands in for the agent icon (16px plus gap) when sizing the island for a session title.
 const AGENT_ICON_TEXT = "MM";
-// Lyric lines come and go every few seconds; the island keeps its widest size for them rather
-// than resizing with each line.
-const LYRICS_WIDTH_TEXT = "♪".repeat(24);
 // The song's cover (22px) and the gap after it.
 const COVER_WIDTH = 30;
 // A countdown pill beside the todo title: gap, padding and about 7px a digit (12px a CJK glyph).
@@ -36,7 +33,7 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[] } = {},
+  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers, lyricText = "" }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[]; lyricText?: string } = {},
 ) {
   const t = useTranslation();
   const pendingTodoIds = useMemo(
@@ -94,15 +91,18 @@ export function useCollapsedTodo(
       : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
-      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
+      : collapsedItem === "lyrics" ? lyricText : collapsedItem === "todo" ? todoText : null;
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
+    // A lyric may use the whole width the settings allow, so a long line is not cut short.
+    // A todo title or an agent session keeps the ordinary auto width.
+    const maxWidth = collapsedItem === "lyrics" ? MAX_COLLAPSED_ISLAND_WIDTH : MAX_AUTO_COLLAPSED_ISLAND_WIDTH;
     return alignCollapsedIslandWidth(
       getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
-        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0, fontScale),
+        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0, fontScale, maxWidth),
       window.innerWidth,
       window.devicePixelRatio,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
+  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, lyricText, settings.collapsedAutoWidth,
     settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, timers, rotating, rotationTodos]);
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
