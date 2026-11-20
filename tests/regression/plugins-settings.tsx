@@ -87,7 +87,9 @@ try {
   if (!PLUGINS_ENABLED) {
     const guide = document.querySelector<HTMLElement>(".plugin-development")!;
     check(guide?.textContent?.includes(t.comingSoon) && guide.textContent.includes(t.invitation), "关闭时显示本地化的插件计划与贡献说明");
-    check(!document.querySelector(".plugins-settings, details, input, select") && hostCalls.length === 0,
+    // With the market open, its time-and-weather settings may have searched for a city; nothing else asks the host.
+    const pluginCalls = hostCalls.filter((command) => !PLUGIN_MARKET_ENABLED || command !== "search_weather_cities");
+    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select") && pluginCalls.length === 0,
       "关闭时没有安装、启用或开发者功能，也不请求宿主、事件或索引");
     const link = button(t.readGuide);
     await act(async () => { failOpen = true; link.click(); });
