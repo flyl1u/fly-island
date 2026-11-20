@@ -1,4 +1,4 @@
-import type { NativePluginId, NativePluginKind } from "../../../features/plugins/native/catalog";
+import type { NativePluginId } from "../../../features/plugins/native/catalog";
 
 import { zhCN as clockWeatherZh, en as clockWeatherEn, type ClockWeatherText } from "./clockWeather.ts";
 
@@ -16,7 +16,7 @@ export type SettingsPluginsText = {
 export type SettingsPluginMarketText = {
   title: string; hint: string; officeTitle: string; officeHint: string; install: string; uninstall: string; installed: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string;
-  kinds: Record<NativePluginKind, string>;
+  by: string;
   items: Record<NativePluginId, { name: string; description: string }>;
 };
 
@@ -34,7 +34,7 @@ export const zhCN: SettingsPluginsText = {
     hint: "装上后成为小岛自己的一部分：消息类出现在消息页的标签里，Agent 类出现在 AI 会话里，可在对应设置页单独开关；岛屿类直接显示在收起的岛上。",
     install: "安装", uninstall: "卸载", installed: "已安装",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`,
-    kinds: { messages: "消息", agent: "Agent", island: "岛屿" },
+    by: "作者",
     items: {
       clockWeather: { name: "时间与天气", description: "在收起的岛上显示时间与所选城市的天气，可分别开关和调整位置。" },
       dingtalk: { name: "钉钉", description: "钉钉有新消息时岛上提醒，消息页多一个钉钉标签，点一下回到钉钉。" },
@@ -62,7 +62,7 @@ export const en: SettingsPluginsText = {
     hint: "Installed plugins become part of the island: message plugins add a tab to Messages, Agent plugins join AI sessions, each with its own switch in settings. Island plugins add collapsed status items.",
     install: "Get", uninstall: "Remove", installed: "Installed",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`,
-    kinds: { messages: "Messages", agent: "Agent", island: "Island" },
+    by: "by",
     items: {
       clockWeather: { name: "Clock & Weather", description: "Show the time and your city’s weather on the collapsed island, with separate switches and positions." },
       dingtalk: { name: "DingTalk", description: "Get a heads-up on the island for new DingTalk messages, with a DingTalk tab in Messages." },

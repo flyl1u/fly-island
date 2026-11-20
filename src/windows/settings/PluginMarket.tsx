@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Check } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { NATIVE_PLUGINS, NativePluginIcon, setNativePluginInstalled, useNativePlugins, type NativePluginId } from "../../features/plugins";
 import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
@@ -11,7 +12,7 @@ import "./PluginMarket.css";
 
 type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void };
 
-/** The built-in plugins as square cards: icon, name, a two-line pitch and one action. */
+/** The built-in plugins as square cards: icon with name and author beside it, a short pitch and one action. */
 export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
   const installed = useNativePlugins();
@@ -40,7 +41,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
       <p className="plugin-market__hint">{t.hint}</p>
     </header>
     <ul className="plugin-market__grid">
-      {NATIVE_PLUGINS.map(({ id, kind, accent }) => {
+      {NATIVE_PLUGINS.map(({ id, accent, author }) => {
         const item = t.items[id];
         const on = installed[id];
         return <li key={id} className={`plugin-card${on ? " plugin-card--installed" : ""}`} style={{ "--plugin-accent": accent } as CSSProperties}>
@@ -49,12 +50,16 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
               <NativePluginIcon id={id} size={44} className="plugin-card__tile" />
               {on && <span className="plugin-card__check" aria-hidden="true"><Check size={10} strokeWidth={3} /></span>}
             </span>
-            <span className="plugin-card__kind">{t.kinds[kind]}</span>
+            <div className="plugin-card__heading">
+              <h3 className="plugin-card__name">{item.name}</h3>
+              <p className="plugin-card__author">
+                {t.by}{" "}
+                <a className="plugin-card__author-link" href={author.url}
+                  onClick={(event) => { event.preventDefault(); void openUrl(author.url).catch(console.error); }}>@{author.name}</a>
+              </p>
+            </div>
           </div>
-          <div className="plugin-card__text">
-            <h3 className="plugin-card__name">{item.name}</h3>
-            <p className="plugin-card__description">{item.description}</p>
-          </div>
+          <p className="plugin-card__description">{item.description}</p>
           <button
             type="button"
             className={`plugin-card__action${on ? " plugin-card__action--remove" : ""}`}
