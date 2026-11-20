@@ -37,6 +37,10 @@ localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "
 if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
 else localStorage.removeItem("focusd-island-settings");
 if (automated) prepareColorRegression();
+if (query.has("clockWeather")) {
+  localStorage.setItem("focusd-island-native-plugins", JSON.stringify(["clockWeather"]));
+  localStorage.setItem("focusd-island-clock-weather", JSON.stringify({ showClock: true, showWeather: true, location: { name: "北京 · 中国", latitude: 39.9, longitude: 116.4 } }));
+} else localStorage.removeItem("focusd-island-native-plugins");
 localStorage.setItem("focusd-island-save-directory", "");
 localStorage.removeItem("focusd-island-todo-file-sync");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");

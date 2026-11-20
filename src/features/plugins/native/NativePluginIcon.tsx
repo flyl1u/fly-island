@@ -1,3 +1,4 @@
+import { CloudSun } from "lucide-react";
 import dingtalkIcon from "../../../assets/brands/dingtalk.svg";
 import feishuIcon from "../../../assets/brands/feishu.svg";
 import wecomIcon from "../../../assets/brands/wecom.svg";
@@ -8,7 +9,7 @@ import hermesIcon from "../../../assets/brands/hermes.svg";
 import type { NativePluginId } from "./catalog";
 import "./NativePluginIcon.css";
 
-export const NATIVE_PLUGIN_ICONS: Record<NativePluginId, string> = {
+export const NATIVE_PLUGIN_ICONS: Record<Exclude<NativePluginId, "clockWeather">, string> = {
   dingtalk: dingtalkIcon,
   feishu: feishuIcon,
   wecom: wecomIcon,
@@ -20,5 +21,7 @@ export const NATIVE_PLUGIN_ICONS: Record<NativePluginId, string> = {
 
 /** A plugin's square app tile, rounded like the WeChat and Agent icons. */
 export function NativePluginIcon({ id, size = 16, className = "" }: { id: NativePluginId; size?: number; className?: string }) {
+  if (id === "clockWeather") return <span className={`native-plugin-icon native-plugin-icon--weather ${className}`.trim()}
+    style={{ width: size, height: size }} aria-hidden="true"><CloudSun size={size * 0.72} strokeWidth={1.5} /></span>;
   return <img className={`native-plugin-icon ${className}`.trim()} src={NATIVE_PLUGIN_ICONS[id]} alt="" aria-hidden="true" width={size} height={size} draggable={false} />;
 }

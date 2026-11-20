@@ -11,3 +11,9 @@ API v1 已实现为独立进程平台，协议见 [API](../plugins/api.md)。没
 前端 `features/plugins/` 提供类型化 IPC、共享快照与 manifest 设置行。额度和会话适配在 `features/agent-status/PluginQuotaRings.tsx`、`pluginSessions.ts`；消息在 `features/messages/PluginMessagesPanel.tsx` 和 `pluginNotifications.ts`。原有渲染组件继续负责视觉、列表和预览仲裁。
 
 默认索引 `https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json`；环境变量 FOCUSD_PLUGINS_INDEX 优先，其次显式开发模式配置，最后默认。插件的可执行文件和 API schema 都经维护者 review；权限是声明，没有把普通进程称为沙箱。
+
+## 内置时间与天气（2026-11-19）
+
+`features/plugins/native/catalog.ts` 新增 `clockWeather`，kind 为 `island`。它沿用内置插件安装列表和发布市场开关，不启动独立插件进程。`features/weather/` 自包含设置、缓存、类型化 IPC、WMO 映射和收起态叶子组件；`PluginMarket` 安装后展示城市设置和两个独立开关，`CollapsedLayoutEditor` 安装后展示可排序状态位。
+
+Rust `weather/` 用已有 reqwest 异步请求固定 Open-Meteo 端点；没有新依赖、凭据、自动定位或原生后台服务。天气每三十分钟刷新，失败静默保留有效观测，三小时到期隐藏；时间只由叶子组件整分钟刷新。细节见 [时间与天气](../plugins/clock-weather.md)。

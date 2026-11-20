@@ -1,13 +1,8 @@
-import type { CSSProperties } from "react";
 import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import { useTranslation } from "../../i18n";
-import { inkOn } from "../../utils/color";
 import { AgentPagePreview } from "./AgentPagePreview";
-import { cornerShapeCss } from "./cornerShape";
-import { shapedSettings } from "./islandShape";
-import { COLLAPSED_WIDTH, glassTintAlpha, hexToRgba, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
-import { resolveSchemeColors } from "./theme";
+import { islandPreviewStyle } from "./islandPreviewStyle";
 import { useResolvedScheme } from "./useDocumentTheme";
 import "./IslandPreview.css";
 
@@ -20,43 +15,12 @@ import "./IslandPreview.css";
  */
 export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const text = useTranslation().settings.appearance.preview;
-  const glass = isGlass(settings.material);
-  const shaped = shapedSettings(settings);
-  const colors = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
-  const style = {
-    "--preview-fill": hexToRgba(
-      colors.islandBackgroundColor,
-      settings.opacity / 100 * (glass ? glassTintAlpha(settings.material, settings.glassIntensity) : 1),
-    ),
-    "--preview-glass": settings.glassIntensity / 100,
-    "--preview-radius-px": settings.islandCornerRadius,
-    "--preview-radius-collapsed-px": shaped.collapsedCornerRadius,
-    "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
-    "--preview-pulse": colors.pulseColor,
-    "--preview-pulse-glow": hexToRgba(colors.pulseColor, 0.72),
-    "--preview-pulse-brightness": `${settings.pulseBrightness}%`,
-    "--preview-text": colors.taskTextColor,
-    "--preview-ink": inkOn(colors.islandBackgroundColor),
-    "--preview-collapsed-scale": settings.collapsedScale,
-    "--preview-collapsed-width": settings.collapsedAutoWidth ? COLLAPSED_WIDTH.default : settings.collapsedWidth,
-    "--preview-collapsed-height": settings.collapsedHeight,
-    "--preview-collapsed-limit": COLLAPSED_WIDTH.max * MAX_COLLAPSED_SCALE,
-    "--preview-expanded-scale": settings.expandedScale,
-    "--preview-expanded-max-scale": MAX_EXPANDED_SCALE,
-    "--preview-font-scale": settings.islandFontPercent / 100,
-  } as CSSProperties;
-  const islandClass = [
-    "island-preview__island",
-    glass && "island-preview__island--glass",
-    `island-preview__island--${settings.material}`,
-    shaped.marginY > 0 && "island-preview__island--detached",
-    settings.islandShape === "capsule" && "island-preview__island--capsule",
-  ].filter(Boolean).join(" ");
+  const { style, islandClass, tone } = islandPreviewStyle(settings, useResolvedScheme(settings.colorScheme));
 
   return (
     <figure
       className={`island-preview island-preview--font-${settings.fontFamily}`}
-      data-tone={colors.tone}
+      data-tone={tone}
       style={style}
       aria-label={text.label}
     >

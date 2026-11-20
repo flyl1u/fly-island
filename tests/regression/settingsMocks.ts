@@ -31,6 +31,8 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "search_weather_cities": return [{ name: "北京 · 中国", latitude: 39.9, longitude: 116.4 }];
+    case "get_current_weather": return { temperature: 23, code: 2, observedAt: Date.now(), fetchedAt: Date.now() };
     case "get_workbuddy_usage": {
       if (args.refreshNow) return setMockWorkbuddy({ status: "connected", usage: { remaining: 50, total: 500, updatedAt: Date.now() } }).then(() => workbuddy);
       return workbuddy;

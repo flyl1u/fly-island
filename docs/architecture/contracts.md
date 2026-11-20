@@ -24,6 +24,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 音乐全局快捷键（2026-11-19）：新增 `focusd-island-music-shortcuts`，JSON 对象 `{ playPause: string, previous: string, next: string }`，三项缺失、非法或空值按空字符串读取（不注册），不进外观预设。主窗口启动及跨窗口修改后调用 `set_media_shortcuts({ enabled, shortcuts, target? })`，可选 target 与音乐面板当前会话一致；音乐关闭时释放全部，保存的键保留。`get_media_shortcut_errors()` 返回各动作最近的错误字符串对象（成功项省略），`media-shortcut-status` 广播同一对象。复用现有组合键格式与 Windows 注册冲突判定，另预留审批键 `Ctrl+Alt+Y` / `N` / `T`；设置页互查音乐、翻译和剪贴板快捷键。热键只控制已有 SMTC 会话，没有会话时静默跳过。
 
+时间与天气（2026-11-19）：`focusd-island-settings.collapsedLayout` 的 slot 新增 `clock` / `weather`，完整默认顺序为 `text,mail,shelf,music,agents,clock,weather`。读取旧数组时保留原有合法顺序，将缺少的位追加到末尾；未知和重复项丢弃。插件未安装时隐藏这两个位，重排其余位不丢失隐藏位置。
+
 `focusd-island-settings.messagePreviewSeconds` 为岛上通知停留时长，3–30 的整数秒，默认 5；旧记录缺失或非法值回退到 5。
 
 `focusd-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
@@ -74,7 +76,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
 | `focusd-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
-| `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `focusd-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个开关、保留城市） | `features/weather/storage.ts` |
+| `focusd-island-weather-cache`（`{ latitude, longitude, temperature, code, observedAt, fetchedAt }`；temperature 为摄氏数值，code 为 WMO 整数，时间均为 Unix 毫秒；只显示坐标匹配且观测/获取均未超过三小时的数据） | `features/weather/storage.ts` |
 | `focusd-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-wechat-hide-minimized-taskbar`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
@@ -220,3 +224,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 事件：`plugins-changed`（无敏感数据；前端重新 get_plugins）。stdio RPC：`initialize`、`action`、`publish`，停止时可发送无 id 的可选 `shutdown` 通知；旧 v1 插件仍由宿主限时结束，完整 schema 见 `docs/plugins/api.md`。
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
 - v3.2.6（2026-11-18，第三轮手测后）：`focusd-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `focusd-island-todos`。
+
+## 时间与天气命令（2026-11-19）
+
+- `search_weather_cities({ name, language }) → { name, latitude, longitude }[]`：name 为去空白后 2–100 字符的城市名，language 为 `zh` 或 `en`（其它值按 en）；最多八项，显示名合并城市、行政区、国家并去重。
+- `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。命令异步请求 Open-Meteo，不新增事件、权限或原生持久化文件。

@@ -20,6 +20,7 @@ mod system;
 mod translation;
 mod tray;
 mod office_im;
+mod weather;
 mod wechat_reminders;
 mod win32;
 
@@ -145,6 +146,7 @@ pub fn run() {
             ; clipboard_window
             ; app_log
             ; config_transfer
+            ; weather
         ))
         .build(context)
         .map(|app| {

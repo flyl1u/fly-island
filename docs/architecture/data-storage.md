@@ -76,3 +76,9 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 仓库内 `artifacts/plugins/` 为忽略的 zip 与 plugins-index.json 构建产物；本地测试数据在 node_modules/.cache/plugin-tests/。插件 crate 的 target 不入库。
 
 索引下载/解析诊断写入同样约 1 MiB 上限的 `plugin-logs/catalog.log`；不记录 URL 认证信息。索引失败统一返回 `plugin_index_unavailable`，设置页按当前语言显示简短状态和重试，不回显底层错误。
+
+## 时间与天气（2026-11-19）
+
+前端 `features/weather/storage.ts` 通过安全读写保存 WebView2 localStorage：`focusd-island-clock-weather` 存两个显示开关和用户选择的城市名/经纬度，`focusd-island-weather-cache` 存一条城市坐标、摄氏温度、WMO code、观测时间与获取时间（Unix 毫秒）。安装记录沿用 `focusd-island-native-plugins` 的 `clockWeather` id；卸载仅移除安装态，保留偏好和缓存。缓存超过三小时不显示。
+
+Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo，不写应用数据文件、凭据或用户位置记录，不使用 IP 自动定位。前端订阅在关闭天气或卸载后停止刷新；同窗口共享请求和缓存。说明见 [时间与天气](../plugins/clock-weather.md)。

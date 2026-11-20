@@ -1,3 +1,4 @@
+import { checkClockWeatherSettings } from "./clockWeatherSettings";
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -28,6 +29,10 @@ const hostCalls: string[] = [];
 mockIPC((command, payload) => {
   hostCalls.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
+  if (command === "search_weather_cities") {
+    if (args.name === "offline") throw new Error("offline");
+    return args.name === "empty" ? [] : [{ name: "Beijing · China", latitude: 39.9, longitude: 116.4 }];
+  }
   if (command === "get_plugins") return resolveRegistry
     ? snapshot()
     : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
@@ -54,6 +59,7 @@ const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement
 const app = createRoot(document.getElementById("fixture")!);
 try {
   localStorage.removeItem(NATIVE_PLUGINS_KEY);
+  localStorage.removeItem("focusd-island-clock-weather");
   localStorage.setItem(OFFICE_IM_ENABLED_KEY, JSON.stringify({ dingtalk: false, feishu: true, wecom: true }));
   await act(async () => app.render(<StrictMode><I18nProvider><Page /></I18nProvider></StrictMode>)); await wait();
   const cards = [...document.querySelectorAll<HTMLElement>(".plugin-card")];
@@ -74,6 +80,7 @@ try {
     check(latestSettings.agentShowZcode && latestSettings.agentQuotaSources.includes("zcode"), "安装 Z Code 同时打开它的开关并勾上额度环");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.zcode.name)}']`)!.click());
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.cursor.name)}']`)!.click());
+    await checkClockWeatherSettings(locale, check);
     const fixtureBox = document.getElementById("fixture")!.getBoundingClientRect();
     check(cards.every((card) => card.getBoundingClientRect().right <= fixtureBox.right + 1 && card.scrollWidth <= card.clientWidth), "窄布局下卡片不溢出");
   }

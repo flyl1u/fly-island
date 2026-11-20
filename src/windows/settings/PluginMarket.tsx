@@ -5,6 +5,7 @@ import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
 import type { IslandSettings } from "../../features/appearance/types";
+import { ClockWeatherSettingsGroup, setClockWeatherSettings, useClockWeather } from "../../features/weather";
 import { useTranslation } from "../../i18n";
 import "./PluginMarket.css";
 
@@ -14,11 +15,13 @@ type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings
 export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
   const installed = useNativePlugins();
+  const clockWeather = useClockWeather();
   const [, setOfficeEnabled] = useOfficeImEnabled();
   // Installing is asking for it: its own switch (Messages / Agent settings) goes on with it. A switch
   // left off from before, or turned off and forgotten, kept an installed plugin off the island
   // with nothing there to say why (2026-11-19, owner: 钉钉装好后岛上没有).
   const install = (id: NativePluginId) => {
+    if (id === "clockWeather") setClockWeatherSettings({ ...clockWeather.settings, showClock: true, showWeather: true });
     const office = OFFICE_SOURCES.find((source) => source === id);
     if (office) setOfficeEnabled(office, true);
     const agent = NATIVE_AGENTS.find((item) => item.id === id);
@@ -32,7 +35,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     }
     setNativePluginInstalled(id, true);
   };
-  return <section className="plugin-market" aria-labelledby="plugin-market-title">
+  return <><section className="plugin-market" aria-labelledby="plugin-market-title">
     <header className="plugin-market__header">
       <h2 id="plugin-market-title" className="plugin-market__title">{t.title}</h2>
       <p className="plugin-market__hint">{t.hint}</p>
@@ -64,5 +67,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
         </li>;
       })}
     </ul>
-  </section>;
+  </section>
+    {installed.clockWeather && <ClockWeatherSettingsGroup />}
+  </>;
 }

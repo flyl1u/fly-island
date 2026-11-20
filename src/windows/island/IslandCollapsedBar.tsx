@@ -20,6 +20,7 @@ import type { MailController } from "../../features/messages/mail/MailPanel";
 import { MailOtpCode } from "../../features/messages/mail/MailOtpCode";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import { CollapsedClock, CollapsedWeather, useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
@@ -111,6 +112,9 @@ export function IslandCollapsedBar({
   onTuck,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
+  const clockWeather = useClockWeather();
+  const weatherOn = clockWeather.installed && clockWeather.settings.showWeather;
+  const weather = useCurrentWeather(weatherOn, clockWeather.settings.location);
   // A pending update shows a red dot even collapsed, so it is not missed.
   const updatePending = useUpdatePending();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
@@ -152,6 +156,9 @@ export function IslandCollapsedBar({
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
+    clock: clockWeather.installed && clockWeather.settings.showClock && <CollapsedClock active={!isExpanded && !isTucked} />,
+    weather: weatherOn && weather && clockWeather.settings.location
+      ? <CollapsedWeather location={clockWeather.settings.location} reading={weather} /> : null,
     text: (
       <div className="island__text-slot">
         <button

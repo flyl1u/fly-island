@@ -5,8 +5,13 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { useTranslation } from "../../i18n";
 import { moveItem } from "../../utils/order.ts";
+import { WeatherIcon, clockWeatherWidth, useClockWeather } from "../weather";
+import { mergeVisibleCollapsedLayout } from "./collapsedLayout";
 import { COLLAPSED_SLOTS } from "./settingsLimits";
 import type { CollapsedSlot, IslandSettings } from "./types";
+import { islandPreviewStyle } from "./islandPreviewStyle";
+import { useResolvedScheme } from "./useDocumentTheme";
+import "./IslandPreview.css";
 import "./CollapsedLayoutEditor.css";
 
 /** Whether each icon's feature is on; a switched-off one shows grey and keeps its place. */
@@ -16,7 +21,7 @@ function slotsOn(settings: IslandSettings): Record<CollapsedSlot, boolean> {
     mail: settings.mailEnabled,
     shelf: settings.shelfEnabled && settings.shelfShowCount,
     music: settings.musicEnabled,
-    agents: true,
+    agents: true, clock: false, weather: false,
   };
 }
 
@@ -37,14 +42,18 @@ export function CollapsedLayoutEditor({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const text = useTranslation().settings.appearance.collapsedIsland.layout;
-  const layout = settings.collapsedLayout;
-  const on = slotsOn(settings);
+  const preview = islandPreviewStyle(settings, useResolvedScheme(settings.colorScheme));
+  const clockWeather = useClockWeather();
+  const layout = settings.collapsedLayout.filter((slot) => clockWeather.installed || (slot !== "clock" && slot !== "weather"));
+  const on = { ...slotsOn(settings), clock: clockWeather.settings.showClock,
+    weather: clockWeather.settings.showWeather && clockWeather.settings.location !== null };
   const reorder = useCallback(
-    (collapsedLayout: CollapsedSlot[]) => onSettingsChange({ ...settings, collapsedLayout }),
+    (visible: CollapsedSlot[]) => onSettingsChange({ ...settings, collapsedLayout: visible.length === COLLAPSED_SLOTS.length
+      ? visible : mergeVisibleCollapsedLayout(settings.collapsedLayout, visible) }),
     [onSettingsChange, settings],
   );
-  const { containerRef, itemProps, draggingId } = usePointerReorder(layout, reorder, "x");
-  const isDefault = layout.join() === COLLAPSED_SLOTS.join();
+  const { containerRef, itemProps, draggingId } = usePointerReorder(layout, reorder, "x", true);
+  const isDefault = settings.collapsedLayout.join() === COLLAPSED_SLOTS.join();
 
   const moveWithKeys = (slot: CollapsedSlot, event: KeyboardEvent) => {
     const step = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
@@ -60,6 +69,8 @@ export function CollapsedLayoutEditor({
     shelf: <><Inbox size={13} strokeWidth={1.6} absoluteStrokeWidth />2</>,
     music: <AudioLines size={15} strokeWidth={1.6} absoluteStrokeWidth />,
     agents: settings.agentStatusEnabled ? "1" : null,
+    clock: "12:34",
+    weather: <><WeatherIcon code={2} />23°</>,
   };
 
   return (
@@ -68,8 +79,10 @@ export function CollapsedLayoutEditor({
       action={<SettingsLinkButton disabled={isDefault} onClick={() => reorder([...COLLAPSED_SLOTS])}>{text.reset}</SettingsLinkButton>}
       footer={text.footer}
     >
-      <div className="collapsed-layout">
-        <div className="collapsed-layout__island" ref={(node) => { containerRef.current = node; }}>
+      <div className={`collapsed-layout island-preview--font-${settings.fontFamily}`} data-tone={preview.tone} style={{ ...preview.style, "--preview-collapsed-width": clockWeatherWidth(
+        settings.collapsedAutoWidth ? 340 : settings.collapsedWidth, clockWeather.installed, clockWeather.installed,
+        settings.islandFontPercent / 100) } as import("react").CSSProperties}>
+        <div className={`collapsed-layout__island ${preview.islandClass} island-preview__island--collapsed`} ref={(node) => { containerRef.current = node; }}>
           {layout.map((slot) => (
             <button
               key={slot}

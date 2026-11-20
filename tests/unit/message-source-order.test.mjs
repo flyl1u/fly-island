@@ -21,6 +21,8 @@ test("installed plugins keep only known ids", () => {
   const installed = normalizeInstalledNativePlugins(["feishu", "nope", 3]);
   assert.equal(installed.feishu, true);
   assert.equal(installed.dingtalk, false);
-  assert.equal(Object.keys(installed).length, 7);
+  assert.equal(installed.clockWeather, false);
+  assert.equal(normalizeInstalledNativePlugins(["clockWeather"]).clockWeather, true);
+  assert.equal(Object.keys(installed).length, 8);
   assert.equal(normalizeInstalledNativePlugins("bad").cursor, false);
 });
