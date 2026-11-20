@@ -8,7 +8,7 @@ import { useSongOffset } from "./lyrics/useSongOffset";
 import "./CollapsedLyric.css";
 
 // How small the lyric's font may get before the line keeps its ellipsis.
-// shortcut: 0.7 (about 9px at the default text size); a longer line is still cut short.
+// shortcut: 0.7 of the island's own text size (about 9.1px); a longer line is still cut short.
 const MIN_LYRIC_FIT = 0.7;
 
 /**
@@ -17,29 +17,33 @@ const MIN_LYRIC_FIT = 0.7;
  */
 function fitFloor(element: HTMLElement) {
   const scale = Number.parseFloat(getComputedStyle(element).getPropertyValue("--island-font-scale")) || 1;
-  return Math.min(MIN_LYRIC_FIT, MIN_LYRIC_FIT / scale);
+  // 13px * scale * fit is the font's size, so this floor keeps it at 13px * 0.7 at any scale.
+  return MIN_LYRIC_FIT / scale;
 }
 
 /**
- * Shrink the line's font until the whole line fits the room it has. The width a line needs
- * follows its font size, so the width it has now says how wide the line would be without any
- * shrinking.
+ * Shrink the line's font until the whole line fits the room it has. The line is measured at
+ * its natural size every time, so the fit follows the room the line has right now: it grows
+ * back when the room grows, and it never drifts, because no round starts from the last fit.
  */
 function fitLyric(element: HTMLElement) {
+  // The natural size, so the fit does not depend on the shrink it replaces.
+  element.style.setProperty("--lyric-fit", "1");
   const available = element.clientWidth;
-  const fit = Number(element.style.getPropertyValue("--lyric-fit")) || 1;
   if (available <= 0) return;
-  const needed = element.scrollWidth;
-  if (needed <= available) {
-    // The line fits as it is; it may still carry the shrink of an earlier, longer line.
-    if (fit < 1 && needed / fit <= available) {
-      element.style.setProperty("--lyric-fit", "1");
-    }
-    return;
+  const natural = element.scrollWidth;
+  if (natural <= available) return;
+  const floor = fitFloor(element);
+  let fit = Math.max(floor, (available - 1) / natural);
+  element.style.setProperty("--lyric-fit", String(fit));
+  // Glyph widths do not scale exactly with the font size, so measure again and narrow the
+  // line down until it really fits.
+  for (let round = 0; round < 3; round += 1) {
+    const needed = element.scrollWidth;
+    if (needed <= available) break;
+    fit = Math.max(floor, fit * (available - 1) / needed);
+    element.style.setProperty("--lyric-fit", String(fit));
   }
-  // A pixel of slack keeps the rounded text width from asking for another round.
-  const next = Math.max(fitFloor(element), fit * (available - 1) / needed);
-  element.style.setProperty("--lyric-fit", String(next));
 }
 
 /** Snapshot the lyric clock on mount; CSS fills every frame without re-rendering the island. */
@@ -84,9 +88,7 @@ export function CollapsedLyric({
   // be a shade too wide; shrink it a little then, instead of cutting the words off.
   useLayoutEffect(() => {
     const element = lyricRef.current;
-    if (!element) return;
-    element.style.setProperty("--lyric-fit", "1");
-    fitLyric(element);
+    if (element) fitLyric(element);
   }, [shownText]);
 
   // The island's font size and its width can change under the line (Settings → Appearance, a

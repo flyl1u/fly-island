@@ -14,6 +14,19 @@ import { getCollapsedIslandWidth, MAX_COLLAPSED_ISLAND_WIDTH } from "../../src/w
 
 const preview = new URLSearchParams(location.search).has("preview");
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: !preview });
+// The lyric's ResizeObserver, counted per element so a self-triggering loop shows up.
+const observerCalls = new Map<Element, number>();
+const NativeResizeObserver = window.ResizeObserver;
+window.ResizeObserver = class extends NativeResizeObserver {
+  constructor(callback: ResizeObserverCallback) {
+    super((entries, observer) => {
+      for (const entry of entries) {
+        observerCalls.set(entry.target, (observerCalls.get(entry.target) ?? 0) + 1);
+      }
+      callback(entries, observer);
+    });
+  }
+};
 const root = createRoot(document.getElementById("fixture")!);
 const results = document.getElementById("results")!;
 const passed: string[] = [];
@@ -100,6 +113,8 @@ async function waitFor(condition: () => boolean, label: string, timeout = 3000) 
     await frames();
   }
 }
+/** How often the lyric's observer ran for this element. */
+const callsOf = (element: HTMLElement) => observerCalls.get(element) ?? 0;
 
 if (preview) {
   results.remove();
@@ -119,6 +134,33 @@ if (preview) {
   check(fontSize >= 9, `超长歌词缩到 ${fontSize.toFixed(1)}px，仍读得清`);
   // The island's font size (Settings → Appearance) changes the room the line has.
   const longLyric = lyricOf(2);
+  const fitAtDefault = Number(fitOf(longLyric));
+  const fontAtDefault = Number.parseFloat(getComputedStyle(longLyric).fontSize);
+  // 120% → 100%: the fit has to grow back, not stay at the smaller one it had.
+  await act(async () => changeScale(1.2));
+  await waitFor(() => Number(fitOf(longLyric)) !== fitAtDefault, "字号调到 120% 后重新缩放");
+  const fitAt120 = Number(fitOf(longLyric));
+  await act(async () => changeScale(1));
+  await waitFor(() => Number(fitOf(longLyric)) > fitAt120, "字号调回 100% 后缩放涨回去");
+  check(Number(fitOf(longLyric)) > fitAt120, `字号调回 100% 后缩放涨回去（${fitAt120} → ${fitOf(longLyric)}）`);
+  check(Math.abs(Number(fitOf(longLyric)) - fitAtDefault) < 0.02,
+    `字号调回 100% 后缩放回到原来的值（${fitAtDefault} → ${fitOf(longLyric)}）`);
+  check(Math.abs(Number.parseFloat(getComputedStyle(longLyric).fontSize) - fontAtDefault) < 0.2,
+    `字号调回 100% 后歌词字号恢复正常（${fontAtDefault}px → ${getComputedStyle(longLyric).fontSize}）`);
+  // The smallest font size the settings allow (90%): the lyric stays readable.
+  await act(async () => changeScale(0.9));
+  await waitFor(() => Number(fitOf(longLyric)) !== fitAtDefault, "字号调到 90% 后重新缩放");
+  check(Number.parseFloat(getComputedStyle(longLyric).fontSize) >= 9,
+    `字号调到 90% 后长歌词仍读得清（${getComputedStyle(longLyric).fontSize}）`);
+  // Too little room at 90%: the font stops at its floor, and the floor follows the island's size.
+  await act(async () => changeNarrow(true));
+  await waitFor(() => Number(fitOf(longLyric)) !== Number(fitAtDefault), "岛变窄后重新缩放");
+  const fontAtNarrow90 = Number.parseFloat(getComputedStyle(longLyric).fontSize);
+  check(fontAtNarrow90 >= 9.05, `字号 90% 且岛变窄时字号不低于可读下限（${fontAtNarrow90}px）`);
+  await act(async () => changeNarrow(false));
+  await act(async () => changeScale(1));
+  await frames();
+  // The font size up to 150%: the line keeps fitting the room it has.
   const fitBefore = fitOf(longLyric);
   await act(async () => changeScale(1.5));
   await waitFor(() => fitOf(longLyric) !== fitBefore, "字号调大后重新缩放");
@@ -143,6 +185,17 @@ if (preview) {
   await act(async () => changeTrack("shorter"));
   await waitFor(() => fitOf(changing) === "1", "换成短歌词后缩放复位");
   check(fitOf(changing) === "1", `换成短歌词后缩放复位（${fitOf(changing)}）`);
+  // The observer settles: no self-triggering loop, and the fit does not drift.
+  let settled = 0;
+  let lastCalls = callsOf(changing);
+  const deadline = performance.now() + 3000;
+  while (settled < 3 && performance.now() < deadline) {
+    await frames();
+    if (callsOf(changing) === lastCalls) settled += 1;
+    else { settled = 0; lastCalls = callsOf(changing); }
+  }
+  check(settled >= 3, `缩放稳定后观察回调收敛（停在 ${lastCalls} 次）`);
+  check(fitOf(changing) === "1", `稳定后缩放没有漂移（${fitOf(changing)}）`);
   results.dataset.result = "passed";
   results.textContent = passed.join("\n");
 } catch (error) {
