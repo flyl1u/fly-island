@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseLrc, withTranslations } from "../../src/features/media/lyrics/lrc.ts";
-import { MAX_SONG_OFFSETS, normalizeSongOffsets, setSongOffset } from "../../src/features/media/lyrics/songOffsets.ts";
+import { MAX_SONG_OFFSETS, normalizeSongOffsets, saveSongOffsets, setSongOffset, subscribeSongOffsets } from "../../src/features/media/lyrics/songOffsets.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
 
 test("each line takes the translation that starts with it", () => {
@@ -26,6 +26,15 @@ test("per-song offsets are kept in range, and 0 or the oldest drop out", () => {
   assert.equal("0" in many, false);
   assert.deepEqual(normalizeSongOffsets({ a: 1234, b: "x", c: 0 }), { a: 1200 });
   assert.deepEqual(normalizeSongOffsets([1]), {});
+});
+
+test("saving a song offset tells the other island state to read it again", () => {
+  let told = 0;
+  const stop = subscribeSongOffsets(() => { told += 1; });
+  saveSongOffsets(setSongOffset({}, "余香", 500));
+  stop();
+  saveSongOffsets(setSongOffset({}, "余香", 1000));
+  assert.equal(told, 1);
 });
 
 test("Chinese lyric sources are on unless turned off", () => {

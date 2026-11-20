@@ -34,6 +34,20 @@ export function loadSongOffsets(): SongOffsets {
   return normalizeSongOffsets(readJson(SONG_OFFSETS_STORAGE_KEY));
 }
 
+const listeners = new Set<() => void>();
+
+/**
+ * The music page changes a song's offset while the collapsed lyric reads it; both listen here, so
+ * the two places always show the same lyrics.
+ */
+export function subscribeSongOffsets(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 export function saveSongOffsets(offsets: SongOffsets) {
   writeJson(SONG_OFFSETS_STORAGE_KEY, offsets);
+  listeners.forEach((listener) => listener());
 }
