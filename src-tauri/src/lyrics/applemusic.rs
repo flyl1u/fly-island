@@ -127,7 +127,7 @@ struct Storefront {
 /// The account's own storefront and language; the Chinese ones when they cannot be read.
 async fn storefront(client: &reqwest::Client, developer: &str, token: &str) -> Storefront {
     let url = format!("{API_BASE}/me/storefront");
-    let Ok(answer) = get_json(client, &url, developer, Some(token)).await else {
+    let Ok(Some(answer)) = get_json(client, &url, developer, Some(token)).await else {
         return Storefront { id: DEFAULT_STOREFRONT.to_string(), language: DEFAULT_LANGUAGE.to_string() };
     };
     let attributes = &answer["data"][0]["attributes"];
@@ -154,6 +154,20 @@ fn song_url(storefront: &str, language: &str, id: &str) -> String {
     format!("{API_BASE}/catalog/{storefront}/songs/{id}?include[songs]=lyrics,syllable-lyrics&l={}", encode_query(language))
 }
 
+/// The addresses of the lyrics of a song, in the order they are tried. The two sub-resources
+/// come first: their answer holds the words right away, while the song asked with `include`
+/// only links to them, and that link is empty for a song without a subscription.
+fn lyrics_urls(storefront: &str, language: &str, id: &str) -> [String; 3] {
+    [
+        format!(
+            "{API_BASE}/catalog/{storefront}/songs/{id}/syllable-lyrics?l={}&extend=ttmlLocalizations",
+            encode_query(language)
+        ),
+        song_url(storefront, language, id),
+        format!("{API_BASE}/catalog/{storefront}/songs/{id}/lyrics?l={}", encode_query(language)),
+    ]
+}
+
 /// A text for a query string: everything but letters, digits and a few marks is written as %XX.
 fn encode_query(text: &str) -> String {
     let mut encoded = String::with_capacity(text.len());
@@ -169,7 +183,8 @@ fn encode_query(text: &str) -> String {
 
 /// The search result that is the playing track: the same song, with the closest length.
 fn best_song(answer: &Value, title: &str, artist: &str, duration_ms: i64) -> Option<(String, i64)> {
-    let songs = answer["results"]["songs"].as_array()?;
+    // Apple nests the songs in an object of their own: `results.songs.data`.
+    let songs = answer["results"]["songs"]["data"].as_array()?;
     songs
         .iter()
         .filter_map(|song| {
@@ -185,19 +200,35 @@ fn best_song(answer: &Value, title: &str, artist: &str, duration_ms: i64) -> Opt
         .map(|(_, found)| found)
 }
 
-/// The TTML of the song's lyrics: the word-by-word one, or the plain one.
+/// The TTML of the song's lyrics: the word-by-word one, or the plain one. Apple's answers
+/// come in two shapes: a sub-resource puts the words straight in `data[0].attributes`, while the
+/// song asked with `include` keeps them in `relationships`.
 fn ttml_of(answer: &Value) -> Option<String> {
+    if let Some(text) = ttml_text(&answer["data"][0]["attributes"]) {
+        return Some(text);
+    }
     let relationships = &answer["data"][0]["relationships"];
     for name in ["syllable-lyrics", "lyrics"] {
-        let attributes = &relationships[name]["data"][0]["attributes"];
-        if let Some(text) = attributes["ttml"].as_str().filter(|text| !text.is_empty()) {
-            return Some(text.to_string());
+        if let Some(text) = ttml_text(&relationships[name]["data"][0]["attributes"]) {
+            return Some(text);
         }
-        if let Some(localizations) = attributes["ttmlLocalizations"].as_object() {
-            for value in localizations.values() {
-                if let Some(text) = value["ttml"].as_str().filter(|text| !text.is_empty()) {
-                    return Some(text.to_string());
-                }
+    }
+    None
+}
+
+/// The TTML in a set of attributes: the whole file, or the copy of one language.
+fn ttml_text(attributes: &Value) -> Option<String> {
+    if let Some(text) = attributes["ttml"].as_str().filter(|text| !text.is_empty()) {
+        return Some(text.to_string());
+    }
+    let localizations = &attributes["ttmlLocalizations"];
+    if let Some(text) = localizations.as_str().filter(|text| !text.is_empty()) {
+        return Some(text.to_string());
+    }
+    if let Some(object) = localizations.as_object() {
+        for value in object.values() {
+            if let Some(text) = value["ttml"].as_str().filter(|text| !text.is_empty()) {
+                return Some(text.to_string());
             }
         }
     }
@@ -229,12 +260,34 @@ pub(super) async fn fetch(
     let developer = developer_token(&client).await?;
     let store = storefront(&client, &developer, token).await;
     let term = format!("{title} {artist}").trim().to_string();
-    let search = get_json(&client, &search_url(&store.id, &store.language, &term), &developer, None).await?;
+    let Some(search) = get_json(&client, &search_url(&store.id, &store.language, &term), &developer, None).await? else {
+        return Ok(None);
+    };
     let Some((id, length)) = best_song(&search, title, artist, duration_ms) else {
         return Ok(None);
     };
-    let song = get_json(&client, &song_url(&store.id, &store.language, &id), &developer, Some(token)).await?;
-    Ok(lyrics_of(&song, title).map(|found| found.with_duration(length)))
+    // Apple's answers with 404 when the song has no lyrics of that kind, so every address is
+    // tried until one of them carries the words.
+    let mut failure = None;
+    let mut reached = false;
+    for url in lyrics_urls(&store.id, &store.language, &id) {
+        match get_json(&client, &url, &developer, Some(token)).await {
+            Ok(Some(answer)) => {
+                reached = true;
+                if let Some(found) = lyrics_of(&answer, title) {
+                    return Ok(Some(found.with_duration(length)));
+                }
+            }
+            Ok(None) => reached = true,
+            Err(error) => failure = Some(error),
+        }
+    }
+    // Apple was reached, so the song simply has no lyrics here; a failure of every address is
+    // a real one.
+    match failure {
+        Some(error) if !reached => Err(error),
+        _ => Ok(None),
+    }
 }
 
 /// The text at an address.
@@ -246,13 +299,13 @@ async fn get_text(client: &reqwest::Client, url: &str) -> Result<String, String>
     response.text().await.map_err(|error| format!("Apple Music sent something unexpected: {error}"))
 }
 
-/// The answer at an address, as JSON.
+/// The answer at an address, as JSON. `None` when Apple says there is nothing there (404).
 async fn get_json(
     client: &reqwest::Client,
     url: &str,
     developer: &str,
     user: Option<&str>,
-) -> Result<Value, String> {
+) -> Result<Option<Value>, String> {
     let mut request = client
         .get(url)
         .header("Origin", "https://music.apple.com")
@@ -262,10 +315,17 @@ async fn get_json(
         request = request.header("media-user-token", token);
     }
     let response = request.send().await.map_err(|error| format!("Could not reach Apple Music: {error}"))?;
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
     if !response.status().is_success() {
         return Err(format!("Apple Music answered {}", response.status()));
     }
-    response.json().await.map_err(|error| format!("Apple Music sent something unexpected: {error}"))
+    response
+        .json()
+        .await
+        .map(Some)
+        .map_err(|error| format!("Apple Music sent something unexpected: {error}"))
 }
 
 #[cfg(test)]
