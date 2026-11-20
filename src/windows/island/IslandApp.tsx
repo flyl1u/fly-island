@@ -14,7 +14,9 @@ import { useClipboardHistory } from "../../features/clipboard/useClipboardHistor
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
 import { useLyrics } from "../../features/media/lyrics/useLyrics";
-import { widestLyricText } from "../../features/media/lyrics/lrc";
+import { songOffsetKey } from "../../features/media/lyrics/lrc";
+import { useLyricClock } from "../../features/media/lyrics/useLyricClock";
+import { useSongOffset } from "../../features/media/lyrics/useSongOffset";
 import type { TodoItem } from "../../features/todos/types";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
@@ -77,13 +79,16 @@ export function IslandApp() {
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
-  // The collapsed island is as wide as the lyric it shows. The song's widest line sets that width,
-  // so the island does not resize with every line that comes along.
+  // The collapsed island is as wide as the lyric it shows right now: a short line keeps the
+  // island's usual width, a long one widens it up to the width the settings allow.
   const { lines: lyricLines } = useLyrics(media.mediaState, settings);
+  const [songOffsetMs] = useSongOffset(lyricLines ? songOffsetKey(media.mediaState) : null);
+  const { index: lyricIndex } = useLyricClock(
+    lyricLines, media.mediaState, settings.lyricsOffsetMs + songOffsetMs, mode === "collapsed");
   const lyricText = useMemo(
-    () => (lyricLines ? widestLyricText(lyricLines)
+    () => (lyricLines && lyricIndex >= 0 ? lyricLines[lyricIndex].text
       : [media.mediaState.title, media.mediaState.artist].filter(Boolean).join(" · ")),
-    [lyricLines, media.mediaState.artist, media.mediaState.title],
+    [lyricLines, lyricIndex, media.mediaState.artist, media.mediaState.title],
   );
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
   const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer } =

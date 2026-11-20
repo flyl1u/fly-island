@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { lineIndexAt, parseLrc, playbackPosition, trackKey, widestLyricText, wordFill } from "../../src/features/media/lyrics/lrc.ts";
+import { lineIndexAt, parseLrc, playbackPosition, trackKey, wordFill } from "../../src/features/media/lyrics/lrc.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
 import { suggestsChineseSources } from "../../src/features/media/lyrics/chineseHint.ts";
 
@@ -27,11 +27,6 @@ test("the line being sung is the last one that started", () => {
   assert.equal(lineIndexAt([], 1000), -1);
 });
 
-test("the widest lyric line sizes the collapsed island", () => {
-  const lines = parseLrc("[00:01.00]短句\n[00:05.00]这是一句很长的歌词\n[00:09.00]middle");
-  assert.equal(widestLyricText(lines), "这是一句很长的歌词");
-  assert.equal(widestLyricText([]), "");
-});
 
 test("the position moves on from Windows' reading only while playing", () => {
   const state = { positionMs: 10_000, durationMs: 11_000, updatedAt: 1000, playbackStatus: "playing" };

@@ -55,7 +55,7 @@ export const PAGES = [
   "notice-reader.html",
   "notice-reader.html?scale=1.4&theme=light&lang=en",
   "lyric-clock.html",
-  "lyric-fit.html",
+  "lyric-width.html",
   "lyric-word-fill.html",
   "lyric-sync.html",
   "music-lyrics.html",

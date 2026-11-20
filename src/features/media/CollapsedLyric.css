@@ -4,8 +4,7 @@
   flex: 1;
   overflow: hidden;
   color: var(--task-text-color);
-  /* --lyric-fit shrinks the font when a long line does not fit the island (CollapsedLyric.tsx). */
-  font-size: calc(13px * var(--island-font-scale, 1) * var(--lyric-fit, 1));
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-overflow: ellipsis;

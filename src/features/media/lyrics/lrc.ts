@@ -1,5 +1,3 @@
-import { getCollapsedTextUnits } from "../../../utils/text.ts";
-
 /** A word (or syllable) of a line, sung from `startMs` to `endMs`. */
 export type LyricWord = { startMs: number; endMs: number; text: string };
 
@@ -137,21 +135,3 @@ export function wordFill(word: LyricWord, positionMs: number) {
   return { delayMs: Math.round(word.startMs - positionMs), durationMs: Math.max(1, word.endMs - word.startMs) };
 }
 
-/**
- * The song's widest line, for sizing the collapsed island to the lyrics. The island fits the
- * longest line of the whole song, so it does not resize with every line that comes along.
- */
-export function widestLyricText(lines: LyricLine[]) {
-  let widest = "";
-  let widestUnits = 0;
-
-  for (const line of lines) {
-    const units = getCollapsedTextUnits(line.text);
-    if (units > widestUnits) {
-      widestUnits = units;
-      widest = line.text;
-    }
-  }
-
-  return widest;
-}
