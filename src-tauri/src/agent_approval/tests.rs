@@ -155,7 +155,7 @@ fn only_local_agents_with_the_token_get_in() {
     assert_eq!(check_access(&request(&[("host", "127.0.0.1:47830"), ("authorization", "Bearer wrong")]), TOKEN, 47830).unwrap_err().status, 401);
     assert_eq!(check_access(&request(&[("host", "evil.example:47830"), ("authorization", &bearer)]), TOKEN, 47830).unwrap_err().status, 403);
     // The header SSH forwards once carried is no way in any more.
-    let remote = request(&[("host", "127.0.0.1:47830"), ("x-focusd-remote", "zcm6"), ("authorization", "Bearer derived")]);
+    let remote = request(&[("host", "127.0.0.1:47830"), ("x-fly-island-remote", "zcm6"), ("authorization", "Bearer derived")]);
     assert_eq!(check_access(&remote, TOKEN, 47830).unwrap_err().status, 401);
     let from_page = request(&[("host", "127.0.0.1:47830"), ("authorization", &bearer), ("origin", "https://evil.example")]);
     assert_eq!(check_access(&from_page, TOKEN, 47830).unwrap_err().status, 403);
@@ -211,7 +211,7 @@ fn a_session_shows_one_request_at_a_time() {
 
 #[test]
 fn config_gets_a_token_and_keeps_it() {
-    let dir = std::env::temp_dir().join(format!("focusd-approval-test-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("fly-island-approval-test-{}", std::process::id()));
     let path = dir.join("agent-approval.json");
     let _ = std::fs::remove_dir_all(&dir);
     let (config, changed) = load_config(&path).unwrap();

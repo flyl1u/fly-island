@@ -182,13 +182,13 @@ fn read_qq_notifications(listener: &UserNotificationListener) -> Result<Observat
         }
         let diagnostic = parts
             .first()
-            .is_some_and(|title| title == "FocuSD QQ 通知诊断")
+            .is_some_and(|title| title == "Fly Island QQ 通知诊断")
             && parts
                 .iter()
                 .any(|body| body == "这是本机通道测试，不是聊天消息。")
             || parts
                 .first()
-                .is_some_and(|title| title == "FocuSD QQ notification diagnostic")
+                .is_some_and(|title| title == "Fly Island QQ notification diagnostic")
                 && parts
                     .iter()
                     .any(|body| body == "Local channel test; this is not a chat message.");

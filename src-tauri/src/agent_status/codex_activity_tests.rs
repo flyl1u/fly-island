@@ -12,7 +12,7 @@ static NEXT: AtomicUsize = AtomicUsize::new(0);
 struct Home(PathBuf);
 impl Home {
     fn new() -> Self {
-        let root = std::env::temp_dir().join(format!("focusd-codex-activity-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        let root = std::env::temp_dir().join(format!("fly-island-codex-activity-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         fs::create_dir_all(&root).unwrap();
         Self(root)
     }

@@ -67,6 +67,6 @@ mod tests {
         let exe = std::env::current_exe().ok().and_then(|path| path.file_name().map(|name| name.to_string_lossy().to_uppercase()));
         let exe = exe.unwrap_or_default();
         assert!(process_ids_named(&exe).contains(&std::process::id()));
-        assert!(process_ids_named("focusd-surely-not-running.exe").is_empty());
+        assert!(process_ids_named("fly-island-surely-not-running.exe").is_empty());
     }
 }

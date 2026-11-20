@@ -1,4 +1,4 @@
-//! What the SessionStart / SessionEnd hooks recorded about a session (focusd-agent-session.ps1):
+//! What the SessionStart / SessionEnd hooks recorded about a session (fly-island-agent-session.ps1):
 //! `agent-sessions/<session id>.json` in the app data folder, with the agent's process id and
 //! start time, its folder and its terminal (Orca handle, Windows Terminal session). These come
 //! from the hooks Claude Code and Codex document, so they are preferred over Claude Code's

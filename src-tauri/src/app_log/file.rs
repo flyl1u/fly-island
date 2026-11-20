@@ -1,4 +1,4 @@
-//! The log file and its one backup: past MAX_BYTES the file becomes `focusd-island.1.log`
+//! The log file and its one backup: past MAX_BYTES the file becomes `fly-island.1.log`
 //! (replacing the older one) and a new file starts, so the log never takes more than twice that.
 
 use std::{
@@ -7,8 +7,8 @@ use std::{
     path::Path,
 };
 
-pub(super) const FILE_NAME: &str = "focusd-island.log";
-const BACKUP_NAME: &str = "focusd-island.1.log";
+pub(super) const FILE_NAME: &str = "fly-island.log";
+const BACKUP_NAME: &str = "fly-island.1.log";
 const MAX_BYTES: u64 = 5 * 1024 * 1024;
 
 pub(super) struct LogFile {
@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn rotates_into_one_backup_and_clears_both() {
-        let dir = std::env::temp_dir().join(format!("focusd-log-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("fly-island-log-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let mut log = LogFile::open(&dir).unwrap();
         let line = "x".repeat(1024 * 1024) + "\n";
@@ -78,5 +78,10 @@ mod tests {
         remove_all(&dir).unwrap();
         assert_eq!(total_bytes(&dir), 0);
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn log_contract_uses_the_current_product_name() {
+        assert_eq!(FILE_NAME, "fly-island.log");
     }
 }

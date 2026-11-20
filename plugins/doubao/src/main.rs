@@ -94,7 +94,7 @@ fn fetch_quota_with_cookie(cookie: &str) -> Option<Value> {
 
 fn cookie_file_path() -> Option<PathBuf> {
     let appdata = std::env::var_os("APPDATA")?;
-    Some(PathBuf::from(appdata).join("com.focusd.island/plugins/doubao/cookie.txt"))
+    Some(PathBuf::from(appdata).join("com.flyisland.app/plugins/doubao/cookie.txt"))
 }
 
 fn load_saved_cookie() -> Option<String> {

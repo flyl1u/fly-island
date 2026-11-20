@@ -10,7 +10,7 @@ pub(super) const CODEX_RUNNING_MARKER_FILE_NAME: &str = "agent-codex-running.fla
 pub(super) const CODEX_RUNNING_HOLD_FILE_NAME: &str = "agent-codex-running-hold.flag";
 pub(super) const CLAUDE_CODE_RUNNING_MARKER_FILE_NAME: &str = "agent-claudeCode-running.flag";
 pub(super) const CLAUDE_CODE_RUNNING_HOLD_FILE_NAME: &str = "agent-claudeCode-running-hold.flag";
-/// Claude Code's latest waiting notification, saved by `focusd-agent-running.cmd claudeCode
+/// Claude Code's latest waiting notification, saved by `fly-island-agent-running.cmd claudeCode
 /// notification`; see notifications.rs.
 pub(super) const CLAUDE_CODE_NOTIFICATION_FILE_NAME: &str = "agent-claudeCode-notification.json";
 /// The prompt-submit hook input that versions before titles came from the session files saved

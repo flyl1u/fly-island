@@ -7,6 +7,7 @@ mod codex_hooks;
 mod codex_activity;
 mod codex_process;
 mod editor_terminal;
+pub(crate) mod hook_migration;
 mod hooks_state;
 mod host_icon;
 mod codex_usage;
@@ -84,27 +85,27 @@ use snapshot::{
 
 pub(super) const AGENT_STATUS_FILE_NAME: &str = "agent-status.json";
 
-pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "focusd-agent-running.cmd";
-pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "focusd-agent-status.ps1";
-pub(super) const AGENT_SESSION_SCRIPT_FILE_NAME: &str = "focusd-agent-session.ps1";
+pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "fly-island-agent-running.cmd";
+pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "fly-island-agent-status.ps1";
+pub(super) const AGENT_SESSION_SCRIPT_FILE_NAME: &str = "fly-island-agent-session.ps1";
 
-pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
+pub(super) const FLY_ISLAND_AGENT_HOOK_SIGNATURE: &str = "fly-island-agent-";
 /// Second argument of the running script for the Notification and PermissionRequest hooks (Claude
 /// Code and Codex): save the hook input instead of marking the session as running (see
-/// focusd-agent-running.cmd). Installs from before the session script also pass `session` from
+/// fly-island-agent-running.cmd). Installs from before the session script also pass `session` from
 /// SessionStart, which the script still handles.
 pub(super) const AGENT_RUNNING_NOTIFICATION_ARG: &str = "notification";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
-    include_str!("hooks/focusd-agent-running.cmd");
+    include_str!("hooks/fly-island-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =
-    include_str!("hooks/focusd-agent-status.ps1");
+    include_str!("hooks/fly-island-agent-status.ps1");
 /// SessionStart / SessionEnd: records the session's process and terminal (session_records.rs).
 pub(super) const AGENT_SESSION_SCRIPT: &str =
-    include_str!("hooks/focusd-agent-session.ps1");
+    include_str!("hooks/fly-island-agent-session.ps1");
 /// Codex PermissionRequest: forwards the request to the island's approval endpoint (agent_approval).
-pub(super) const AGENT_APPROVAL_SCRIPT_FILE_NAME: &str = "focusd-agent-approval.ps1";
+pub(super) const AGENT_APPROVAL_SCRIPT_FILE_NAME: &str = "fly-island-agent-approval.ps1";
 pub(super) const AGENT_APPROVAL_SCRIPT: &str =
-    include_str!("hooks/focusd-agent-approval.ps1");
+    include_str!("hooks/fly-island-agent-approval.ps1");
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

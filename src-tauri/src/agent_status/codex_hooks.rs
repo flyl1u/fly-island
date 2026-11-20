@@ -1,14 +1,15 @@
 //! Managed hook block in the Codex `config.toml`.
 
 use std::{fs, path::Path};
+use crate::legacy_migration;
 
 use super::{
     claude_hooks::APPROVAL_HOOK_TIMEOUT_SECONDS, write_text_file, AGENT_APPROVAL_SCRIPT_FILE_NAME,
-    AGENT_RUNNING_NOTIFICATION_ARG, AGENT_SESSION_SCRIPT_FILE_NAME, FOCUSD_AGENT_HOOK_SIGNATURE,
+    AGENT_RUNNING_NOTIFICATION_ARG, AGENT_SESSION_SCRIPT_FILE_NAME,
 };
 
-pub(super) const FOCUSD_AGENT_HOOK_BLOCK_BEGIN: &str = "# BEGIN FocuSD Agent Status Hooks";
-pub(super) const FOCUSD_AGENT_HOOK_BLOCK_END: &str = "# END FocuSD Agent Status Hooks";
+pub(super) const FLY_ISLAND_AGENT_HOOK_BLOCK_BEGIN: &str = "# BEGIN Fly Island Agent Status Hooks";
+pub(super) const FLY_ISLAND_AGENT_HOOK_BLOCK_END: &str = "# END Fly Island Agent Status Hooks";
 
 pub(super) fn install_codex_status_hooks(
     config_path: &Path,
@@ -97,8 +98,8 @@ command_windows = {approval_command}
 timeout = {approval_timeout}
 
 {end}"#,
-        begin = FOCUSD_AGENT_HOOK_BLOCK_BEGIN,
-        end = FOCUSD_AGENT_HOOK_BLOCK_END,
+        begin = FLY_ISLAND_AGENT_HOOK_BLOCK_BEGIN,
+        end = FLY_ISLAND_AGENT_HOOK_BLOCK_END,
         submit_command = toml_basic_string(&submit_command),
         stop_command = toml_basic_string(&stop_command),
         session_start_command = toml_basic_string(&session_start_command),
@@ -110,18 +111,19 @@ timeout = {approval_timeout}
 }
 
 pub(super) fn remove_managed_codex_hook_block(content: &str) -> String {
-    let mut remaining = content;
+    let normalized = legacy_migration::normalize_hook_text(content);
+    let mut remaining = normalized.as_str();
     let mut next_content = String::new();
 
-    while let Some(start) = remaining.find(FOCUSD_AGENT_HOOK_BLOCK_BEGIN) {
+    while let Some(start) = remaining.find(FLY_ISLAND_AGENT_HOOK_BLOCK_BEGIN) {
         next_content.push_str(&remaining[..start]);
         let after_begin = &remaining[start..];
-        let Some(end) = after_begin.find(FOCUSD_AGENT_HOOK_BLOCK_END) else {
+        let Some(end) = after_begin.find(FLY_ISLAND_AGENT_HOOK_BLOCK_END) else {
             remaining = "";
             break;
         };
 
-        remaining = &after_begin[end + FOCUSD_AGENT_HOOK_BLOCK_END.len()..];
+        remaining = &after_begin[end + FLY_ISLAND_AGENT_HOOK_BLOCK_END.len()..];
         if let Some(stripped) = remaining.strip_prefix("\r\n") {
             remaining = stripped;
         } else if let Some(stripped) = remaining.strip_prefix('\n') {
@@ -130,10 +132,10 @@ pub(super) fn remove_managed_codex_hook_block(content: &str) -> String {
     }
 
     next_content.push_str(remaining);
-    remove_legacy_codex_focusd_hooks(&next_content)
+    remove_legacy_codex_fly_island_hooks(&next_content)
 }
 
-pub(super) fn remove_legacy_codex_focusd_hooks(content: &str) -> String {
+pub(super) fn remove_legacy_codex_fly_island_hooks(content: &str) -> String {
     let lines = content.lines().collect::<Vec<_>>();
     let mut next_lines: Vec<&str> = Vec::new();
     let mut index = 0;
@@ -165,7 +167,7 @@ pub(super) fn remove_legacy_codex_focusd_hooks(content: &str) -> String {
                 }
 
                 let child_block = lines[child_start..index].join("\n");
-                if child_block.contains(FOCUSD_AGENT_HOOK_SIGNATURE) {
+                if legacy_migration::contains_managed_hook_signature(&child_block) {
                     removed_managed_child = true;
                 } else {
                     kept_child_ranges.push(child_start..index);
@@ -250,8 +252,8 @@ mod tests {
     #[test]
     fn prompt_submit_hook_only_marks_running() {
         let block = build_codex_hook_block(
-            Path::new(r"C:\a b\focusd-agent-running.cmd"),
-            Path::new(r"C:\a b\focusd-agent-status.ps1"),
+            Path::new(r"C:\a b\fly-island-agent-running.cmd"),
+            Path::new(r"C:\a b\fly-island-agent-status.ps1"),
             false,
         );
         assert!(!block.contains("async"));
@@ -260,14 +262,14 @@ mod tests {
         assert_eq!(background.matches("async = true").count(), 1, "only SessionStart runs in the background");
 
         assert!(block.contains(
-            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex\"""#
+            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\fly-island-agent-running.cmd\" codex\"""#
         ));
         assert!(!block.contains("capture"));
         assert!(block.contains(
-            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex notification\"""#
+            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\fly-island-agent-running.cmd\" codex notification\"""#
         ));
         assert!(block.contains("[[hooks.SessionStart]]") && block.contains("[[hooks.PermissionRequest]]"));
-        assert!(block.contains(r#"focusd-agent-session.ps1\" codex start"#));
+        assert!(block.contains(r#"fly-island-agent-session.ps1\" codex start"#));
         assert_eq!(
             agent_running_command(Path::new(r"C:\s.cmd"), "codex"),
             r#"cmd.exe /d /s /c ""C:\s.cmd" codex""#

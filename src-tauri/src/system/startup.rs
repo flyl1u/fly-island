@@ -1,6 +1,6 @@
 //! Launch at startup through the current user's Run key.
 //!
-//! The Run value (its name stays `FocuSD Island`) starts the app with [`AUTOSTART_ARG`], so a
+//! The Run value (its name stays `Fly Island`) starts the app with [`AUTOSTART_ARG`], so a
 //! launch at sign-in can be told from one by hand. At sign-in the desktop, Explorer and every
 //! other startup app compete for the machine, so the island then shows without taking the
 //! focus and its background services that watch other apps (QQ, WeChat, the NetEase plugin)
@@ -20,11 +20,11 @@ use std::{
 
 use windows::Win32::System::Registry::HKEY_CURRENT_USER;
 
-use crate::win32::registry;
+use crate::{legacy_migration, win32::registry};
 
 /// The Run key under `HKEY_CURRENT_USER`.
 pub(super) const STARTUP_REGISTRY_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
-pub(super) const STARTUP_REGISTRY_VALUE: &str = "FocuSD Island";
+pub(super) const STARTUP_REGISTRY_VALUE: &str = "Fly Island";
 const STARTUP_APPROVED_RUN_KEY: &str =
     r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
 /// Passed by the Run value; any other launch has no arguments.
@@ -74,6 +74,7 @@ fn startup_value_for(executable: &Path) -> String {
 /// The Run value as it is now, `None` when launch at startup is off.
 fn read_value() -> Option<String> {
     registry::read_string(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE)
+        .or_else(|| legacy_migration::legacy_startup_value_present().then_some(String::new()))
 }
 
 /// Finds an exact command-line argument while ignoring text inside a quoted executable path.
@@ -137,9 +138,15 @@ pub fn get_launch_at_startup() -> Result<bool, String> {
 #[tauri::command]
 pub fn set_launch_at_startup(enabled: bool) -> Result<(), String> {
     let result = if enabled {
-        registry::write_string(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE, &startup_value()?)
+        let result = registry::write_string(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE, &startup_value()?);
+        if result.is_ok() {
+            legacy_migration::delete_legacy_startup_value();
+        }
+        result
     } else {
-        registry::delete_value(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE)
+        let result = registry::delete_value(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE);
+        legacy_migration::delete_legacy_startup_value();
+        result
     };
     result.map_err(|error| format!("Failed to update startup registry: {error}"))
 }
@@ -179,5 +186,10 @@ mod tests {
         assert!(!startup_approved_is_disabled(&[3, 0, 0, 0]));
         assert!(!startup_approved_is_disabled(&[3, 0, 0]));
         assert!(!startup_approved_is_disabled(&[]));
+    }
+
+    #[test]
+    fn startup_contract_uses_the_current_product_name() {
+        assert_eq!(STARTUP_REGISTRY_VALUE, "Fly Island");
     }
 }

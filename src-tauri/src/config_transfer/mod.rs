@@ -95,6 +95,7 @@ pub struct ImportPreview { includes_clipboard_history: bool }
 
 #[tauri::command]
 pub async fn stage_config_import(app: tauri::AppHandle, backup: Backup) -> Result<ImportPreview, String> {
+    let backup = backup.normalize_legacy()?;
     backup.validate()?;
     let includes_clipboard_history = backup.files.includes_history();
     let bytes = serde_json::to_vec(&backup).map_err(|e| e.to_string())?;

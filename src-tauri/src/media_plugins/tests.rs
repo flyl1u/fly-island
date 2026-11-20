@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 struct Temp(PathBuf);
 impl Temp {
     fn new() -> Self {
-        let p = std::env::temp_dir().join(format!("focusd-plugin-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let p = std::env::temp_dir().join(format!("fly-island-plugin-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
         fs::create_dir_all(&p).unwrap(); Self(p)
     }
 }
@@ -117,31 +117,31 @@ fn helper_report_argument_is_optional_and_absolute() {
     let args = |list: &[&str]| list.iter().map(|s| s.to_string()).collect::<Vec<_>>();
     let plain = args(&["--media-plugin-remove", r"C:\x\msimg32.dll", "h"]);
     assert_eq!(helper_exit::split_report(&plain), (&plain[..], None));
-    let with = args(&["--media-plugin-remove", r"C:\x\msimg32.dll", "h", r"--report=C:\t\focusd-plugin-helper-1.txt"]);
+    let with = args(&["--media-plugin-remove", r"C:\x\msimg32.dll", "h", r"--report=C:\t\fly-island-plugin-helper-1.txt"]);
     let (rest, report) = helper_exit::split_report(&with);
     assert_eq!(rest, &with[..3]);
-    assert_eq!(report, Some(PathBuf::from(r"C:\t\focusd-plugin-helper-1.txt")));
+    assert_eq!(report, Some(PathBuf::from(r"C:\t\fly-island-plugin-helper-1.txt")));
     let relative = args(&["--media-plugin-remove", "h", "--report=report.txt"]);
     assert_eq!(helper_exit::split_report(&relative).1, None);
 }
 #[test]
 fn only_our_own_temp_files_are_cleaned_up() {
-    assert!(elevated::is_own_temp("msimg32.focusd-tmp", "msimg32.dll"));
-    assert!(elevated::is_own_temp("MSIMG32.FOCUSD-TMP", "msimg32.dll"));
-    assert!(elevated::is_own_temp("msimg32.dll.123-456.focusd-tmp", "msimg32.dll"));
-    for other in ["msimg32.dll", "msimg32.dll.focusd-tmp", "msimg32.tmp", "cloudmusic.focusd-tmp", "other.dll.1-2.focusd-tmp", "msimg32.dll.1-2.tmp"] {
+    assert!(elevated::is_own_temp("msimg32.fly-island-tmp", "msimg32.dll"));
+    assert!(elevated::is_own_temp("MSIMG32.fly-island-tmp", "msimg32.dll"));
+    assert!(elevated::is_own_temp("msimg32.dll.123-456.fly-island-tmp", "msimg32.dll"));
+    for other in ["msimg32.dll", "msimg32.dll.fly-island-tmp", "msimg32.tmp", "cloudmusic.fly-island-tmp", "other.dll.1-2.fly-island-tmp", "msimg32.dll.1-2.tmp"] {
         assert!(!elevated::is_own_temp(other, "msimg32.dll"), "{other}");
     }
     let t = Temp::new(); let source = t.0.join("source"); let target = t.0.join("InfLink.dll");
     fs::write(&source, b"abc").unwrap();
-    fs::write(t.0.join("InfLink.focusd-tmp"), b"stale").unwrap();
-    fs::write(t.0.join("InfLink.dll.1-2.focusd-tmp"), b"stale").unwrap();
-    fs::write(t.0.join("keep.focusd-tmp"), b"other").unwrap();
+    fs::write(t.0.join("InfLink.fly-island-tmp"), b"stale").unwrap();
+    fs::write(t.0.join("InfLink.dll.1-2.fly-island-tmp"), b"stale").unwrap();
+    fs::write(t.0.join("keep.fly-island-tmp"), b"other").unwrap();
     elevated::atomic_copy(&source, &target, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").unwrap();
     assert_eq!(fs::read(&target).unwrap(), b"abc");
     let mut left: Vec<_> = fs::read_dir(&t.0).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
     left.sort();
-    assert_eq!(left, ["InfLink.dll", "keep.focusd-tmp", "source"]);
+    assert_eq!(left, ["InfLink.dll", "keep.fly-island-tmp", "source"]);
 }
 fn netease_status(state: &'static str, version: &str, tested: bool) -> netease::NeteasePluginStatus {
     netease::NeteasePluginStatus { state, supported: true, tested, version: Some(version.into()), arch: Some("x64"),

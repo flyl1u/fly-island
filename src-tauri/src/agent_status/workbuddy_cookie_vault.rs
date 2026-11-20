@@ -2,6 +2,7 @@
 //! when its process exits and persistent cookies before they are written to disk.
 
 use keyring::{Entry, Error as KeyringError};
+use crate::legacy_migration;
 use serde::{Deserialize, Serialize};
 use tauri::webview::{
     cookie::{time::OffsetDateTime, SameSite},
@@ -10,7 +11,7 @@ use tauri::webview::{
 
 use super::workbuddy_auth::CookieMetadata;
 
-const SERVICE: &str = "com.focusd.island.workbuddy-web";
+const SERVICE: &str = "com.flyisland.app.workbuddy-web";
 const ACTIVE_ENTRY: &str = "cookies-active";
 /// Each Credential Manager blob holds at most 2560 bytes.
 const CHUNK_BYTES: usize = 2400;
@@ -186,9 +187,10 @@ fn decode(chunks: &[Vec<u8>]) -> Result<Vec<SavedCookie>, ()> {
     serde_json::from_slice(&chunks.concat()).map_err(|_| ())
 }
 
+/// Reads under the new service name; an entry still under the old one is moved over on first read.
 fn read_secret(name: &str) -> Result<Option<Vec<u8>>, ()> {
-    match Entry::new(SERVICE, name).and_then(|entry| entry.get_secret()) {
-        Ok(bytes) => Ok(Some(bytes)),
+    match legacy_migration::read_secret_bytes_with_fallback(SERVICE, name) {
+        Ok(bytes) => Ok(bytes),
         Err(KeyringError::NoEntry) => Ok(None),
         Err(_) => Err(()),
     }
@@ -201,10 +203,7 @@ fn write_secret(name: &str, bytes: &[u8]) -> Result<(), ()> {
 }
 
 fn delete_secret(name: &str) -> bool {
-    match Entry::new(SERVICE, name).and_then(|entry| entry.delete_credential()) {
-        Ok(()) | Err(KeyringError::NoEntry) => true,
-        Err(_) => false,
-    }
+    matches!(legacy_migration::delete_credential_with_fallback(SERVICE, name), Ok(()) | Err(KeyringError::NoEntry))
 }
 
 fn active_index() -> Result<Option<Index>, ()> {

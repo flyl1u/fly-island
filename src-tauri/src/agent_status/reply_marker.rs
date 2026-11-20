@@ -14,6 +14,8 @@ use std::{
 
 use serde::Serialize;
 
+use crate::legacy_migration;
+
 /// What the last line of a reply says the session is waiting for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum ReplyMarker {
@@ -61,9 +63,9 @@ pub(super) fn split_reply(text: &str) -> (Option<ReplyMarker>, &str) {
 }
 
 /// Opens the block; the version lets a newer island replace an older wording.
-const BLOCK_START: &str = "<!-- focusd-island: reply marker v3 -->";
-pub(super) const BLOCK_START_PREFIX: &str = "<!-- focusd-island: reply marker";
-const BLOCK_END: &str = "<!-- /focusd-island: reply marker -->";
+const BLOCK_START: &str = "<!-- fly-island: reply marker v3 -->";
+pub(super) const BLOCK_START_PREFIX: &str = "<!-- fly-island: reply marker";
+const BLOCK_END: &str = "<!-- /fly-island: reply marker -->";
 
 /// The instruction, in the island's own words.
 const BLOCK_BODY: &str = "\
@@ -79,13 +81,6 @@ Write the character alone on the last line, without backticks, and nothing after
 
 pub(super) fn block() -> String {
     format!("{BLOCK_START}\n{BLOCK_BODY}\n{BLOCK_END}")
-}
-
-/// The v2 rules file: the same words under the island's former name. Only the name changed, so
-/// a file still holding exactly this is rewritten on the next read without asking.
-fn v2_rules_file() -> String {
-    let body = BLOCK_BODY.replace("Fly Island", "FocuSD Island");
-    format!("<!-- focusd-island: reply marker v2 -->\n{body}\n{BLOCK_END}\n")
 }
 
 /// Where the island's block is in `text`: from its start line to the end of its end line.
@@ -149,7 +144,7 @@ pub(super) fn without_block(text: &str) -> String {
 
 /// Under the Claude config folder. Claude Code reads every `rules/*.md` there into each session,
 /// as it reads `CLAUDE.md`, so the island never edits the user's own instructions.
-pub(super) const RULES_FILE: &str = "rules/focusd-island-reply-marker.md";
+pub(super) const RULES_FILE: &str = "rules/fly-island-reply-marker.md";
 
 /// The Claude config folder: `CLAUDE_CONFIG_DIR` when set, else `~/.claude`.
 fn claude_dir() -> Result<PathBuf, String> {
@@ -169,19 +164,10 @@ fn read_text(path: &Path) -> Result<String, String> {
     }
 }
 
-/// Rewrites a v2 rules file, which differs only in naming the island by its former name.
-fn upgrade_former_name(path: &Path) -> Result<(), String> {
-    if read_text(path)?.replace("\r\n", "\n") == v2_rules_file() {
-        super::write_text_file(path, &rules_file())?;
-    }
-    Ok(())
-}
-
-/// Called from `setup`: the rules file is read by Claude Code in every session, so the former
-/// name is replaced at startup rather than only when the settings page is opened.
+/// Called from `setup` so an old rules file is removed before Claude Code reads it.
 pub(crate) fn init() {
     std::thread::spawn(|| {
-        if let Ok(dir) = claude_dir() { let _ = upgrade_former_name(&dir.join(RULES_FILE)); }
+        if let Ok(dir) = claude_dir() { legacy_migration::remove_legacy_reply_marker_file(&dir); }
     });
 }
 
@@ -191,7 +177,7 @@ pub async fn get_reply_marker_state() -> Result<ReplyMarkerState, String> {
     tauri::async_runtime::spawn_blocking(|| {
         let dir = claude_dir()?;
         let path = dir.join(RULES_FILE);
-        upgrade_former_name(&path)?;
+        legacy_migration::remove_legacy_reply_marker_file(&dir);
         Ok(state_of(&read_text(&path)?, &read_text(&dir.join("CLAUDE.md"))?, &path))
     })
     .await
@@ -211,6 +197,7 @@ pub async fn set_reply_marker(enabled: bool) -> Result<ReplyMarkerState, String>
 pub(super) fn apply(enabled: bool) -> Result<ReplyMarkerState, String> {
     let dir = claude_dir()?;
     let path = dir.join(RULES_FILE);
+    legacy_migration::remove_legacy_reply_marker_file(&dir);
     let rules = read_text(&path)?;
     if enabled && rules != rules_file() {
         super::write_text_file(&path, &rules_file())?;
@@ -220,7 +207,7 @@ pub(super) fn apply(enabled: bool) -> Result<ReplyMarkerState, String> {
     }
     let claude_md_path = dir.join("CLAUDE.md");
     let claude_md = read_text(&claude_md_path)?;
-    let cleaned = without_block(&claude_md);
+    let cleaned = without_block(&legacy_migration::without_legacy_reply_block(&claude_md));
     if cleaned != claude_md {
         super::write_text_file(&claude_md_path, &cleaned)?;
     }
@@ -245,7 +232,7 @@ mod tests {
 
     #[test]
     fn the_rules_file_holds_the_block_and_an_old_block_comes_out_of_claude_md_cleanly() {
-        let path = Path::new("C:/Users/me/.claude/rules/focusd-island-reply-marker.md");
+        let path = Path::new("C:/Users/me/.claude/rules/fly-island-reply-marker.md");
         let user = "# Global rules\r\n\r\n- reply in Chinese\r\n";
         let state = state_of(&rules_file(), user, path);
         assert!(state.installed && !state.outdated);
@@ -254,21 +241,12 @@ mod tests {
         assert!(!state_of("", user, path).installed);
 
         // An island before v2 put the block into CLAUDE.md: it counts as on, and needs moving.
-        let legacy = format!("{user}\r\n<!-- focusd-island: reply marker v1 -->\r\nold words\r\n{BLOCK_END}\r\n\r\n## After\r\n");
+        let legacy = format!("{user}\r\n<!-- fly-island: reply marker v1 -->\r\nold words\r\n{BLOCK_END}\r\n\r\n## After\r\n");
         let state = state_of("", &legacy, path);
         assert!(state.installed && state.outdated);
         assert_eq!(without_block(&legacy), format!("{user}\r\n## After\r\n"));
         assert_eq!(without_block(user), user);
-        assert!(state_of("<!-- focusd-island: reply marker v1 -->\nx\n<!-- /focusd-island: reply marker -->\n", "", path).outdated);
+        assert!(state_of("<!-- fly-island: reply marker v1 -->\nx\n<!-- /fly-island: reply marker -->\n", "", path).outdated);
     }
 
-    #[test]
-    fn the_former_name_is_replaced_and_its_file_recognised() {
-        assert!(!rules_file().contains("FocuSD"));
-        let former = v2_rules_file();
-        assert!(former.starts_with("<!-- focusd-island: reply marker v2 -->
-## Reply status marker (added by FocuSD Island)"));
-        assert!(is_rules_file(&former));
-        assert!(state_of(&former, "", Path::new("rules.md")).outdated);
-    }
 }

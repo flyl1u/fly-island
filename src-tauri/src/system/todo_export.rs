@@ -42,8 +42,8 @@ pub fn save_todo_markdown(
 pub fn get_default_todo_save_directory() -> Result<String, String> {
     let home_dir = windows_home_dir()?;
     let documents = home_dir.join("Documents");
-    // Exports from before the rename went to Documents\FocuSD: keep using it when it is there.
-    let former = documents.join("FocuSD");
+    // Exports from before the rename went to Documents\Fly Island: keep using it when it is there.
+    let former = documents.join("Fly Island");
     let folder = if former.is_dir() { former } else { documents.join("Fly Island") };
     Ok(folder.to_string_lossy().to_string())
 }

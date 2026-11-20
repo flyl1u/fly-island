@@ -89,7 +89,7 @@ impl Host {
 
     pub fn source(&self) -> (String, bool) {
         let r = self.registry.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Ok(url) = std::env::var("FOCUSD_PLUGINS_INDEX") { return (url, true); }
+        if let Ok(url) = std::env::var("FLY_ISLAND_PLUGINS_INDEX") { return (url, true); }
         if r.developer_mode && !r.index_url.is_empty() { (r.index_url.clone(), true) } else { (DEFAULT_INDEX.into(), false) }
     }
 
