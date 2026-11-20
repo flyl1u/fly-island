@@ -23,8 +23,22 @@ fn number(value: &Value) -> Option<f64> {
     value.as_f64().or_else(|| value.as_str()?.trim().parse().ok())
 }
 
+fn integer(value: &Value) -> Option<i64> {
+    value.as_i64().or_else(|| value.as_str()?.trim().parse().ok())
+}
+
+fn percentage(value: &Value) -> Option<f64> {
+    let value = number(value)?;
+    if !value.is_finite() { return None; }
+    Some(if value > 0.0 && value < 1.0 { value * 100.0 } else { value.clamp(0.0, 100.0) })
+}
+
 fn success(value: &Value) -> bool {
-    matches!(value["code"].as_i64(), Some(0 | 200)) || (value["code"].is_null() && value["success"] == true)
+    matches!(integer(&value["code"]), Some(0 | 200)) || (value["code"].is_null() && value["success"] == true)
+}
+
+fn coding_plan_host(family: &str) -> &'static str {
+    if family == "zai" { "https://api.z.ai" } else { "https://open.bigmodel.cn" }
 }
 
 fn empty(plan: &str, now: i64) -> AgentUsage {
@@ -37,10 +51,16 @@ fn coding(value: &Value, now: i64) -> Option<AgentUsage> {
     let mut usage = empty("Coding Plan", now);
     let mut tools = Vec::new();
     for row in value["data"]["limits"].as_array().into_iter().flatten() {
-        let Some(used) = number(&row["percentage"]).filter(|v| (0.0..=100.0).contains(v)) else { continue };
-        let unit = match row["unit"].as_i64() { Some(1) => Some(86_400), Some(3) => Some(3_600), Some(5) => Some(60), Some(6) => Some(604_800), _ => None };
-        let seconds = row["number"].as_i64().filter(|n| *n > 0).zip(unit).and_then(|(n, m)| n.checked_mul(m));
-        let window = UsageWindow { name: String::new(), used, resets_at: reset_at(&row["nextResetTime"]).filter(|at| *at > 0) };
+        let Some(used) = percentage(&row["percentage"]) else { continue };
+        let reset = reset_at(&row["nextResetTime"]).filter(|at| *at > 0);
+        let unit = integer(&row["unit"]);
+        let seconds = match (row["type"].as_str(), unit) {
+            (Some("TOKENS_LIMIT" | "CREDIT_LIMIT"), Some(3)) => Some(18_000),
+            (Some("TOKENS_LIMIT" | "CREDIT_LIMIT"), Some(6)) => Some(604_800),
+            (Some("TOKENS_LIMIT" | "CREDIT_LIMIT"), None) => Some(if reset.is_some_and(|at| at.saturating_sub(now) > 12 * 60 * 60 * 1000) { 604_800 } else { 18_000 }),
+            (_, unit) => integer(&row["number"]).filter(|n| *n > 0).zip(match unit { Some(1) => Some(86_400), Some(3) => Some(3_600), Some(5) => Some(60), Some(6) => Some(604_800), _ => None }).and_then(|(n, m)| n.checked_mul(m)),
+        };
+        let window = UsageWindow { name: String::new(), used, resets_at: reset };
         match row["type"].as_str() {
             Some("TOKENS_LIMIT" | "CREDIT_LIMIT") => place(&mut usage, seconds, window),
             Some("TIME_LIMIT") => tools.push((seconds, window)),
@@ -100,7 +120,7 @@ async fn fetch(path: &Path) -> Result<Option<AgentUsage>, String> {
         .map(|id| format!("account-provider:coding-plan:account:{}-individual-coding-plan:account:{id}:api-key", account.family))
         .filter(|key| root.get(key).is_some());
     if let Some(key) = key {
-        let host = if account.family == "zai" { "https://api.z.ai" } else { "https://bigmodel.cn" };
+        let host = coding_plan_host(account.family);
         let url = Url::parse(&format!("{host}/api/monitor/usage/quota/limit")).map_err(|error| error.to_string())?;
         let answer = get(&client, url, &value(&root, &key, path)?, None).await?;
         if success(&answer) { return Ok(coding(&answer, current_unix_millis())); }
@@ -139,15 +159,33 @@ mod tests {
 
     #[test]
     fn coding_plan_windows() {
-        let answer = json!({"code": 200, "data": {"limits": [
-            {"type": "TOKENS_LIMIT", "percentage": 12, "unit": 3, "number": 5, "nextResetTime": 1_900_000_000_000_i64},
-            {"type": "TOKENS_LIMIT", "percentage": 40, "unit": 6, "number": 1},
+        let answer = json!({"code": "200", "data": {"limits": [
+            {"type": "TOKENS_LIMIT", "percentage": "0.12", "unit": "3", "number": "5", "nextResetTime": 1_900_000_000_000_i64},
+            {"type": "CREDIT_LIMIT", "percentage": 40, "unit": 6, "number": 1},
             {"type": "TIME_LIMIT", "percentage": 3, "unit": 5, "number": 1}]}});
         let usage = coding(&answer, 1).unwrap();
+        assert!(success(&answer));
         assert_eq!(usage.five_hour.as_ref().map(|w| w.used), Some(12.0));
         assert_eq!(usage.five_hour.unwrap().resets_at, Some(1_900_000_000_000));
         assert_eq!(usage.seven_day.map(|w| w.used), Some(40.0));
         assert!(usage.models.is_empty());
+    }
+
+    #[test]
+    fn coding_plan_host_matches_selected_platform() {
+        assert_eq!(coding_plan_host("bigmodel"), "https://open.bigmodel.cn");
+        assert_eq!(coding_plan_host("zai"), "https://api.z.ai");
+    }
+
+    #[test]
+    fn token_limit_without_unit_uses_reset_span() {
+        let now = 1_800_000_000_000_i64;
+        let answer = json!({"data": {"limits": [
+            {"type": "TOKENS_LIMIT", "percentage": "0.35", "unit": 3, "nextResetTime": now + 1_200_000},
+            {"type": "TOKENS_LIMIT", "percentage": 35, "nextResetTime": now + 86_400_000}]}});
+        let usage = coding(&answer, now).unwrap();
+        assert_eq!(usage.five_hour.as_ref().map(|window| window.used), Some(35.0));
+        assert_eq!(usage.seven_day.as_ref().map(|window| window.used), Some(35.0));
     }
 
     #[test]
