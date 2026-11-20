@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MyFinder device pack loader 1",
+  "$comment": "UTF-8 JSON, maximum 262144 bytes; reject duplicate object keys and non-JSON numeric constants before schema validation. Integers must be JSON integer tokens (not booleans or 1.0). Strings marked x-printable use Unicode Python str.isprintable semantics (exclude all Unicode Other/Separator categories except ASCII space). entries + disabled <= 2000. Structural errors, disallowed profile match fields and unsupported profileRev reject the whole pack. Semantic conflicts reject every affected row: duplicate VID/PID even across providers or disjoint interfaces, builtin/reserved VID/PID, unknown profile/provider, profile vendor/kind mismatch. native_atk rows (including disabled) are always rejected. Profile catalog and allowed match fields come from providers.profiles; only Razer additions in stage 2a. disabled supports the existing engine HID brand providers, never native/Bluetooth readers. Disabled targets override accepted entries and builtins. level defaults to C; source defaults to empty. Only the selected profile's battery reads are allowed; metadata cannot select another protocol. Signatures, key trust and rollback policy belong to the C# host.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "loader", "packVersion", "keyId", "createdAt", "entries", "disabled"],
+  "properties": {
+    "format": {"type": "string", "const": "myfinder-device-pack"},
+    "loader": {"type": "integer", "const": 1},
+    "packVersion": {"type": "integer", "minimum": 1, "maximum": 9999999999},
+    "keyId": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9_-]+$"},
+    "createdAt": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "entries": {"type": "array", "maxItems": 2000, "items": {"$ref": "#/$defs/entry"}},
+    "disabled": {"type": "array", "maxItems": 2000, "items": {"$ref": "#/$defs/disabled"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[0-9A-Fa-f]{4}$"},
+    "identifier": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z][a-z0-9_-]*$"},
+    "match": {
+      "type": "object", "additionalProperties": false,
+      "required": ["vendorId", "productId"],
+      "properties": {
+        "vendorId": {"$ref": "#/$defs/id"},
+        "productId": {"$ref": "#/$defs/id"},
+        "interfaceNumber": {"type": "integer", "minimum": 0, "maximum": 255},
+        "usagePage": {"$ref": "#/$defs/id"},
+        "usage": {"$ref": "#/$defs/id"}
+      }
+    },
+    "entry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "profile", "profileRev", "match", "name", "kind"],
+      "properties": {
+        "provider": {"$ref": "#/$defs/identifier"},
+        "profile": {"$ref": "#/$defs/identifier"},
+        "profileRev": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "match": {"$ref": "#/$defs/match"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 48, "x-printable": true},
+        "kind": {"type": "string", "enum": ["mouse", "headset", "keyboard", "gamepad", "device"]},
+        "level": {"type": "string", "enum": ["A", "B", "C", "D", "E"]},
+        "source": {"type": "string", "maxLength": 128, "x-printable": true}
+      }
+    },
+    "disabled": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "vendorId", "productId", "reason"],
+      "properties": {
+        "provider": {"$ref": "#/$defs/identifier"},
+        "vendorId": {"$ref": "#/$defs/id"},
+        "productId": {"$ref": "#/$defs/id"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 256, "x-printable": true}
+      }
+    }
+  }
+}

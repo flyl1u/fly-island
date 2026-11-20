@@ -4,6 +4,7 @@ mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
 mod config_transfer;
+mod device_battery;
 mod file_shelf;
 mod island;
 mod lyrics;
@@ -140,6 +141,7 @@ pub fn run() {
             plugin_host;
             lyrics;
             clipboard_history;
+            device_battery;
             translation;
             settings_window
             ; tray

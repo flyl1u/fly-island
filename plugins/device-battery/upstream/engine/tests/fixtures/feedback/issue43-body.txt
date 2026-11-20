@@ -1,0 +1,32 @@
+来自程序内反馈 · 版本 1.3.5
+
+**类型**：设备不识别
+
+**描述**
+```
+迈从K99 V3键盘
+```
+
+<details><summary>诊断信息</summary>
+
+```
+MyFinder Device Battery 1.3.5
+Windows 10.0.26300.9818
+
+有卡片的设备
+MCHOSE K7 Ultra | mouse | mchose | 93% | 当前读数：是 | 5253:1020
+
+已隐藏的重复连接
+无记录
+
+未取得电量的设备
+04F3:30BC "HIDI2C Device" 0001:0002
+04F3:30BC "HIDI2C Device" FF00:0001
+2D99:A106 "花再 Halo PixelBar" 000C:0001 FF13:0001 FF14:0001
+3837:3033 "MCHOSE K99 V3 2.4G" 0001:0000 0001:0002 0001:0006 0001:0006 0001:000C 0001:0080 000C:0001 FF31:0074
+
+读取器健康
+bluetooth | backoff | timeout
+```
+
+</details>
