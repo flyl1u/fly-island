@@ -22,11 +22,14 @@ import { dirname, join, resolve } from "node:path";
 import { BETA_CHANNEL_TAG, isPrerelease, shouldUpdateBetaManifest } from "./channel.mjs";
 import { msiNames, msiVersion } from "./msi-version.mjs";
 import { loadSigningEnvironment } from "./release-signing.mjs";
+import { cargoTargetDir } from "./cargo-target.mjs";
 
 const CONFIG = "src-tauri/tauri.conf.json";
 const OVERLAY = "src-tauri/tauri.release.conf.json";
 const CARGO = "src-tauri/Cargo.toml";
-const RELEASE_DIR = resolve(process.env.CARGO_TARGET_DIR || "src-tauri/target", "release").replaceAll("\\", "/");
+// Pinned for every child (tauri build, make-latest-json, build-plugins.ps1) so they agree on it.
+process.env.CARGO_TARGET_DIR = cargoTargetDir();
+const RELEASE_DIR = resolve(process.env.CARGO_TARGET_DIR, "release").replaceAll("\\", "/");
 const BUNDLE_DIR = `${RELEASE_DIR}/bundle/nsis`;
 const MSI_DIR = `${RELEASE_DIR}/bundle/msi`;
 const MSI_OVERLAY = `${RELEASE_DIR}/msi-version.conf.json`;
