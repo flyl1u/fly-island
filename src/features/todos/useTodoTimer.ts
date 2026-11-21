@@ -11,9 +11,8 @@ export function useTodoTimer(todos: TodoItem[], activeIds: string[], onExpired?:
   const [storedTimers, setTimers] = useState(loadTodoTimers);
   const [durations, setDurations] = useState(loadTodoDurations);
   const announced = useRef(new Set<string>());
-  const timers = useMemo(() => enabled ? storedTimers.filter((timer) => activeIds.includes(timer.todoId)
-    && todos.some((todo) => todo.id === timer.todoId && !todo.completed && todo.kind !== "update"))
-    .map((round) => remindersEnabled ? round : withoutTodoReminder(round)) : [], [activeIds, enabled, remindersEnabled, storedTimers, todos]);
+  const timers = useMemo(() => enabled ? storedTimers.filter((timer) => activeIds.includes(timer.todoId))
+    .map((round) => remindersEnabled ? round : withoutTodoReminder(round)) : [], [activeIds, enabled, remindersEnabled, storedTimers]);
   const timer = timers.find((round) => round.todoId === activeIds[0]) ?? null;
 
   const chooseDuration = useCallback((id: string, minutes: number) => {
@@ -23,18 +22,18 @@ export function useTodoTimer(todos: TodoItem[], activeIds: string[], onExpired?:
     saveTodoDurations(next);
   }, [durations, todos]);
 
-  const startTimer = useCallback((id: string, duration: TodoDuration, multiple = false, remindMinutes = 0) => {
+  const startTimer = useCallback((id: string, duration: TodoDuration, remindMinutes = 0) => {
     if (!enabled) return true;
     if (duration !== null && !isTodoDuration(duration)) return false;
     const next = duration === null ? null : createTodoTimer(id, duration, Date.now(), remindersEnabled ? remindMinutes : 0);
     if (duration !== null && !next) return false;
-    setTimers((current) => [...(multiple ? current.filter((round) => round.todoId !== id) : []), ...(next ? [next] : [])]);
+    setTimers((current) => [...current.filter((round) => round.todoId !== id), ...(next ? [next] : [])]);
     if (duration !== null) chooseDuration(id, duration);
     return true;
   }, [chooseDuration, enabled, remindersEnabled]);
 
-  const clearTimer = useCallback((id?: string) => {
-    setTimers((current) => id ? current.filter((round) => round.todoId !== id) : []);
+  const clearTimer = useCallback((id: string) => {
+    setTimers((current) => current.filter((round) => round.todoId !== id));
   }, []);
 
   useEffect(() => {

@@ -32,9 +32,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 `fly-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
 
-待办并行状态兼容扩展（2026-11-15）：开启轮换后，开始任务追加到 `fly-island-active-todos`（去重的字符串 ID 数组，顺序为开始顺序），倒计时独立保存到 `fly-island-todo-timers`（`{ todoId, endsAt, durationMinutes, notified }[]`，每项 ID 唯一）。首次读取若新键缺失、JSON 损坏或根类型错误，则从旧 `fly-island-active-todo` 字符串和 `fly-island-todo-timer` 单对象兼容读取；新键中的空数组表示已停止，不恢复旧值。非法数组项忽略，通知标记缺失按 false。原待办列表数据格式不变。
+待办并行状态保存到 `fly-island-active-todos`（去重的字符串 ID 数组，首项为主任务）和 `fly-island-todo-timers`（独立计时对象数组 `{ todoId, endsAt, durationMinutes, notified }[]`，每项 ID 唯一）。首次读取若新键缺失、JSON 损坏或根类型错误，则从旧 `fly-island-active-todo` 字符串和 `fly-island-todo-timer` 单对象兼容读取。新键中的空数组表示已停止。非法数组项忽略，通知标记缺失按 false。
 
-新旧键同步写入：第一个开始的活动 ID 作为主任务，旧 `fly-island-active-todo` 仍写字符串；旧 `fly-island-todo-timer` 仅保存主任务的计时对象，主任务无计时或没有活动任务时删除。关闭轮换保留主任务，停止其他任务并清除其倒计时；之后开始另一项按原单任务规则替换、清除旧计时并收起岛屿。轮换开启时开始/再来一轮保持展开，再次点击停止仅清除该任务。完成、删除或无效 ID 均会从活动状态及计时中移除；关闭番茄钟清空全部计时但保留活动任务。每轮首次到时前写入 `notified: true`；同一次检查中多项到时一起标记、提醒一次。跨天保留所有计时中或已到时待处理任务的 ID 与结束时间。
+旧 `fly-island-active-todo` 同步主任务 ID，旧 `fly-island-todo-timer` 同步主任务的计时对象。轮换开启时，新增活动任务按开始顺序追加，岛屿保持展开。轮换关闭时，保留主任务和其他有计时的任务。开始任务或再来一轮时，该任务成为主任务，岛屿收起。停止、完成或删除只清除对应任务的计时。关闭番茄钟清空全部计时，活动任务仍遵循轮换设置。每轮首次提示前写入 `notified: true`，同一次检查中多项到时一起标记、合响一次。跨天保留所有计时中或已到时待处理任务的 ID 与结束时间。
 
 | key | 当前定义位置 |
 |---|---|
@@ -49,7 +49,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `fly-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `fly-island-todos` | `features/todos/storage.ts` |
 | `fly-island-active-todo`（主任务 ID 字符串，兼容原单任务格式） | `features/todos/storage.ts` |
-| `fly-island-active-todos`（全部活动 ID 数组，按开始顺序；无新数据时兼容读取旧单 ID） | `features/todos/storage.ts` |
+| `fly-island-active-todos`（全部活动 ID 数组，首项为主任务。无新数据时兼容读取旧单 ID） | `features/todos/storage.ts` |
 | `fly-island-todo-timer`（主任务倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；保留原单对象格式） | `features/todos/storage.ts` |
 | `fly-island-todo-timers`（各任务独立倒计时对象数组；无新数据时兼容读取旧单对象） | `features/todos/storage.ts` |
 | `fly-island-todo-remind-minutes`（上次实际选择的提前提醒分钟数，0–60 的整数；缺失或非法按 5；0 表示不提醒） | `features/todos/storage.ts` |

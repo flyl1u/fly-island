@@ -95,7 +95,8 @@ export function useCollapsedTodo(
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;
     // A fixed width for the whole round; ticking digits never resize the native window.
-    const widestTimer = (timers ?? (timer ? [timer] : [])).reduce<string | null>((widest, round) => {
+    const visibleTimers = rotating && timers ? timers : collapsedTimer ? [collapsedTimer] : [];
+    const widestTimer = visibleTimers.reduce<string | null>((widest, round) => {
       const text = round.notified ? t.todo.timeUp : formatTodoCountdown(round.durationMinutes * 60);
       return !widest || text.length > widest.length ? text : widest;
     }, null);
@@ -116,7 +117,7 @@ export function useCollapsedTodo(
       window.devicePixelRatio,
     );
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, timers, rotating, rotationTodos]);
+    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
 
   const collapsedIslandWidth = clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum);
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
