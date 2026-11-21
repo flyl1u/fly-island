@@ -6,7 +6,7 @@ import type { IslandMode } from "./types";
 import { isIslandPickerOpen } from "../../lib/islandPicker";
 
 /**
- * Text selected in the message reader while the island has the focus (a message being copied).
+ * Text selected in a mail or message reader while the island has focus (being copied).
  * Once another app is clicked the island loses the focus and the selection stops counting.
  */
 export function hasIslandSelection() {
@@ -14,7 +14,7 @@ export function hasIslandSelection() {
   if (!selection || selection.isCollapsed || !document.hasFocus()) return false;
   const node = selection.anchorNode;
   const element = node instanceof Element ? node : node?.parentElement;
-  return Boolean(element?.closest(".message-notice") && selection.toString().trim());
+  return Boolean(element?.closest(".message-notice, .qq-mail-reader") && selection.toString().trim());
 }
 
 function logFocusError(error: unknown) {
@@ -80,6 +80,8 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = f
     const run = (delayMs: number) => {
       timer = window.setTimeout(() => {
         if (mode === "expanded" && isIslandPickerOpen()) return;
+        // A release deferred during a drag must see the selection made since it was queued.
+        if (action === "release" && hasIslandSelection()) return;
         const call = action === "take" ? takeIslandHoverFocus() : releaseIslandHoverFocus();
         void call.catch(logFocusError).then((settled) => {
           if (!settled && !cancelled) run(HOVER_FOCUS_RETRY_MS);
@@ -101,7 +103,7 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = f
     const handleFocusOut = () => {
       window.setTimeout(() => {
         const { mode: currentMode, isHovering: hovering, entered: wasEntered } = stateRef.current;
-        if (currentMode === "expanded" && wasEntered && !hovering && !isEditingText() && !isIslandPickerOpen()) {
+        if (currentMode === "expanded" && wasEntered && !hovering && !isEditingText() && !isIslandPickerOpen() && !hasIslandSelection()) {
           void releaseIslandHoverFocus().catch(logFocusError);
         }
       }, 0);

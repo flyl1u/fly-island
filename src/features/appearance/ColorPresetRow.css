@@ -1,7 +1,16 @@
 .appearance-presets {
+  position: relative;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 5px;
+  min-width: 0;
+}
+
+.settings-row__control:has(> .appearance-presets) {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .appearance-preset {
@@ -69,6 +78,35 @@
 
 .appearance-preset__delete:hover {
   color: var(--color-text);
+}
+
+.appearance-preset--confirming .appearance-preset__apply {
+  cursor: default;
+}
+
+.appearance-preset--confirming .appearance-preset__delete,
+.appearance-preset--confirming .appearance-preset__delete:hover {
+  opacity: 1;
+  pointer-events: auto;
+  color: var(--color-white);
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.appearance-presets__confirmation {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 7px);
+  z-index: 2;
+  width: max-content;
+  max-width: min(160px, 100%);
+  padding: 4px 7px;
+  border-radius: var(--corner-sm);
+  background: var(--color-surface-dark);
+  color: var(--color-danger);
+  font-size: 11px;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .appearance-preset__apply:focus-visible,

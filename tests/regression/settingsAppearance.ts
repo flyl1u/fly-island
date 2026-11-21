@@ -1,4 +1,5 @@
 import { act } from "react";
+import { checkCollapsedLayout } from "./settingsCollapsedLayout";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 
 const element = <T extends HTMLElement>(selector: string) => {
@@ -98,7 +99,7 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
 }
 
 async function checkColorPresets(check: (condition: unknown, message: string) => void) {
-  const saved = () => JSON.parse(localStorage.getItem("focusd-island-color-presets") ?? "[]") as { id: string; islandBackgroundColor: string }[];
+  const saved = () => JSON.parse(localStorage.getItem("focusd-island-color-presets") ?? "[]") as { id: string; islandBackgroundColor: string; pageTextColor?: string }[];
   const chips = () => [...document.querySelectorAll<HTMLButtonElement>(".appearance-preset__apply")];
   const plus = () => element<HTMLButtonElement>(".appearance-presets__add");
   const setBackground = async (value: string) => {
@@ -116,6 +117,27 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
     "Plus saves a color chip whose accessible label reads all three colors");
   await click(".appearance-presets__add");
   check(saved().length === 1, "Saving identical colors does not duplicate the preset");
+  const pageInk = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageTextColor;
+  const setPageInk = async (value: string) => {
+    const hex = document.querySelectorAll<HTMLButtonElement>(".settings-color .appearance-hex")[3];
+    await act(async () => hex.click());
+    const input = element<HTMLInputElement>("input.appearance-hex");
+    await type(input, value);
+    await act(async () => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  };
+  check(saved()[0].pageTextColor === "", "New presets explicitly save follow-background page text");
+  await setPageInk("aabbcc");
+  await click(".appearance-presets__add");
+  check(saved().length === 2 && saved()[1].pageTextColor === "#AABBCC", "Changing only open page text creates a distinct preset");
+  check(chips().every((chip) => new Set(chip.style.background.match(/rgb\([^)]*\)/g)).size === 4) && chips()[1].style.background.includes("rgb(170, 187, 204)"),
+    "Preset chips show all four colors, open page text included");
+  await act(async () => chips()[0].click());
+  check(pageInk() === "", "Applying a preset restores follow-background page text");
+  await act(async () => chips()[1].click());
+  check(pageInk() === "#AABBCC", "Applying a preset restores custom open page text");
+  // Leave one chip for the existing three-color backup checks below.
+  await act(async () => document.querySelectorAll<HTMLButtonElement>(".appearance-preset__delete")[1].click());
+  await act(async () => document.querySelectorAll<HTMLButtonElement>(".appearance-preset__delete")[1].click());
   const backupBeforeEdit = localStorage.getItem("focusd-island-color-backup");
   await setBackground("556677");
   check(localStorage.getItem("focusd-island-color-backup") === backupBeforeEdit, "A manual color edit preserves the existing backup");
@@ -131,12 +153,29 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
     await click(".appearance-presets__add");
   }
   check(saved().length === 8 && chips().length === 8 && plus().disabled, "Eight presets disable Plus");
-  const row = plus().closest(".settings-row")!;
+  const row = plus().closest<HTMLElement>(".settings-row")!;
   check(row.scrollWidth <= row.clientWidth, "Eight color chips and Plus stay inside the row");
+  row.style.width = "280px";
+  check(row.scrollWidth <= row.clientWidth, "Eight color chips wrap within a narrow settings row");
+  row.style.width = "";
   const firstId = saved()[0].id;
   const remove = element<HTMLButtonElement>(".appearance-preset__delete");
   await act(async () => { remove.focus(); });
   check(getComputedStyle(remove).opacity === "1" && !!remove.getAttribute("aria-label"), "Keyboard focus reveals the accessible delete icon");
+  await click(".appearance-preset__delete");
+  check(saved().length === 8 && remove.getAttribute("aria-label")?.includes("再点一次删除")
+    && document.querySelector(".appearance-presets__confirmation")?.textContent === "再点一次删除",
+    "First delete click arms a red confirmation with updated accessible text");
+  const beforeConfirmApply = localStorage.getItem("focusd-island-settings");
+  await act(async () => chips()[0].click());
+  check(localStorage.getItem("focusd-island-settings") === beforeConfirmApply && saved().length === 8,
+    "Clicking the chip while confirming neither applies nor deletes it");
+  await act(async () => { remove.closest(".appearance-preset")!.dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body })); });
+  check(!document.querySelector(".appearance-preset--confirming"), "Leaving the preset cancels delete confirmation");
+  await click(".appearance-preset__delete");
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 3100)); });
+  check(!document.querySelector(".appearance-preset--confirming") && saved().length === 8, "Three seconds without confirmation preserves the preset");
+  await click(".appearance-preset__delete");
   await click(".appearance-preset__delete");
   check(saved().length === 7 && !saved().some((preset) => preset.id === firstId) && !plus().disabled, "Deleting a preset saves the deletion and enables Plus");
   await openPage("general");
@@ -149,6 +188,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as Partial<typeof DEFAULT_SETTINGS>;
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
     await openPage("appearance");
+    await checkCollapsedLayout(check);
     await checkColorInputs(check);
     const colorsBeforeReset = storedColors();
     // Expanded size: a slider from 0.85x to 1.2x, stored as the scale once the thumb is let go,

@@ -15,7 +15,9 @@ import { checkQuotaSettings } from "./settingsQuota";
 import { checkGeneralControls } from "./settingsGeneral";
 import { checkGroups } from "./settingsGroups";
 import { checkTodoRotation } from "./settingsTodoRotation";
+import { checkTodoFileSync } from "./settingsTodoFileSync";
 import { checkMessagePreview } from "./settingsMessagePreview";
+import { checkMusicShortcuts } from "./settingsMusicShortcuts";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const query = new URLSearchParams(location.search);
@@ -35,12 +37,18 @@ localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "
 if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
 else localStorage.removeItem("focusd-island-settings");
 if (automated) prepareColorRegression();
+if (query.has("clockWeather")) {
+  localStorage.setItem("focusd-island-native-plugins", JSON.stringify(["clockWeather"]));
+  localStorage.setItem("focusd-island-clock-weather", JSON.stringify({ showClock: true, showWeather: true, location: { name: "北京 · 中国", latitude: 39.9, longitude: 116.4 } }));
+} else localStorage.removeItem("focusd-island-native-plugins");
 localStorage.setItem("focusd-island-save-directory", "");
+localStorage.removeItem("focusd-island-todo-file-sync");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Other pages in the same run leave their own agent settings behind; start from the defaults.
 localStorage.removeItem("focusd-island-agent-approval");
 localStorage.removeItem("focusd-island-agent-sounds");
 localStorage.removeItem("focusd-island-detached-settings");
+localStorage.removeItem("focusd-island-music-shortcuts");
 // The player order as the old Music page saved it.
 localStorage.setItem("focusd-island-music-sources", JSON.stringify([{ id: "Spotify.exe", label: "Spotify" }, { id: "QQMusic", label: "QQ音乐" }]));
 
@@ -106,11 +114,14 @@ if (!automated) {
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
-      if (category === "todos") await checkTodoRotation(panel, check);
+      if (category === "todos") {
+        await checkTodoRotation(panel, check);
+        await checkTodoFileSync(panel, check);
+      }
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
       // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
       // 2026-11-19: the tucked look (+1) moves from general (16 -> 15) to appearance (22 -> 23).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 23 : category === "clipboard" ? 9 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 17 : category === "appearance" ? 24 : category === "clipboard" || category === "todos" ? 9 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
@@ -277,6 +288,7 @@ if (!automated) {
       && savedPlayers[1].label === "网易云音乐", "Moving a player saves the order in the same key and format");
 
     // Shortcuts: the recorder reads the physical key (Shift+1 gives "!" and Chinese input
+    await checkMusicShortcuts(check, openPage);
     // gives "Process"), and another part of the page saving later keeps the new keys.
     // In the app, clicking into a window that was not active makes WebView2 put the focus
     // back where it was before (wry's WM_SETFOCUS handler), so the keys arrive somewhere

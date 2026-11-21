@@ -3,6 +3,7 @@ mod app_log;
 mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
+mod config_transfer;
 mod file_shelf;
 mod island;
 mod lyrics;
@@ -19,6 +20,7 @@ mod system;
 mod translation;
 mod tray;
 mod office_im;
+mod weather;
 mod wechat_reminders;
 mod win32;
 
@@ -45,7 +47,7 @@ pub fn run() {
     }
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = island::show_island(app);
+            tray::on_relaunch(app);
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -69,6 +71,7 @@ pub fn run() {
             // changes. Liquid glass is rendered inside the island element.
         })
         .setup(|app| {
+            config_transfer::prepare(app.handle());
             // First, so whatever goes wrong while the rest starts is in the log.
             app_log::init(app.handle());
             tray::build_tray(app)?;
@@ -139,8 +142,11 @@ pub fn run() {
             clipboard_history;
             translation;
             settings_window
+            ; tray
             ; clipboard_window
             ; app_log
+            ; config_transfer
+            ; weather
         ))
         .build(context)
         .map(|app| {

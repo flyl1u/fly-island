@@ -9,6 +9,7 @@ pub(crate) mod clipboard;
 pub(crate) mod com;
 pub(crate) mod desktop_duplication;
 pub(crate) mod folder_dialog;
+pub(crate) mod file_dialog;
 pub(crate) mod hotkey;
 pub(crate) mod icon;
 pub(crate) mod input;

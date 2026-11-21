@@ -1,5 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import type { MusicShortcutAction, MusicShortcuts } from "./shortcuts";
+
+// Corresponds to ShortcutErrors and STATUS_EVENT in media_control/hotkeys.rs.
+export type MediaShortcutErrors = Partial<Record<MusicShortcutAction, string>>;
+export const MEDIA_SHORTCUT_STATUS_EVENT = "media-shortcut-status";
+export function setMediaShortcuts(enabled: boolean, shortcuts: MusicShortcuts, target?: string) {
+  return invoke<void>("set_media_shortcuts", { enabled, shortcuts, target });
+}
+export function getMediaShortcutErrors() {
+  return invoke<MediaShortcutErrors>("get_media_shortcut_errors");
+}
+export function listenMediaShortcutStatus(handler: (errors: MediaShortcutErrors) => void) {
+  return listen<MediaShortcutErrors>(MEDIA_SHORTCUT_STATUS_EVENT, (event) => handler(event.payload));
+}
 
 // 与 src-tauri/src/media_control/service.rs 中的 MediaState、MediaSessionInfo、AudioLevel 对应。
 export type MediaPlaybackStatus = "unavailable" | "playing" | "paused";

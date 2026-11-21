@@ -1,6 +1,6 @@
 [package]
 name = "fly-island"
-version = "3.2.8-beta"
+version = "3.2.8"
 description = "A compact floating island shell for Windows."
 authors = ["you"]
 edition = "2021"

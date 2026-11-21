@@ -5,6 +5,18 @@
 
 全局方向见 [DESIGN.md](../../DESIGN.md)。
 
+## 每日 Markdown 反向同步（2026-11-19，issue #88）
+
+- 设置 → 待办 → 保存路径增加「从文件同步回岛上 / Sync file edits back to the island」，默认关闭；说明开启后在外部编辑当天 Markdown，岛上的待办和笔记会随之更新。未保存文件夹路径时禁用，并说明先保存路径。复用设置开关行和现有换行布局。（用户要求）
+- 关闭时沿用原单向导出。开启后每 1.5 秒检查当前日期文件，连续两次稳定的版本才导入；跨天和保存路径变化后切换监听对象。轮询状态放在内存，不引起无变化的窗口重渲染。（用户要求；轮询和稳定样本为 Agent 推断）
+- 文件的开头列表决定任务标题、勾选和顺序；支持 `-` / `*` / `+`、大小写 X、缩进、空行和无复选框的普通列表。首个正文段落之后全部属于每日笔记。现有导出没有专门的笔记标记，因此纯列表笔记与待办有固有歧义；需要以正文或标题（如 `## 笔记`）开始笔记区。（Agent 推断；不改变原导出格式）
+- 标题先精确匹配，重复标题取最近位置；其余行数相同时按剩余位置推断改名，以保留 ID、创建时间、活动计时和隐藏字段。新增行创建新 ID；文件删除的旧行删除；系统更新待办、未来已安排列表不参与导入。（用户要求；无法消除的改名/同位替换歧义采用位置优先）
+- 标题输入框打开、笔记或新增输入框聚焦以及拖拽期间，暂缓导入和写盘，完成后与已提交内容合并。空文件、半截复选框、损坏编码或暂时移走的文件不清空岛屿，也不被自动保存覆盖。（用户要求；输入框与拖拽保护为 Agent 推断）
+- 并发编辑以最后共同内容作三方合并，保留彼此独立的改动。同一字段或删除/改名冲突按岛上最后编辑时间与文件修改时间决定；写入前在文件夹留下两份 `YYYY-MM-DD.conflict-<时间戳>-island.md` / `-file.md` 恢复副本。新版写入使用版本比较与 Windows 写入/替换排他保护，比较失败等待再读取。（用户要求；恢复文件名和整篇时间比较为 Agent 推断）
+- 不将有效 Markdown 的缩短直接判断为截断，否则无法支持删除行；两次稳定采样和语法保护只能识别临时空文件与结构损坏，无法区分有意删除和停留很久的合法前缀。（Agent 推断，保留原格式的限制）
+
+English: File sync is off by default and requires a saved folder. When enabled, edits to today's Markdown update the leading task list and daily note. Editing a title/note or dragging defers synchronization. Empty or malformed files never clear island data. Independent edits merge; a same-field conflict uses the newer document timestamp and keeps both versions in timestamped conflict files. A note made only of list items is ambiguous in the existing export format; start it with a heading or prose.
+
 ## 深色列表
 
 - 待办与岛屿共用深色背景，移除纸张底色、横线、折痕和投影；取消左侧“回到今天 / 保存 / 历史”三个按钮，继续自动保存。（2026-11-10，用户确认）

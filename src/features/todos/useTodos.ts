@@ -63,13 +63,18 @@ export function useTodos({
     }
     setDraftDate(null);
   }, [addListTodo, currentTodoDate, draftDate, draftTodo, scheduleTodo, setDraftTodo]);
-  const { saveDirectory, saveState, saveTodosToDisk, saveTodayTodos } =
+  const importMarkdown = useCallback((document: { todos: TodoItem[]; dailyNote: string }) => {
+    setTodos(document.todos);
+    setDailyNote(document.dailyNote);
+  }, [setTodos]);
+  const { saveDirectory, saveState, saveTodosToDisk, saveTodayTodos, fileSyncEnabled } =
     useTodoSaving({
       currentTodoDate,
       todos,
       dailyNote,
       upsertArchive,
       onMissingSaveDirectory,
+      onImport: importMarkdown,
     });
 
   const showToday = useCallback(() => {
@@ -118,6 +123,7 @@ export function useTodos({
     timerTodoIds,
     saveDirectory,
     saveTodosToDisk,
+    fileSyncEnabled,
     upsertArchive,
     onStartDay: startDay,
   });

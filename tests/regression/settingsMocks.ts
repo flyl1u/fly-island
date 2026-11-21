@@ -4,6 +4,7 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
 import type { WorkbuddyState } from "../../src/features/agent-status/api";
 import type { MailSnapshot } from "../../src/features/messages/mail/api";
+import type { MusicShortcuts } from "../../src/features/media/shortcuts";
 
 let revision = 0;
 export const commands: string[] = [];
@@ -23,12 +24,15 @@ export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-isl
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
 export const translationShortcutCalls: string[] = [];
+export const mediaShortcutCalls: { enabled: boolean; shortcuts: MusicShortcuts }[] = [];
 // Kept like the native store, so a page opened again reads back what was saved.
 let clipboardSettings = { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true };
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "search_weather_cities": return [{ name: "北京 · 中国", latitude: 39.9, longitude: 116.4 }];
+    case "get_current_weather": return { temperature: 23, code: 2, observedAt: Date.now(), fetchedAt: Date.now() };
     case "get_workbuddy_usage": {
       if (args.refreshNow) return setMockWorkbuddy({ status: "connected", usage: { remaining: 50, total: 500, updatedAt: Date.now() } }).then(() => workbuddy);
       return workbuddy;
@@ -49,6 +53,13 @@ mockIPC((command, payload) => {
     // Two players open, NetEase playing; Spotify is in the saved order but not open.
     case "get_media_state": return { sessions: [{ id: "QQMusic", label: "QQ音乐", playing: false }, { id: "cloudmusic.exe", label: "网易云音乐", playing: true }] };
     case "get_launch_at_startup": return false;
+    case "get_config_import_report": return null;
+    case "dismiss_config_import_report": return null;
+    case "export_config": return true;
+    case "read_config_import": return null;
+
+    case "get_media_shortcut_errors": return {};
+    case "set_media_shortcuts": mediaShortcutCalls.push({ enabled: Boolean(args.enabled), shortcuts: args.shortcuts as MusicShortcuts }); return null;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
     case "get_clipboard_history": return { settings: clipboardSettings, items: [] };

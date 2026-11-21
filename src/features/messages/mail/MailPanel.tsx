@@ -96,6 +96,10 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
   // The open mail as listed now, so the button goes once it is marked read here or elsewhere.
   const readerStillUnread = Boolean(selectedMail && mailboxes.find((mailbox) => mailbox.email === readerAccount)?.items.find((item) => item.id === selectedMail.id)?.unread);
   const html = useMemo(() => content?.contentType === "text/html" ? sanitizeMailHtml(content.content) : "", [content]);
+  // React rewrites innerHTML when this prop object changes, even if the string is unchanged.
+  // A global pointerup updates the island; keep the selected text nodes alive through it.
+  const bodyHtml = useMemo(() => ({ __html: html || DOMPurify.sanitize(`<p>${t.mail.emptyHtml}</p>`) }), [html, t.mail.emptyHtml]);
+  const selectedMailId = selectedMail?.id;
   const readerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -110,15 +114,15 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
     return () => node.removeEventListener("error", hideBrokenImage, true);
   }, [html]);
   useLayoutEffect(() => {
-    if (!selectedMail && listRef.current) {
+    if (!selectedMailId && listRef.current) {
       listRef.current.scrollTop = listScroll.current;
       if (returnFocus.current) {
         Array.from(listRef.current.querySelectorAll<HTMLButtonElement>("button[data-mail-id]")).find(button => button.dataset.mailId === returnFocus.current)?.focus({ preventScroll: true });
         returnFocus.current = null;
       }
     }
-    if (selectedMail && readerRef.current) { returnFocus.current = selectedMail.id; readerRef.current.scrollTop = 0; readerRef.current.focus(); }
-  }, [selectedMail]);
+    if (selectedMailId && readerRef.current) { returnFocus.current = selectedMailId; readerRef.current.scrollTop = 0; readerRef.current.focus(); }
+  }, [selectedMailId, readerAccount]);
 
 
   if (selectedMail) return (
@@ -143,7 +147,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
               event.preventDefault();
               if (window.getSelection()?.toString()) return;
               if (link.getAttribute("href")) void openLink(link.getAttribute("href")!);
-            }} dangerouslySetInnerHTML={{ __html: html || DOMPurify.sanitize(`<p>${t.mail.emptyHtml}</p>`) }} />
+            }} dangerouslySetInnerHTML={bodyHtml} />
           : <div className="qq-mail-body qq-mail-body--text">{content?.content || t.mail.emptyText}</div>}
       </div>
       {content && readerAccount ? <MailAttachments key={content.id} account={readerAccount} messageId={content.id} attachments={content.attachments ?? []} /> : null}

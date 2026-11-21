@@ -112,7 +112,7 @@ Three looks: Classic, Liquid Glass and Frosted Glass (the glass shows what's beh
 
 ## Barely there
 
-Leave it running all day: in Task Manager, fly-island uses only about 0.3% of memory.
+Don’t worry if it’s always on: in the task manager, fly-island only occupies about 0.3% of the memory (tested on a Windows laptop with about 15GB). When you open the music listening software and download plug-ins, the usage will increase slightly depending on the situation.
 
 <p align="center"><img src="docs/assets/screenshots/memory.webp" alt="fly-island using about 0.3% memory in Task Manager" width="620"></p>
 
