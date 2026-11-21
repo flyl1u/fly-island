@@ -1,7 +1,10 @@
 import type { CSSProperties } from "react";
 import { Check } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { NATIVE_PLUGINS, NativePluginIcon, setNativePluginInstalled, useNativePlugins, type NativePluginId } from "../../features/plugins";
+import {
+  NATIVE_PLUGINS, NativePluginIcon, setNativePluginEnabled, setNativePluginInstalled, useNativePluginStates, type NativePluginId,
+} from "../../features/plugins";
+import { SettingsSwitch } from "../../components/settings/SettingsSwitch";
 import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
@@ -12,10 +15,10 @@ import "./PluginMarket.css";
 
 type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void };
 
-/** The built-in plugins as square cards: icon with name and author beside it, a short pitch and one action. */
+/** The built-in plugins as square cards: icon with name and author beside it, a short pitch and installation controls. */
 export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
-  const installed = useNativePlugins();
+  const { installed, enabled } = useNativePluginStates();
   const clockWeather = useClockWeather();
   const [, setOfficeEnabled] = useOfficeImEnabled();
   // Installing is asking for it: its own switch (Messages / Agent settings) goes on with it. A switch
@@ -43,12 +46,14 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     <ul className="plugin-market__grid">
       {NATIVE_PLUGINS.map(({ id, accent, author }) => {
         const item = t.items[id];
-        const on = installed[id];
-        return <li key={id} className={`plugin-card${on ? " plugin-card--installed" : ""}`} style={{ "--plugin-accent": accent } as CSSProperties}>
+        const isInstalled = installed[id];
+        const isEnabled = enabled[id];
+        const stateClass = isInstalled ? ` plugin-card--installed${isEnabled ? "" : " plugin-card--disabled"}` : "";
+        return <li key={id} className={`plugin-card${stateClass}`} style={{ "--plugin-accent": accent } as CSSProperties}>
           <div className="plugin-card__top">
             <span className="plugin-card__icon">
               <NativePluginIcon id={id} size={44} className="plugin-card__tile" />
-              {on && <span className="plugin-card__check" aria-hidden="true"><Check size={10} strokeWidth={3} /></span>}
+              {isInstalled && <span className="plugin-card__check" aria-hidden="true"><Check size={10} strokeWidth={3} /></span>}
             </span>
             <div className="plugin-card__heading">
               <h3 className="plugin-card__name">{item.name}</h3>
@@ -60,14 +65,22 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
             </div>
           </div>
           <p className="plugin-card__description">{item.description}</p>
-          <button
-            type="button"
-            className={`plugin-card__action${on ? " plugin-card__action--remove" : ""}`}
-            aria-label={on ? t.uninstallNamed(item.name) : t.installNamed(item.name)}
-            onClick={() => on ? setNativePluginInstalled(id, false) : install(id)}
-          >
-            {on ? <><span className="plugin-card__state">{t.installed}</span><span className="plugin-card__remove">{t.uninstall}</span></> : t.install}
-          </button>
+          <div className="plugin-card__footer">
+            {isInstalled && <SettingsSwitch
+              size="small"
+              ariaLabel={t.enableNamed(item.name)}
+              checked={isEnabled}
+              onChange={(checked) => setNativePluginEnabled(id, checked)}
+            />}
+            <button
+              type="button"
+              className={`plugin-card__action${isInstalled ? " plugin-card__action--remove" : ""}`}
+              aria-label={isInstalled ? t.uninstallNamed(item.name) : t.installNamed(item.name)}
+              onClick={() => isInstalled ? setNativePluginInstalled(id, false) : install(id)}
+            >
+              {isInstalled ? <><span className="plugin-card__state">{t.installed}</span><span className="plugin-card__remove">{t.uninstall}</span></> : t.install}
+            </button>
+          </div>
         </li>;
       })}
     </ul>

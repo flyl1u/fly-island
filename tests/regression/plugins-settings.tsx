@@ -2,10 +2,12 @@ import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
+import { SettingsSidebar } from "../../src/windows/settings/SettingsSidebar";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import type { PluginIndexEntry } from "../../src/features/plugins/api";
 import { PLUGIN_MARKET_ENABLED, PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
-import { NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
+import { DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
+import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 import type { IslandSettings } from "../../src/features/appearance/types";
 import { OFFICE_IM_ENABLED_KEY } from "../../src/features/messages/office-im/storage";
@@ -28,10 +30,6 @@ const hostCalls: string[] = [];
 mockIPC((command, payload) => {
   hostCalls.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
-  if (command === "search_weather_cities") {
-    if (args.name === "offline") throw new Error("offline");
-    return args.name === "empty" ? [] : [{ name: "Beijing · China", latitude: 39.9, longitude: 116.4 }];
-  }
   if (command === "get_plugins") return resolveRegistry
     ? snapshot()
     : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
@@ -47,7 +45,10 @@ const messages: string[] = [];
 let latestSettings: IslandSettings = { ...DEFAULT_SETTINGS, agentShowCursor: false, agentShowZcode: false, agentQuotaSources: ["claudeCode"] };
 function Page() {
   const [settings, setSettings] = useState(latestSettings);
-  return <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }} />;
+  return <>
+    <SettingsSidebar category="plugins" onCategoryChange={() => {}} />
+    <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }} />
+  </>;
 }
 function check(condition: unknown, label: string) {
   if (!condition) throw new Error(label);
@@ -58,7 +59,8 @@ const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement
 const app = createRoot(document.getElementById("fixture")!);
 try {
   localStorage.removeItem(NATIVE_PLUGINS_KEY);
-  localStorage.removeItem("focusd-island-clock-weather");
+  localStorage.removeItem(DISABLED_NATIVE_PLUGINS_KEY);
+  localStorage.removeItem(CLOCK_WEATHER_KEY);
   localStorage.setItem(OFFICE_IM_ENABLED_KEY, JSON.stringify({ dingtalk: false, feishu: true, wecom: true }));
   await act(async () => app.render(<StrictMode><I18nProvider><Page /></I18nProvider></StrictMode>)); await wait();
   const cards = [...document.querySelectorAll<HTMLElement>(".plugin-card")];
@@ -79,19 +81,52 @@ try {
     check(latestSettings.agentShowZcode && latestSettings.agentQuotaSources.includes("zcode"), "安装 Z Code 同时打开它的开关并勾上额度环");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.zcode.name)}']`)!.click());
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.cursor.name)}']`)!.click());
-    const weatherInstall = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.clockWeather.name)}']`)!;
-    await act(async () => weatherInstall.click());
-    check(!document.querySelector(".clock-weather-settings__cities, input[aria-label='天气位置'], input[aria-label='Weather location']"), "插件页安装时间与天气后不再内嵌天气设置");
-    await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.clockWeather.name)}']`)!.click());
-    const fixtureBox = document.getElementById("fixture")!.getBoundingClientRect();
-    check(cards.every((card) => card.getBoundingClientRect().right <= fixtureBox.right + 1 && card.scrollWidth <= card.clientWidth), "窄布局下卡片不溢出");
+    const name = market.items.clockWeather.name;
+    const weatherInstall = () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(name)}']`)!;
+    const weatherRemove = () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(name)}']`)!;
+    const weatherSwitch = () => document.querySelector<HTMLInputElement>(`[role=switch][aria-label='${market.enableNamed(name)}']`);
+    const weatherSidebar = () => document.querySelector("[data-category='clockWeather']");
+    check(!weatherSwitch() && !weatherSidebar(), "未安装的卡片没有开关和独立栏目");
+    await act(async () => weatherInstall().click());
+    const toggle = weatherSwitch()!;
+    const card = toggle.closest<HTMLElement>(".plugin-card")!;
+    const visuals = [card.querySelector(".plugin-card__tile")!, card.querySelector(".plugin-card__check")!];
+    check(toggle.checked && weatherSidebar() && !document.querySelector(`input[aria-label='${t.clockWeather.city}']`),
+      "安装默认启用，天气设置只出现在独立栏目");
+    const weatherSettings = JSON.stringify({ showClock: true, showWeather: false, location: { name: "Shenzhen", latitude: 22.5, longitude: 114.1 } });
+    localStorage.setItem(CLOCK_WEATHER_KEY, weatherSettings);
+    await act(async () => toggle.click());
+    check(!toggle.checked && card.classList.contains("plugin-card--installed") && !weatherSidebar(), "关闭插件隐藏功能入口并保留安装状态");
+    check(visuals.every((visual) => getComputedStyle(visual).filter.includes("grayscale(1)") && Number(getComputedStyle(visual).opacity) < 1),
+      "关闭后磁贴和对勾变灰");
+    await act(async () => toggle.click());
+    check(toggle.checked && weatherSidebar() && localStorage.getItem(CLOCK_WEATHER_KEY) === weatherSettings
+      && !card.classList.contains("plugin-card--disabled"), "重新打开恢复功能与外观并保留设置");
+    await act(async () => {
+      localStorage.setItem(DISABLED_NATIVE_PLUGINS_KEY, JSON.stringify(["clockWeather"]));
+      window.dispatchEvent(new StorageEvent("storage", { key: DISABLED_NATIVE_PLUGINS_KEY }));
+    });
+    check(!toggle.checked && !weatherSidebar(), "从其他窗口关闭时，市场与功能入口同步");
+    await act(async () => weatherRemove().click());
+    check(!weatherSwitch(), "停用的插件仍可卸载");
+    await act(async () => weatherInstall().click());
+    check(weatherSwitch()?.checked && weatherSidebar(), "卸载再安装默认启用");
+
+    const fixture = document.getElementById("fixture")!;
+    fixture.style.width = "168px";
+    const fixtureBox = fixture.getBoundingClientRect();
+    const switchBox = weatherSwitch()!.getBoundingClientRect();
+    const buttonBox = weatherRemove().getBoundingClientRect();
+    check(cards.every((item) => item.getBoundingClientRect().right <= fixtureBox.right + 1 && item.scrollWidth <= item.clientWidth)
+      && switchBox.right < buttonBox.left && Math.abs(switchBox.top + switchBox.height / 2 - buttonBox.top - buttonBox.height / 2) <= 1
+      && buttonBox.right <= card.getBoundingClientRect().right, "最窄卡片的开关与卸载按钮同排且不溢出");
+    fixture.style.width = "";
+    await act(async () => weatherRemove().click());
   }
   if (!PLUGINS_ENABLED) {
     const guide = document.querySelector<HTMLElement>(".plugin-development")!;
     check(guide?.textContent?.includes(t.guide) && guide.textContent.includes(t.guideHint) && !guide.querySelector("h2, h3, .settings-group__title"), "市场下方只保留本地化的开发规范入口，没有开发计划标题");
-    // With the market open, its time-and-weather settings may have searched for a city; nothing else asks the host.
-    const pluginCalls = hostCalls.filter((command) => !PLUGIN_MARKET_ENABLED || command !== "search_weather_cities");
-    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select") && pluginCalls.length === 0,
+    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select") && hostCalls.length === 0,
       "关闭时没有安装、启用或开发者功能，也不请求宿主、事件或索引");
     const link = button(t.readGuide);
     await act(async () => { failOpen = true; link.click(); });
