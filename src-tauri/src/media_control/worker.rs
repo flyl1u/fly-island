@@ -143,6 +143,7 @@ fn work(id: u64, receiver: &Receiver<Job>, state: &WorkerState) {
         state.busy_since.store(0, Ordering::Release);
     }
     // COM objects go before the apartment does.
+    super::session::release_poll_manager();
     super::audio::release_cached();
     drop(apartment);
     if state.abandoned.load(Ordering::Acquire) {

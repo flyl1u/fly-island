@@ -4,14 +4,15 @@
 //! [`super::com::ComApartment`]).
 
 use windows::{
-    core::Result,
+    core::{Error, Result, PWSTR},
     Win32::{
+        Foundation::E_UNEXPECTED,
         Media::Audio::{
             eMultimedia, eRender, ERole,
             Endpoints::{IAudioEndpointVolume, IAudioMeterInformation},
             IMMDevice, IMMDeviceEnumerator, MMDeviceEnumerator,
         },
-        System::Com::{CoCreateInstance, CLSCTX_ALL},
+        System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL},
     },
 };
 
@@ -49,6 +50,14 @@ impl AudioDevices {
 pub(crate) struct AudioOutput(IMMDevice);
 
 impl AudioOutput {
+    /// The opaque device ID identifies an endpoint even between enumeration calls.
+    pub(crate) fn id(&self) -> Result<String> {
+        // SAFETY: GetId returns an owned, NUL-terminated string from the COM task allocator.
+        let id = EndpointId(unsafe { self.0.GetId()? });
+        // SAFETY: the buffer is live and NUL-terminated for the conversion.
+        unsafe { id.0.to_string() }.map_err(|_| Error::from(E_UNEXPECTED))
+    }
+
     pub(crate) fn volume(&self) -> Result<OutputVolume> {
         // SAFETY: `self.0` is a live device; no activation parameters are passed
         // and the typed Activate returns an owned interface.
@@ -58,6 +67,15 @@ impl AudioOutput {
     pub(crate) fn peak_meter(&self) -> Result<PeakMeter> {
         // SAFETY: as in `volume`.
         unsafe { self.0.Activate::<IAudioMeterInformation>(CLSCTX_ALL, None) }.map(PeakMeter)
+    }
+}
+
+struct EndpointId(PWSTR);
+
+impl Drop for EndpointId {
+    fn drop(&mut self) {
+        // SAFETY: GetId allocated this buffer with the COM task allocator; we free it once.
+        unsafe { CoTaskMemFree(Some(self.0.as_ptr().cast())) };
     }
 }
 
