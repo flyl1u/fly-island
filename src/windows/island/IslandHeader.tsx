@@ -1,6 +1,8 @@
 import { useCallback, type ReactNode } from "react";
 import { usePointerReorder } from "../../components/reorder/usePointerReorder";
+import { PageButtonContent } from "../../features/appearance/PageButtonContent";
 import { PAGE_ICONS } from "../../features/appearance/pageIcons";
+import { usePageButtonLabels } from "../../features/appearance/usePageButtonLabels";
 import type { PageButtonStyle, PageDot } from "../../features/appearance/types";
 import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -43,6 +45,54 @@ type IslandHeaderProps = {
   pageActions?: ReactNode;
 };
 
+function IslandHeaderAgent({ style, enabled, active, state, statusLabel, onOpen }: {
+  style: PageButtonStyle;
+  enabled: boolean;
+  active: boolean;
+  state: AgentVisualState;
+  statusLabel: string;
+  onOpen: () => void;
+}) {
+  const t = useTranslation();
+  const iconClass = `island__agent-status-icon island__agent-status-icon--${state}`;
+  const capsule = style === "capsule";
+  const labeled = style === "iconLabel";
+
+  if (!enabled) {
+    return capsule
+      ? <span className={`island__agent-capsule ${iconClass}`} role="img" aria-label={statusLabel} />
+      : <CircleDot className={iconClass} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-label={statusLabel} />;
+  }
+
+  return (
+    <button
+      className={[
+        "island__agent-button",
+        capsule && "island__agent-button--capsule",
+        labeled && "dot-button dot-button--icon dot-button--icon-label",
+        active && (labeled ? "dot-button--active" : "island__agent-button--active"),
+      ].filter(Boolean).join(" ")}
+      type="button"
+      data-tip={t.island.agentPage}
+      data-page-button={labeled ? "agents" : undefined}
+      data-page-button-current={labeled && active ? "" : undefined}
+      aria-label={`${statusLabel} · ${t.agent.sessions.open}`}
+      aria-pressed={active}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen();
+      }}
+    >
+      {capsule
+        ? <span className={`island__agent-capsule ${iconClass}`} aria-hidden="true" />
+        : <PageButtonContent
+            icon={<Bot className={iconClass} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+            label={labeled ? t.island.agentPage : undefined}
+          />}
+    </button>
+  );
+}
+
 /**
  * Header of the expanded island: agent status, page dots (translation among them), collapse
  * target and window actions.
@@ -75,7 +125,9 @@ export function IslandHeader({
   const community = useCommunityInvite();
   const communityPending = community.pending;
   const updatePending = useUpdatePending();
-  const showIcons = pageButtonStyle === "icon";
+  const showIcons = pageButtonStyle !== "capsule";
+  const labeled = pageButtonStyle === "iconLabel";
+  const dotStyle = labeled ? "dot-button--icon dot-button--icon-label" : showIcons ? "dot-button--icon" : "dot-button--capsule";
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending, officePending && t.messages.sourceLabels[officePending]);
   // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
   // Translation has one while it is on, also when it opens in its own window.
@@ -92,54 +144,47 @@ export function IslandHeader({
     [onPageOrderChange, pageOrder],
   );
   const { containerRef: dotsRef, itemProps: dotProps, draggingId: draggingDot, wasDragged: wasDotDragged } =
-    usePointerReorder(dots, reorderDots, "x");
-  const agentStatusIconClassName = [
-    "island__agent-status-icon",
-    `island__agent-status-icon--${agentVisualState}`,
-  ].join(" ");
+    usePointerReorder(dots, reorderDots, "x", labeled ? "midpoint" : "edge");
+  const labelRowProps = usePageButtonLabels(dotsRef, labeled, page);
+
+  const agent = (
+    <IslandHeaderAgent
+      style={pageButtonStyle}
+      enabled={features.agents}
+      active={page === "agents"}
+      state={agentVisualState}
+      statusLabel={agentStatusLabel}
+      onOpen={() => onPageChange("agents")}
+    />
+  );
+  const agentInRow = labeled && features.agents;
+  const title = (
+    <div className="island__title" data-page-button-fixed={labeled ? "" : undefined}>
+      {!agentInRow && agent}
+      {showTitle && <span>fly-island</span>}
+    </div>
+  );
+  const collapseTarget = (
+    <button
+      className="island__collapse-target"
+      type="button"
+      aria-label={t.island.collapseIsland}
+      data-window-drag="false"
+      onClick={onCollapse}
+    />
+  );
 
   return (
-    <header className="island__header">
-      <div className="island__title">
-        {features.agents ? (
-          // The status light doubles as the way into the Agent page.
-          <button
-            className={`island__agent-button${showIcons ? "" : " island__agent-button--capsule"}${page === "agents" ? " island__agent-button--active" : ""}`}
-            type="button"
-            data-tip={t.island.agentPage}
-            aria-label={`${agentStatusLabel} · ${t.agent.sessions.open}`}
-            aria-pressed={page === "agents"}
-            onClick={(event) => {
-              event.stopPropagation();
-              onPageChange("agents");
-            }}
-          >
-            {showIcons ? (
-              <Bot className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-            ) : (
-              // Capsule page buttons: the Agent entry is a capsule too, in its status colour.
-              <span className={`island__agent-capsule ${agentStatusIconClassName}`} aria-hidden="true" />
-            )}
-          </button>
-        ) : showIcons ? (
-          <CircleDot
-            className={agentStatusIconClassName}
-            size={16}
-            strokeWidth={1.5}
-            absoluteStrokeWidth
-            aria-label={agentStatusLabel}
-          />
-        ) : (
-          <span className={`island__agent-capsule ${agentStatusIconClassName}`} role="img" aria-label={agentStatusLabel} />
-        )}
-        {showTitle && <span>fly-island</span>}
-      </div>
-
+    <header className={labeled ? "island__header island__header--icon-label" : "island__header"}>
+      {!labeled && title}
       <div
-        className="editor-dots"
+        className={labeled ? "editor-dots editor-dots--icon-label" : "editor-dots"}
         aria-label={t.island.editor}
+        {...labelRowProps}
         ref={(node) => { dotsRef.current = node; }}
       >
+        {agentInRow && agent}
+        {labeled && (!agentInRow || showTitle) && title}
         {dots.map((dot) => {
           const Icon = PAGE_ICONS[dot];
           return (
@@ -148,7 +193,7 @@ export function IslandHeader({
               className={[
                 "dot-button",
                 `dot-button--${dot}`,
-                showIcons ? "dot-button--icon" : "dot-button--capsule",
+                dotStyle,
                 page === dot ? "dot-button--active" : "",
                 draggingDot === dot ? "dot-button--dragging" : "",
               ].filter(Boolean).join(" ")}
@@ -156,6 +201,8 @@ export function IslandHeader({
               aria-label={dot === "todo" && updatePending ? t.island.todoListWithUpdate : dotLabels[dot]}
               aria-current={page === dot ? "page" : undefined}
               data-tip={t.island.pageNames[dot]}
+              data-page-button={labeled ? dot : undefined}
+              data-page-button-current={labeled && page === dot ? "" : undefined}
               {...dotProps(dot)}
               onClick={(event) => {
                 event.stopPropagation();
@@ -165,7 +212,10 @@ export function IslandHeader({
                 else onPageChange(dot);
               }}
             >
-              {showIcons && <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+              {showIcons && <PageButtonContent
+                icon={<Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+                label={labeled ? t.island.pageNames[dot] : undefined}
+              />}
               {dot === "todo" && updatePending && <span className="island-update-dot" aria-hidden="true" />}
             </button>
           );
@@ -176,31 +226,30 @@ export function IslandHeader({
             className={[
               "dot-button",
               "dot-button--messages",
-              showIcons ? "dot-button--icon" : "dot-button--capsule",
+              dotStyle,
               page === "qq" ? "dot-button--active" : "",
             ].filter(Boolean).join(" ")}
             type="button"
             aria-label={t.messages.label(messageBadgeLabel)}
             aria-pressed={page === "qq"}
             data-tip={t.messages.title}
+            data-page-button={labeled ? "qq" : undefined}
+            data-page-button-current={labeled && page === "qq" ? "" : undefined}
             onClick={(event) => {
               event.stopPropagation();
               onOpenMessages(wechatPending ? "wechat" : officePending ?? "qq");
             }}
           >
-            {showIcons && <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+            {showIcons && <PageButtonContent
+              icon={<Bell size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+              label={labeled ? t.messages.title : undefined}
+            />}
             {(qqNotificationCount > 0 || wechatPending || officePending) && <span className="island-message-button__dot" aria-hidden="true" />}
           </button>
         )}
+        {labeled && collapseTarget}
       </div>
-
-      <button
-        className="island__collapse-target"
-        type="button"
-        aria-label={t.island.collapseIsland}
-        data-window-drag="false"
-        onClick={onCollapse}
-      />
+      {!labeled && collapseTarget}
 
       <div className="window-actions">
         {pageActions}

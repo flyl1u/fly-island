@@ -132,7 +132,7 @@ export function FontRows({ settings, onSettingsChange, onFontSizePreview }: Rows
   );
 }
 
-/** Capsules or icons for the page buttons of the open island. */
+/** The appearance of the open island's page buttons. */
 export function PageButtonsRow({ settings, onSettingsChange }: RowsProps) {
   const text = useTranslation().settings.appearance;
   return (
@@ -144,6 +144,7 @@ export function PageButtonsRow({ settings, onSettingsChange }: RowsProps) {
           options={[
             { value: "capsule", label: text.capsules },
             { value: "icon", label: text.icons },
+            { value: "iconLabel", label: text.iconsAndLabels },
           ]}
           ariaLabel={text.pageButtons}
           onChange={(pageButtonStyle) => onSettingsChange({ ...settings, pageButtonStyle })}

@@ -16,3 +16,9 @@ export function moveItem<T>(items: readonly T[], item: T, index: number): T[] {
   next.splice(Math.max(0, Math.min(index, next.length)), 0, item);
   return next;
 }
+
+/** Cross the target's midpoint from the side the dragged item is coming from. */
+export function crossedReorderMidpoint(position: number, start: number, end: number, targetBefore: boolean) {
+  const midpoint = (start + end) / 2;
+  return targetBefore ? position <= midpoint : position >= midpoint;
+}
