@@ -50,6 +50,7 @@ pub(crate) mod transfer;
 mod usage;
 mod wezterm;
 mod window_focus;
+mod workbuddy_auth;
 pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
 mod workbuddy_cookie_vault;

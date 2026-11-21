@@ -122,6 +122,7 @@ pub fn run() {
                 eprintln!("failed to initialize plugins: {error}");
             }
             agent_status::reply_marker::init();
+            agent_status::workbuddy_connection::init(app.handle());
             system::startup::upgrade_legacy_value();
             Ok(())
         })
