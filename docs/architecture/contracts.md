@@ -80,7 +80,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
 | `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
 | `focusd-island-native-plugins-disabled`（`string[]`：手动关闭的已安装内置插件 id；缺失或损坏时按空数组处理，未知和未安装 id 不生效；卸载或重装时清除对应标记） | `features/plugins/native/storage.ts` |
-| `focusd-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个开关、保留城市） | `features/weather/storage.ts` |
+| `focusd-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个显示开关，设置更新从最新记录合并，选中有效城市或主动定位才更新城市） | `features/weather/storage.ts` |
 | `focusd-island-weather-cache`（`{ latitude, longitude, temperature, code, observedAt, fetchedAt }`；temperature 为摄氏数值，code 为 WMO 整数，时间均为 Unix 毫秒；只显示坐标匹配且观测/获取均未超过三小时的数据） | `features/weather/storage.ts` |
 | `focusd-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-wechat-hide-minimized-taskbar`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
