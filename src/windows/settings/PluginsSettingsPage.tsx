@@ -21,7 +21,8 @@ import "./PluginsSettingsPage.css";
 export function PluginsSettingsPage({ settings, onSettingsChange }: { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void }) {
   return <div className="plugins-page">
     {PLUGIN_MARKET_ENABLED && <PluginMarket settings={settings} onSettingsChange={onSettingsChange} />}
-    {PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : <PluginDevelopmentPage />}
+    {(PLUGINS_ENABLED || PLUGIN_MARKET_ENABLED) && <EnabledPluginsSettingsPage />}
+    {!PLUGINS_ENABLED && <PluginDevelopmentPage />}
   </div>;
 }
 
@@ -32,23 +33,25 @@ function EnabledPluginsSettingsPage() {
   const [catalog, setCatalog] = useState<PluginIndexEntry[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(PLUGINS_ENABLED);
   const [catalogRevision, setCatalogRevision] = useState(0);
   const [catalogUnavailable, setCatalogUnavailable] = useState(false);
   const [directory, setDirectory] = useState("");
   const [index, setIndex] = useState<string | null>(null);
   const disabled = busy || catalogLoading;
-  const perform = async (action: () => Promise<unknown>) => {
-    setBusy(true); setError("");
+  const perform = async (action: () => Promise<unknown>, block = true) => {
+    if (block) setBusy(true);
+    setError("");
     try { await action(); await refreshPlugins(); }
     catch (e) {
       if (String(e) === PLUGIN_INDEX_UNAVAILABLE) { setCatalog([]); setCatalogUnavailable(true); }
       else setError(String(e));
     }
-    finally { setBusy(false); }
+    finally { if (block) setBusy(false); }
   };
   const refreshCatalog = () => setCatalogRevision((revision) => revision + 1);
   useEffect(() => {
+    if (!PLUGINS_ENABLED && catalogRevision === 0) return;
     let disposed = false;
     setCatalogLoading(true);
     void getPluginsIndex().then((entries) => {
@@ -60,34 +63,35 @@ function EnabledPluginsSettingsPage() {
     return () => { disposed = true; };
   }, [registry.developerMode, registry.indexUrl, catalogRevision]);
   const installed = Object.values(registry.installed);
+  if (!PLUGINS_ENABLED && installed.length === 0) return null;
   return <section className="settings-section settings-section--list plugins-settings">
-    <SettingsGroup title={t.installed} action={<SettingsLinkButton disabled={disabled} onClick={() => { void refreshCatalog(); }} >{t.retry}</SettingsLinkButton>}>
+    <SettingsGroup title={t.installed} action={<SettingsLinkButton disabled={disabled} onClick={() => { void refreshCatalog(); }} >{PLUGINS_ENABLED ? t.retry : t.checkUpdate}</SettingsLinkButton>}>
       {installed.length === 0 && <SettingsRow title={t.empty} control={<Puzzle size={18} aria-hidden="true" />} />}
       {installed.map((p) => <div key={p.manifest.id}>
         <SettingsRow title={p.manifest.name[locale]} description={`${p.manifest.version} · ${t.status[live[p.manifest.id]?.status ?? "stopped"] ?? ""}`} control={<span className="plugins-settings__actions">
           {catalog.some((e) => e.id === p.manifest.id && e.version !== p.manifest.version) && <SettingsLinkButton disabled={disabled} onClick={() => { void perform(() => installPlugin(p.manifest.id)); }}>{t.update}</SettingsLinkButton>}
-          <SettingsLinkButton disabled={disabled} onClick={() => { void perform(() => uninstallPlugin(p.manifest.id)); }}>{t.uninstall}</SettingsLinkButton>
+          {PLUGINS_ENABLED && <SettingsLinkButton disabled={disabled} onClick={() => { void perform(() => uninstallPlugin(p.manifest.id)); }}>{t.uninstall}</SettingsLinkButton>}
         </span>} />
-        <SettingsToggleRow title={t.enabled} checked={p.enabled} disabled={disabled} onChange={(enabled) => { void perform(() => setPluginEnabled(p.manifest.id, enabled)); }} />
+        {PLUGINS_ENABLED && <SettingsToggleRow title={t.enabled} checked={p.enabled} disabled={disabled} onChange={(enabled) => { void perform(() => setPluginEnabled(p.manifest.id, enabled)); }} />}
         <SettingsRow title={<span className="plugins-settings__permissions"><ShieldCheck size={14} aria-hidden="true" />{t.permissions}</span>}>
           <div className="plugins-settings__permissions">{p.manifest.permissions.map((permission) => <span key={permission} className="plugins-settings__permission">{t.permission[permission] ?? permission}</span>)}</div>
         </SettingsRow>
-        {p.manifest.settings.map((s) => <PluginSettingRow key={`${p.manifest.id}/${s.key}/${JSON.stringify(p.settings[s.key])}`} setting={s} value={p.settings[s.key] ?? s.default} disabled={disabled} onSave={(value) => { void perform(() => setPluginSetting(p.manifest.id, s.key, value)); }} />)}
-        {p.manifest.actions.map((action) => <SettingsRow key={action.id} title={action.label[locale]} control={<SettingsLinkButton disabled={disabled || !p.enabled} onClick={() => { void perform(() => runPluginAction(p.manifest.id, action.id)); }}>{action.label[locale]}</SettingsLinkButton>} />)}
+        {p.manifest.settings.map((s) => <PluginSettingRow key={`${p.manifest.id}/${s.key}/${s.type === "number" ? "number" : JSON.stringify(p.settings[s.key])}`} setting={s} value={p.settings[s.key] ?? s.default} disabled={disabled} onSave={(value) => { void perform(() => setPluginSetting(p.manifest.id, s.key, value), s.type !== "number"); }} />)}
+        {!p.manifest.contributes.includes("panel") && p.manifest.actions.map((action) => <SettingsRow key={action.id} title={action.label[locale]} control={<SettingsLinkButton disabled={disabled || !p.enabled} onClick={() => { void perform(() => runPluginAction(p.manifest.id, action.id)); }}>{action.label[locale]}</SettingsLinkButton>} />)}
       </div>)}
     </SettingsGroup>
-    {catalog.some((e) => !registry.installed[e.id]) && <SettingsGroup title={t.available}>
+    {PLUGINS_ENABLED && catalog.some((e) => !registry.installed[e.id]) && <SettingsGroup title={t.available}>
       {catalog.filter((e) => !registry.installed[e.id]).map((entry) => <SettingsRow key={entry.id} title={entry.name[locale]} description={entry.description[locale]} control={<SettingsLinkButton disabled={disabled} onClick={() => { void perform(() => installPlugin(entry.id)); }}>{t.install}</SettingsLinkButton>} />)}
     </SettingsGroup>}
     {catalogUnavailable && <SettingsGroup><SettingsRow title={t.unavailable} control={<SettingsLinkButton disabled={disabled} onClick={() => { void refreshCatalog(); }}>{t.retry}</SettingsLinkButton>} /></SettingsGroup>}
     {error && <p className="plugins-settings__error" role="alert">{error}</p>}
-    <details className="plugins-settings__developer"><summary>{t.developer}</summary><SettingsGroup>
+    {PLUGINS_ENABLED && <details className="plugins-settings__developer"><summary>{t.developer}</summary><SettingsGroup>
       <SettingsToggleRow title={t.developerMode} checked={registry.developerMode} disabled={busy} onChange={(enabled) => { void perform(() => configurePlugins(enabled, registry.indexUrl)); }} />
       {registry.developerMode && <>
         <SettingsRow title={t.index} control={<SettingsLinkButton disabled={busy} onClick={() => { void perform(async () => { await configurePlugins(true, index ?? registry.indexUrl); setIndex(null); }); }}>{t.save}</SettingsLinkButton>}><SettingsInput aria-label={t.index} value={index ?? registry.indexUrl} onChange={(e) => setIndex(e.target.value)} /></SettingsRow>
         <SettingsRow title={t.directory} control={<SettingsLinkButton disabled={busy || !directory} onClick={() => { void perform(() => loadDevelopmentPlugin(directory)); }}>{t.load}</SettingsLinkButton>}><SettingsInput aria-label={t.directory} value={directory} onChange={(e) => setDirectory(e.target.value)} /></SettingsRow>
       </>}
       <SettingsRow title={t.develop} control={<SettingsLinkButton ariaLabel={t.develop} onClick={() => { void openUrl("https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md").catch(console.error); }}><ArrowUpRight size={16} aria-hidden="true" /></SettingsLinkButton>} />
-    </SettingsGroup></details>
+    </SettingsGroup></details>}
   </section>;
 }

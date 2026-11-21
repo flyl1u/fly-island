@@ -43,6 +43,26 @@ export function getSettingsExpandedHeight(contentHeight: number | null) {
   return Math.min(MAX_SETTINGS_EXPANDED_ISLAND_HEIGHT, Math.max(MIN_SETTINGS_EXPANDED_ISLAND_HEIGHT, contentHeight + SETTINGS_CHROME_HEIGHT));
 }
 
+// A plugin's page (PluginPanel.css): the island's padding, header and gap (86) around the
+// panel's padding (34, plus 10 after the head); its headline and note (39), 58px per row 6px
+// apart, and the action row (28) with the 10px gap above it. An empty page keeps room for its
+// line. Keep in step with the stylesheet.
+const PLUGIN_ISLAND_CHROME = 86;
+const PLUGIN_PANEL_PADDING = 34;
+const PLUGIN_HEAD = 39;
+const PLUGIN_GAP = 10;
+const PLUGIN_ROW = 58;
+const PLUGIN_ROW_GAP = 6;
+const PLUGIN_ACTIONS = 28;
+const PLUGIN_EMPTY = 120;
+
+/** The island's height around a plugin page showing `rows` entries and its buttons. */
+export function getPluginExpandedHeight(rows: number, actions: number) {
+  const list = rows > 0 ? rows * PLUGIN_ROW + (rows - 1) * PLUGIN_ROW_GAP : PLUGIN_EMPTY;
+  const actionRow = actions > 0 ? PLUGIN_GAP + PLUGIN_ACTIONS : 0;
+  return PLUGIN_ISLAND_CHROME + PLUGIN_PANEL_PADDING + PLUGIN_HEAD + PLUGIN_GAP + list + actionRow;
+}
+
 type ExpandedHeightInput = {
   page: IslandPage;
   todoPageMode: TodoPageMode;
@@ -68,6 +88,8 @@ type ExpandedHeightInput = {
   settingsContentHeight?: number | null;
   /** Entries on the file shelf; its page fits their rows of tiles. */
   shelfItems?: number;
+  /** The open plugin page's entries and buttons; its page fits them. */
+  pluginPanel?: { rows: number; actions: number };
 };
 
 /**
@@ -94,6 +116,7 @@ export function getExpandedIslandHeight({
   agentAlertRowHeight,
   settingsContentHeight = null,
   shelfItems = 0,
+  pluginPanel,
 }: ExpandedHeightInput) {
   // The upcoming list and calendar each scroll inside their fixed height.
   const isTodoArchivePage =
@@ -136,5 +159,8 @@ export function getExpandedIslandHeight({
           : getAgentPageExpandedHeight(agentVisibleRows, agentUsageLines, agentSessionView, fontScale)
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)
-        : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);
+        : page === "plugin:device-battery" ? Math.min(420, maxPanelHeight)
+        : page.startsWith("plugin:")
+          ? Math.min(getPluginExpandedHeight(pluginPanel?.rows ?? 0, pluginPanel?.actions ?? 0), maxPanelHeight)
+          : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);
 }
