@@ -73,6 +73,10 @@ YTC（GitHub：[@YTC0408](https://github.com/YTC0408)）
 
 手动确认过：插件加载/启用/停用、重启后自动恢复、展开与收起时的 Agent 页、通知出现与消失、10/15 秒刷新间隔。
 
+## 演示页
+
+`docs/assets/minimax-demo.html`：单文件（图标已内联，约 79 KB），双击用浏览器打开即可。鼠标移到收起的小岛上会展开，显示额度环（91% / 100%）和 MiniMax Code 的会话列表；移开收回。录屏时可以先用它讲清交互，再进真机。
+
 ## 演示脚本（录屏按这个走）
 
 1. **改造前**：Agent 页只有 Claude Code / Codex / Kimi 这些，没有 MiniMax Code
