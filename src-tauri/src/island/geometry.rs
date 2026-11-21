@@ -3,14 +3,15 @@
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},
-        Mutex, PoisonError,
+        mpsc::{self, SyncSender},
+        Mutex, OnceLock, PoisonError,
     },
     thread,
     time::{Duration, Instant},
 };
 use tauri::{LogicalSize, Monitor, PhysicalPosition, Position, Size, WebviewWindow};
 
-use super::state::{IslandPosition, IslandWindowState, MonitorFollow, TuckStyle};
+use super::state::{read_window_state, IslandPosition, IslandWindowState, MonitorFollow, TuckStyle};
 use crate::win32::{self, taskbar_edge::TaskbarRect};
 
 pub(super) const STAGE_WINDOW_WIDTH: f64 = 820.0;
@@ -281,15 +282,85 @@ pub(super) fn contains((left, top, width, height): (i32, i32, i32, i32), (x, y):
     x >= left && x < left + width && y >= top && y < top + height
 }
 
+const TASKBAR_REFRESH: Duration = Duration::from_secs(3);
+static TASKBAR_REQUEST: OnceLock<SyncSender<()>> = OnceLock::new();
+static TOP_TASKBARS: Mutex<TaskbarSnapshot> = Mutex::new(TaskbarSnapshot {
+    rects: Vec::new(),
+    checked_at: None,
+    refreshing: false,
+});
+
+struct TaskbarSnapshot {
+    rects: Vec<TaskbarRect>,
+    checked_at: Option<Instant>,
+    refreshing: bool,
+}
+
+/// Explorer may take seconds to answer appbar messages during sign-in. Let the island render
+/// and accept input while this worker waits, then correct placement when the snapshot changes.
+pub(crate) fn start_taskbar_tracking(window: WebviewWindow) {
+    let (request, pending) = mpsc::sync_channel(1);
+    let started = thread::Builder::new()
+        .name("island-taskbar".into())
+        .spawn(move || {
+            while pending.recv().is_ok() {
+                let mut rects = win32::taskbar_edge::top_taskbar_candidates();
+                rects.sort_unstable();
+                let changed = {
+                    let mut current = TOP_TASKBARS.lock().unwrap_or_else(PoisonError::into_inner);
+                    current.checked_at = Some(Instant::now());
+                    current.refreshing = false;
+                    let changed = current.rects != rects;
+                    current.rects = rects;
+                    changed
+                };
+                if !changed {
+                    continue;
+                }
+                let stage = window.clone();
+                if window.run_on_main_thread(move || {
+                    let state = read_window_state();
+                    if !state.is_dragging {
+                        if let Err(error) = apply_stage_geometry(&stage, state, false) {
+                            eprintln!("Failed to place the island after the taskbar changed: {error}");
+                        }
+                    }
+                }).is_err() {
+                    break;
+                }
+            }
+        });
+    match started {
+        Ok(_) => { let _ = TASKBAR_REQUEST.set(request); }
+        Err(error) => eprintln!("Failed to start island taskbar tracking: {error}"),
+    }
+}
+
 /// Physical distance from the monitor top to where the island anchors: below a
 /// top-docked Windows taskbar, and flush with the top otherwise. Third-party app bars
 /// (MyDockFinder and other docks or menu bars) shrink the work area just the same, but
 /// the island stays at the top and sits above them instead.
 pub(super) fn monitor_top_inset(monitor: &Monitor) -> i32 {
     let (position, size) = (monitor.position(), monitor.size());
+    let work_top = monitor.work_area().position.y;
+    // A bottom or side taskbar cannot affect this position and needs no shell query.
+    if work_top <= position.y {
+        return 0;
+    }
     let bounds = (position.x, position.y, size.width as i32, size.height as i32);
-    let taskbars = win32::taskbar_edge::top_taskbar_candidates();
-    anchor_top_inset(position.y, top_taskbar_bottom(bounds, &taskbars))
+    let mut snapshot = TOP_TASKBARS.lock().unwrap_or_else(PoisonError::into_inner);
+    if !snapshot.refreshing && snapshot.checked_at.is_none_or(|time| time.elapsed() >= TASKBAR_REFRESH) {
+        snapshot.refreshing = TASKBAR_REQUEST.get().is_some_and(|request| request.try_send(()).is_ok());
+    }
+    reserved_top_inset(bounds, work_top, &snapshot.rects)
+}
+
+/// The current work area prevents a stale snapshot from reserving space after the taskbar
+/// leaves the top. A third-party app bar alone never moves the island.
+pub(super) fn reserved_top_inset(bounds: (i32, i32, i32, i32), work_top: i32, taskbars: &[TaskbarRect]) -> i32 {
+    let top = bounds.1;
+    let reserved = (work_top - top).max(0);
+    anchor_top_inset(top, top_taskbar_bottom(bounds, taskbars)).min(reserved)
 }
 
 /// Bottom edge of the taskbar docked to the top of the monitor `(left, top, width, height)`,

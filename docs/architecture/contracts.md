@@ -187,6 +187,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 岛屿设置 `fly-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。
 - 岛屿设置 `fly-island-settings` 2026-11-17（3.2.6）新增 `ctrlWheelPages`（布尔，默认 false）：只有明确存为 true 才开，展开时按住 Ctrl 滚动滚轮按顶栏顺序切页。旧数据缺失或类型无效时为关。没有新 key。
 - 开机自启（2026-11-17，3.2.6）：注册表值名仍是 `Fly Island`，命令行改为 `"<exe>" --autostart`，用来区分开机启动（岛屿显示时不抢焦点，QQ / 微信监听与网易云插件自动安装错峰延后）。旧版本写的无参数值照常生效，启动一分钟后在后台改写成新格式一次。命令 `get_launch_at_startup` / `set_launch_at_startup` 不变。
+- 自启更名迁移遇到两份 Run 记录时，保留 `Fly Island` 的启动命令和 Windows 启用状态，清理旧名称的重复记录。只有旧名称时，用当前可执行文件和 `--autostart` 注册新值，保留原启用状态。成功写入新值后清理旧记录。
 - 卸载清理（2026-11-17，3.2.6）：可执行文件新增命令行参数 `--remove-agent-hooks`，由卸载程序在勾选「Delete the application data」且不是更新卸载时调用（`src-tauri/nsis/installer-hooks.nsh` 的 `NSIS_HOOK_PREUNINSTALL`），只删 Codex 受管区块、Claude Code 里带 `fly-island-agent-` 签名的条目和回复标记规则文件，随后退出，不启动岛屿。
 - 新增 Tauri 命令 `set_island_game_quiet`（`quiet: boolean`，2026-11-17）：前端把游戏模式的 quiet 告诉原生侧，贴边的岛在游戏全屏时不再命中、不置顶、不抢焦点。
 - 岛屿设置 `fly-island-settings` 新增 `positionLocked`（布尔，默认 false）：只在明确保存为 true 时禁止拖动。旧数据缺失或类型无效时保持可拖动。`set_island_interaction` 增加可选参数 `positionLocked`，缺失时按 false；`start_island_drag` 在锁定时不启动拖动。复位和贴边隐藏不受影响。
