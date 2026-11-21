@@ -1,6 +1,8 @@
 import { Fragment, type ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
+import { BatteryAlertPopup } from "../../features/device-battery/BatteryAlertPopup";
+import type { BatteryAlert } from "../../features/device-battery/lowBattery";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
 import type { AgentSession } from "../../features/agent-status/session";
@@ -68,6 +70,7 @@ type IslandCollapsedBarProps = {
   shelfCount: number | null;
   /** Claude's or Codex's usage reaching the alert level, or resetting; it takes the place of the text while shown. */
   quotaAlert?: QuotaAlert | null;
+  batteryAlert?: BatteryAlert | null;
   /** A todo round reaching its reminder before the end; it takes the place of the text while shown. */
   agentVisualState: AgentVisualState;
   onOpenPage: (page: IslandPage) => void;
@@ -105,6 +108,7 @@ export function IslandCollapsedBar({
   showMusic,
   shelfCount,
   quotaAlert = null,
+  batteryAlert = null,
   agentVisualState,
   onOpenPage,
   onOpenMessages,
@@ -197,7 +201,7 @@ export function IslandCollapsedBar({
               if (preview) {
                 openPreview(preview);
               } else {
-                onOpenPage(page);
+                onOpenPage(batteryAlert ? "plugin:device-battery" : page);
               }
             }
           }}
@@ -207,7 +211,7 @@ export function IslandCollapsedBar({
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
             {quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
-            ) : <>
+            ) : batteryAlert ? <BatteryAlertPopup alert={batteryAlert} /> : <>
             {showCollapsedText && showTitle && (
               <span className="island__brand">fly-island</span>
             )}

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { nextWheelPage, wheelPageOrder } from "../../src/windows/island/wheelPages.ts";
 
-const features = { todo: true, music: true, clipboard: true, shelf: false, qq: true, wechat: false, qqMail: false, agents: true, translation: false };
+const features = { todo: true, music: true, clipboard: true, shelf: false, qq: true, wechat: false, qqMail: false, agents: true, translation: false, pluginPages: [] };
 const order = ["todo", "music", "clipboard", "shelf", "translation"];
 
 test("Ctrl + wheel follows the header: Agent, the enabled page dots, then messages", () => {
@@ -22,4 +22,13 @@ test("the wheel steps one page and wraps round the ends", () => {
   assert.equal(nextWheelPage(pages, "settings", 1), "agents");
   assert.equal(nextWheelPage(["todo"], "todo", 1), null);
   assert.equal(nextWheelPage([], "todo", 1), null);
+});
+
+test("Ctrl + wheel includes native plugin pages in header order", () => {
+  const pluginPages = [{ page: "plugin:device-battery" }, { page: "plugin:eye-care" }];
+  const pages = wheelPageOrder(order, { ...features, pluginPages }, false);
+  assert.deepEqual(pages, ["agents", "todo", "music", "clipboard", "plugin:device-battery", "plugin:eye-care", "qq"]);
+  assert.equal(nextWheelPage(pages, "clipboard", 1), "plugin:device-battery");
+  assert.equal(nextWheelPage(pages, "plugin:eye-care", 1), "qq");
+  assert.equal(nextWheelPage(pages, "qq", -1), "plugin:eye-care");
 });

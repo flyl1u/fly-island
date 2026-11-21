@@ -63,17 +63,40 @@ fn supervise(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path
     publish(Contributions::default(), if stop.load(Ordering::Acquire) { "stopped" } else { "failed" });
 }
 
-fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop: &AtomicBool, requests: &mpsc::Receiver<Request>, publish: &Publish) -> Result<(), String> {
+fn plugin_command(directory: &Path, relative: &str) -> Result<Command, String> {
     let base = directory.canonicalize().map_err(|e| e.to_string())?;
-    let executable = base.join(&manifest.runtime.command).canonicalize().map_err(|e| e.to_string())?;
+    let executable = base.join(relative).canonicalize().map_err(|e| e.to_string())?;
     if !executable.starts_with(&base) { return Err("Executable escapes plugin directory".into()); }
     let mut command = Command::new(executable);
-    command.current_dir(&base).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    command.current_dir(&base);
     #[cfg(windows)] {
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
-    let mut child = command.spawn().map_err(|e| e.to_string())?;
+    Ok(command)
+}
+
+pub(super) fn disconnect_minimax(directory: &Path) -> Result<(), String> {
+    let mut child = plugin_command(directory, "minimax.exe")?.arg("--disconnect-approvals")
+        .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())
+        .spawn().map_err(|error| error.to_string())?;
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => return Ok(()),
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(25)),
+            _ => break,
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    Err("Could not disconnect MiniMax Code approval hooks".into())
+}
+
+fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop: &AtomicBool, requests: &mpsc::Receiver<Request>, publish: &Publish) -> Result<(), String> {
+    let mut child = plugin_command(directory, &manifest.runtime.command)?
+        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped())
+        .spawn().map_err(|e| e.to_string())?;
     #[cfg(windows)]
     let _job = match crate::win32::process_job::ProcessJob::attach(&child) {
         Ok(job) => job,
