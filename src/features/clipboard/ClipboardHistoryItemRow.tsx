@@ -25,6 +25,8 @@ export function ClipboardHistoryItemRow({
   selected,
   onSelect,
   onPreview,
+  onHover,
+  onHoverLeave,
 }: {
   item: ClipboardHistoryItem;
   elementRef: (node: HTMLElement | null) => void;
@@ -44,6 +46,8 @@ export function ClipboardHistoryItemRow({
   selected: boolean;
   onSelect: (id: string) => void;
   onPreview: (item: ClipboardHistoryItem) => void;
+  onHover?: (id: string, anchor: HTMLElement) => void;
+  onHoverLeave?: () => void;
 }) {
   const t = useTranslation();
   const itemKind = clipboardItemKind(item);
@@ -57,7 +61,11 @@ export function ClipboardHistoryItemRow({
         onClick={(event) => { event.stopPropagation(); onSelect(item.id); }}>
         {selected && <Check size={14} strokeWidth={1.5} absoluteStrokeWidth />}
       </button>
-      <div className="clipboard-item__content">
+      <div className="clipboard-item__content"
+        onPointerEnter={onHover && ((event) => {
+          if (event.pointerType === "mouse" && event.buttons === 0) onHover(item.id, event.currentTarget);
+        })}
+        onPointerLeave={onHoverLeave}>
         {itemKind === "image" ? (
           <button className="clipboard-item__thumb" type="button" aria-label={t.clipboard.imagePreview}
             onClick={(event) => { event.stopPropagation(); onPreview(item); }}>

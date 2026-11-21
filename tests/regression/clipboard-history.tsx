@@ -40,9 +40,12 @@ mockIPC((command) => {
   if (command === "read_clipboard_history_thumbnail") { thumbnailReads++; return thumbnailDataUrl; }
   return null;
 });
-function Harness() {
-  const [items, setItems] = useState(clipboardItems);
-  return <ClipboardHistoryPanel snapshot={{ ...DEFAULT_CLIPBOARD_HISTORY, items }}
+function Harness({ initialItems = clipboardItems, hoverPreview = false }: {
+  initialItems?: ClipboardHistoryItem[];
+  hoverPreview?: boolean;
+}) {
+  const [items, setItems] = useState(initialItems);
+  return <ClipboardHistoryPanel snapshot={{ ...DEFAULT_CLIPBOARD_HISTORY, items }} hoverPreview={hoverPreview}
     onCopyItem={() => { copyCount++; return true; }} onToggleFavorite={() => {}}
     onUpdateNote={() => true} onDeleteItem={() => {}}
     onDeleteItems={(ids) => {
@@ -61,6 +64,10 @@ const searchFor = async (value: string) => {
   });
 };
 const escape = async () => { await act(async () => { document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); }); };
+const move = (selector: string, type: "pointerover" | "pointerout") => act(async () => {
+  document.querySelector(selector)!.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: "mouse" }));
+});
+const waitMs = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
 async function run() {
   const started = performance.now();
   await act(async () => root.render(<I18nProvider><Harness /></I18nProvider>));
@@ -123,6 +130,41 @@ async function run() {
   await click(".clipboard-clear-button--confirming");
   check(!!document.querySelector("[role=alert]") && !!document.querySelector(".clipboard-item--selected"), "Failed deletion preserves selection and shows an error");
   await escape();
+
+  const filePaths = [String.raw`C:\Demo\full-path-one.txt`, String.raw`D:\Demo\full-path-two.txt`];
+  const text = Array.from({ length: 40 }, (_, row) => `完整的剪贴板正文，第 ${row + 1} 行`).join("\n");
+  const [image] = clipboardItems;
+  const items: ClipboardHistoryItem[] = [
+    { id: "full-text", kind: "text", hash: "full", preview: "正文摘要", text, createdAt: 1, copiedAt: 3 },
+    { id: "paths", kind: "text", hash: "paths", preview: "第一个路径", files: filePaths, createdAt: 1, copiedAt: 2 },
+    image,
+  ];
+  await act(async () => root.render(<I18nProvider><Harness key="preview" initialItems={items} hoverPreview /></I18nProvider>));
+  const full = '[data-clipboard-id="full-text"] .clipboard-item__content';
+  const popover = () => document.querySelector<HTMLElement>(".clipboard-hover-preview");
+  await move(full, "pointerover");
+  await move(full, "pointerout");
+  await waitMs(400);
+  check(!popover(), "Passing over a row does not open a preview");
+  await move(full, "pointerover");
+  await waitMs(400);
+  check(popover()?.textContent === text && popover()!.scrollHeight > popover()!.clientHeight, "Hover shows all text with its line breaks and a scrollable viewport");
+  await move(full, "pointerout");
+  await move(".clipboard-hover-preview", "pointerover");
+  await waitMs(200);
+  check(Boolean(popover()), "Moving into the preview keeps it open for reading");
+  await escape();
+  check(!popover() && escapedToWindow === 0, "Escape dismisses the hover preview without collapsing the island");
+  await move('[data-clipboard-id="paths"] .clipboard-item__content', "pointerover");
+  await waitMs(400);
+  check(popover()?.textContent === filePaths.join("\n"), "All file paths are shown");
+  await move('[data-clipboard-id="item-0"] .clipboard-item__content', "pointerover");
+  await waitMs(400);
+  check(Boolean(popover()?.querySelector("img")) && popover()!.textContent!.includes("1920"), "Image hover shows the thumbnail and original dimensions while loading");
+  await act(async () => { resolveImage?.("data:image/png;base64,original"); });
+  check(popover()?.querySelector("img")?.getAttribute("src") === "data:image/png;base64,original", "Hover replaces the thumbnail with the original");
+  await click(".clipboard-item__main");
+  check(!popover() && copyCount === 2, "Click-to-copy still works while hover previews are enabled");
   document.getElementById("results")!.textContent = messages.join("\n");
   document.documentElement.dataset.testResult = messages.some((line) => line.startsWith("FAIL")) ? "failed" : "passed";
 }

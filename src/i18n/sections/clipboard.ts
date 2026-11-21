@@ -12,6 +12,7 @@ export type ClipboardText = {
   deleteSelected: (count: number) => string;
   deleteFailed: string;
   imagePreview: string;
+  contentPreview: string;
   closePreview: string;
   loadingImage: string;
   previewFailed: string;
@@ -68,6 +69,7 @@ export const zhCN: ClipboardText = {
   deleteSelected: (count) => `删除已选的 ${count} 条记录`,
   deleteFailed: "删除失败，请再试一次",
   imagePreview: "预览图片",
+  contentPreview: "完整剪贴板内容",
   closePreview: "关闭预览",
   loadingImage: "正在加载原图…",
   previewFailed: "原图未能加载，暂时显示缩略图",
@@ -123,6 +125,7 @@ export const en: ClipboardText = {
   deleteSelected: (count) => `Delete ${count} selected`,
   deleteFailed: "Couldn't delete. Try again.",
   imagePreview: "Preview image",
+  contentPreview: "Full clipboard content",
   closePreview: "Close preview",
   loadingImage: "Loading full image…",
   previewFailed: "Full image unavailable. Showing thumbnail.",

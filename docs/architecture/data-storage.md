@@ -50,6 +50,7 @@ English: backups cover app storage and explicitly selected user-data files, impo
 | 开机自启 | `HKCU\...\Run` 下的值 `Fly Island` | `system` |
 | 剪贴板历史（条目、收藏、备注与剪贴板设置）；图片原图和 128px 缩略图 | 应用数据目录（`clipboard-history.json`；图片在 `clipboard-images/`），可在设置里移到自选文件夹，位置记在应用数据目录的 `clipboard-location.json` | `clipboard_history/store.rs`、`clipboard_history/location.rs` |
 | 剪贴板独立窗口上次关闭时的位置 | 应用数据目录（`clipboard-window.json`） | `clipboard_window/bounds.rs` |
+| 剪贴板悬停预览 | WebView2 的 `localStorage`，在 `fly-island-settings.clipboardHoverPreview` 保存。默认关闭，岛内和独立窗口共用 | `features/appearance/storage.ts` |
 | 通知、微信消息摘要、邮件正文 | 仅保存在内存中 | 各服务模块 |
 | 微信摘要和最小化时隐藏任务栏图标的偏好 | WebView2 的 `localStorage`，见 [对外契约](contracts.md) | `features/messages/wechat/storage.ts` |
 | 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
