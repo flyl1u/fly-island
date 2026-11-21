@@ -4,6 +4,7 @@ import { act } from "react";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { createRoot } from "react-dom/client";
 import { I18nProvider } from "../../src/i18n";
+import { STORAGE_KEY } from "../../src/features/appearance/storage";
 import { ClipboardWindow } from "../../src/windows/clipboard/ClipboardWindow";
 import { DEFAULT_CLIPBOARD_HISTORY } from "../../src/features/clipboard/settings";
 import type { ClipboardHistoryItem } from "../../src/features/clipboard/api";
@@ -15,6 +16,7 @@ const automated = new URLSearchParams(location.search).has("test");
 localStorage.removeItem(PINNED_KEY);
 const items: ClipboardHistoryItem[] = Array.from({ length: 50 }, (_, i) => ({
   id: `item-${i}`, hash: `hash-${i}`, kind: "text", preview: i % 3 === 0 ? `https://example.com/very/long/link/${i}` : `复制的文字 ${i}`,
+  text: i === 0 ? Array.from({ length: 35 }, (_, index) => `第 ${index + 1} 行 · 核对视频发布清单和附件路径`).join("\n") : undefined,
   createdAt: 0, copiedAt: 0, favorite: i % 7 === 0,
 }));
 const alwaysOnTop: boolean[] = [];
@@ -51,6 +53,29 @@ if (automated) {
   const list = document.querySelector<HTMLElement>(".clipboard-list")!;
   const rootRect = document.getElementById("root")!.getBoundingClientRect();
   check(list.getBoundingClientRect().bottom <= rootRect.bottom + 0.5 && list.scrollHeight > list.clientHeight, "列表在窗口内滚动，不撑出窗口");
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const setHover = (enabled: boolean) => act(async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ clipboardHoverPreview: enabled }));
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+  });
+  const hoverFirst = async () => {
+    await act(async () => {
+      document.querySelector(".clipboard-item__content")!.dispatchEvent(new PointerEvent("pointerover", {
+        bubbles: true, pointerType: "mouse",
+      }));
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    });
+  };
+  await setHover(false);
+  await hoverFirst();
+  check(!document.querySelector(".clipboard-hover-preview"), "悬停预览开关关闭时没有浮层");
+  await setHover(true);
+  await hoverFirst();
+  check(document.querySelector(".clipboard-hover-preview")?.textContent === items[0].text, "跨窗口打开设置后，独立窗口可预览全文");
+  await setHover(false);
+  check(!document.querySelector(".clipboard-hover-preview"), "关闭设置立即收起当前预览");
+  if (saved === null) localStorage.removeItem(STORAGE_KEY);
+  else localStorage.setItem(STORAGE_KEY, saved);
   await act(async () => { pin().click(); await frames(2); });
   check(alwaysOnTop[alwaysOnTop.length - 1] === false && localStorage.getItem(PINNED_KEY) === "false" && pin().getAttribute("aria-pressed") === "false", "点图钉取消置顶并记住");
   await act(async () => { pin().click(); await frames(2); });

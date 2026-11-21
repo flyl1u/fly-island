@@ -1,23 +1,16 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { readClipboardImage, type ClipboardHistoryItem } from "./api";
+import type { ClipboardHistoryItem } from "./api";
+import { useClipboardOriginal } from "./useClipboardOriginal";
 import { useClipboardThumbnail } from "./useClipboardThumbnail";
 import "./ClipboardImagePreview.css";
 
 export function ClipboardImagePreview({ item, onClose }: { item: ClipboardHistoryItem; onClose: () => void }) {
   const t = useTranslation();
-  const [original, setOriginal] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const { original, failed } = useClipboardOriginal(item.id);
   const closeRef = useRef<HTMLButtonElement>(null);
   const thumbnail = useClipboardThumbnail(item).url;
-  useEffect(() => {
-    let cancelled = false;
-    void readClipboardImage(item.id).then((url) => {
-      if (!cancelled) setOriginal(url);
-    }).catch(() => { if (!cancelled) setFailed(true); });
-    return () => { cancelled = true; };
-  }, [item.id]);
   useEffect(() => {
     const previous = document.activeElement;
     closeRef.current?.focus();

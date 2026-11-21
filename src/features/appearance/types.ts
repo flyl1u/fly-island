@@ -248,6 +248,8 @@ export type IslandSettings = {
   ctrlWheelPages: boolean;
   /** Clipboard: rows visible in the island before scrolling (3–8). */
   clipboardVisibleRows: number;
+  /** Show an entry's full content when the pointer rests over it. */
+  clipboardHoverPreview: boolean;
   /** Todos: rows the todo page shows before it scrolls (3–12), within the panel height limit. */
   todoVisibleRows: number;
   /** Clipboard: open history in its own window instead of inside the island. */

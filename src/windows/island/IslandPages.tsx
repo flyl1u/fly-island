@@ -132,6 +132,7 @@ export function IslandPages({
       {page === "clipboard" && (
         <ClipboardHistoryPanel
           snapshot={clipboardHistory}
+          hoverPreview={settings.clipboardHoverPreview}
           onCopyItem={copyClipboardHistoryItem}
           onToggleFavorite={(id) => void toggleClipboardHistoryFavorite(id)}
           onUpdateNote={updateClipboardHistoryItemNote}

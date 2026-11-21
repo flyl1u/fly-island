@@ -34,7 +34,7 @@ export function ClipboardWindow() {
         </button>
       </header>
       <div className="clipboard-window__content">
-        <ClipboardHistoryPanel variant="window" snapshot={clipboard.clipboardHistory}
+        <ClipboardHistoryPanel variant="window" snapshot={clipboard.clipboardHistory} hoverPreview={frame.hoverPreview}
           onCopyItem={clipboard.copyClipboardHistoryItem} onToggleFavorite={clipboard.toggleClipboardHistoryFavorite}
           onUpdateNote={clipboard.updateClipboardHistoryItemNote} onDeleteItem={clipboard.deleteClipboardHistoryItem}
           onDeleteItems={clipboard.deleteClipboardHistoryItems} />

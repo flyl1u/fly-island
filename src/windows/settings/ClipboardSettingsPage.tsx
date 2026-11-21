@@ -40,6 +40,8 @@ export function ClipboardSettingsPage({
           onClipboardSettingsChange={updateClipboardSettings}
           visibleRows={settings.clipboardVisibleRows}
           onVisibleRowsChange={(clipboardVisibleRows) => onSettingsChange({ ...settings, clipboardVisibleRows })}
+          hoverPreview={settings.clipboardHoverPreview}
+          onHoverPreviewChange={(clipboardHoverPreview) => onSettingsChange({ ...settings, clipboardHoverPreview })}
           detached={settings.clipboardDetached}
           onDetachedChange={(clipboardDetached) => onSettingsChange({ ...settings, clipboardDetached })}
           closeOnBlur={settings.clipboardCloseOnBlur}
