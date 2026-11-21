@@ -251,7 +251,36 @@ fn append_migration_log(directory: &Path, message: &str) {
 /// Task Manager's on/off switch for a Run value, stored under the same value name.
 const STARTUP_APPROVED_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
 
+#[derive(Debug, PartialEq, Eq)]
+enum StartupMigration {
+    Skip,
+    RemoveDuplicate,
+    Move,
+}
+
+fn startup_migration(has_legacy: bool, has_current: bool) -> StartupMigration {
+    match (has_legacy, has_current) {
+        (false, _) => StartupMigration::Skip,
+        (true, true) => StartupMigration::RemoveDuplicate,
+        (true, false) => StartupMigration::Move,
+    }
+}
+
 fn migrate_startup_value() {
+    let current = registry::read_string(HKEY_CURRENT_USER, STARTUP_KEY, NEW_STARTUP_VALUE);
+    match startup_migration(legacy_startup_value_present(), current.is_some()) {
+        StartupMigration::Skip => return,
+        StartupMigration::RemoveDuplicate => {
+            // An old development build may still exist. Keep the current installation's
+            // command and Startup Apps preference and remove the second launch entry.
+            delete_legacy_startup_value();
+            return;
+        }
+        StartupMigration::Move => {}
+    }
+    let Ok(value) = crate::system::startup::startup_value() else {
+        return;
+    };
     // The Task Manager state moves first: a Run value renamed without it would start the island
     // again at sign-in for a user who had disabled it there. If it cannot move, neither does the
     // Run value, so the old pair keeps working and the next launch retries.
@@ -259,13 +288,9 @@ fn migrate_startup_value() {
         if registry::write_binary(HKEY_CURRENT_USER, STARTUP_APPROVED_KEY, NEW_STARTUP_VALUE, &state).is_err() {
             return;
         }
-        let _ = registry::delete_value(HKEY_CURRENT_USER, STARTUP_APPROVED_KEY, OLD_STARTUP_VALUE);
     }
-    let Some(value) = registry::read_string(HKEY_CURRENT_USER, STARTUP_KEY, OLD_STARTUP_VALUE) else {
-        return;
-    };
     if registry::write_string(HKEY_CURRENT_USER, STARTUP_KEY, NEW_STARTUP_VALUE, &value).is_ok() {
-        let _ = registry::delete_value(HKEY_CURRENT_USER, STARTUP_KEY, OLD_STARTUP_VALUE);
+        delete_legacy_startup_value();
     }
 }
 
@@ -445,15 +470,18 @@ pub(crate) fn delete_credential_with_fallback(service: &str, account: &str) -> R
     }
     Ok(())
 }
-/// Removes both rule filenames when the setting is switched off.
+/// Whether a pre-rename startup entry still exists.
 pub(crate) fn legacy_startup_value_present() -> bool {
     registry::read_string(HKEY_CURRENT_USER, STARTUP_KEY, OLD_STARTUP_VALUE).is_some()
 }
 
 pub(crate) fn delete_legacy_startup_value() {
-    let _ = registry::delete_value(HKEY_CURRENT_USER, STARTUP_KEY, OLD_STARTUP_VALUE);
-    let _ = registry::delete_value(HKEY_CURRENT_USER, STARTUP_APPROVED_KEY, OLD_STARTUP_VALUE);
+    // A failed Run deletion must keep the old entry's disabled marker intact.
+    if registry::delete_value(HKEY_CURRENT_USER, STARTUP_KEY, OLD_STARTUP_VALUE).is_ok() {
+        let _ = registry::delete_value(HKEY_CURRENT_USER, STARTUP_APPROVED_KEY, OLD_STARTUP_VALUE);
+    }
 }
+/// Removes the former rule filename when the reply marker is switched off.
 pub(crate) fn remove_legacy_reply_marker_file(claude_dir: &Path) {
     let _ = fs::remove_file(claude_dir.join(OLD_RULES_FILE));
 }
@@ -482,6 +510,13 @@ mod tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
 
+    #[test]
+    fn startup_migration_prefers_the_current_registration() {
+        assert_eq!(startup_migration(false, false), StartupMigration::Skip);
+        assert_eq!(startup_migration(false, true), StartupMigration::Skip);
+        assert_eq!(startup_migration(true, true), StartupMigration::RemoveDuplicate);
+        assert_eq!(startup_migration(true, false), StartupMigration::Move);
+    }
     fn temp_root(label: &str) -> PathBuf {
         let stamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
         std::env::temp_dir().join(format!("fly-island-migration-{label}-{stamp}"))

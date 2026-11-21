@@ -39,16 +39,19 @@ macro_rules! collect_commands {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let verification_identifier = notification_diagnostics::verification_identifier();
+    let isolated = verification_identifier.is_some();
     // Migrate the old app-data roots before Tauri creates its first WebView; if that fails, stop
     // here rather than let Tauri create empty new ones (the next launch retries).
-    if !legacy_migration::run() {
+    // A verification instance already has its own roots and must leave real startup entries alone.
+    if !isolated && !legacy_migration::run() {
         return;
     }
     system::startup::note_launch();
     media_plugins::handle_startup();
     agent_status::uninstall::handle_startup();
     let mut context = tauri::generate_context!();
-    if let Some(identifier) = notification_diagnostics::verification_identifier() {
+    if let Some(identifier) = verification_identifier {
         context.config_mut().identifier = identifier;
     }
     let result = tauri::Builder::default()
@@ -76,7 +79,7 @@ pub fn run() {
             // Native Acrylic/Region is intentionally not reapplied on DPI
             // changes. Liquid glass is rendered inside the island element.
         })
-        .setup(|app| {
+        .setup(move |app| {
             config_transfer::prepare(app.handle());
             // First, so whatever goes wrong while the rest starts is in the log.
             app_log::init(app.handle());
@@ -107,6 +110,7 @@ pub fn run() {
                 eprintln!("failed to initialize notification diagnostics: {error}");
             }
             if let Ok(window) = island::main_window(app.handle()) {
+                island::start_taskbar_tracking(window.clone());
                 if let Err(error) = island::apply_stage_geometry(
                     &window,
                     island::IslandWindowState::default(),
@@ -129,8 +133,10 @@ pub fn run() {
             }
             agent_status::reply_marker::init();
             agent_status::workbuddy_connection::init(app.handle());
-            agent_status::hook_migration::repair_legacy_hooks(app.handle());
-            system::startup::upgrade_legacy_value();
+            if !isolated {
+                agent_status::hook_migration::repair_legacy_hooks(app.handle());
+                system::startup::upgrade_legacy_value();
+            }
             Ok(())
         })
         .invoke_handler(collect_commands!([]

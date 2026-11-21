@@ -2,11 +2,6 @@
 //! without also yielding to third-party app bars (docks, menu bars) that shrink the
 //! work area the same way.
 
-use std::{
-    sync::{Mutex, PoisonError},
-    time::{Duration, Instant},
-};
-
 use windows::{
     core::w,
     Win32::{
@@ -31,24 +26,8 @@ pub(crate) type TaskbarRect = (i32, i32, i32, i32);
 /// secondary-monitor taskbar (the caller checks which edge those sit on). Empty while
 /// the taskbar auto-hides, since an auto-hidden taskbar leaves the work area alone.
 ///
-/// Cached for a moment: every island resize asks, on the main thread, and SHAppBarMessage
-/// waits on Explorer. A busy Explorer (sign-in, waking from sleep) stalled the main thread
-/// on each of those, and the cursor passthrough queued behind it.
+/// Call on a worker: SHAppBarMessage can wait for Explorer during sign-in or wake.
 pub(crate) fn top_taskbar_candidates() -> Vec<TaskbarRect> {
-    const FRESH_FOR: Duration = Duration::from_secs(3);
-    static CACHE: Mutex<Option<(Instant, Vec<TaskbarRect>)>> = Mutex::new(None);
-    let mut cache = CACHE.lock().unwrap_or_else(PoisonError::into_inner);
-    if let Some((read_at, rects)) = cache.as_ref() {
-        if read_at.elapsed() < FRESH_FOR {
-            return rects.clone();
-        }
-    }
-    let rects = read_top_taskbar_candidates();
-    *cache = Some((Instant::now(), rects.clone()));
-    rects
-}
-
-fn read_top_taskbar_candidates() -> Vec<TaskbarRect> {
     if is_auto_hidden() {
         return Vec::new();
     }

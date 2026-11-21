@@ -61,7 +61,7 @@ pub(crate) fn hold_after_autostart(delay: Duration) {
     }
 }
 
-fn startup_value() -> Result<String, String> {
+pub(crate) fn startup_value() -> Result<String, String> {
     let current_exe = std::env::current_exe()
         .map_err(|error| format!("Failed to resolve current executable: {error}"))?;
     Ok(startup_value_for(&current_exe))
