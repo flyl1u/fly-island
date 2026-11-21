@@ -223,6 +223,7 @@ export function IslandApp() {
         isTucked={isTucked}
         tuckStyle={settings.tuckStyle}
         topEdgeShoulders={settings.topEdgeShoulders}
+        islandCornerShape={settings.islandCornerShape}
         positionLocked={settings.positionLocked}
         isDetached={isPositionDetached || settings.marginY > 0}
         islandShape={settings.islandShape}

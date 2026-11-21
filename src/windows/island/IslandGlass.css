@@ -13,19 +13,13 @@
  * the shadows and the text halo follow the tone.
  */
 
-@property --glass-shape-radius {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
 .island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
   /* One small noise tile, rasterized once and repeated: the pane reads as glass, not a flat colour. */
   --glass-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)'/%3E%3C/svg%3E");
   /* The glass draws its own rim. */
   --island-rim: transparent;
   isolation: isolate;
-  background:
+  --island-material-fill:
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 46%),
     var(--glass-tint-color);
   /* The shadow is .island__glass-shadow, which does not repaint as the shape moves. */
@@ -91,93 +85,23 @@
 
 /*
  * The live backdrop (useGlassCapture.ts, island/glass_capture.rs): what is behind the island,
- * blurred, on a canvas fixed to the window rather than to the island. The host now covers the
- * island and its optional shoulders; its mask is the union of the island's rounded body and the
- * two reverse shoulder curves. The tint, frosted wash and grain therefore cover both areas from
- * the same frame, while the content and text stay inside .island__surface on their sharp layer.
+ * blurred, on a canvas fixed to the window rather than to the island. "50% - 50vw" is the window's
+ * left edge seen from the centred island (50% is the island's current half width), so as the
+ * shape grows and shrinks the picture stays put and is only clipped. The tint, the frosted wash
+ * and the grain lie over it in the same still box.
  */
-:is(.island__glass-backdrop, .island__classic-backdrop) {
-  --island-shoulder-length: 0px;
-  --glass-shape-radius: 0px;
-  position: absolute;
-  top: 0;
-  right: calc(-1 * var(--island-shoulder-length, 0px));
-  bottom: 0;
-  left: calc(-1 * var(--island-shoulder-length, 0px));
-  overflow: hidden;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-  corner-shape: var(--island-corner-shape, round);
-  transition:
-    --island-shoulder-length var(--island-motion-duration) var(--island-motion),
-    --glass-shape-radius var(--island-motion-duration) var(--island-motion);
-}
-
 .island__glass-backdrop {
   display: none;
 }
 
 :root[data-glass-backdrop] .island__glass-backdrop {
+  position: absolute;
+  top: var(--glass-frame-y, 0px);
+  left: calc(50% - 50vw + var(--glass-frame-x, 0px));
   display: block;
-}
-
-/* Classic material paints its fill once on the same expanded host as the shoulders. The island
-   element itself stays transparent so a semi-opaque fill is never composited twice at the join. */
-.island__classic-backdrop {
-  background: var(--island-fill, var(--island-background-color));
-}
-
-.island--collapsed > .island__classic-backdrop {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--island-shade-top) calc(var(--island-fill-alpha, 1) * 100%), transparent), color-mix(in srgb, var(--island-shade-bottom) calc(var(--island-fill-alpha, 1) * 100%), transparent)),
-    var(--island-fill, var(--island-background-color));
-}
-
-.island--material-classic {
-  background: transparent;
-}
-
-.island--material-classic > .island__shoulders {
-  background: transparent;
-}
-
-/* Attached shoulders are a union of the body and two reverse corners. The body is two overlapping
-   rectangles plus its two bottom corners (cornerMaskCss in cornerShape.ts: the island's own round or
-   squircle curve, stretched to the radius), so it matches the unattached island and the hit test.
-   The rectangles overlap by a pixel so no anti-aliased seam opens between mask pieces. */
-:root[data-island-top-edge="attached"] .island--shoulders:not(.island--tucked) > :is(.island__glass-backdrop, .island__classic-backdrop),
-:root:not([data-island-top-edge]) .island--docked.island--shoulders:not(.island--tucked) > :is(.island__glass-backdrop, .island__classic-backdrop) {
-  --glass-shape-radius: var(--island-shape-radius-collapsed);
-  --island-shoulder-length: calc(var(--island-shoulder-size-target, 10px) * var(--island-expanded-scale));
-  -webkit-mask:
-    linear-gradient(#000 0 0) center top / calc(100% - var(--island-shoulder-length) - var(--island-shoulder-length)) calc(100% - var(--glass-shape-radius) + 1px) no-repeat,
-    linear-gradient(#000 0 0) center bottom / calc(100% - var(--island-shoulder-length) - var(--island-shoulder-length) - var(--glass-shape-radius) - var(--glass-shape-radius) + 2px) var(--glass-shape-radius) no-repeat,
-    var(--island-corner-mask-left, linear-gradient(#000 0 0)) left var(--island-shoulder-length) bottom 0 / var(--glass-shape-radius) var(--glass-shape-radius) no-repeat,
-    var(--island-corner-mask-right, linear-gradient(#000 0 0)) right var(--island-shoulder-length) bottom 0 / var(--glass-shape-radius) var(--glass-shape-radius) no-repeat,
-    radial-gradient(circle var(--island-shoulder-length) at 0 100%, transparent calc(var(--island-shoulder-length) - 0.5px), #000 calc(var(--island-shoulder-length) + 0.5px)) left top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat,
-    radial-gradient(circle var(--island-shoulder-length) at 100% 100%, transparent calc(var(--island-shoulder-length) - 0.5px), #000 calc(var(--island-shoulder-length) + 0.5px)) right top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat;
-  mask:
-    linear-gradient(#000 0 0) center top / calc(100% - var(--island-shoulder-length) - var(--island-shoulder-length)) calc(100% - var(--glass-shape-radius) + 1px) no-repeat,
-    linear-gradient(#000 0 0) center bottom / calc(100% - var(--island-shoulder-length) - var(--island-shoulder-length) - var(--glass-shape-radius) - var(--glass-shape-radius) + 2px) var(--glass-shape-radius) no-repeat,
-    var(--island-corner-mask-left, linear-gradient(#000 0 0)) left var(--island-shoulder-length) bottom 0 / var(--glass-shape-radius) var(--glass-shape-radius) no-repeat,
-    var(--island-corner-mask-right, linear-gradient(#000 0 0)) right var(--island-shoulder-length) bottom 0 / var(--glass-shape-radius) var(--glass-shape-radius) no-repeat,
-    radial-gradient(circle var(--island-shoulder-length) at 0 100%, transparent calc(var(--island-shoulder-length) - 0.5px), #000 calc(var(--island-shoulder-length) + 0.5px)) left top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat,
-    radial-gradient(circle var(--island-shoulder-length) at 100% 100%, transparent calc(var(--island-shoulder-length) - 0.5px), #000 calc(var(--island-shoulder-length) + 0.5px)) right top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat;
-}
-
-.island--expanded > :is(.island__glass-backdrop, .island__classic-backdrop) {
-  --glass-shape-radius: var(--island-shape-radius);
-}
-
-:root[data-island-top-edge="attached"] .island--shoulders.island--expanded:not(.island--tucked) > :is(.island__glass-backdrop, .island__classic-backdrop),
-:root:not([data-island-top-edge]) .island--docked.island--shoulders.island--expanded:not(.island--tucked) > :is(.island__glass-backdrop, .island__classic-backdrop) {
-  --glass-shape-radius: var(--island-shape-radius);
-}
-
-:root[data-island-top-edge="attached"] .island--shoulders.island--collapsed:not(.island--tucked) > :is(.island__glass-backdrop, .island__classic-backdrop),
-:root:not([data-island-top-edge]) .island--docked.island--shoulders.island--collapsed:not(.island--tucked) > :is(.island__glass-backdrop, .island__classic-backdrop) {
-  --island-shoulder-length: calc(var(--island-shoulder-size-target, 10px) * var(--island-collapsed-scale));
+  width: var(--glass-frame-width, 100vw);
+  height: var(--glass-frame-height, 100vh);
+  pointer-events: none;
 }
 
 /* Its own layer while the island opens or closes (data-moving, useMotionLayer.ts): inside the
@@ -189,12 +113,9 @@
 }
 
 .island__glass-backdrop canvas {
-  position: absolute;
-  top: var(--glass-frame-y, 0px);
-  left: calc(50% - 50vw + var(--glass-frame-x, 0px));
   display: block;
-  width: var(--glass-frame-width, 100vw);
-  height: var(--glass-frame-height, 100vh);
+  width: 100%;
+  height: 100%;
 }
 
 .island__glass-backdrop::before,
@@ -239,11 +160,7 @@
 
 /* With a backdrop the pane keeps its own tint underneath it: the opaque canvas hides it, but
    wherever the frame does not reach yet (the window just grew) the pane still reads as glass
-   instead of a bare rim round the desktop (2026-11-19, owner). The shoulder itself is transparent
-   here so the expanded backdrop, rather than a copied flat tint, paints its material. */
-:root[data-glass-backdrop] .island--shoulders:is(.island--material-liquidGlass, .island--material-frostedGlass) > .island__shoulders {
-  background: transparent;
-}
+   instead of a bare rim round the desktop (2026-11-19, owner). */
 
 :is(.island--material-liquidGlass, .island--material-frostedGlass).island--collapsed:has(:focus-visible) {
   box-shadow:
@@ -294,7 +211,8 @@
   pointer-events: none;
 }
 
-.island__glass::after {
+.island__glass::after,
+.island__material--glass::after {
   inset: 0;
   background-image: var(--glass-grain);
   background-size: 128px;
@@ -331,13 +249,19 @@
 
 /* The lens edge: light gathering where the glass thickens, as gradients rather than a blurred
    inset shadow, which repainted a 16px blur around the whole shape on every frame. */
-.island__glass-refraction::before {
+.island__glass-refraction::before,
+.island__material--glass::before {
   content: "";
   position: absolute;
   inset: 0;
   background:
     radial-gradient(130% 120% at 50% 0%, transparent 58%, rgba(255, 255, 255, var(--glass-inner-glow-alpha)) 100%),
     linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-inner-glow-alpha) * 1.4)), transparent 18%);
+}
+
+.island__material--glass::before {
+  content: var(--glass-shouldered-lens, none);
+  z-index: 1;
 }
 
 /* A short specular streak along the top edge, following the pointer. */
@@ -363,13 +287,15 @@
 .island--material-liquidGlass .island__glass-refraction,
 .island--material-liquidGlass .island__glass-highlight,
 .island--material-liquidGlass .island__glass::before,
+.island--material-liquidGlass .island__material--glass::before,
 .island--material-frostedGlass .island__glass::before {
   animation: glassRimIn 200ms ease-out backwards;
 }
 
 .island[data-moving] .island__glass-refraction,
 .island[data-moving] .island__glass-highlight,
-.island[data-moving] .island__glass::before {
+.island[data-moving] .island__glass::before,
+.island[data-moving] .island__material--glass::before {
   visibility: hidden;
   animation: none;
 }
@@ -394,7 +320,7 @@
  */
 .island.island--material-frostedGlass {
   --glass-backdrop-wash: rgba(255, 255, 255, calc(0.06 + var(--is-light) * 0.16));
-  background:
+  --island-material-fill:
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%),
     linear-gradient(var(--glass-backdrop-wash), var(--glass-backdrop-wash)),
     var(--glass-tint-color);
@@ -437,7 +363,8 @@
 @media (prefers-reduced-motion: reduce) {
   .island__glass-refraction,
   .island__glass-highlight,
-  .island__glass::before {
+  .island__glass::before,
+  .island__material--glass::before {
     animation: none !important;
   }
 }
