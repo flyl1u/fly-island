@@ -5,6 +5,9 @@ export type SettingsAppearanceText = {
   collapsedDimensions: { autoWidth: string; width: string; height: string; padding: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
+  loadingLocalFonts: string;
+  localFontsFailed: string;
+  localFontMissing: string;
   /** Material: classic, liquid glass, or frosted glass. */
   material: string;
   classic: string;
@@ -91,6 +94,9 @@ export const zhCN: SettingsAppearanceText = {
   collapsedDimensions: { autoWidth: "自动宽度", width: "宽度", height: "高度", padding: "两侧留白", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
+  loadingLocalFonts: "正在读取本机字体…",
+  localFontsFailed: "无法读取本机字体。重新打开列表可重试。",
+  localFontMissing: "找不到此字体，岛屿使用默认字体",
   material: "质感",
   classic: "经典",
   liquidGlass: "液态玻璃",
@@ -165,6 +171,9 @@ export const en: SettingsAppearanceText = {
   collapsedDimensions: { autoWidth: "Automatic width", width: "Width", height: "Height", padding: "Side space", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
+  loadingLocalFonts: "Loading installed fonts…",
+  localFontsFailed: "Couldn't read installed fonts. Reopen the list to retry.",
+  localFontMissing: "This font is unavailable. The island is using the default font.",
   material: "Material",
   classic: "Classic",
   liquidGlass: "Liquid",

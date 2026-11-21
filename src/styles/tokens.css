@@ -1,7 +1,8 @@
 /* Shared design tokens. Values are the exact literals they replaced; changing one restyles every user. */
 :root {
   /* One type family; weights 400 and 600, 700 only at 15px and up. */
-  --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-system: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-ui: var(--font-system);
 
   /* Todo notebook paper */
   --color-ink: #1f1b16;

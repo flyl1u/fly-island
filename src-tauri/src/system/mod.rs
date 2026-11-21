@@ -2,6 +2,7 @@
 //! export, folder picker, full-screen app detection, settings backups.
 
 pub(crate) mod folder_dialog;
+pub(crate) mod fonts;
 pub(crate) mod fullscreen;
 pub(crate) mod theme_file;
 pub(crate) mod startup;
@@ -41,6 +42,7 @@ macro_rules! tauri_commands {
             crate::system::todo_sync::read_todo_markdown,
             crate::system::todo_sync::save_todo_markdown_if_unchanged,
             crate::system::folder_dialog::pick_folder,
+            crate::system::fonts::list_installed_fonts,
             crate::system::fullscreen::get_foreground_fullscreen,
             crate::system::startup::get_launch_at_startup,
             crate::system::startup::set_launch_at_startup,

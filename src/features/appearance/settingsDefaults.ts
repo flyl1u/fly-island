@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   material: "classic",
   colorScheme: "dark",
   fontFamily: "system",
+  localFontFamily: "",
   islandFontPercent: ISLAND_FONT_PERCENT.default,
   pageButtonStyle: "icon",
   glassIntensity: 72,

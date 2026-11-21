@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { cornerShapeCss } from "../../features/appearance/cornerShape";
+import { localIslandFontStyle } from "../../features/appearance/localFont";
 import { hexToRgba, isGlass } from "../../features/appearance/settings";
 import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -19,6 +20,7 @@ export function getIslandStageStyle(
   noticeHeight: number | null = null,
 ) {
   return ({
+    ...localIslandFontStyle(settings),
     // Classic opacity fades the fill only, so text and icons on it stay solid.
     "--island-fill": hexToRgba(colors.islandBackgroundColor, settings.opacity / 100),
     "--island-fill-alpha": settings.opacity / 100,

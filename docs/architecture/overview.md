@@ -22,6 +22,8 @@
 
 各项数据存在哪里见 [data-storage.md](data-storage.md)。
 
+外观设置选择本机字体时，`features/appearance/api.ts` 经 `system/fonts.rs` 异步调用 `win32/fonts.rs` 枚举已安装字体。字体名称随外观设置保存，主岛和设置预览复用 `features/appearance/localFont.ts` 生成的字体栈。
+
 待办每日 Markdown 的可选反向同步由 `features/todos/todoMarkdownSync.ts` 串行协调（稳定采样、三方合并、防回环），`useTodoFileSync.ts` 负责日期/目录生命周期和低频轮询；Rust `system/todo_sync.rs` 提供受限读取及版本比较写入。默认关闭时仍走原 `todo_export.rs` 单向导出。偏好、恢复副本与数据流见 [data-storage.md](data-storage.md)，命令契约见 [contracts.md](contracts.md)。
 
 配置迁移（issue #87）由前端 `features/config-transfer/` 与原生 `config_transfer/` 负责；Win32 JSON 对话框封装在 `win32/file_dialog.rs`。原生模块在服务初始化前恢复允许的数据文件；所有 WebView 在 React 挂载前等待启动门禁，只有主窗口应用 localStorage 后确认完成。插件、剪贴板与 Agent 集成的可迁移部分由各自 `transfer.rs` 提供，凭据不跨边界；异常保留可重试的备份和文件撤销日志。格式见 [contracts.md](contracts.md)。

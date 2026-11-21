@@ -32,6 +32,10 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "list_installed_fonts": return [
+      { family: "Consolas", label: "Consolas" },
+      { family: "Microsoft YaHei", label: args.locale === "zh-CN" ? "微软雅黑" : "Microsoft YaHei" },
+    ];
     case "search_weather_cities": return [{ name: "北京 · 中国", latitude: 39.9, longitude: 116.4 }];
     case "locate_weather": return { location: { name: "深圳市 · 广东省", latitude: 22.54, longitude: 114.06 }, source: "windows" };
     case "get_current_weather": return { temperature: 23, code: 2, observedAt: Date.now(), fetchedAt: Date.now() };

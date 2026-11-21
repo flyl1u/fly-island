@@ -12,6 +12,22 @@ import {
   STORAGE_KEY,
   loadSettings,
 } from "../../src/features/appearance/storage.ts";
+import { localIslandFontStyle } from "../../src/features/appearance/localFont.ts";
+
+test("installed fonts preserve legacy modes and safely fall back for missing glyphs", () => {
+  const custom = normalizeSettings({ fontFamily: "local", localFontFamily: "  Microsoft YaHei  " });
+  assert.equal(custom.fontFamily, "local");
+  assert.equal(custom.localFontFamily, "Microsoft YaHei");
+  assert.deepEqual(localIslandFontStyle(custom), {
+    "--font-ui": '"Microsoft YaHei", var(--font-system)',
+    fontFamily: "var(--font-ui)",
+  });
+  const quoted = normalizeSettings({ fontFamily: "local", localFontFamily: 'Family", Something' });
+  assert.equal(localIslandFontStyle(quoted)["--font-ui"], String.raw`"Family\", Something", var(--font-system)`);
+  assert.equal(localIslandFontStyle(normalizeSettings({ fontFamily: "local", localFontFamily: "invalid\nfont" })), undefined);
+  assert.equal(localIslandFontStyle(normalizeSettings({ fontFamily: "pixel" })), undefined);
+  assert.equal(withAppearanceFrom(custom, DEFAULT_SETTINGS).localFontFamily, "");
+});
 
 test("tucked style defaults to line and rejects unknown saved values", () => {
   assert.equal(DEFAULT_SETTINGS.tuckStyle, "line");

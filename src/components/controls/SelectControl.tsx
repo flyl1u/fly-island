@@ -13,12 +13,14 @@ export function SelectControl<T extends string>({
   options,
   ariaLabel,
   disabled = false,
+  onOpen,
   onChange,
 }: {
   value: T;
   options: readonly SelectOption<T>[];
   ariaLabel: string;
   disabled?: boolean;
+  onOpen?: () => void;
   onChange: (value: T) => void;
 }) {
   const listId = useId();
@@ -36,6 +38,7 @@ export function SelectControl<T extends string>({
   const open = () => {
     setActiveIndex(Math.max(selectedIndex, 0));
     setIsOpen(true);
+    onOpen?.();
   };
   const choose = (index: number) => {
     setIsOpen(false);
