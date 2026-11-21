@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { cornerMaskCss, cornerShapeCss } from "../../features/appearance/cornerShape";
+import { cornerShapeCss } from "../../features/appearance/cornerShape";
 import { hexToRgba, isGlass } from "../../features/appearance/settings";
 import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -35,8 +35,7 @@ export function getIslandStageStyle(
     "--island-collapsed-corner-radius-size": settings.collapsedCornerRadius,
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
-    "--island-corner-mask-left": cornerMaskCss(settings.islandCornerShape, "left"),
-    "--island-corner-mask-right": cornerMaskCss(settings.islandCornerShape, "right"),
+    "--island-shoulder-size-factor": settings.islandCornerShape === "squircle" ? 1.4 : 1,
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,
     // The expanded page's resting transform. At scale 1 it is none: a transform, even scale(1), keeps
     // the page on its own compositing layer, and the text there is drawn again once the layer goes.

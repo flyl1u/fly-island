@@ -3,6 +3,9 @@
 //
 //   pnpm test:regression                 every page
 //   pnpm test:regression mail-reader     pages whose name contains the word
+//   pnpm test:regression shoulderSweep   screenshot the contour at four device scale factors
+//   pnpm test:regression shapePerf       compare frame intervals with the 3.2.8 shoulder renderer
+// REGRESSION_SHOULDER_FAULT=1 adds a known 1px notch to the shoulderSweep contours.
 //   REGRESSION_REDUCED_MOTION=reduce pnpm test:regression  emulate Windows animations off
 //
 // Pages are driven over the DevTools protocol in a normal tab, not with --dump-dom:
@@ -17,7 +20,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { capturePixelProbe, READ_PIXEL_PROBE } from "./regression-pixels.mjs";
+import { capturePixelProbe } from "./regression-pixels.mjs";
 
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
@@ -57,6 +60,11 @@ export const PAGES = [
   "island-tour.html?test=1&material=classic&opacity=80&shoulders=1&classicShoulders=1",
   "island-tour.html?test=1&theme=light&material=classic&opacity=80&shoulders=1&classicShoulders=1",
   "island-tour.html?test=1&theme=light&material=classic&opacity=80&shoulders=1&classicShoulders=1&capsule=1",
+  ...[1, 1.25, 1.5, 2].flatMap((dpr) => [
+    `island-tour.html?shoulderSweep=1&dpr=${dpr}&material=classic&opacity=80`,
+    `island-tour.html?shoulderSweep=1&dpr=${dpr}&material=liquidGlass&glassBackdrop=1`,
+  ]),
+  "island-tour.html?shoulderSweep=1&dpr=1.5&material=frostedGlass&glassBackdrop=1&corner=round",
   "island-tour.html?test=1&theme=light&material=liquidGlass",
   "island-tour.html?test=1&material=frostedGlass",
   "island-tour.html?test=1&theme=light&material=frostedGlass",
@@ -101,6 +109,11 @@ export const PAGES = [
   "translation-window.html?test=1&theme=dark",
   "translation-window.html?test=1&theme=light",
 ];
+
+const SHAPE_PERF_PAGES = ["classic", "liquidGlass", "frostedGlass"].flatMap((material) => {
+  const url = `island-tour.html?shapePerf=1&dpr=1.5&material=${material}${material === "classic" ? "&opacity=80" : "&glassBackdrop=1"}`;
+  return [url, `${url}&perfRenderer=328`];
+});
 
 const PAGE_TIMEOUT_MS = 120_000;
 const BROWSERS = [
@@ -213,39 +226,76 @@ async function connect(port) {
 const READ_STATE = `(() => {
   const results = document.getElementById("results");
   return JSON.stringify({
+    url: location.href,
     testResult: document.documentElement.dataset.testResult ?? "",
     dataResult: results?.dataset.result ?? "",
     text: results?.textContent ?? "",
   });
 })()`;
 
+async function captureShoulderSweep(session, dpr, material) {
+  const captures = [];
+  const cases = [6, 9.5, 13, 16.5, 20, 24, 28].map((length) => [length, Math.max(38.5, length + 17.5)]);
+  cases.push([28, 26.5]);
+  const samples = cases.map(([length, height]) => ({
+    expression: `window.sampleIslandShoulder(${length}, ${height})`, name: `L=${length} H=${height}`,
+  }));
+  if (material === "liquidGlass" || material === "frostedGlass") {
+    samples.push({ expression: "window.sampleExpandedGlassShoulder()", name: "expanded" });
+  }
+  for (const { expression, name } of samples) {
+    const { result, exceptionDetails } = await session.send("Runtime.evaluate", {
+      expression, awaitPromise: true, returnByValue: true,
+    });
+    if (exceptionDetails || !result?.value) throw new Error(
+      exceptionDetails?.exception?.description ?? "The shoulder fixture returned no pixel probe",
+    );
+    if (JSON.parse(result.value).dpr !== dpr) throw new Error(`Browser did not use requested DPR ${dpr}`);
+    const { passed, label } = await capturePixelProbe(session, result.value);
+    captures.push({ passed, label: `${name} DPR=${dpr} ${label.replaceAll("\n", "; ")}` });
+  }
+  return captures;
+}
+
 export async function runPage(session, url) {
   session.errors.length = 0;
-  await session.send("Page.navigate", { url });
+  const query = new URL(url).searchParams;
+  const dpr = Number(query.get("dpr"));
+  if (dpr) await session.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 800, deviceScaleFactor: dpr, mobile: false });
   const deadline = Date.now() + PAGE_TIMEOUT_MS;
   let state = {};
-  let pixelProbe = null;
-  while (Date.now() < deadline) {
-    await sleep(url.includes("classicShoulders") ? 25 : 500);
-    if (!pixelProbe && url.includes("classicShoulders")) {
-      const probeResult = await session.send("Runtime.evaluate", { expression: READ_PIXEL_PROBE, returnByValue: true });
-      if (probeResult.result?.value) {
-        pixelProbe = await capturePixelProbe(session, probeResult.result.value);
-        await session.send("Runtime.evaluate", { expression: "document.documentElement.setAttribute('data-island-pixel-probe-captured', 'true')" });
+  let reloaded = false;
+  try {
+    await session.send("Page.navigate", { url });
+    while (Date.now() < deadline) {
+      await sleep(query.has("shoulderSweep") ? 75 : 500);
+      // Vite answers a module request with 504 while it re-bundles dependencies; the page's
+      // dynamic import then fails for good. Load the page once more instead of timing out.
+      if (!reloaded && session.errors.some((error) => error.includes("Failed to fetch dynamically imported module"))) {
+        reloaded = true;
+        session.errors.length = 0;
+        await session.send("Page.navigate", { url });
+        continue;
       }
-    }
-    const { result } = await session.send("Runtime.evaluate", { expression: READ_STATE, returnByValue: true });
-    try { state = JSON.parse(result?.value ?? "{}"); } catch { state = {}; }
-    const outcome = pageOutcome(state);
-    if (outcome) {
-      if (pixelProbe) {
-        state.text = `${state.text ?? ""}\n${pixelProbe.passed ? "PASS" : "FAIL"} ${pixelProbe.label}`;
-        if (!pixelProbe.passed) return { outcome: "failed", state, errors: [...session.errors] };
+      const { result } = await session.send("Runtime.evaluate", { expression: READ_STATE, returnByValue: true });
+      try { state = JSON.parse(result?.value ?? "{}"); } catch { state = {}; }
+      if (state.url !== url) continue;
+      const outcome = pageOutcome(state);
+      if (!outcome) continue;
+      if (outcome === "passed" && query.has("shoulderSweep")) {
+        const captures = await captureShoulderSweep(session, dpr, query.get("material"));
+        state.text += "\n" + captures.map(({ passed, label }) => `${passed ? "PASS" : "FAIL"} ${label}`).join("\n");
+        if (captures.some(({ passed }) => !passed)) return { outcome: "failed", state, errors: [...session.errors] };
       }
       return { outcome, state, errors: [...session.errors] };
     }
+    return { outcome: "timed out", state, errors: [...session.errors] };
+  } catch (error) {
+    state.text = `${state.text ?? ""}\nFAIL ${String(error)}`;
+    return { outcome: "failed", state, errors: [...session.errors] };
+  } finally {
+    if (dpr) await session.send("Emulation.clearDeviceMetricsOverride");
   }
-  return { outcome: "timed out", state, errors: [...session.errors] };
 }
 
 /**
@@ -294,7 +344,8 @@ export async function withRegressionBrowser(root, firstPage, use, { featuresEnab
 async function main() {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const filters = process.argv.slice(2);
-  const pages = PAGES.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
+  const candidates = filters.includes("shapePerf") ? SHAPE_PERF_PAGES : PAGES;
+  const pages = candidates.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
   if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
   let failed = 0;
   console.log(`Regression prefers-reduced-motion: ${process.env.REGRESSION_REDUCED_MOTION ?? "no-preference"}`);
@@ -304,9 +355,11 @@ async function main() {
     await withRegressionBrowser(root, fixtures[0], async ({ session, base }) => {
       for (const page of fixtures) {
         const started = Date.now();
-        const { outcome, state, errors } = await runPage(session, base + page);
+        const fault = page.includes("shoulderSweep") && process.env.REGRESSION_SHOULDER_FAULT === "1" ? "&shoulderFault=1" : "";
+        const { outcome, state, errors } = await runPage(session, base + page + fault);
         const seconds = ((Date.now() - started) / 1000).toFixed(1);
         console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s`);
+        if (outcome === "passed" && page.includes("shapePerf")) console.log(state.text);
         if (outcome !== "passed") {
           failed += 1;
           const lines = (state.text ?? "").split("\n").filter((line) => line.trim());

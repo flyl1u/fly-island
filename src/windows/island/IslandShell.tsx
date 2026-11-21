@@ -1,9 +1,10 @@
+import { shoulderedShapeCss } from "../../features/appearance/cornerShape";
 import { isGlass } from "../../features/appearance/settings";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode, TransitionEvent } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { CollapsedItem, CollapsedSlot, IslandShape, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
+import type { CollapsedItem, CollapsedSlot, IslandCornerShape, IslandShape, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import type { MessagePreview, MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -52,6 +53,7 @@ type IslandShellProps = {
   /** Moved away from its default place by a drag or the margin; a capsule floats without that. */
   isDetached: boolean;
   islandShape?: IslandShape;
+  islandCornerShape?: IslandCornerShape;
   showTitle: boolean;
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
@@ -100,6 +102,15 @@ type IslandShellProps = {
   children: ReactNode;
 };
 
+function updateShoulderMotion(event: TransitionEvent<HTMLDivElement>) {
+  const surface = event.currentTarget;
+  if (event.target !== surface || event.propertyName !== "--island-shoulder-length") return;
+  const moving = event.type === "transitionrun" || surface.getAnimations().some((animation) =>
+    animation instanceof CSSTransition && animation.transitionProperty === event.propertyName && animation.playState === "running",
+  );
+  surface.toggleAttribute("data-shoulder-moving", moving);
+}
+
 export function IslandShell({
   qqMail,
   qqNotifications,
@@ -118,6 +129,7 @@ export function IslandShell({
   positionLocked,
   isDetached,
   islandShape = "notch",
+  islandCornerShape = "squircle",
   showTitle,
   showCollapsedText,
   collapsedTaskTitle,
@@ -211,84 +223,95 @@ export function IslandShell({
         }
       }}
     >
-      <div className={glass ? "island__glass-backdrop" : "island__classic-backdrop"} aria-hidden="true">
-        {glass && <canvas />}
-      </div>
-      <span className="island__shoulders" aria-hidden="true" />
       {glass && <span className="island__glass-shadow" aria-hidden="true" />}
-      <div className="island__surface">
-        {glass && (
-          <div className="island__glass" aria-hidden="true">
-            {isLiquidGlass && <span className="island__glass-refraction" />}
-            {isLiquidGlass && <span className="island__glass-highlight" />}
-          </div>
-        )}
-        <IslandCollapsedBar
-          qqMail={qqMail}
-          qqNotifications={qqNotifications}
-          wechatReminders={wechatReminders}
-          preview={preview}
-          noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
-          page={page}
-          isExpanded={isExpanded}
-          isTucked={isTucked}
-          positionLocked={positionLocked}
-          showTitle={showTitle}
-          showCollapsedText={showCollapsedText}
-          collapsedLabel={collapsedLabel}
-          collapsedTaskTitle={collapsedTaskTitle}
-          todoTimer={todoTimer}
-          todoRotation={todoRotation}
-          collapsedTodoCount={collapsedTodoCount}
-          collapsedItem={collapsedItem}
-          collapsedLayout={collapsedLayout}
-          collapsedCover={collapsedCover}
-          lyricsSettings={lyricsSettings}
-          agentSession={agentSession}
-          agentSessionCount={features.agents ? activeAgentSessionCount : null}
-          mediaState={mediaState}
-          showMusic={features.music}
-          shelfCount={shelfCount}
-          quotaAlert={quotaAlert}
-          agentVisualState={agentVisualState}
-          onOpenPage={onOpenPage}
-          onOpenMessages={onOpenMessages}
-          onWindowDragStart={onWindowDragStart}
-          onTuck={onTuck}
-        />
-
+      <div
+        className="island__surface"
+        onTransitionRun={glass ? updateShoulderMotion : undefined}
+        onTransitionCancel={glass ? updateShoulderMotion : undefined}
+        onTransitionEnd={glass ? updateShoulderMotion : undefined}
+      >
         <div
-          ref={panelRef}
-          id="island-panel"
-          className="island__expanded"
-          aria-hidden={!isExpanded}
-          inert={!isExpanded}
+          className={glass ? "island__material island__material--glass" : "island__material"}
+          style={{ "--island-shouldered-shape": shoulderedShapeCss(islandCornerShape) } as CSSProperties}
+          aria-hidden="true"
         >
-          <IslandHeader
-            isExpanded={isExpanded && !isTucked}
+          {/* Outside .island__glass, whose top fades out when attached (IslandTopEdge.css). */}
+          {glass && <div className="island__glass-backdrop"><canvas /></div>}
+        </div>
+        <div className="island__surface-contents">
+          {glass && (
+            <div className="island__glass" aria-hidden="true">
+              {isLiquidGlass && <span className="island__glass-refraction" />}
+              {isLiquidGlass && <span className="island__glass-highlight" />}
+            </div>
+          )}
+          <IslandCollapsedBar
+            qqMail={qqMail}
+            qqNotifications={qqNotifications}
+            wechatReminders={wechatReminders}
+            preview={preview}
+            noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
             page={page}
-            features={features}
-            pageOrder={pageOrder}
-            pageButtonStyle={pageButtonStyle}
-            onPageOrderChange={onPageOrderChange}
+            isExpanded={isExpanded}
+            isTucked={isTucked}
+            positionLocked={positionLocked}
             showTitle={showTitle}
-            isDetached={isDetached}
+            showCollapsedText={showCollapsedText}
+            collapsedLabel={collapsedLabel}
+            collapsedTaskTitle={collapsedTaskTitle}
+            todoTimer={todoTimer}
+            todoRotation={todoRotation}
+            collapsedTodoCount={collapsedTodoCount}
+            collapsedItem={collapsedItem}
+            collapsedLayout={collapsedLayout}
+            collapsedCover={collapsedCover}
+            lyricsSettings={lyricsSettings}
+            agentSession={agentSession}
+            agentSessionCount={features.agents ? activeAgentSessionCount : null}
+            mediaState={mediaState}
+            showMusic={features.music}
+            shelfCount={shelfCount}
+            quotaAlert={quotaAlert}
             agentVisualState={agentVisualState}
-            agentStatusLabel={agentStatusLabel}
-            qqNotificationCount={qqNotificationCount}
-            wechatPending={wechatPending}
-            officePending={officePending}
-            onPageChange={onPageChange}
-            onCollapse={onCollapse}
-            onOpenSettings={onOpenSettings}
+            onOpenPage={onOpenPage}
             onOpenMessages={onOpenMessages}
-            onOpenTranslator={onOpenTranslator}
-            onResetPosition={onResetPosition}
-            minimizesToTray={minimizesToTray}
-            onMinimize={onMinimize}
-            pageActions={pageActions}
+            onWindowDragStart={onWindowDragStart}
+            onTuck={onTuck}
           />
-          <div ref={contentRef} className="island__content">{children}</div>
+
+          <div
+            ref={panelRef}
+            id="island-panel"
+            className="island__expanded"
+            aria-hidden={!isExpanded}
+            inert={!isExpanded}
+          >
+            <IslandHeader
+              isExpanded={isExpanded && !isTucked}
+              page={page}
+              features={features}
+              pageOrder={pageOrder}
+              pageButtonStyle={pageButtonStyle}
+              onPageOrderChange={onPageOrderChange}
+              showTitle={showTitle}
+              isDetached={isDetached}
+              agentVisualState={agentVisualState}
+              agentStatusLabel={agentStatusLabel}
+              qqNotificationCount={qqNotificationCount}
+              wechatPending={wechatPending}
+              officePending={officePending}
+              onPageChange={onPageChange}
+              onCollapse={onCollapse}
+              onOpenSettings={onOpenSettings}
+              onOpenMessages={onOpenMessages}
+              onOpenTranslator={onOpenTranslator}
+              onResetPosition={onResetPosition}
+              minimizesToTray={minimizesToTray}
+              onMinimize={onMinimize}
+              pageActions={pageActions}
+            />
+            <div ref={contentRef} className="island__content">{children}</div>
+          </div>
         </div>
       </div>
     </section>

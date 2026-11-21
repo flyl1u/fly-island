@@ -1,8 +1,7 @@
 // pnpm dev, then open /tests/regression/island-tour.html. The whole island with believable data
 // behind a fake desktop, for looking at every page by eye: ?media=playing|paused|nocover|long|
 // nolyrics|none picks what the player reports (?lyrics=0 turns online lyrics off), ?empty=1 empties every list, ?lang=en switches the
-// interface, ?detached=1 floats the island below the top edge, ?capsule=1 picks the capsule shape. With ?test=1 it opens each page and
-// checks that nothing sticks out of the island's rounded shape.
+// interface, ?detached=1 floats the island below the top edge, ?capsule=1 picks the capsule shape. ?test=1 checks each page.
 import { checkClockWeatherIsland, clockWeatherMock } from "./clockWeatherIsland";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -13,7 +12,8 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkCollapsedShape } from "./islandTourShape";
-import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone, prepareClassicLegacy, waitForClassicShoulderScreenshot } from "./islandTourTheme";
+import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } from "./islandTourTheme";
+import { prepareTourGlassBackdrop, runShoulderFixture } from "./islandTourShoulders";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
 import { TOUR_CLIPBOARD, TOUR_KIMI_USAGE, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SHELF, TOUR_TODOS, tourMediaState, tourSessions, type TourMedia } from "./islandTourMocks";
 
@@ -24,7 +24,6 @@ const media = (query.get("media") ?? "playing") as TourMedia;
 const customNotch = query.has("notch");
 const fontPercent = Number(query.get("font")) || 100;
 // ?theme=dark|light|system picks the colour scheme; ?bg=FFFFFF sets the background and ?material=classic|liquidGlass|frostedGlass the material.
-// ?tuck=line|hidden picks the tucked look (default edge).
 const tuckStyle = query.get("tuck") ?? "edge";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
 
@@ -56,8 +55,8 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   islandFontPercent: fontPercent,
   ...(query.get("theme") ? { colorScheme: query.get("theme") } : {}),
   ...(query.get("bg") ? { islandBackgroundColor: `#${query.get("bg")}` } : {}),
-  ...(query.get("material") ? { material: query.get("material") } : {}), ...(query.get("opacity") ? { opacity: Number(query.get("opacity")) } : {}), ...(query.has("classicShoulders") ? { autoTuck: false } : {}),
-  topEdgeShoulders: query.has("shoulders"), topEdgeShoulderSize: 20,
+  ...(query.get("material") ? { material: query.get("material") } : {}), ...(query.get("opacity") ? { opacity: Number(query.get("opacity")) } : {}), ...(query.get("corner") ? { islandCornerShape: query.get("corner") } : {}),
+  topEdgeShoulders: query.has("shoulders") || query.has("shoulderSweep") || query.has("shapePerf"), topEdgeShoulderSize: 20,
   ...(query.has("capsule") ? { islandShape: "capsule" } : {}),
   tuckStyle,
   // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
@@ -146,7 +145,6 @@ const click = async (selector: string) => {
   await settle(700);
 };
 
-// Product decision (2026-11-13): the island's opening/closing is an exception to reduced motion.
 function checkShapeMotion(expectedSeconds: number) {
   const style = getComputedStyle(document.querySelector<HTMLElement>(".island")!);
   const properties = style.transitionProperty.split(",").map((value) => value.trim());
@@ -189,13 +187,15 @@ function strays() {
   return out;
 }
 
-if (!automated) {
-  if (query.has("classicLegacy")) prepareClassicLegacy(); mount();
+if (query.has("shoulderSweep") || query.has("shapePerf")) {
+  mount(); await runShoulderFixture(query, results);
+} else if (!automated) {
+  mount();
   results.remove();
 } else {
   try {
     await act(async () => { mount(); });
-    await settle(300); if (query.has("glassBackdrop")) document.documentElement.dataset.glassBackdrop = "live"; if (query.has("classicLegacy")) prepareClassicLegacy();
+    await settle(300); if (query.has("glassBackdrop")) prepareTourGlassBackdrop();
     const island = () => document.querySelector<HTMLElement>(".island")!;
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     if (query.has("clockWeather")) await checkClockWeatherIsland(check, settle);
@@ -204,7 +204,7 @@ if (!automated) {
     const expectedHeight = customNotch ? 32 : 38;
     checkShapeMotion(0.38);
     checkCollapsedShape(query.has("capsule"), { island: island(), expectedHeight, interaction, check });
-    if (query.has("classicShoulders")) { checkClassicShoulders(check); await waitForClassicShoulderScreenshot(); }
+    if (query.has("classicShoulders")) checkClassicShoulders(check);
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
     if (customNotch) {
       const title = bar.querySelector<HTMLElement>(".island__agent-session, .island__active-task, .island__todo-count, .collapsed-lyric")!;
