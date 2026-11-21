@@ -9,9 +9,16 @@
 !macro NSIS_HOOK_PREINSTALL
   ; Tauri's template derives Software\\<manufacturer>\\<product> from the
   ; identifier. Reuse the former location when it is still registered.
+  ; The template has already run SetOutPath $INSTDIR, so the output path must follow
+  ; the switch: otherwise File writes into the old default directory while the
+  ; resource folders are created in the reused one, and v3.2.9 stopped on
+  ; "Error opening file for writing ... media-plugins\BetterNCMII.dll" for every
+  ; upgrade. A registered directory the user has since moved or deleted is ignored.
   ReadRegStr $0 SHCTX "Software\${LEGACY_MANUFACTURER}\fly-island" ""
   ${If} $0 != ""
+  ${AndIf} ${FileExists} "$0\${MAINBINARYNAME}.exe"
     StrCpy $INSTDIR $0
+    SetOutPath $INSTDIR
   ${EndIf}
 !macroend
 
