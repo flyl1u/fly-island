@@ -9,7 +9,7 @@ import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
 import type { IslandSettings } from "../../features/appearance/types";
-import { setClockWeatherSettings, useClockWeather } from "../../features/weather";
+import { setClockWeatherSettings } from "../../features/weather";
 import { useTranslation } from "../../i18n";
 import "./PluginMarket.css";
 
@@ -19,13 +19,12 @@ type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings
 export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
   const { installed, enabled } = useNativePluginStates();
-  const clockWeather = useClockWeather();
   const [, setOfficeEnabled] = useOfficeImEnabled();
   // Installing is asking for it: its own switch (Messages / Agent settings) goes on with it. A switch
   // left off from before, or turned off and forgotten, kept an installed plugin off the island
   // with nothing there to say why (2026-11-19, owner: 钉钉装好后岛上没有).
   const install = (id: NativePluginId) => {
-    if (id === "clockWeather") setClockWeatherSettings({ ...clockWeather.settings, showClock: true, showWeather: true });
+    if (id === "clockWeather") setClockWeatherSettings({ showClock: true, showWeather: true });
     const office = OFFICE_SOURCES.find((source) => source === id);
     if (office) setOfficeEnabled(office, true);
     const agent = NATIVE_AGENTS.find((item) => item.id === id);

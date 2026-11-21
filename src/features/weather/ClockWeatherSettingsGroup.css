@@ -5,6 +5,8 @@
   overflow-wrap: anywhere;
 }
 .clock-weather-settings__status:empty { display: none; }
+.clock-weather-settings__status--error { color: var(--color-error-text); }
+.clock-weather-settings__current { overflow-wrap: anywhere; }
 .clock-weather-settings__actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--space-md); flex-wrap: wrap; }
 .clock-weather-settings__location-error { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
 .clock-weather-settings__cities { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }

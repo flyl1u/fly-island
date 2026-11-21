@@ -19,12 +19,20 @@ export function ClockWeatherSettingsGroup() {
   const { locale } = useLocale();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<WeatherLocation[]>([]);
-  const [status, setStatus] = useState<"idle" | "loading" | "empty" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "empty" | "error" | "saveError">("idle");
   const [locationStatus, setLocationStatus] = useState<"idle" | "locating" | "ip" | "error">("idle");
   const revision = useRef(0);
-  const settingsRef = useRef(settings);
-  useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => () => { revision.current += 1; }, []);
+  const saveCity = (location: WeatherLocation) => {
+    if (!setClockWeatherSettings({ location })) {
+      setStatus("saveError");
+      return false;
+    }
+    setQuery("");
+    setResults([]);
+    setStatus("idle");
+    return true;
+  };
   const search = async () => {
     const token = ++revision.current;
     setResults([]);
@@ -45,13 +53,10 @@ export function ClockWeatherSettingsGroup() {
     try {
       const result = await locateWeather(locale);
       if (token !== revision.current) return;
-      setClockWeatherSettings({ ...settingsRef.current, location: result.location });
-      setQuery("");
-      setResults([]);
-      setStatus("idle");
-      setLocationStatus(result.source === "ip" ? "ip" : "idle");
+      const saved = saveCity(result.location);
+      setLocationStatus(saved && result.source === "ip" ? "ip" : "idle");
     } catch {
-      setLocationStatus("error");
+      if (token === revision.current) setLocationStatus("error");
     }
   };
   const openLocationSettings = () => {
@@ -60,10 +65,12 @@ export function ClockWeatherSettingsGroup() {
   if (!installed) return null;
   return <SettingsGroup title={title} footer={t.privacy}>
     <SettingsToggleRow title={t.showClock} checked={settings.showClock}
-      onChange={(showClock) => setClockWeatherSettings({ ...settings, showClock })} />
+      onChange={(showClock) => { setClockWeatherSettings({ showClock }); }} />
     <SettingsToggleRow title={t.showWeather} checked={settings.showWeather}
-      onChange={(showWeather) => setClockWeatherSettings({ ...settings, showWeather })} />
-    <SettingsRow title={t.city} description={settings.location?.name ?? t.chooseCity}
+      onChange={(showWeather) => { setClockWeatherSettings({ showWeather }); }} />
+    <SettingsRow title={t.city} description={<span className="clock-weather-settings__current">
+      {settings.location ? t.currentCity(settings.location.name) : t.noCity}
+    </span>}
       control={<span className="clock-weather-settings__actions">
         <SettingsLinkButton disabled={query.trim().length < 2 || status === "loading" || locationStatus === "locating"}
           onClick={() => { void search(); }}>{t.search}</SettingsLinkButton>
@@ -73,7 +80,7 @@ export function ClockWeatherSettingsGroup() {
           {locationStatus === "locating" ? t.locating : t.locate}
         </SettingsLinkButton>
       </span>}>
-      <SettingsInput aria-label={t.city} placeholder={t.cityPlaceholder} value={query} maxLength={100}
+      <SettingsInput aria-label={t.city} placeholder={settings.location ? t.otherCityPlaceholder : t.cityPlaceholder} value={query} maxLength={100}
         onChange={(event) => {
           revision.current += 1;
           setQuery(event.target.value); setResults([]); setStatus("idle"); setLocationStatus("idle");
@@ -86,6 +93,7 @@ export function ClockWeatherSettingsGroup() {
       <p className="clock-weather-settings__status" role="status" aria-live="polite">
         {status === "loading" ? t.searching : status === "empty" ? t.noCities : status === "error" ? t.searchFailed : ""}
       </p>
+      {status === "saveError" && <p className="clock-weather-settings__status clock-weather-settings__status--error" role="alert">{t.saveFailed}</p>}
       {locationStatus === "locating" && <p className="clock-weather-settings__status" role="status" aria-live="polite">{t.locating}</p>}
       {locationStatus === "ip" && <p className="clock-weather-settings__status" role="status" aria-live="polite">{t.locatedByIp}</p>}
       {locationStatus === "error" && <div className="clock-weather-settings__location-error" role="alert">
@@ -96,8 +104,8 @@ export function ClockWeatherSettingsGroup() {
         {results.map((city) => <li key={`${city.latitude}/${city.longitude}`}>
           <button type="button" onClick={() => {
             revision.current += 1;
-            setClockWeatherSettings({ ...settingsRef.current, location: city });
-            setQuery(""); setResults([]); setStatus("idle"); setLocationStatus("idle");
+            setLocationStatus("idle");
+            saveCity(city);
           }}>{city.name}</button>
         </li>)}
       </ul>}

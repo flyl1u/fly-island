@@ -23,7 +23,8 @@ export async function checkClockWeatherIsland(
   const island = () => document.querySelector<HTMLElement>(".island")!;
   await act(async () => {
     setNativePluginInstalled("clockWeather", false);
-    setClockWeatherSettings({ showClock: true, showWeather: true, location: null });
+    localStorage.removeItem(CLOCK_WEATHER_KEY);
+    window.dispatchEvent(new StorageEvent("storage", { key: CLOCK_WEATHER_KEY }));
   });
   await settle(800);
   const baseWidth = island().getBoundingClientRect().width;
@@ -46,7 +47,7 @@ export async function checkClockWeatherIsland(
   const fixedClockWidth = clock()!.getBoundingClientRect().width;
   await act(async () => window.dispatchEvent(new Event("focus")));
   check(clock()!.getBoundingClientRect().width === fixedClockWidth, "时间对齐刷新不会改变固定数字宽度");
-  await act(async () => setClockWeatherSettings({ showClock: false, showWeather: true, location: city }));
+  await act(async () => setClockWeatherSettings({ showClock: false }));
   check(!clock() && weather(), "关闭时间不影响天气");
   await act(async () => {
     localStorage.setItem(CLOCK_WEATHER_KEY, JSON.stringify({ showClock: true, showWeather: false, location: city }));

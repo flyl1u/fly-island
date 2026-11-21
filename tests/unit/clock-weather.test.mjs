@@ -4,6 +4,7 @@ import { normalizeClockWeatherSettings, normalizeWeatherCache, normalizeWeatherL
   WEATHER_MAX_AGE_MS, clockWeatherWidth, formatClock, nextMinuteDelay, formatTemperature } from "../../src/features/weather/model.ts";
 import { normalizeCollapsedHidden, placeCollapsedLayout, visibleCollapsedSlots } from "../../src/features/appearance/collapsedLayout.ts";
 import { normalizeBehaviorSettings } from "../../src/features/appearance/normalizeBehaviorSettings.ts";
+import { CLOCK_WEATHER_KEY, loadClockWeatherSettings, saveClockWeatherSettings } from "../../src/features/weather/storage.ts";
 
 const location = { name: "Beijing", latitude: 39.9, longitude: 116.4 };
 const now = 1795089700000;
@@ -75,4 +76,62 @@ test("arranging the editor keeps uninstalled plugin slots in their saved places"
   assert.deepEqual(placeCollapsedLayout(saved, ["music", "pulse", "text", "agents", "mail"], ["clock", "weather"]),
     ["clock", "music", "pulse", "text", "weather", "agents", "mail", "shelf"]);
   assert.deepEqual(placeCollapsedLayout(saved, ["shelf", "text"], []), ["shelf", "text", "clock", "pulse", "music", "weather", "agents", "mail"]);
+});
+
+function mockClockWeatherStorage(t, initial) {
+  const values = new Map(initial ? [[CLOCK_WEATHER_KEY, JSON.stringify(initial)]] : []);
+  const previous = globalThis.window;
+  globalThis.window = {
+    localStorage: {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => { values.set(key, value); },
+    },
+  };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.window;
+    else globalThis.window = previous;
+  });
+  return values;
+}
+
+test("each display toggle keeps a city and other preferences written by another window", (t) => {
+  const values = mockClockWeatherStorage(t, { showClock: true, showWeather: true, location });
+  const oldSettings = loadClockWeatherSettings();
+  const newCity = { name: "深圳市 · 广东省", latitude: 22.54, longitude: 114.06 };
+  values.set(CLOCK_WEATHER_KEY, JSON.stringify({ showClock: true, showWeather: false, location: newCity }));
+
+  assert.equal(saveClockWeatherSettings({ showClock: !oldSettings.showClock }), true);
+  assert.deepEqual(loadClockWeatherSettings(), { showClock: false, showWeather: false, location: newCity });
+  assert.equal(saveClockWeatherSettings({ showWeather: true }), true);
+  assert.deepEqual(loadClockWeatherSettings(), { showClock: false, showWeather: true, location: newCity });
+});
+
+test("the install defaults keep a city chosen after the market first read its settings", (t) => {
+  const values = mockClockWeatherStorage(t);
+  assert.equal(loadClockWeatherSettings().location, null);
+  values.set(CLOCK_WEATHER_KEY, JSON.stringify({ showClock: false, showWeather: false, location }));
+
+  assert.equal(saveClockWeatherSettings({ showClock: true, showWeather: true }), true);
+  assert.deepEqual(loadClockWeatherSettings(), { showClock: true, showWeather: true, location });
+});
+
+test("a selected or located city keeps new display preferences and accepts long names and signed coordinates", (t) => {
+  const values = mockClockWeatherStorage(t, { showClock: true, showWeather: true, location });
+  const city = { name: `海港 · ${"城".repeat(220)}`, latitude: -33.86, longitude: -70.65 };
+  values.set(CLOCK_WEATHER_KEY, JSON.stringify({ showClock: false, showWeather: false, location }));
+
+  assert.equal(saveClockWeatherSettings({ location: city }), true);
+  assert.deepEqual(loadClockWeatherSettings(), { showClock: false, showWeather: false, location: { ...city, name: city.name.slice(0, 200) } });
+});
+
+test("invalid location results and failed writes leave the persisted city available on reload", (t) => {
+  const values = mockClockWeatherStorage(t, { showClock: true, showWeather: false, location });
+  const previous = values.get(CLOCK_WEATHER_KEY);
+  for (const result of [null, undefined, { ...location, name: " " }, { ...location, longitude: 181 }]) {
+    assert.equal(saveClockWeatherSettings({ location: result }), false);
+    assert.equal(values.get(CLOCK_WEATHER_KEY), previous);
+  }
+  globalThis.window.localStorage.setItem = () => { throw new Error("Quota exceeded"); };
+  assert.equal(saveClockWeatherSettings({ location: { name: "Another city", latitude: -10, longitude: -20 } }), false);
+  assert.deepEqual(loadClockWeatherSettings(), { showClock: true, showWeather: false, location });
 });

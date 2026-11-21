@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { useNativePlugins } from "../plugins";
-import { CLOCK_WEATHER_KEY, loadClockWeatherSettings, saveClockWeatherSettings } from "./storage";
+import { CLOCK_WEATHER_KEY, loadClockWeatherSettings, saveClockWeatherSettings, type ClockWeatherSettingsUpdate } from "./storage";
 import type { ClockWeatherSettings } from "./model";
 
 let current: ClockWeatherSettings | null = null;
@@ -16,13 +16,13 @@ function onStorage(event: StorageEvent) {
   if (event.key === null || event.key === CLOCK_WEATHER_KEY) reread();
 }
 function subscribe(listener: () => void) {
-  if (!listeners.size) {
+  listeners.add(listener);
+  if (listeners.size === 1) {
     window.addEventListener("storage", onStorage);
     window.addEventListener("focus", reread);
     document.documentElement.addEventListener("pointerenter", reread);
     reread();
   }
-  listeners.add(listener);
   return () => {
     listeners.delete(listener);
     if (!listeners.size) {
@@ -37,7 +37,8 @@ export function useClockWeather() {
   const settings = useSyncExternalStore(subscribe, snapshot, snapshot);
   return { installed, settings };
 }
-export function setClockWeatherSettings(settings: ClockWeatherSettings) {
-  saveClockWeatherSettings(settings);
+export function setClockWeatherSettings(update: ClockWeatherSettingsUpdate) {
+  const saved = saveClockWeatherSettings(update);
   reread();
+  return saved;
 }
