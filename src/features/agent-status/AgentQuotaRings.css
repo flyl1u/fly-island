@@ -132,4 +132,5 @@
   min-width: 22px;
   flex-shrink: 1;
 }
-.agent-quota__agent--plugin { --quota-base: #43b4a5; }
+/* 外部插件：MiniMax Code 的图标蓝，和市场卡片、Agent 图标一致。 */
+.agent-quota__agent--plugin { --quota-base: #0f9ef0; }
