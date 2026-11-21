@@ -129,7 +129,7 @@ export function useOfficeIm(canPreview: boolean, previewSeconds: number) {
     return () => window.clearTimeout(timer);
   }, [previewWindow]);
 
-  const shown = previewWindow && canPreview && snapshot[previewWindow.source].pending ? previewWindow : null;
+  const shown = previewWindow && canPreview && wanted[previewWindow.source] && snapshot[previewWindow.source].pending ? previewWindow : null;
   const preview: MessagePreview | null = shown ? { source: shown.source, title: "", body: "", receivedAt: shown.receivedAt } : null;
   return { snapshot, preview };
 }

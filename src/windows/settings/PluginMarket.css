@@ -37,8 +37,9 @@
   min-height: 168px;
   padding: var(--space-2xl);
   overflow: hidden;
+  --plugin-card-glow: color-mix(in srgb, var(--plugin-accent) 16%, transparent);
   background:
-    radial-gradient(120px 96px at 34px 30px, color-mix(in srgb, var(--plugin-accent) 16%, transparent), transparent 72%),
+    radial-gradient(120px 96px at 34px 30px, var(--plugin-card-glow), transparent 72%),
     var(--color-white-a04);
   border: 1px solid var(--color-white-a06);
   border-radius: var(--corner-2xl);
@@ -139,13 +140,38 @@
   line-clamp: 3;
 }
 
+.plugin-card--disabled {
+  --plugin-card-glow: var(--color-white-a06);
+}
+
+.plugin-card--disabled .plugin-card__tile,
+.plugin-card--disabled .plugin-card__check {
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+
+.plugin-card--disabled .plugin-card__name {
+  color: var(--color-text-muted);
+}
+
+.plugin-card--disabled .plugin-card__description {
+  color: color-mix(in srgb, var(--color-text-subtle) 90%, transparent);
+}
+
+.plugin-card__footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: auto;
+}
+
 .plugin-card__action {
   display: inline-grid;
-  align-self: flex-start;
   place-items: center;
   min-width: 64px;
   height: 26px;
-  margin-top: auto;
   padding: 0 14px;
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 16%, transparent);
@@ -174,6 +200,8 @@
 
 /* Installed: a quiet "Installed" that turns into "Remove" under the pointer or keyboard focus. */
 .plugin-card__action--remove {
+  min-width: 0;
+  padding-inline: var(--space-lg);
   color: var(--color-text-subtle);
   background: var(--color-white-a06);
 }

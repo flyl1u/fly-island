@@ -15,7 +15,7 @@ export type SettingsPluginsText = {
 
 export type SettingsPluginMarketText = {
   title: string; hint: string; officeTitle: string; officeHint: string; install: string; uninstall: string; installed: string;
-  installNamed: (name: string) => string; uninstallNamed: (name: string) => string;
+  installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
   by: string;
   items: Record<NativePluginId, { name: string; description: string }>;
 };
@@ -31,9 +31,9 @@ export const zhCN: SettingsPluginsText = {
   permission: { network: "联网", "read-home-files": "本地文件", notifications: "消息", quota: "额度", sessions: "会话", "desktop-windows": "桌面窗口", "private-browser": "独立登录" },
   market: {
     title: "插件市场", officeTitle: "办公消息", officeHint: "钉钉、飞书、企业微信的任务栏图标闪动时在岛上提醒，看不到消息内容；点提醒回到对应软件。",
-    hint: "装上后成为小岛自己的一部分：消息类出现在消息页的标签里，Agent 类出现在 AI 会话里，可在对应设置页单独开关；岛屿类直接显示在收起的岛上。",
+    hint: "装上后，消息插件显示在消息页，Agent 插件显示在 AI 会话页，岛屿插件显示在收起的岛上。卡片上的开关可随时停用插件并保留设置。",
     install: "安装", uninstall: "卸载", installed: "已安装",
-    installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`,
+    installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
     by: "作者",
     items: {
       clockWeather: { name: "时间与天气", description: "在收起的岛上显示时间与所选城市的天气，可分别开关和调整位置。" },
@@ -59,9 +59,9 @@ export const en: SettingsPluginsText = {
   permission: { network: "Network", "read-home-files": "Local files", notifications: "Messages", quota: "Quota", sessions: "Sessions", "desktop-windows": "Desktop windows", "private-browser": "Private sign-in" },
   market: {
     title: "Plugin market", officeTitle: "Work messages", officeHint: "Get a heads-up when DingTalk, Feishu or WeCom flashes in the taskbar; message text is not read. Click the reminder to switch to the app.",
-    hint: "Installed plugins become part of the island: message plugins add a tab to Messages, Agent plugins join AI sessions, each with its own switch in settings. Island plugins add collapsed status items.",
+    hint: "Installed plugins appear in Messages, AI sessions or on the collapsed island. Use the switch on a card to turn its plugin off and keep its settings.",
     install: "Get", uninstall: "Remove", installed: "Installed",
-    installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`,
+    installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
     by: "by",
     items: {
       clockWeather: { name: "Clock & Weather", description: "Show the time and your city’s weather on the collapsed island, with separate switches and positions." },
