@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { moveItem, normalizeOrder } from "../../src/utils/order.ts";
+import { crossedReorderMidpoint, moveItem, normalizeOrder } from "../../src/utils/order.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
 
 const ITEMS = ["agent", "lyrics", "todo"];
@@ -20,6 +20,14 @@ test("moving an item puts it at the new index and leaves the rest in order", () 
   assert.equal(moveItem(ITEMS, "missing", 0), ITEMS);
 });
 
+test("crossing the target midpoint keeps unequal widths from swapping back on the same drag", () => {
+  assert.equal(crossedReorderMidpoint(141, 100, 180, true), false);
+  assert.equal(crossedReorderMidpoint(140, 100, 180, true), true);
+  // The wider target moved 28px to the right when the narrow button was inserted before it.
+  assert.equal(crossedReorderMidpoint(139, 128, 208, false), false);
+  assert.equal(crossedReorderMidpoint(168, 128, 208, false), true);
+});
+
 test("the collapsed island's order, cover and the page dots load with defaults", () => {
   const settings = normalizeSettings({});
   assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo"]);
@@ -33,8 +41,10 @@ test("the collapsed island's order, cover and the page dots load with defaults",
   assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation"]);
 });
 
-test("page buttons default to icons; a saved capsule choice is kept", () => {
+test("page buttons keep each supported style and default to icons", () => {
   assert.equal(normalizeSettings({}).pageButtonStyle, "icon");
   assert.equal(normalizeSettings({ pageButtonStyle: "capsule" }).pageButtonStyle, "capsule");
   assert.equal(normalizeSettings({ pageButtonStyle: "icon" }).pageButtonStyle, "icon");
+  assert.equal(normalizeSettings({ pageButtonStyle: "iconLabel" }).pageButtonStyle, "iconLabel");
+  assert.equal(normalizeSettings({ pageButtonStyle: "unknown" }).pageButtonStyle, "icon");
 });

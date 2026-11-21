@@ -56,7 +56,7 @@
   width: calc(19 * var(--u));
 }
 
-.agent-page-preview__page > span {
+.agent-page-preview__page:not(.agent-page-preview__page--icon-label) > span {
   width: calc(18 * var(--u));
   height: calc(12 * var(--u));
   border-radius: var(--radius-pill);
@@ -72,6 +72,47 @@
 .agent-page-preview__page--translation { color: #ff9a76; }
 .agent-page-preview__page--clipboard { color: #f4a7c4; }
 .agent-page-preview__page--shelf { color: #d8d6cf; }
+
+.agent-page-preview__header--icon-label {
+  gap: calc(4 * var(--u));
+  margin-inline: calc(-10 * var(--u));
+}
+
+.agent-page-preview__dots--icon-label {
+  --page-button-unit: var(--u);
+  --page-button-label-color: var(--ink-2);
+  flex: 1;
+  min-width: 0;
+  gap: var(--page-button-gap);
+}
+
+.agent-page-preview__page--icon-label {
+  --preview-page-icon: color-mix(in srgb, currentColor 55%, rgb(var(--preview-ink)));
+  position: relative;
+  height: calc(34 * var(--u));
+}
+
+.agent-page-preview__page--icon-label .page-button-content__icon {
+  position: relative;
+  color: var(--preview-page-icon);
+}
+
+.agent-page-preview__page--messages { color: #e58ee2; }
+.agent-page-preview__page--agents { --preview-page-icon: var(--color-agent-running); }
+
+.agent-page-preview__page--agents::before {
+  content: "";
+  position: absolute;
+  inset: calc(5 * var(--u)) 0;
+  background: color-mix(in srgb, var(--preview-page-icon) 15%, transparent);
+  box-shadow: inset 0 0 0 var(--u) color-mix(in srgb, var(--preview-page-icon) 34%, transparent);
+  border-radius: calc(6 * var(--u));
+  corner-shape: var(--preview-corner-shape, round);
+}
+
+.agent-page-preview__header--icon-label .agent-page-preview__buttons {
+  gap: calc(2 * var(--u));
+}
 
 .agent-page-preview__buttons {
   display: flex;

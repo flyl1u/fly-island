@@ -93,12 +93,17 @@
  * corners and everything inside (AgentPagePreview.css) follow the real island's proportions.
  */
 .island-preview__island--expanded {
-  --u: calc(92cqw / var(--preview-expanded-max-scale) / 660);
+  --preview-expanded-width: 660;
+  --u: calc(92cqw / var(--preview-expanded-max-scale) / var(--preview-expanded-width));
   --preview-radius-expanded: calc(var(--preview-radius-px) * var(--u));
-  width: calc(660 * var(--u));
+  width: calc(var(--preview-expanded-width) * var(--u));
   padding: calc(12 * var(--u)) calc(20 * var(--u)) calc(16 * var(--u));
   border-radius: 0 0 var(--preview-radius-expanded) var(--preview-radius-expanded);
   transform: scale(var(--preview-expanded-scale));
+}
+
+.island-preview__island--expanded:has(.agent-page-preview__header--icon-label) {
+  --preview-expanded-width: 560;
 }
 
 /* Away from the top edge (Position → distance from the top) the island is rounded all round. */

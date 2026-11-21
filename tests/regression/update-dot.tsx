@@ -8,7 +8,7 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
 import { I18nProvider } from "../../src/i18n";
 import type { IslandPage } from "../../src/windows/island/types";
-import type { PageButtonStyle } from "../../src/features/appearance/types";
+import type { PageButtonStyle, PageDot } from "../../src/features/appearance/types";
 import type { UpdateState } from "../../src/features/updater/updaterController";
 import { syncUpdateTodo } from "../../src/features/todos/updateTodo";
 
@@ -52,6 +52,7 @@ function Fixture() {
   const [page, changePage] = useState<IslandPage>("todo");
   const [expanded, changeExpanded] = useState(false);
   const [style, changeStyle] = useState<PageButtonStyle>("icon");
+  const [order, changeOrder] = useState<PageDot[]>(["todo", "music", "clipboard", "shelf", "translation"]);
   setPage = changePage;
   setExpanded = changeExpanded;
   setStyle = changeStyle;
@@ -59,15 +60,16 @@ function Fixture() {
   const visibleTodo = syncUpdateTodo([], { ...state, hasVersion: state.nextVersion !== "" }, "Update").length > 0;
   return <>
     <IslandHeader isExpanded={expanded} page={page} features={{ todo: true, music: true, clipboard: true, shelf: true,
-      agents: true, translation: true, qq: true, wechat: true, qqMail: true }} pageOrder={["todo", "music", "clipboard", "shelf", "translation"]}
-      pageButtonStyle={style} onPageOrderChange={() => {}} showTitle={false} isDetached={false} agentVisualState="idle"
-      agentStatusLabel="Agent" qqNotificationCount={0} wechatPending={false} officePending={null} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
-      onOpenSettings={() => {}} onOpenMessages={() => {}} onOpenTranslator={() => {}} onResetPosition={() => {}}
+      agents: true, translation: true, qq: true, wechat: true, qqMail: true }} pageOrder={order}
+      pageButtonStyle={style} onPageOrderChange={changeOrder} showTitle={false} isDetached={false} agentVisualState="idle"
+      agentStatusLabel="Agent" qqNotificationCount={2} wechatPending={false} officePending={null} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
+      onOpenSettings={() => {}} onOpenMessages={() => changePage("qq")} onOpenTranslator={() => changePage("translation")} onResetPosition={() => {}}
       minimizesToTray={false} onMinimize={() => {}} />
     {page === "todo" && visibleTodo && <div className="todo-item"><span /><span>检测到新版本</span><UpdateTodoAction /></div>}
   </>;
 }
-const root = createRoot(document.getElementById("fixture")!);
+const fixture = document.getElementById("fixture")!;
+const root = createRoot(fixture);
 const results = document.getElementById("results")!;
 const passed: string[] = [];
 const check = (condition: unknown, message: string) => {
@@ -76,6 +78,84 @@ const check = (condition: unknown, message: string) => {
 };
 const dot = () => document.querySelector<HTMLElement>(".island-update-dot");
 const action = () => document.querySelector<HTMLButtonElement>(".todo-start--update")!;
+async function checkPageButtonLabels() {
+  const row = () => fixture.querySelector<HTMLElement>(".editor-dots")!;
+  const buttons = () => [...row().querySelectorAll<HTMLButtonElement>("[data-page-button]")];
+  const labels = () => [...row().querySelectorAll<HTMLElement>(".page-button-content__label")];
+  const visible = () => labels().filter((label) => label.getBoundingClientRect().width > 0.5
+    && Number(getComputedStyle(label).opacity) > 0.01);
+  const visiblePages = () => visible().map((label) => label.closest<HTMLElement>("[data-page-button]")!.dataset.pageButton).join(",");
+  const actions = () => fixture.querySelector<HTMLElement>(".window-actions")!.getBoundingClientRect();
+  const fits = () => {
+    const right = row().getBoundingClientRect().right;
+    return buttons().every((button) => button.getBoundingClientRect().right <= right + 0.5) && right <= actions().left;
+  };
+  const settleLabels = async () => {
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
+  };
+  const resize = async (width: number) => {
+    fixture.style.width = `${width}px`;
+    await settleLabels();
+  };
+
+  fixture.style.setProperty("--island-font-scale", "1.25");
+  await resize(800);
+  await act(async () => setStyle("iconLabel"));
+  await settleLabels();
+  check(row().dataset.pageLabelMode === "all" && visiblePages() === "agents,todo,music,clipboard,shelf,translation,qq"
+    && visible().every((label) => label.getBoundingClientRect().left >= label.previousElementSibling!.getBoundingClientRect().right
+      && label.getBoundingClientRect().width >= label.querySelector(".page-button-content__text")!.getBoundingClientRect().width - 0.5)
+    && visible()[0].textContent === "AI Agent" && visible()[1].textContent === (en ? "Todo" : "待办") && fits(),
+    "Wide icon-label buttons show all localized names next to their icons");
+  check(dot()?.closest("button")?.getAttribute("aria-label")?.includes(en ? "update available" : "有新版本")
+    && fixture.querySelector(".dot-button--messages .island-message-button__dot"),
+    "Icon-label buttons keep the localized update announcement and the message dot");
+
+  await resize(400);
+  check(row().dataset.pageLabelMode === "current" && visiblePages() === "music" && fits(),
+    "A narrower header shows only the current page name and fits beside window actions");
+  const actionsLeft = actions().left;
+  const clipboard = row().querySelector<HTMLButtonElement>(".dot-button--clipboard")!;
+  await act(async () => { clipboard.focus(); clipboard.click(); });
+  await settleLabels();
+  check(visiblePages() === "clipboard" && fits() && actions().left === actionsLeft && document.activeElement === clipboard
+    && clipboard.getAttribute("aria-current") === "page",
+    "Switching pages moves the visible name and keeps focus and window actions in place");
+
+  const shelf = row().querySelector<HTMLButtonElement>(".dot-button--shelf")!;
+  const target = clipboard.getBoundingClientRect();
+  const source = shelf.getBoundingClientRect();
+  const midpoint = target.left + target.width / 2;
+  const fire = (type: string, x: number) => shelf.dispatchEvent(new PointerEvent(type, {
+    bubbles: true, button: 0, pointerId: 9, clientX: x, clientY: source.top + source.height / 2,
+  }));
+  await act(async () => { fire("pointerdown", source.left + source.width / 2); });
+  await act(async () => { fire("pointermove", midpoint - 1); });
+  await act(async () => { fire("pointermove", midpoint - 2); });
+  await act(async () => { fire("pointerup", midpoint - 2); shelf.click(); });
+  await settleLabels();
+  check(shelf.nextElementSibling === clipboard && visiblePages() === "clipboard" && fits(),
+    "Dragging a narrow icon across a longer name reorders once and keeps the current page");
+
+  await act(async () => row().querySelector<HTMLButtonElement>(".dot-button--messages")!.click());
+  await settleLabels();
+  check(visiblePages() === "qq" && fits(), "The message entry can be the current labeled page");
+
+  await resize(244);
+  check(row().dataset.pageLabelMode === "icons" && visible().length === 0 && fits()
+    && buttons().every((button) => button.querySelector("svg") && button.getAttribute("aria-label") && button.dataset.tip),
+    "The narrowest header fits all the icons and keeps their accessible names and tooltips");
+  await resize(800);
+  check(row().dataset.pageLabelMode === "all" && visible().length === 7 && fits(),
+    "Widening the header restores all page names");
+
+  fixture.style.removeProperty("width");
+  fixture.style.removeProperty("--island-font-scale");
+  await settleLabels();
+}
+
 try {
   await act(async () => root.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>));
   await update({});
@@ -94,6 +174,7 @@ try {
       && badge.getAttribute("aria-hidden") === "true" && button.getAttribute("aria-label")?.includes(en ? "update available" : "有新版本"),
       `${style}: solid red decorative dot, no ring/glow/pulse, same button size and localized announcement`);
   }
+  await checkPageButtonLabels();
   await act(async () => document.querySelector<HTMLButtonElement>(".dot-button--todo")!.click());
   check(dot() && document.querySelector(".todo-update-dot"),
     "Opening Todo keeps the header dot and the row dot until the update is installed");

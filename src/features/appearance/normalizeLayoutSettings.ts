@@ -30,11 +30,14 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
   const collapsedScale = hasPreviousDefaultScales
     ? 0.82
     : settings?.collapsedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.collapsedScale;
+  const pageButtonStyle = settings?.pageButtonStyle;
   return {
     topEdgeLayoutVersion: 1,
     fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
     islandFontPercent: normalizeSize(settings?.islandFontPercent, ISLAND_FONT_PERCENT),
-    pageButtonStyle: settings?.pageButtonStyle === "capsule" ? "capsule" : DEFAULT_SETTINGS.pageButtonStyle,
+    pageButtonStyle: pageButtonStyle === "capsule" || pageButtonStyle === "icon" || pageButtonStyle === "iconLabel"
+      ? pageButtonStyle
+      : DEFAULT_SETTINGS.pageButtonStyle,
     material: normalizeMaterial(settings),
     colorScheme: settings?.colorScheme === "light" || settings?.colorScheme === "system" ? settings.colorScheme : DEFAULT_SETTINGS.colorScheme,
     glassIntensity: clamp(

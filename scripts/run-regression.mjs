@@ -41,6 +41,8 @@ export const PAGES = [
   "i18n.html?test=1",
   "island-tour.html?test=1&shoulders=1",
   "island-tour.html?test=1&update=1",
+  "island-tour.html?test=1&pageButtons=iconLabel",
+  "island-tour.html?test=1&pageButtons=iconLabel&lang=en",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
   // cover the line and hidden tucked looks.
   "island-tour.html?test=1&scale=0.85&tuck=line&shoulders=1",

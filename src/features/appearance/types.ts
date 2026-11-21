@@ -9,7 +9,7 @@ export type Material = "classic" | "liquidGlass" | "frostedGlass";
 /** Colour scheme of the island and the windows: dark, light, or whichever Windows uses. */
 export type ColorScheme = "dark" | "light" | "system";
 export type IslandFont = "system" | "pixel";
-export type PageButtonStyle = "capsule" | "icon";
+export type PageButtonStyle = "capsule" | "icon" | "iconLabel";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
 export type IslandCornerShape = "squircle" | "round";
 /** Notch: flush with the top edge (the original look). Capsule: a floating pill below it (islandShape.ts). */

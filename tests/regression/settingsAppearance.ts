@@ -242,6 +242,15 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       "The uncommitted font slider updates both previews");
     await act(async () => window.dispatchEvent(new PointerEvent("pointerup")));
     check(storedSettings().islandFontPercent === 120, "Releasing the font slider saves the new size");
+    const labeledChoice = [...document.querySelectorAll<HTMLButtonElement>('[aria-label="页面按钮"] button')]
+      .find((option) => option.textContent === "图标加文字")!;
+    await act(async () => labeledChoice.click());
+    const previewButtons = element(".agent-page-preview__dots--icon-label");
+    check(labeledChoice.getAttribute("aria-pressed") === "true" && storedSettings().pageButtonStyle === "iconLabel"
+      && previewButtons.dataset.pageLabelMode !== "icons"
+      && previewButtons.querySelector('[data-page-button="agents"] .page-button-content__text')?.textContent === "AI Agent"
+      && previewButtons.querySelector('[data-page-button="qq"] .page-button-content__text')?.textContent === "消息",
+      "The third page button style saves and draws the localized labels in the appearance preview");
     const autoWidth = inputNamed("自动宽度")!;
     check(autoWidth.checked && !inputNamed("宽度"), "The notch uses automatic width by default");
     await act(async () => autoWidth.click());

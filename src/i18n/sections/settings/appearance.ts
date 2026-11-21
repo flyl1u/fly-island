@@ -31,6 +31,7 @@ export type SettingsAppearanceText = {
   pageButtons: string;
   capsules: string;
   icons: string;
+  iconsAndLabels: string;
   /** Notch (flush with the top edge) or capsule (a floating pill, islandShape.ts). */
   islandShape: string;
   islandShapeHint: string;
@@ -110,6 +111,7 @@ export const zhCN: SettingsAppearanceText = {
   pageButtons: "页面按钮",
   capsules: "胶囊",
   icons: "图标",
+  iconsAndLabels: "图标加文字",
   islandShape: "岛屿外形",
   islandShapeHint: "胶囊悬在屏幕顶端下方，收起时是一颗完整的药丸",
   islandShapes: { notch: "刘海", capsule: "胶囊" },
@@ -183,6 +185,7 @@ export const en: SettingsAppearanceText = {
   pageButtons: "Page buttons",
   capsules: "Capsules",
   icons: "Icons",
+  iconsAndLabels: "Icons & labels",
   islandShape: "Island shape",
   islandShapeHint: "The capsule floats just below the top of the screen and collapses to a full pill",
   islandShapes: { notch: "Notch", capsule: "Capsule" },

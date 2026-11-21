@@ -1,7 +1,5 @@
-// pnpm dev, then open /tests/regression/island-tour.html. The whole island with believable data
-// behind a fake desktop, for looking at every page by eye: ?media=playing|paused|nocover|long|
-// nolyrics|none picks what the player reports (?lyrics=0 turns online lyrics off), ?empty=1 empties every list, ?lang=en switches the
-// interface, ?detached=1 floats the island below the top edge, ?capsule=1 picks the capsule shape. ?test=1 checks each page.
+// Run pnpm dev and open /tests/regression/island-tour.html for the island against a mock desktop.
+// ?media=playing|paused|nocover|long|nolyrics|none, ?lyrics=0, ?empty=1, ?lang=en, ?detached=1, ?capsule=1 and ?test=1 configure the tour.
 import { checkClockWeatherIsland, clockWeatherMock } from "./clockWeatherIsland";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -10,6 +8,7 @@ import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
+import { checkIslandTourPageButtons } from "./islandTourPageButtons";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkCollapsedShape } from "./islandTourShape";
 import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } from "./islandTourTheme";
@@ -59,8 +58,7 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   topEdgeShoulders: query.has("shoulders") || query.has("shoulderSweep") || query.has("shapePerf"), topEdgeShoulderSize: 20,
   ...(query.has("capsule") ? { islandShape: "capsule" } : {}),
   tuckStyle,
-  // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
-  pageButtonStyle: "capsule",
+  pageButtonStyle: query.get("pageButtons") === "iconLabel" ? "iconLabel" : "capsule",
   // The waiting session would pop the Agent page open at a random moment and race the geometry checks.
   agentAlertWaiting: false, agentAlertCompleted: false, agentAlertFailed: false,
   lyricsOnline: query.get("lyrics") !== "0",
@@ -192,6 +190,8 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
 } else if (!automated) {
   mount();
   results.remove();
+} else if (query.get("pageButtons") === "iconLabel") {
+  await checkIslandTourPageButtons({ mount, click, settle, check, results, messages }).finally(restore);
 } else {
   try {
     await act(async () => { mount(); });
@@ -336,7 +336,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     await click(".settings-sidebar__item[data-category='appearance']");
     const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;
     check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 6, "已保存为胶囊的页面按钮保持胶囊（含消息）");
-    await click('[aria-label="页面按钮"] button:last-child');
+    await click('[aria-label="页面按钮"] button:nth-child(2)');
     const savedStyle = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageButtonStyle;
     check(document.querySelectorAll(".dot-button--icon svg, .island__agent-button svg.lucide-bot").length === 7 &&
       document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "七个入口切换为图标，外观预览和保存同步");
