@@ -19,7 +19,7 @@ src-tauri/src/
 │                            #   workbuddy_sessions.rs：WorkBuddy 桌面端本地会话记录；workbuddy_connection.rs / workbuddy_auth.rs / workbuddy_cookie_vault.rs / workbuddy_usage.rs：WorkBuddy 官网独立登录窗口、续期策略、凭据副本与积分缓存
 │                            #   zcode_credentials.rs / zcode_api_key.rs / zcode_usage.rs：Z Code 桌面凭据、Credential Manager 中的 Coding Plan API Key 与额度查询
 ├── app_log/                 # 问题排查日志（默认关闭）：开启后把标准错误接到管道写入 logs/，前端的报错经 append_app_log 写入；file.rs 负责一份备份的轮转
-├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出与受限同步读写（todo_sync）、不合成 Alt 键地聚焦自己的窗口（window_focus）
+├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出与受限同步读写（todo_sync）、已安装字体（fonts）、不合成 Alt 键地聚焦自己的窗口（window_focus）
 ├── clipboard_history/
 ├── config_transfer/         # 配置备份 / 迁移：原生文件对话框、受限数据与音效收集、启动恢复与撤销日志
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
@@ -38,7 +38,7 @@ src-tauri/src/
 ├── notification_diagnostics.rs
 └── win32/                   # Win32 / COM 的安全封装，crate 中唯一允许 unsafe 的地方：window（窗口查询、枚举、前台切换）、
                              # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
-                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
+                             # com（COM / WinRT 初始化守卫）、audio、fonts（DirectWrite 字体列表）、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
                              # notification_state（前台是否有全屏程序）、shell_open（不弹系统错误框地打开协议）、
                              # task_switcher（让主窗口不进 Alt+Tab）、known_folder（下载文件夹等已知文件夹）、
                              # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、std_handle（重定向标准错误、本地时间）、uia_tabs / uia_list、caption_close、taskbar

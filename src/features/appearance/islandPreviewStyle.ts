@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { inkOn } from "../../utils/color";
 import { cornerShapeCss } from "./cornerShape";
 import { shapedSettings } from "./islandShape";
+import { localIslandFontStyle } from "./localFont";
 import { COLLAPSED_WIDTH, glassTintAlpha, hexToRgba, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
 import { resolveSchemeColors, type ResolvedScheme } from "./theme";
@@ -12,6 +13,7 @@ export function islandPreviewStyle(settings: IslandSettings, scheme: ResolvedSch
   const shaped = shapedSettings(settings);
   const colors = resolveSchemeColors(settings, scheme);
   const style = {
+    ...localIslandFontStyle(settings),
     "--preview-fill": hexToRgba(colors.islandBackgroundColor,
       settings.opacity / 100 * (glass ? glassTintAlpha(settings.material, settings.glassIntensity) : 1)),
     "--preview-glass": settings.glassIntensity / 100,

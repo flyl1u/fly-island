@@ -100,6 +100,10 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 新增命令 `get_media_diagnostics()` 返回 `{ players }`：逐会话的 `sourceAppId`、`label`、`hasSession`、`hasTimeline`、`hasPluginTrackId`、`exePath`、`directory`、`version`、`status` 与 `neteasePluginState`（非网易云为 null），并补入正在运行但没有会话的已知播放器。只读检查，不安装插件。`get_media_state` 新增 `hasTimeline` 布尔字段；前端兼容缺少字段的旧状态，估算位置始终保留 false 标记。
 
+## 本机字体
+
+`list_installed_fonts(locale)` 按需读取 Windows DirectWrite 中已安装的字体。返回 `{ family, label }[]`，`family` 用于设置与 CSS，`label` 为本地化显示名。`fly-island-settings.fontFamily` 增加 `"local"`，对应名称保存在 `localFontFamily`。两项均可随外观预设保存。
+
 ## 微信只读探测输出
 
 `examples/wechat_reminder_probe.rs`（2026-11-13 起）在监听或路径解析报错前向标准输出增加一条 `phase: "executableResolution"` JSON：`registryExecutable`、`runningExecutable`、`selectedExecutable` 和 `explicitExecutable` 均为路径字符串或 `null`，分别表示注册表候选、主窗口优先的运行路径、最终采用路径及 `--exe` 参数。原有监听状态、事件计数字段和退出码不变；这条诊断不进入 Tauri 事件或持久化存储。详见 [微信提醒兼容性说明](../wechat-reminder-compatibility.md#只读诊断)。

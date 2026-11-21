@@ -1,6 +1,7 @@
 import { act } from "react";
 import { checkCollapsedLayout } from "./settingsCollapsedLayout";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
+import { commands } from "./settingsMocks";
 
 const element = <T extends HTMLElement>(selector: string) => {
   const found = document.querySelector<T>(selector);
@@ -242,6 +243,28 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       "The uncommitted font slider updates both previews");
     await act(async () => window.dispatchEvent(new PointerEvent("pointerup")));
     check(storedSettings().islandFontPercent === 120, "Releasing the font slider saves the new size");
+    check(!commands.includes("list_installed_fonts"), "Appearance opens without enumerating local fonts");
+    const fontSelect = 'button[aria-label="岛屿字体"]';
+    const fontOption = (value: string) => `[role="listbox"][aria-label="岛屿字体"] [data-value="${value}"]`;
+    await click(fontSelect);
+    check(element(fontOption("system")).textContent === "默认字体" && element(fontOption("pixel")).textContent === "像素字体"
+      && element(fontOption("local:Microsoft YaHei")).textContent === "微软雅黑", "One font selector lists system, pixel, and localized installed families");
+    await click(fontOption("pixel"));
+    check(storedSettings().fontFamily === "pixel" && getComputedStyle(collapsedSample).fontFamily.includes("Fusion Pixel"),
+      "The pixel entry still applies the bundled font");
+    await click(fontSelect);
+    await click(fontOption("local:Consolas"));
+    check(storedSettings().fontFamily === "local" && storedSettings().localFontFamily === "Consolas"
+      && getComputedStyle(collapsedSample).fontFamily.startsWith("Consolas,")
+      && getComputedStyle(expandedSample).fontFamily.startsWith("Consolas,"),
+    "Selecting a family saves it and updates both island previews");
+    await click(fontSelect);
+    await click(fontOption("system"));
+    check(!getComputedStyle(collapsedSample).fontFamily.includes("Consolas"), "Switching to the system font updates the sample");
+    await click(fontSelect);
+    await click(fontOption("local:Consolas"));
+    check(element(fontSelect).textContent === "Consolas" && commands.filter((name) => name === "list_installed_fonts").length === 1,
+      "Reopening the selector reuses the installed font list");
     const labeledChoice = [...document.querySelectorAll<HTMLButtonElement>('[aria-label="页面按钮"] button')]
       .find((option) => option.textContent === "图标加文字")!;
     await act(async () => labeledChoice.click());
@@ -282,6 +305,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     check(storedSettings().opacity === DEFAULT_SETTINGS.opacity, "Confirming resets the appearance");
     check(storedSettings().islandFontPercent === 100 && storedSettings().collapsedAutoWidth && storedSettings().collapsedHeight === 38 && storedSettings().collapsedWidth === 340,
       "Appearance reset restores the font and notch defaults");
+    check(storedSettings().fontFamily === "system" && storedSettings().localFontFamily === "", "Appearance reset clears the custom font");
 
     check(storedSettings().carryOverIncompleteTodos === false, "Resetting the appearance keeps todo settings");
     check(JSON.stringify(JSON.parse(localStorage.getItem("fly-island-color-backup") ?? "null")) === JSON.stringify(colorsBeforeReset),

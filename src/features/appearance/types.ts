@@ -8,7 +8,7 @@ export type TranslationTarget = "window" | "island";
 export type Material = "classic" | "liquidGlass" | "frostedGlass";
 /** Colour scheme of the island and the windows: dark, light, or whichever Windows uses. */
 export type ColorScheme = "dark" | "light" | "system";
-export type IslandFont = "system" | "pixel";
+export type IslandFont = "system" | "pixel" | "local";
 export type PageButtonStyle = "capsule" | "icon" | "iconLabel";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
 export type IslandCornerShape = "squircle" | "round";
@@ -61,6 +61,8 @@ export type IslandSettings = {
   material: Material;
   colorScheme: ColorScheme;
   fontFamily: IslandFont;
+  /** The installed font family in "local" mode. Empty uses the default stack. */
+  localFontFamily: string;
   islandFontPercent: number;
   pageButtonStyle: PageButtonStyle;
   glassIntensity: number;

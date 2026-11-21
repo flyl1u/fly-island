@@ -7,17 +7,19 @@ export function SettingsSelect<T extends string>({
   options,
   ariaLabel,
   disabled = false,
+  onOpen,
   onChange,
 }: {
   value: T;
   options: readonly SelectOption<T>[];
   ariaLabel: string;
   disabled?: boolean;
+  onOpen?: () => void;
   onChange: (value: T) => void;
 }) {
   return (
     <div className="settings-select">
-      <SelectControl value={value} options={options} ariaLabel={ariaLabel} disabled={disabled} onChange={onChange} />
+      <SelectControl value={value} options={options} ariaLabel={ariaLabel} disabled={disabled} onOpen={onOpen} onChange={onChange} />
     </div>
   );
 }
