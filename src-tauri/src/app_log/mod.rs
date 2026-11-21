@@ -66,7 +66,7 @@ fn log_dir() -> Option<PathBuf> {
 
 /// Writes one line when the log is on. Never reports its own failures on standard error,
 /// which would come straight back here.
-fn write_line(source: &str, message: &str) {
+pub(crate) fn write_line(source: &str, message: &str) {
     if !ENABLED.load(Ordering::Relaxed) {
         return;
     }

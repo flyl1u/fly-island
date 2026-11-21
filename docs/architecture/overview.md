@@ -32,7 +32,7 @@ Codex 的会话展示仍由 `agent_status/session_scan.rs` 读取 rollout 尾部
 
 Agent 的 DSH 桌面端来源由 `agent_status/dsh_sessions.rs`（只读本地检查点、合并去重、宿主聚焦）、dsh_desktop.rs（官方与社区宿主识别、目录发现）、`dsh_credentials.rs`（受限凭据读取）和 `dsh_usage.rs`（官方余额只读查询与内存缓存）承担；从现有会话命令和聚焦命令接入，余额有独立的 `get_dsh_usage` 命令。前端仍在 `features/agent-status/`，余额展示在 `DshQuotaRing.tsx`，纯逻辑在 `dshUsage.ts`。详见 [DSH 接入说明](../deepseek-harness.md)。
 
-WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析（本地会话记录与打开中的会话登记，聚焦主窗口），从现有会话命令和聚焦命令接入。WorkBuddy 的 `agent_status/workbuddy_connection.rs` 管理专用 WebView2 官网登录和刷新，`workbuddy_usage.rs` 读取积分汇总。远程登录窗口 `workbuddy-sign-in` 使用独立浏览器配置，由本地设置页启动。岛屿和设置页共享原生余额缓存，额度环按 `agentQuotaSources` 选择。
+WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析（本地会话记录与打开中的会话登记，聚焦主窗口），从现有会话命令和聚焦命令接入。WorkBuddy 的 `agent_status/workbuddy_connection.rs` 管理专用 WebView2 官网登录和后台续期，`workbuddy_auth.rs` 决定续期时间与失败退避，`workbuddy_cookie_vault.rs` 保存并恢复凭据副本，`workbuddy_usage.rs` 读取积分汇总。远程登录窗口 `workbuddy-sign-in` 使用独立浏览器配置，由本地设置页启动。岛屿和设置页共享原生余额缓存，额度环按 `agentQuotaSources` 选择。
 
 Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先读取 Windows 凭据管理器中的手动 API Key 配置（`zcode_api_key.rs`），未配置时回退到 Z Code 桌面版登录凭据；设置页只拿到 Key 是否存在与掩码。额度缓存在原生内存中，Key 或平台变更时清除。
 

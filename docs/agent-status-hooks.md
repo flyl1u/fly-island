@@ -138,6 +138,16 @@ A session in a terminal (Windows Terminal, an editor's terminal, WezTerm, Orca) 
 
 **VS Code** and editors built on it (Cursor, Windsurf, VSCodium, Trae, Kiro) have no way to select one of their terminals from outside. With the **FocuSD Island extension** (`tixxin.focusd-island`, source in `packages/vscode-extension/`) installed in that editor, after the editor window comes to the front the island opens `<scheme>://tixxin.focusd-island/focus?pids=<session process chain>&title=<session title>` (`vscode`, `vscode-insiders`, `cursor`, `windsurf`, `vscodium`, `trae`, `kiro`). The editor hands the link to the window used last, which is the one just brought forward, and the extension shows the terminal whose shell is one of those processes, or else the only terminal named like the session; it does nothing when none matches. The island first looks for a `tixxin.focusd-island-<version>` folder in the editor's extensions folder (`~/.vscode/extensions`, `~/.cursor/extensions`, ...; ignoring ones listed in `.obsolete`), since opening the link without the extension would make the editor offer to install it. It also skips the link when Windows kept the window behind. The log notes `editor-terminal=sent`, `no-extension` or `failed`.
 
+## WorkBuddy 登录态与续期
+
+Fly Island 用独立的 WebView2 配置登录 WorkBuddy 官网。首次读到积分后，官网 Cookie 备份到 Windows 凭据管理器。重启 Fly Island 或 Windows 后，应用会补回仍可用的 Cookie，包括没有 `Expires` 的会话 Cookie。备份写入成功后才切换到新副本。
+
+连接成功后，Fly Island 在隐藏窗口访问用量页，让官网按原有流程请求 `/console/account`。读取积分确认会话有效后，更新凭据副本。应用根据 `session` 和 `session_2` 的可见期限，在首次观察到的剩余期限约用去 80% 前后安排访问，最长间隔 30 分钟。缺少到期时间时每 30 分钟访问一次。窗口只在用户主动点击「去登录」时显示。
+
+缺少 Cookie、网络错误、请求超时或网页加载失败会显示「暂时读不到 WorkBuddy 积分」，后台按 30 秒、1 分钟、2 分钟、5 分钟、10 分钟、15 分钟退避。恢复后重新按正常间隔读取。经过恢复仍连续两次收到服务器明确拒绝，且两次相隔至少 1 分钟时，才显示「WorkBuddy 登录已过期」并清除凭据副本。
+
+官网匿名登录握手下发的 `session` Cookie 有 7 天的客户端期限。认证后 Cookie 的签发期限、服务端会话上限及刷新条件由 WorkBuddy 决定，公开资料未给出固定时长。登录界面未发现「记住我」控件。开启应用的问题排查日志后，可以在 `logs/focusd-island.log` 中查找 `[workbuddy-auth]`。每次备份、恢复与失败判定会记录 Cookie 名称、Unix 秒到期时间、是否为会话 Cookie 和原因，Cookie 值不入日志。 [WorkBuddy 用量页](https://www.workbuddy.cn/profile/plans-usage) · [WorkBuddy 登录指南](https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Installation-Win-Guide)
+
 ## Manual Smoke Test
 
 After using the in-app installer, run these commands with the app-data scripts:
