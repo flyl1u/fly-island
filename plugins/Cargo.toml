@@ -9,5 +9,6 @@ members = [
     "doubao",
     "hermes",
     "office-im",
+    "minimax",
 ]
 resolver = "2"

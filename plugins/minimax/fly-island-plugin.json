@@ -1,0 +1,41 @@
+{
+  "id": "minimax",
+  "name": { "zh-CN": "MiniMax Code", "en": "MiniMax Code" },
+  "description": {
+    "zh-CN": "MiniMax Code 的额度余量、会话任务进度与等待审批提醒",
+    "en": "MiniMax Code quota, session task progress and pending approvals"
+  },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "minimax.exe" },
+  "permissions": ["quota", "sessions", "notifications", "network", "read-home-files", "desktop-windows"],
+  "contributes": ["quota", "sessions", "notifications"],
+  "settings": [
+    {
+      "key": "api_key",
+      "label": {
+        "zh-CN": "Token Plan 密钥（可选，默认读取 mmx 登录）",
+        "en": "Token Plan key (optional, reads mmx sign-in by default)"
+      },
+      "type": "secret",
+      "default": ""
+    },
+    {
+      "key": "interval",
+      "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" },
+      "type": "select",
+      "default": "60",
+      "options": [
+        { "value": "10", "label": { "zh-CN": "10 秒", "en": "10 seconds" } },
+        { "value": "15", "label": { "zh-CN": "15 秒", "en": "15 seconds" } },
+        { "value": "30", "label": { "zh-CN": "30 秒", "en": "30 seconds" } },
+        { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
+        { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
+      ]
+    }
+  ],
+  "actions": [
+    { "id": "install-hooks", "label": { "zh-CN": "把审批提醒接入 MiniMax Code", "en": "Connect approval alerts" } },
+    { "id": "remove-hooks", "label": { "zh-CN": "移除审批提醒", "en": "Disconnect approval alerts" } }
+  ]
+}
