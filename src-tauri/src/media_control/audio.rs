@@ -1,9 +1,6 @@
-//! Default render endpoint: master volume and the output peak meter.
-//!
-//! The enumerator and the default output's volume and meter are kept on the media worker
-//! thread (see [`super::worker`]) instead of being opened again on every read. The default
-//! device is looked up again every few seconds, so switching output (headphones, HDMI) is
-//! followed, and at once after any failed read.
+//! Default multimedia output: volume and peak interfaces live on the media COM worker.
+//! A periodic lookup follows changes to the default device without activating unchanged
+//! interfaces. Failed interfaces recover independently, with a delay between attempts.
 
 use std::{
     cell::RefCell,
@@ -11,22 +8,23 @@ use std::{
 };
 
 use super::session::media_error;
-use crate::win32::audio::{AudioDevices, OutputRole, OutputVolume, PeakMeter};
+use crate::win32::audio::{AudioDevices, AudioOutput, OutputRole, OutputVolume, PeakMeter};
 
 pub(super) const AUDIO_ACTIVE_THRESHOLD: f32 = 0.000015;
-/// How long a default output is trusted before it is looked up again.
 const DEVICE_REFRESH: Duration = Duration::from_secs(5);
+const DEVICE_RETRY: Duration = Duration::from_secs(2);
 
 struct Output {
+    id: String,
     volume: Option<OutputVolume>,
     meter: Option<PeakMeter>,
-    opened_at: Instant,
 }
 
 #[derive(Default)]
 struct Cache {
     devices: Option<AudioDevices>,
     output: Option<Output>,
+    next_check: Option<Instant>,
 }
 
 thread_local! {
@@ -34,54 +32,83 @@ thread_local! {
 }
 
 impl Cache {
-    /// Opens the default output unless a recent one is cached.
-    fn ensure_output(&mut self) -> Result<(), String> {
-        if self.output.as_ref().is_some_and(|output| output.opened_at.elapsed() < DEVICE_REFRESH) {
-            return Ok(());
-        }
-        self.output = None;
+    fn default_output(&mut self) -> Result<(AudioOutput, String), String> {
         if self.devices.is_none() {
             self.devices = Some(AudioDevices::open().map_err(|error| {
                 media_error("Failed to open the Windows audio device manager", error)
             })?);
         }
-        let Some(devices) = self.devices.as_ref() else {
-            return Err("No Windows audio device manager.".to_string());
-        };
-        // Only the multimedia role: music plays there, and every extra role cost another open.
-        let device = match devices.default_output(OutputRole::Multimedia) {
+        let devices = self
+            .devices
+            .as_ref()
+            .ok_or_else(|| "No Windows audio device manager.".to_string())?;
+        let device = devices
+            .default_output(OutputRole::Multimedia)
+            .map_err(|error| media_error("Failed to open the default audio output", error))?;
+        let id = device
+            .id()
+            .map_err(|error| media_error("Failed to identify the default audio output", error))?;
+        Ok((device, id))
+    }
+
+    fn refresh_if_due(&mut self) -> Result<(), String> {
+        if self.next_check.is_some_and(|check| check > Instant::now()) {
+            return Ok(());
+        }
+        let (device, id) = match self.default_output() {
             Ok(device) => device,
             Err(error) => {
-                // The enumerator itself may have gone stale (audio service restarted).
+                // The audio service may still be starting or have restarted.
                 self.devices = None;
-                return Err(media_error("Failed to open the default audio output", error));
+                self.output = None;
+                self.next_check = Some(Instant::now() + DEVICE_RETRY);
+                return Err(error);
             }
         };
-        self.output = Some(Output {
-            volume: device.volume().ok(),
-            meter: device.peak_meter().ok(),
-            opened_at: Instant::now(),
-        });
+        if self.output.as_ref().is_none_or(|output| output.id != id) {
+            self.output = Some(Output {
+                id,
+                volume: None,
+                meter: None,
+            });
+        }
+        if let Some(output) = &mut self.output {
+            if output.volume.is_none() {
+                output.volume = device.volume().ok();
+            }
+            if output.meter.is_none() {
+                output.meter = device.peak_meter().ok();
+            }
+        }
+        self.next_check = Some(Instant::now() + DEVICE_REFRESH);
         Ok(())
     }
 
-    fn try_read<T>(&mut self, read: &impl Fn(&Output) -> Option<T>) -> Result<Option<T>, String> {
-        self.ensure_output()?;
-        Ok(self.output.as_ref().and_then(read))
-    }
-
-    /// Runs `read` on the cached output, reopening it once when the read fails.
-    fn read<T>(&mut self, read: impl Fn(&Output) -> Option<T>) -> Result<T, String> {
-        if let Some(value) = self.try_read(&read)? {
-            return Ok(value);
-        }
-        self.output = None;
-        self.try_read(&read)?
-            .ok_or_else(|| "The default audio output did not answer.".to_string())
+    fn read<I, T>(
+        &mut self,
+        interface: fn(&mut Output) -> &mut Option<I>,
+        read: impl FnOnce(&I) -> windows::core::Result<T>,
+    ) -> Result<T, String> {
+        self.refresh_if_due()?;
+        let Some(interface) = self.output.as_mut().map(interface) else {
+            return Err("Windows has no default multimedia audio output.".to_string());
+        };
+        let Some(active) = interface.as_ref() else {
+            return Err("The default audio output interface is unavailable.".to_string());
+        };
+        read(active).map_err(|error| {
+            *interface = None;
+            let retry_at = Instant::now() + DEVICE_RETRY;
+            self.next_check = Some(
+                self.next_check
+                    .map_or(retry_at, |check| check.min(retry_at)),
+            );
+            media_error("The default audio output did not answer", error)
+        })
     }
 }
 
-/// Drops the cached COM objects. The worker calls this before it leaves its apartment.
+/// Drops the cached COM objects before the worker leaves its apartment.
 pub(super) fn release_cached() {
     CACHE.with(|cache| cache.replace(Cache::default()));
 }
@@ -90,7 +117,7 @@ pub(super) fn read_master_volume() -> Option<f32> {
     CACHE.with(|cache| {
         cache
             .borrow_mut()
-            .read(|output| output.volume.as_ref()?.level().ok())
+            .read(|output| &mut output.volume, OutputVolume::level)
             .ok()
             .map(|level| level.clamp(0.0, 1.0))
     })
@@ -100,7 +127,10 @@ pub(super) fn set_master_volume(level: f32) -> Result<(), String> {
     CACHE.with(|cache| {
         cache
             .borrow_mut()
-            .read(|output| output.volume.as_ref()?.set_level(level.clamp(0.0, 1.0)).ok())
+            .read(
+                |output| &mut output.volume,
+                |volume| volume.set_level(level.clamp(0.0, 1.0)),
+            )
             .map_err(|error| format!("Failed to change the system volume: {error}"))
     })
 }
@@ -109,7 +139,49 @@ pub(super) fn read_system_audio_peak() -> Result<f32, String> {
     CACHE.with(|cache| {
         cache
             .borrow_mut()
-            .read(|output| output.meter.as_ref()?.peak().ok())
+            .read(|output| &mut output.meter, PeakMeter::peak)
             .map(|peak| peak.clamp(0.0, 1.0))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unavailable_output_is_not_reopened_before_the_retry_deadline() {
+        let next_check = Some(Instant::now() + DEVICE_RETRY);
+        let mut cache = Cache {
+            next_check,
+            ..Cache::default()
+        };
+        assert!(cache
+            .read(|output| &mut output.meter, PeakMeter::peak)
+            .is_err());
+        assert!(cache.devices.is_none());
+        assert_eq!(cache.next_check, next_check);
+    }
+
+    #[test]
+    #[ignore = "requires a live default Windows multimedia output"]
+    fn still_reads_the_audio_output_after_rechecking_the_device() {
+        let _apartment = crate::win32::com::ComApartment::multithreaded().unwrap();
+        let mut cache = Cache::default();
+        let volume = |cache: &mut Cache| {
+            cache
+                .read(|output| &mut output.volume, OutputVolume::level)
+                .unwrap()
+        };
+        assert!((0.0..=1.0).contains(&volume(&mut cache)));
+        let id = cache.output.as_ref().unwrap().id.clone();
+        assert!(!id.is_empty());
+        cache.next_check = None;
+        assert!((0.0..=1.0).contains(&volume(&mut cache)));
+        assert_eq!(cache.output.as_ref().unwrap().id, id);
+        assert!((0.0..=1.0).contains(
+            &cache
+                .read(|output| &mut output.meter, PeakMeter::peak)
+                .unwrap()
+        ));
+    }
 }
