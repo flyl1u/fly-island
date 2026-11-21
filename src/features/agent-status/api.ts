@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import type { AgentEffortLabels } from "./effortLabels";
 
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
@@ -230,9 +230,17 @@ export function getZcodeUsage() {
   return invoke<AgentUsage | null>("get_zcode_usage");
 }
 
+export const ZCODE_USAGE_CHANGED = "zcode-usage-changed";
+export function notifyZcodeUsageChanged(usage: AgentUsage | null) {
+  return emit(ZCODE_USAGE_CHANGED, usage);
+}
+export function onZcodeUsageChanged(callback: (usage: AgentUsage | null) => void) {
+  return listen<AgentUsage | null>(ZCODE_USAGE_CHANGED, ({ payload }) => callback(payload));
+}
+
 export type ZcodeApiPlatform = "bigmodel" | "zai";
 
-/** Safe view of Z Code's Coding Plan key settings; the key itself never leaves Credential Manager. */
+/** Mirrors zcode_api_key.rs ApiKeySettings. Only the last four characters of sufficiently long keys are returned. */
 export type ZcodeApiKeySettings = { platform: ZcodeApiPlatform; hasKey: boolean; maskedKey: string | null };
 
 export function getZcodeApiKeySettings() {

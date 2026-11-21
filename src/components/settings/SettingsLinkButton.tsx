@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import "./SettingsLinkButton.css";
 
 /** A secondary action written as accent-coloured text, in place of a filled button. */
@@ -12,7 +12,7 @@ export function SettingsLinkButton({
   children: ReactNode;
   tone?: "accent" | "danger";
   disabled?: boolean;
-  onClick: () => void;
+  onClick: MouseEventHandler<HTMLButtonElement>;
   ariaLabel?: string;
 }) {
   return (

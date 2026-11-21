@@ -1,6 +1,23 @@
-.zcode-api-key__form {
-  display: grid;
-  gap: var(--space-md);
+.zcode-api-key__summary {
+  overflow-wrap: anywhere;
+}
+
+.zcode-api-key__form > .settings-row {
+  min-height: 0;
+  padding-inline: 0;
+}
+
+.zcode-api-key__form .settings-row__control {
+  min-width: 0;
+  max-width: 70%;
+}
+
+.zcode-api-key__form .settings-select {
+  min-width: 0;
+}
+
+.zcode-api-key__form .select-control__trigger {
+  max-width: 100%;
 }
 
 .zcode-api-key__input {
@@ -37,23 +54,14 @@
   opacity: 0.5;
 }
 
-.zcode-api-key__actions {
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-md);
-}
-
 .zcode-api-key__feedback {
-  min-width: 0;
-  flex: 1 1 220px;
+  margin: var(--space-sm) 0 0;
   color: var(--color-text-subtle);
   font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
-.zcode-api-key__feedback--error {
+.zcode-api-key__error {
   color: var(--color-error-text);
 }

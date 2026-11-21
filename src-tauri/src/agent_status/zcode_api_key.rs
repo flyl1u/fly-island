@@ -66,11 +66,19 @@ fn write_config(config: &ApiKeyConfig) -> Result<(), String> {
     credential()?.set_password(&value).map_err(|_| SETTINGS_ERROR.to_string())
 }
 
+fn mask_key(key: &str) -> String {
+    const MASK: &str = "····";
+    match key.char_indices().rev().nth(4) {
+        Some((index, preceding)) => format!("{MASK}{}", &key[index + preceding.len_utf8()..]),
+        None => MASK.to_string(),
+    }
+}
+
 fn settings(config: &ApiKeyConfig) -> ApiKeySettings {
     ApiKeySettings {
         platform: config.platform.as_str().to_string(),
         has_key: config.api_key.is_some(),
-        masked_key: config.api_key.as_ref().map(|_| "********".to_string()),
+        masked_key: config.api_key.as_deref().map(mask_key),
     }
 }
 
@@ -106,4 +114,26 @@ pub fn clear_zcode_api_key() -> Result<ApiKeySettings, String> {
     write_config(&config)?;
     super::zcode_usage::invalidate_cache();
     Ok(settings(&config))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn settings_expose_only_the_last_four_characters() {
+        let config = ApiKeyConfig { api_key: Some("example-key-1a2b".to_string()), platform: ApiKeyPlatform::Zai };
+        let response = serde_json::to_value(settings(&config)).unwrap();
+        assert_eq!(response, serde_json::json!({ "platform": "zai", "hasKey": true, "maskedKey": "····1a2b" }));
+    }
+
+    #[test]
+    fn short_keys_are_fully_masked() {
+        for key in ["", "a", "a12", "1a2b"] {
+            assert_eq!(mask_key(key), "····");
+        }
+        assert_eq!(mask_key("x1a2b"), "····1a2b");
+        assert_eq!(mask_key("前缀中文密钥"), "····中文密钥");
+        assert_eq!(settings(&ApiKeyConfig::default()).masked_key, None);
+    }
 }
