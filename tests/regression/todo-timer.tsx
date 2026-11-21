@@ -287,25 +287,32 @@ try {
   await choose("t1");
   await pick(90);
   await go();
-  await advance(3_600_000);
-  check(stored()?.todoId === "t1" && !stored()?.notified && localStorage.getItem("fly-island-active-todo") === "t1" && sounds === 4,
-    "开始另一项取消旧轮，旧截止时间不再提醒");
+  const parallel = () => JSON.parse(localStorage.getItem(TODO_TIMERS_STORAGE_KEY) ?? "[]") as TodoTimer[];
+  check(parallel().length === 2 && stored()?.todoId === "t1" && collapsedTime()?.includes("90:00"),
+    "轮换关闭时两个计时共存，折叠岛显示最近开始的一项");
+  await mount();
   await open();
+  check(document.querySelectorAll(".todo-list .todo-countdown").length === 2, "重启后两项各自显示倒计时");
+  await advance(3_600_000);
+  check(stored()?.todoId === "t1" && !stored()?.notified && parallel().find((timer) => timer.todoId === "t2")?.notified && sounds === 5,
+    "后台一项独立到时，另一项仍在计时");
   await start("t1");
+  check(stored()?.todoId === "t2" && stored()?.notified, "停止最近一项后露出另一项的到时状态");
+  await start("t2");
   await choose("t2");
   await pick(60);
   await go();
   await open();
   await click('[data-todo-id="t2"] .todo-delete');
   await advance(3_600_000);
-  check(stored() === null && sounds === 4, "删除正在计时的待办取消本轮，不再到时提醒");
+  check(stored() === null && sounds === 5, "删除正在计时的待办取消本轮，不再到时提醒");
   await choose("t1");
   await pick(15);
   await go();
   await open();
   await click('[data-todo-id="t1"] .todo-check');
   await advance(900_000);
-  check(stored() === null && sounds === 4, "提前完成取消本轮，不会在原截止时间响铃");
+  check(stored() === null && sounds === 5, "提前完成取消本轮，不会在原截止时间响铃");
 
   // Restore an unannounced deadline missed while the app was closed.
   const todo = { id: "restored", title: "重启后继续核对发布说明", completed: false, createdAt: now };
@@ -320,11 +327,11 @@ try {
   localStorage.removeItem(ACTIVE_TODOS_STORAGE_KEY);
   localStorage.removeItem(TODO_TIMERS_STORAGE_KEY);
   await mount();
-  check(document.querySelector(".todo-timer-actions") && stored()?.notified && sounds === 5, "关闭期间已过期的倒计时恢复为时间到，补一次提醒");
+  check(document.querySelector(".todo-timer-actions") && stored()?.notified && sounds === 6, "关闭期间已过期的倒计时恢复为时间到，补一次提醒");
   check(localStorage.getItem("fly-island-current-date") === getLocalDateString() && stored()?.todoId === todo.id,
     "启动跨日归档保留计时任务及其标识，时间到不会被归档流程清掉");
   await mount();
-  check(sounds === 5, "离线过期的提醒重启后也不重复");
+  check(sounds === 6, "离线过期的提醒重启后也不重复");
   await open();
   await click(".todo-timer-actions button:first-of-type");
 

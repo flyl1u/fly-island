@@ -1,6 +1,6 @@
 import { moveItem } from "../../utils/order.ts";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createTodoId, loadActiveTodoId, loadActiveTodoIds, loadTodos, saveActiveTodoIds, saveTodos } from "./storage";
+import { createTodoId, loadActiveTodoIds, loadTodos, saveActiveTodoIds, saveTodos } from "./storage";
 import { dismissUpdatePrompt } from "../updater/updaterController";
 import { UPDATE_TODO_ID } from "./updateTodo";
 import { useUpdateTodo } from "./useUpdateTodo";
@@ -12,13 +12,17 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   useUpdateTodo(todos, setTodos);
   const [draftTodo, setDraftTodo] = useState("");
-  const [storedActiveIds, setActiveTodoIds] = useState<string[]>(() => rotateTodos ? loadActiveTodoIds() : [loadActiveTodoId()].filter((id): id is string => id !== null));
+  const [storedActiveIds, setActiveTodoIds] = useState(loadActiveTodoIds);
+  const validActiveIds = useMemo(() => storedActiveIds.filter((id) =>
+    todos.some((todo) => todo.id === id && !todo.completed && todo.kind !== "update")), [storedActiveIds, todos]);
+  const { timer, timers, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, validActiveIds, onTimerExpired, todoTimerEnabled, onTimerReminder, timerReminder);
   const activeTodoIds = useMemo(() => {
-    const valid = storedActiveIds.filter((id) => todos.some((todo) => todo.id === id && !todo.completed && todo.kind !== "update"));
-    return rotateTodos ? valid : valid.slice(0, 1);
-  }, [rotateTodos, storedActiveIds, todos]);
+    if (rotateTodos) return validActiveIds;
+    // Only the primary todo can stay active without a timer when rotation is off.
+    const timedIds = new Set(timers.map((round) => round.todoId));
+    return validActiveIds.filter((id, index) => index === 0 || timedIds.has(id));
+  }, [rotateTodos, timers, validActiveIds]);
   const activeTodoId = activeTodoIds[0] ?? null;
-  const { timer, timers, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoIds, onTimerExpired, todoTimerEnabled, onTimerReminder, timerReminder);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
@@ -76,8 +80,11 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
         return;
       }
 
-      if (!startTimer(id, duration ?? null, rotateTodos, remindMinutes)) return;
-      setActiveTodoIds((ids) => rotateTodos ? ids.includes(id) ? ids : [...ids, id] : [id]);
+      if (!startTimer(id, duration ?? null, remindMinutes)) return;
+      setActiveTodoIds((ids) => {
+        if (rotateTodos) return ids.includes(id) ? ids : [...ids, id];
+        return [id, ...ids.filter((currentId) => currentId !== id)];
+      });
       if (!rotateTodos) onStartTodo();
     },
     [activeTodoIds, clearTimer, onStartTodo, rotateTodos, startTimer, todos],

@@ -153,6 +153,9 @@ try {
   check(getComputedStyle(document.querySelector(".todo-rotation__track")!).animationPlayState === "paused", "expanded panels pause scrolling");
   await mount();
   check(ids().length === 3 && timers().length === 3 && timers().find(timer => timer.todoId === "t2")?.endsAt === secondEnd, "remount restores all started tasks and independent deadlines");
+  await settings({ rotateTodos: false });
+  check(ids().length === 3 && timers().length === 3 && !current(), "turning rotation off keeps every timer and stops switching the collapsed display");
+  await settings({ rotateTodos: true });
   await advance(60_000);
   check(sounds === 1 && timers().find(timer => timer.todoId === "t3")?.notified && !timers().find(timer => timer.todoId === "t1")?.notified, "only the elapsed task expires and rings");
   await mount();
@@ -167,12 +170,13 @@ try {
   check(ids().join() === "t1" && timers().length === 1, "deleting a running task removes its own round");
   await start("t4");
   await settings({ rotateTodos: false });
-  check(ids().join() === "t1" && timers().length === 1, "disabling rotation retains the primary task and stops other tasks");
+  check(ids().join() === "t1" && timers().length === 1, "disabling rotation drops the extra task without a timer");
   await start("t4");
-  check(!expanded() && ids().join() === "t4" && timers().length === 0, "single-task Start replaces the old task, cancels its timer and collapses the island");
+  check(!expanded() && ids().join() === "t4,t1" && timers().length === 1, "plain Start collapses the island and leaves an existing timer running");
   await click(".island__open-button");
   await start("t4");
-  check(ids().length === 0, "single-task Stop preserves the original behavior");
+  check(ids().join() === "t1" && timers().length === 1, "stopping the plain task returns to the task with a timer");
+  await start("t1");
   await settings({ rotateTodos: true });
   await startTimed("t1", 2);
   await startTimed("t4", 3);
