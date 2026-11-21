@@ -1,4 +1,7 @@
+import { en as calendarMarksEn, zhCN as calendarMarksZh, type CalendarMarksText } from "./calendarMarks.ts";
+
 export type NotebookText = {
+  calendarMarks: CalendarMarksText;
   sectionLabel: string;
   backToToday: string;
   saveTodayMarkdown: string;
@@ -43,6 +46,7 @@ const zhTaskCount = (count: number) => `${count} 项待办`;
 const enTaskCount = (count: number) => `${count} ${count === 1 ? "task" : "tasks"}`;
 
 export const zhCN: NotebookText = {
+  calendarMarks: calendarMarksZh,
   sectionLabel: "任务清单",
   backToToday: "回到今天的待办",
   saveTodayMarkdown: "把今天的待办保存为 Markdown",
@@ -83,6 +87,7 @@ export const zhCN: NotebookText = {
 };
 
 export const en: NotebookText = {
+  calendarMarks: calendarMarksEn,
   sectionLabel: "Tasks",
   backToToday: "Back to today's todo list",
   saveTodayMarkdown: "Save today's todo list as markdown",

@@ -32,7 +32,9 @@ pub fn publish(data: Value) -> io::Result<()> {
 
 fn bounded_contributions(mut data: Value) -> Value {
     for (field, cap) in [("quota", 32), ("sessions", 200), ("notifications", 100)] {
-        if let Some(items) = data[field].as_array_mut() {
+        // Read the field, never index it: indexing a missing key would add a null the host
+        // cannot read as an array. A plugin that only sends a panel leaves the others out.
+        if let Some(items) = data.get_mut(field).and_then(Value::as_array_mut) {
             if field == "sessions" { items.sort_by_key(|s| std::cmp::Reverse(s["updatedAt"].as_i64().unwrap_or(0))); }
             let mut ids = std::collections::HashSet::new();
             items.retain(|item| item["id"].as_str().is_some_and(|s| !s.is_empty() && ids.insert(s.to_owned()))
@@ -44,7 +46,7 @@ fn bounded_contributions(mut data: Value) -> Value {
     while data.to_string().len() > MAX_LINE - 128 {
         let field = ["sessions", "notifications", "quota"].into_iter()
             .max_by_key(|key| data[*key].as_array().map_or(0, Vec::len));
-        let Some(items) = field.and_then(|key| data[key].as_array_mut()).filter(|items| !items.is_empty()) else { return empty(); };
+        let Some(items) = field.and_then(|key| data.get_mut(key)).and_then(Value::as_array_mut).filter(|items| !items.is_empty()) else { return empty(); };
         items.pop();
     }
     data
@@ -255,6 +257,14 @@ mod tests {
         let duplicate = session("same", "hello", None, "completed", 1, None);
         let data = bounded_contributions(json!({"sessions":[duplicate,duplicate]}));
         assert_eq!(data["sessions"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_panel_only_payload_is_not_padded_with_nulls() {
+        // Indexing a missing key would add `"quota": null`, which the host cannot read as an
+        // array; a plugin with only a page must be able to send just that.
+        let data = bounded_contributions(json!({"panel": {"headline": "hi"}}));
+        assert_eq!(data, json!({"panel": {"headline": "hi"}}));
     }
 
     #[test]
