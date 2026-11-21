@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
-import { dshProblem, getAgentUsage, getCodexUsage, getDshUsage, getKimiUsage, getZcodeUsage } from "./api";
+import { dshProblem, getAgentUsage, getCodexUsage, getDshUsage, getKimiUsage, getZcodeUsage, onZcodeUsageChanged } from "./api";
 import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 import { usePlugins } from "../plugins";
 
@@ -29,7 +29,10 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
       return;
     }
     let cancelled = false;
+    let zcodeRevision = 0;
+    let unlisten: (() => void) | undefined;
     const refresh = () => {
+      const revision = zcodeRevision;
       const log = (what: string) => (error: unknown) => {
         console.error(`Failed to read the ${what} usage`, error);
         return null;
@@ -43,21 +46,34 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
       ]).then(([claude, codex, dsh, kimi, zcode]) => {
         if (cancelled) return;
         const now = Date.now();
-        setUsages({
+        setUsages((previous) => ({
           claude: withoutPastWindows(claude ?? null, now),
           codex: withoutPastWindows(codex ?? null, now),
           dsh: dsh?.usage ?? null,
           dshProblem: dsh?.problem ?? null,
           kimi: withoutPastWindows(kimi ?? null, now),
-          zcode: withoutPastWindows(zcode ?? null, now),
+          zcode: revision === zcodeRevision ? withoutPastWindows(zcode ?? null, now) : previous.zcode,
           readAt: now,
-        });
+        }));
       });
     };
+    if (showZcode) {
+      void onZcodeUsageChanged((usage) => {
+        if (cancelled) return;
+        // A poll started before a settings change must not overwrite the newly checked quota.
+        zcodeRevision += 1;
+        const now = Date.now();
+        setUsages((previous) => ({ ...previous, zcode: withoutPastWindows(usage, now), readAt: now }));
+      }).then((stop) => {
+        if (cancelled) stop();
+        else unlisten = stop;
+      }).catch(() => undefined);
+    }
     refresh();
     const timer = window.setInterval(refresh, REFRESH_MS);
     return () => {
       cancelled = true;
+      unlisten?.();
       window.clearInterval(timer);
     };
   }, [enabled, showClaude, showCodex, showDsh, showKimi, showZcode]);
