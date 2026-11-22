@@ -7,7 +7,8 @@ import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
-import { useTranslation } from "../../i18n";
+import { useLocale, useTranslation } from "../../i18n";
+import { formatCenteredClock, useCenteredClock } from "../../features/centered-clock";
 import { useTodoRotation } from "./useIslandAutomation";
 import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
 import { pickCollapsedItem } from "./collapsedItem";
@@ -43,12 +44,15 @@ export function useCollapsedTodo(
   { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[] } = {},
 ) {
   const t = useTranslation();
+  const { locale } = useLocale();
   const clockWeather = useClockWeather();
+  const centeredClock = useCenteredClock();
   // Dragged off the island in Settings → Appearance, they take no room and fetch nothing.
-  const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
+  const centeredClockOn = centeredClock.installed && (centeredClock.settings.showTime || centeredClock.settings.showDate);
+  const clockOn = clockWeather.installed && clockWeather.settings.showClock && !centeredClockOn
+    && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
-  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null, settings.islandFontPercent / 100);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -90,7 +94,10 @@ export function useCollapsedTodo(
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
+    centeredClock: centeredClockOn,
   }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
+  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null || collapsedItem === "centeredClock",
+    settings.islandFontPercent / 100);
   const baseIslandWidth = useMemo(() => {
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;
@@ -103,10 +110,13 @@ export function useCollapsedTodo(
     const todoText = rotating && rotationTodos.length
       ? rotationTodos.reduce((widest, todo) => getCollapsedIslandWidth(todo.title, 0, fontScale) > getCollapsedIslandWidth(widest, 0, fontScale) ? todo.title : widest, "")
       : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
+    const centerText = formatCenteredClock(new Date(2026, 0, 2, 12, 34, 56), centeredClock.settings, locale);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
-      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
-    const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
+      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText
+        : collapsedItem === "centeredClock" ? centerText : null;
+    const text = collapsedItem === "centeredClock" ? centerText
+      : settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
     // The automatic widths were set with 18px each side: more side space adds to the width, less
     // keeps it and gives the text the room.
     const sides = 2 * (settings.collapsedPadding - COLLAPSED_PADDING.default);
@@ -117,8 +127,12 @@ export function useCollapsedTodo(
       window.devicePixelRatio,
     );
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
+    centeredClock.settings, locale, settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent,
+    settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
 
-  const collapsedIslandWidth = clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum);
+  const collapsedIslandWidth = Math.max(
+    clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum),
+    collapsedItem === "centeredClock" ? Math.min(480, statusMinimum) : baseIslandWidth,
+  );
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
 }

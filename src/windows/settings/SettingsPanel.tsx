@@ -12,6 +12,7 @@ import { PluginsSettingsPage } from "./PluginsSettingsPage";
 import { DeviceBatterySettings } from "../../features/device-battery/DeviceBatterySettings";
 import { usePlugins } from "../../features/plugins/usePlugins";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
+import { CenteredClockSettingsPage } from "./CenteredClockSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
@@ -28,6 +29,7 @@ import { NATIVE_PLUGINS, useNativePlugins } from "../../features/plugins/native"
 
 const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType>> = {
   clockWeather: ClockWeatherSettingsPage,
+  centeredClock: CenteredClockSettingsPage,
   devices: DeviceBatterySettings,
 };
 

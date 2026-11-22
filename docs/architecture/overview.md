@@ -73,6 +73,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 内置插件 `clockWeather` 通过 `features/plugins/native` 的安装态启用，并声明独立的时间与天气设置页。`features/weather/` 收口城市与缓存存储、IPC、WMO 纯映射及时间/天气叶子组件；`src-tauri/src/weather/` 封装 Open-Meteo 请求。主窗口 `useCollapsedTodo` 低频预留状态位宽度，`useCollapsedStatusWidth` 测量实际状态兄弟元素保护窄岛文字。时间的分钟状态留在叶子中，不驱动窗口重渲染。数据与契约见对应文档。
 
+内置 `centeredClock` 插件由 `features/centered-clock/` 提供本地格式化、设置和折叠态叶子；`useCollapsedTodo` 负责展示优先级与尺寸估算，`IslandCollapsedBar` 负责居中组合。分钟/秒更新仅留在时钟叶子，不驱动主窗口重渲染。
+
 排列编辑器和 `IslandPreview` 共享 `features/appearance/islandPreviewStyle.ts` 的外观变量。通用排序 hook 的 FLIP/指针跟随为可选参数，仅编辑器启用；页面入口与其它调用者保持原有交互。
 ### 护眼休息窗口（插件 0.2.0）
 

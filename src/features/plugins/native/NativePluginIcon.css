@@ -19,3 +19,12 @@
   color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white-a06));
 }
+
+.native-plugin-icon--clock {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-white-a06));
+}

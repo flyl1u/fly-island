@@ -10,6 +10,7 @@ import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
 import type { IslandSettings } from "../../features/appearance/types";
 import { setClockWeatherSettings } from "../../features/weather";
+import { setCenteredClockSettings, useCenteredClock } from "../../features/centered-clock";
 import { isNativePluginId, MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS, type PackagedMarketId } from "../../features/plugins/native/catalog";
 import { installPlugin, setPluginEnabled, uninstallPlugin } from "../../features/plugins/api";
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
@@ -30,6 +31,7 @@ type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings
 export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
   const { installed, enabled } = useNativePluginStates();
+  const centeredClock = useCenteredClock();
   const { registry } = usePlugins();
   const [busy, setBusy] = useState<PackagedMarketId | null>(null);
   const [error, setError] = useState("");
@@ -52,6 +54,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
   // with nothing there to say why (2026-11-19, owner: 钉钉装好后岛上没有).
   const install = (id: NativePluginId) => {
     if (id === "clockWeather") setClockWeatherSettings({ showClock: true, showWeather: true });
+    if (id === "centeredClock") setCenteredClockSettings({ ...centeredClock.settings, showTime: true });
     const office = OFFICE_SOURCES.find((source) => source === id);
     if (office) setOfficeEnabled(office, true);
     const agent = NATIVE_AGENTS.find((item) => item.id === id);

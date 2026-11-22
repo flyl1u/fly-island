@@ -53,6 +53,7 @@ export const PAGES = [
   "island-tour.html?test=1&theme=light",
   "island-tour.html?test=1&clockWeather=1&notch=1&font=120&features=enabled",
   "island-tour.html?test=1&clockWeather=1&theme=light&features=enabled",
+  "island-tour.html?test=1&centeredClock=1&priority=centeredClock,agent,lyrics,todo&media=none&lyrics=0&features=enabled",
   "island-tour.html?test=1&bg=FFFFFF",
   "island-tour.html?test=1&material=liquidGlass",
   "island-tour.html?test=1&material=liquidGlass&shoulders=1&glassBackdrop=1",

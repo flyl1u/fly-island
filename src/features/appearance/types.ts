@@ -45,7 +45,7 @@ export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
 /** What the collapsed island can show in its text: a running agent, the lyric line, a todo. */
-export type CollapsedItem = "agent" | "lyrics" | "todo";
+export type CollapsedItem = "agent" | "lyrics" | "todo" | "centeredClock";
 /**
  * What sits on the collapsed island, in the order the user arranged it (Appearance → Collapsed
  * island): the text (pulse, cover and the agent, lyric or todo line) and the status icons —

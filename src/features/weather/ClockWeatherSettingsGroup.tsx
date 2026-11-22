@@ -9,11 +9,13 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { useLocale, useTranslation } from "../../i18n";
 import { locateWeather, searchWeatherCities } from "./api";
 import { setClockWeatherSettings, useClockWeather } from "./useClockWeather";
+import { useCenteredClock } from "../centered-clock";
 import type { WeatherLocation } from "./model";
 import "./ClockWeatherSettingsGroup.css";
 
 export function ClockWeatherSettingsGroup() {
   const { installed, settings } = useClockWeather();
+  const centeredClock = useCenteredClock();
   const t = useTranslation().settings.plugins.clockWeather;
   const title = useTranslation().settings.plugins.market.items.clockWeather.name;
   const { locale } = useLocale();
@@ -63,9 +65,11 @@ export function ClockWeatherSettingsGroup() {
     void openUrl("ms-settings:privacy-location").catch((error) => console.error("Failed to open Windows location settings", error));
   };
   if (!installed) return null;
-  return <SettingsGroup title={title} footer={t.privacy}>
-    <SettingsToggleRow title={t.showClock} checked={settings.showClock}
+  const centeredClockActive = centeredClock.installed && (centeredClock.settings.showTime || centeredClock.settings.showDate);
+  return <SettingsGroup title={title} footer={centeredClockActive && settings.showClock ? t.clockReplaced : t.privacy}>
+    {!centeredClockActive && <SettingsToggleRow title={t.showClock} checked={settings.showClock}
       onChange={(showClock) => { setClockWeatherSettings({ showClock }); }} />
+    }
     <SettingsToggleRow title={t.showWeather} checked={settings.showWeather}
       onChange={(showWeather) => { setClockWeatherSettings({ showWeather }); }} />
     <SettingsRow title={t.city} description={<span className="clock-weather-settings__current">

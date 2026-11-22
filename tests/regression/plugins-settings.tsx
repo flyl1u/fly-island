@@ -145,6 +145,22 @@ try {
       && buttonBox.right <= card.getBoundingClientRect().right, "最窄卡片的开关与卸载按钮同排且不溢出");
     fixture.style.width = "";
     await act(async () => weatherRemove().click());
+
+    const centeredName = market.items.centeredClock.name;
+    const centeredInstall = () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(centeredName)}']`)!;
+    const centeredSwitch = () => document.querySelector<HTMLInputElement>(`[role=switch][aria-label='${market.enableNamed(centeredName)}']`);
+    const centeredSidebar = () => document.querySelector("[data-category='centeredClock']");
+    check(!centeredSwitch() && !centeredSidebar(), "居中时钟未安装时隐藏开关和独立栏目");
+    await act(async () => centeredInstall().click());
+    check(centeredSwitch()?.checked && centeredSidebar()
+      && JSON.parse(localStorage.getItem("fly-island-centered-clock") ?? "{}").showTime === true,
+    "安装居中时钟后默认启用时间并出现设置栏目");
+    const savedClock = localStorage.getItem("fly-island-centered-clock");
+    await act(async () => centeredSwitch()!.click());
+    check(!centeredSidebar() && localStorage.getItem("fly-island-centered-clock") === savedClock,
+      "停用居中时钟隐藏入口但保留设置");
+    await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(centeredName)}']`)!.click());
+    check(!centeredSwitch(), "卸载居中时钟后移除市场开关");
   }
   if (!PLUGINS_ENABLED) {
     if (PLUGIN_MARKET_ENABLED) {

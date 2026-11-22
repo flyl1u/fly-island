@@ -23,6 +23,7 @@ import { MailOtpCode } from "../../features/messages/mail/MailOtpCode";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { CollapsedClock, CollapsedWeather, useClockWeather, useCurrentWeather } from "../../features/weather";
+import { CollapsedCenteredClock, useCenteredClock } from "../../features/centered-clock";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
@@ -117,6 +118,10 @@ export function IslandCollapsedBar({
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
   const clockWeather = useClockWeather();
+  const centeredClock = useCenteredClock();
+  const centeredClockVisible = centeredClock.installed && collapsedItem === "centeredClock" && !preview && !quotaAlert && !batteryAlert;
+  const clockWeatherVisible = clockWeather.installed && clockWeather.settings.showClock
+    && !(centeredClock.installed && (centeredClock.settings.showTime || centeredClock.settings.showDate));
   const weatherOn = clockWeather.installed && clockWeather.settings.showWeather && collapsedLayout.includes("weather");
   const weather = useCurrentWeather(weatherOn, clockWeather.settings.location);
   // A pending update shows a red dot even collapsed, so it is not missed.
@@ -179,7 +184,7 @@ export function IslandCollapsedBar({
         <span className={pulseClassName} />
       </button>
     ),
-    clock: clockWeather.installed && clockWeather.settings.showClock && <CollapsedClock active={!isExpanded && !isTucked} />,
+    clock: clockWeatherVisible && <CollapsedClock active={!isExpanded && !isTucked} />,
     weather: weatherOn && weather && clockWeather.settings.location
       ? <CollapsedWeather location={clockWeather.settings.location} reading={weather} /> : null,
     text: (
@@ -212,7 +217,7 @@ export function IslandCollapsedBar({
             {quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
             ) : batteryAlert ? <BatteryAlertPopup alert={batteryAlert} /> : <>
-            {showCollapsedText && showTitle && (
+            {showCollapsedText && showTitle && collapsedItem !== "centeredClock" && (
               <span className="island__brand">fly-island</span>
             )}
             {showCollapsedText && shownAgent && (
@@ -301,7 +306,7 @@ export function IslandCollapsedBar({
 
   return (
     <div
-      className="island__collapsed"
+      className={`island__collapsed${centeredClockVisible ? " island__collapsed--centered-clock" : ""}`}
       aria-hidden={isExpanded}
       inert={isExpanded}
       onClick={(event) => {
@@ -311,6 +316,8 @@ export function IslandCollapsedBar({
       }}
     >
       {collapsedLayout.map((slot) => <Fragment key={slot}>{slots[slot]}</Fragment>)}
+      {centeredClockVisible && <CollapsedCenteredClock className="island__centered-clock"
+        settings={centeredClock.settings} active={!isExpanded && !isTucked} />}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { useTranslation } from "../../i18n";
 import { moveItem } from "../../utils/order.ts";
 import { WeatherIcon, clockWeatherWidth, useClockWeather } from "../weather";
+import { useCenteredClock } from "../centered-clock";
 import { placeCollapsedLayout, visibleCollapsedSlots } from "./collapsedLayout";
 import { COLLAPSED_SLOTS } from "./settingsLimits";
 import type { CollapsedSlot, IslandSettings } from "./types";
@@ -49,8 +50,12 @@ export function CollapsedLayoutEditor({
   const text = useTranslation().settings.appearance.collapsedIsland.layout;
   const preview = islandPreviewStyle(settings, useResolvedScheme(settings.colorScheme));
   const clockWeather = useClockWeather();
-  // Time and weather exist once their plugin is installed; until then they keep their saved places.
-  const absent = clockWeather.installed ? NO_SLOTS : PLUGIN_SLOTS;
+  const centeredClock = useCenteredClock();
+  const centeredClockActive = centeredClock.installed && (centeredClock.settings.showTime || centeredClock.settings.showDate);
+  // Keep plugin slots saved while absent; the centered clock takes over the old time slot while active.
+  const absent = useMemo<readonly CollapsedSlot[]>(() => clockWeather.installed
+    ? centeredClockActive ? ["clock"] : NO_SLOTS
+    : PLUGIN_SLOTS, [centeredClockActive, clockWeather.installed]);
   const arrangement = useMemo<SlotArrangement>(() => ({
     shown: visibleCollapsedSlots(settings.collapsedLayout, settings.collapsedHidden).filter((slot) => !absent.includes(slot)),
     hidden: settings.collapsedHidden.filter((slot) => !absent.includes(slot)),
@@ -62,7 +67,7 @@ export function CollapsedLayoutEditor({
   }), [absent, onSettingsChange, settings]);
   const drag = useCollapsedSlotDrag(arrangement, apply);
   const { shown, hidden } = drag.current;
-  const on = { ...slotsOn(settings), clock: clockWeather.settings.showClock,
+  const on = { ...slotsOn(settings), clock: clockWeather.settings.showClock && !centeredClockActive,
     weather: clockWeather.settings.showWeather && clockWeather.settings.location !== null };
   const isDefault = settings.collapsedLayout.join() === COLLAPSED_SLOTS.join() && settings.collapsedHidden.length === 0;
 
@@ -121,7 +126,8 @@ export function CollapsedLayoutEditor({
   const style = {
     ...preview.style,
     "--preview-collapsed-width": clockWeatherWidth(settings.collapsedAutoWidth ? 340 : settings.collapsedWidth,
-      clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100),
+      clockWeather.installed && !centeredClockActive && !hidden.includes("clock"),
+      clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100),
     "--preview-side-space": Math.max(0, settings.collapsedPadding - 6),
   } as CSSProperties;
 

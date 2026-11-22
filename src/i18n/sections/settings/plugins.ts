@@ -1,9 +1,11 @@
 import type { MarketPluginId } from "../../../features/plugins/native/catalog";
 
 import { zhCN as clockWeatherZh, en as clockWeatherEn, type ClockWeatherText } from "./clockWeather.ts";
+import { zhCN as centeredClockZh, en as centeredClockEn, type CenteredClockText } from "./centeredClock.ts";
 
 export type SettingsPluginsText = {
   clockWeather: ClockWeatherText;
+  centeredClock: CenteredClockText;
   empty: string; installed: string; available: string; install: string; update: string;
   uninstall: string; enabled: string; permissions: string; retry: string; save: string;
   developer: string; developerMode: string; develop: string; unavailable: string; index: string; directory: string; load: string; secret: string;
@@ -23,6 +25,7 @@ export type SettingsPluginMarketText = {
 
 export const zhCN: SettingsPluginsText = {
   clockWeather: clockWeatherZh,
+  centeredClock: centeredClockZh,
   checkUpdate: "检查更新", guide: "插件开发规范", guideHint: "插件是什么、怎么改造小岛源码、提交 PR 要附的演示和信息，以及审核上线流程。",
   readGuide: "查看规范", openGuideFailed: "没能打开开发规范，请再试一次。",
   empty: "暂无插件", installed: "已安装", available: "可安装", install: "安装", update: "更新",
@@ -42,6 +45,7 @@ export const zhCN: SettingsPluginsText = {
       "device-battery": { name: "设备电量与音频", description: "查看支持的无线设备电量和低电量提醒，快速切换音频输出。" },
       calendarMarks: { name: "日历标记", description: "在中文界面的待办日历显示中国大陆节假日、调休、节气、纪念日和农历。" },
       clockWeather: { name: "时间与天气", description: "在收起的岛上显示时间与所选城市的天气，可分别开关和调整位置。" },
+      centeredClock: { name: "居中时钟", description: "在收起的岛屿正中央显示时间与日期；有更高优先级内容时自动让位。" },
       dingtalk: { name: "钉钉", description: "钉钉有新消息时岛上提醒，消息页多一个钉钉标签，点一下回到钉钉。" },
       feishu: { name: "飞书", description: "飞书有新消息时岛上提醒，消息页多一个飞书标签，点一下回到飞书。" },
       wecom: { name: "企业微信", description: "企业微信有新消息时岛上提醒，消息页多一个企业微信标签。" },
@@ -55,6 +59,7 @@ export const zhCN: SettingsPluginsText = {
 
 export const en: SettingsPluginsText = {
   clockWeather: clockWeatherEn,
+  centeredClock: centeredClockEn,
   checkUpdate: "Check for updates", guide: "Plugin development guide", guideHint: "What a plugin is, how to change the island's source, the demo and details a PR needs, and how review and release work.",
   readGuide: "Read guide", openGuideFailed: "Could not open the guide. Please try again.",
   empty: "No plugins yet", installed: "Installed", available: "Available", install: "Install", update: "Update",
@@ -74,6 +79,7 @@ export const en: SettingsPluginsText = {
       "device-battery": { name: "Device Battery & Audio", description: "Check battery levels for supported wireless devices and switch audio outputs." },
       calendarMarks: { name: "Calendar Marks", description: "Adds mainland China holidays, make-up workdays, solar terms, observances and lunar dates when the app language is Chinese." },
       clockWeather: { name: "Clock & Weather", description: "Show the time and your city’s weather on the collapsed island, with separate switches and positions." },
+      centeredClock: { name: "Centered Clock", description: "Show the time and date at the center of the collapsed island; higher-priority activity takes its place." },
       dingtalk: { name: "DingTalk", description: "Get a heads-up on the island for new DingTalk messages, with a DingTalk tab in Messages." },
       feishu: { name: "Feishu", description: "Get a heads-up on the island for new Feishu messages, with a Feishu tab in Messages." },
       wecom: { name: "WeCom", description: "Get a heads-up on the island for new WeCom messages, with a WeCom tab in Messages." },
