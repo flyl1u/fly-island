@@ -35,6 +35,7 @@ export function useIslandAgents(settings: IslandSettings) {
     workbuddy: watchesQuota && settings.agentShowWorkbuddy,
     kimiCode: watchesQuota && native.kimiCode,
     zcode: watchesQuota && native.zcode,
+    antigravity: watchesQuota && native.antigravity,
   };
   // Read once for both rings and alerts. Either setting can need the data independently.
   const usages = useAgentUsages(settings.agentStatusEnabled, {
@@ -43,6 +44,7 @@ export function useIslandAgents(settings: IslandSettings) {
     dsh: shown.includes("dsh") || alertSources.dsh,
     kimiCode: native.kimiCode && (shown.includes("kimiCode") || alertSources.kimiCode),
     zcode: native.zcode && (shown.includes("zcode") || alertSources.zcode),
+    antigravity: native.antigravity && (shown.includes("antigravity") || alertSources.antigravity),
   });
   const { state: workbuddy } = useWorkbuddyUsage(settings.agentStatusEnabled && (shown.includes("workbuddy") || alertSources.workbuddy));
   const workbuddyUsage = workbuddy.status === "connected" ? workbuddy.usage : null;
@@ -50,7 +52,7 @@ export function useIslandAgents(settings: IslandSettings) {
     ...usages,
     workbuddy: workbuddyUsage,
   }, shown), [usages, workbuddyUsage, shown]);
-  const { claudeCode, codex, dsh, workbuddy: watchesWorkbuddy, kimiCode, zcode } = alertSources;
+  const { claudeCode, codex, dsh, workbuddy: watchesWorkbuddy, kimiCode, zcode, antigravity } = alertSources;
   const alertUsages = useMemo(() => ({
     claude: claudeCode ? usages.claude : null,
     codex: codex ? usages.codex : null,
@@ -58,8 +60,9 @@ export function useIslandAgents(settings: IslandSettings) {
     workbuddy: watchesWorkbuddy ? workbuddyUsage : null,
     kimi: kimiCode ? usages.kimi : null,
     zcode: zcode ? usages.zcode : null,
+    antigravity: antigravity ? usages.antigravity : null,
     readAt: usages.readAt,
-  }), [usages.claude, usages.codex, usages.dsh, usages.kimi, usages.zcode, usages.readAt, claudeCode, codex, dsh, kimiCode, zcode, workbuddyUsage, watchesWorkbuddy]);
+  }), [usages.claude, usages.codex, usages.dsh, usages.kimi, usages.zcode, usages.antigravity, usages.readAt, claudeCode, codex, dsh, kimiCode, zcode, antigravity, workbuddyUsage, watchesWorkbuddy]);
 
   return { agentStatus, ...sessions, agentSession, agentUsages, alertUsages };
 }

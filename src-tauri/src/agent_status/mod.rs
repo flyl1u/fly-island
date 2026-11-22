@@ -1,6 +1,8 @@
 //! AI agent status: the snapshot shown on the island and the Codex / Claude Code hooks that write it.
 
 pub(crate) mod approval_hotkeys;
+pub(crate) mod antigravity;
+mod antigravity_transcript;
 mod background_tasks;
 mod claude_hooks;
 mod codex_hooks;
@@ -268,8 +270,8 @@ fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallRe
 /// Claude Code, Codex, DSH and WorkBuddy sessions active in the last two hours, running and waiting ones first.
 #[tauri::command]
 /// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
-/// `native`: the agents installed from the plugin market to read as well ("cursor", "kimiCode",
-/// "hermes"); left out by older callers, which read none of them.
+/// `native`: additional agents to read ("cursor", "kimiCode", "hermes", "antigravity").
+/// Older callers can omit this list.
 pub async fn list_agent_sessions(
     app: AppHandle,
     window_hours: Option<u32>,
@@ -300,6 +302,9 @@ pub async fn list_agent_sessions(
             if wants("hermes") {
                 sessions.extend(throttled(&HERMES, window_ms, || hermes_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)));
             }
+            if wants("antigravity") {
+                sessions.extend(throttled(&ANTIGRAVITY, window_ms, || antigravity::list_sessions(&home_dir, current_unix_millis(), window_ms)));
+            }
             let is_active = |phase: &str| matches!(phase, "running" | "waiting");
             sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
             sessions.truncate(12);
@@ -314,8 +319,9 @@ type NativeSessions = std::sync::Mutex<Option<(std::time::Instant, i64, Vec<sess
 static CURSOR: NativeSessions = std::sync::Mutex::new(None);
 static KIMI: NativeSessions = std::sync::Mutex::new(None);
 static HERMES: NativeSessions = std::sync::Mutex::new(None);
+static ANTIGRAVITY: NativeSessions = std::sync::Mutex::new(None);
 
-/// The plugin-market agents are read at most every two seconds: the island asks every second,
+/// Additional agents are read at most every two seconds: the island asks every second,
 /// and Cursor's store is a database rather than a file whose change time says enough.
 fn throttled(
     slot: &NativeSessions,
@@ -535,6 +541,7 @@ macro_rules! tauri_commands {
             crate::agent_status::dsh_usage::get_dsh_usage,
             crate::agent_status::kimi_usage::get_kimi_usage,
             crate::agent_status::zcode_usage::get_zcode_usage,
+            crate::agent_status::antigravity::get_antigravity_usage,
             crate::agent_status::zcode_api_key::get_zcode_api_key_settings,
             crate::agent_status::zcode_api_key::save_zcode_api_key_settings,
             crate::agent_status::zcode_api_key::clear_zcode_api_key,

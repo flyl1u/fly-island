@@ -50,6 +50,7 @@ const KNOWN_HOSTS: &[(&str, &str, &str)] = &[
     ("vscodium", "VSCodium", "editor"),
     ("cursor", "Cursor", "editor"),
     ("windsurf", "Windsurf", "editor"),
+    ("antigravity", "Antigravity", "editor"),
     ("trae", "Trae", "editor"),
     ("kiro", "Kiro", "editor"),
     ("zed", "Zed", "editor"),

@@ -62,6 +62,12 @@ export function AgentSettingsPage({
           onChange={(agentShowWorkbuddy) => onSettingsChange({ ...settings, agentShowWorkbuddy })}
         />
         {settings.agentShowWorkbuddy && <WorkbuddySignInRow polling={settings.agentStatusEnabled && settings.agentQuotaSources.includes("workbuddy")} />}
+        <SettingsToggleRow
+          title={t.settings.agent.sources.antigravity}
+          description={t.settings.agent.sources.antigravityHint}
+          checked={settings.agentShowAntigravity}
+          onChange={(agentShowAntigravity) => onSettingsChange({ ...settings, agentShowAntigravity })}
+        />
         {NATIVE_AGENTS.filter((agent) => installed[agent.id]).map(({ id, setting }) => (
           <Fragment key={id}>
             <SettingsToggleRow title={AGENT_PROVIDER_LABELS[id]} description={t.settings.agent.sources.native[id]}

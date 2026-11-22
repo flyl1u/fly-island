@@ -104,7 +104,7 @@ if (!automated) {
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      // Agents 11 -> 13: the WorkBuddy session source and its sign-in row (2026-11-13 老板要求 WorkBuddy 会话来源).
+      // Agents: two rows for WorkBuddy's source and sign-in, plus one for Antigravity's source.
       // Appearance: 9 -> 12 on 2026-11-13 for island font size (+1) and notch auto-width/height (+2).
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
       // General 11 -> 14: the three independent keep-visible switches requested 2026-11-13.
@@ -119,7 +119,7 @@ if (!automated) {
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
       // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
       // 2026-11-19: the tucked look (+1) moves from general (16 -> 15) to appearance (22 -> 23).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 17 : category === "appearance" ? 24 : category === "clipboard" ? 10 : category === "todos" ? 9 : 8;
+      const maxRows = category === "agents" ? 14 : category === "general" ? 17 : category === "appearance" ? 24 : category === "clipboard" ? 10 : category === "todos" ? 9 : 8;
       if (category === "clipboard") check([...panel.querySelectorAll("label")].some((label) =>
         label.textContent === "悬停时预览完整内容" && label.control?.matches('[role="switch"]:not(:checked)')),
       "Clipboard hover preview defaults off in settings");

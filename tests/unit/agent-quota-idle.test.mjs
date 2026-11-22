@@ -1,6 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { emptyQuotaState, takeQuotaAlerts } from "../../src/features/agent-status/quotaAlerts.ts";
+
+test("Antigravity reports threshold and reset alerts for the model that changed", () => {
+  const state = emptyQuotaState();
+  const read = (gemini, claude) => takeQuotaAlerts(state, {
+    claude: null, codex: null, readAt: 100,
+    antigravity: {
+      updatedAt: 100, fiveHour: null, sevenDay: null,
+      models: [{ name: "Claude", used: claude, resetsAt: null }, { name: "Gemini", used: gemini, resetsAt: 500 }],
+    },
+  }, 80, 100);
+  assert.deepEqual(read(50, 91), []);
+  assert.deepEqual(read(83, 91), [{ kind: "low", agent: "antigravity", window: "model", model: "Gemini", used: 83, resetsAt: 500 }]);
+  assert.deepEqual(read(91, 91), []);
+  assert.deepEqual(read(30, 91), [{ kind: "reset", agent: "antigravity", window: "model", model: "Gemini", used: 30, resetsAt: 500 }]);
+});
 import { compactStarted, emptyIdleSessions, takeIdleSessions } from "../../src/features/agent-status/sounds/idle.ts";
 
 const NOW = 1_000_000_000;

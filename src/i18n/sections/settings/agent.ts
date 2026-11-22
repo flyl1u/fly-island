@@ -14,6 +14,8 @@ export type SettingsAgentText = {
   sessionTitleHint: string;
   sources: {
     title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string;
+    /** Ships with the island once Antigravity's own data is on this computer. */
+    antigravity: string; antigravityHint: string;
     /** Agents installed from the plugin market; their rows appear only once installed. */
     native: Record<"cursor" | "kimiCode" | "hermes" | "zcode", string>;
   };
@@ -80,13 +82,15 @@ export const zhCN: SettingsAgentText = {
     dshHint: "读取桌面端的会话记录。点击会话可打开 DSH 主窗口。",
     workbuddy: "WorkBuddy",
     workbuddyHint: "读取桌面端的会话记录。点击会话可打开 WorkBuddy。",
+    antigravity: "Antigravity",
+    antigravityHint: "显示 Antigravity 会话、回复摘要和任务提醒，按模型显示和提醒额度。",
     native: {
       cursor: "只读取 Cursor 本机的 Agent 对话。点击会话可切到对应的 Cursor 窗口。",
       kimiCode: "读取 Kimi Code CLI 的会话记录，并在 Agent 页显示套餐额度环。",
       hermes: "只读取 Hermes Agent 的会话记录。",
       zcode: "用 Z Code 客户端登录或 Coding Plan API Key，在 Agent 页显示套餐额度环。",
     } },
-  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
+  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" } },
   zcodeApiKey: {
     title: "Coding Plan API Key（可选）",
     empty: "未填写，使用 Z Code 桌面版登录",
@@ -174,13 +178,15 @@ export const en: SettingsAgentText = {
     dshHint: "Reads local desktop sessions. Select a session to open the DSH window.",
     workbuddy: "WorkBuddy",
     workbuddyHint: "Reads local desktop sessions. Select a session to open WorkBuddy.",
+    antigravity: "Antigravity",
+    antigravityHint: "Shows Antigravity sessions, reply previews, task notifications, and quota alerts by model.",
     native: {
       cursor: "Reads Cursor's local agent chats, read-only. Select a session to bring its Cursor window forward.",
       kimiCode: "Reads Kimi Code CLI sessions and shows its plan's quota rings on the Agent page.",
       hermes: "Reads Hermes Agent sessions, read-only.",
       zcode: "Shows Z Code's plan quota rings on the Agent page using its desktop sign-in or a Coding Plan API key.",
     } },
-  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
+  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" } },
   zcodeApiKey: {
     title: "Coding Plan API Key (optional)",
     empty: "No key set. Using Z Code desktop sign-in.",

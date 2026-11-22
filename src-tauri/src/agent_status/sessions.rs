@@ -43,7 +43,7 @@ pub struct AgentSessionSummary {
     pub(super) reply_asks: bool,
     /// Last change of the session file, Unix milliseconds.
     pub(super) updated_at: i64,
-    /// Latest explicit Codex task completion, independent of later metadata writes.
+    /// Latest completion recorded by the agent, independent of later metadata writes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) last_completed_at: Option<i64>,
     /// The program the session runs in, when known (session_host.rs).

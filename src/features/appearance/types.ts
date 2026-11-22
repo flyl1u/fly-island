@@ -38,8 +38,8 @@ export type AgentSessionGroup = "computer" | "project" | "none";
 export type AgentArchiveMotion = "slide" | "dissolve";
 /** Light effects on the Agent page's cards and compact rows: none, the sparkle band, or a gradient wash. */
 export type AgentCardEffects = "off" | "sparkle" | "gradient";
-/** Kimi Code and Z Code come from the plugin market and are offered only once installed. */
-export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode";
+/** Kimi Code and Z Code are offered after their plugins are installed. */
+export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode" | "antigravity";
 /** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
@@ -110,6 +110,7 @@ export type IslandSettings = {
   agentShowKimiCode: boolean;
   agentShowHermes: boolean;
   agentShowZcode: boolean;
+  agentShowAntigravity: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
   /** Show how long a session's current (or last) turn has run. */

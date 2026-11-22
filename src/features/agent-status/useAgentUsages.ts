@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
-import { dshProblem, getAgentUsage, getCodexUsage, getDshUsage, getKimiUsage, getZcodeUsage, onZcodeUsageChanged } from "./api";
+import { dshProblem, getAgentUsage, getAntigravityUsage, getCodexUsage, getDshUsage, getKimiUsage, getZcodeUsage, onZcodeUsageChanged } from "./api";
 import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 import { usePlugins } from "../plugins";
 
@@ -22,6 +22,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
   // Plugin-market agents are asked only when the caller names them: they query a web service.
   const showKimi = show.kimiCode === true;
   const showZcode = show.zcode === true;
+  const showAntigravity = show.antigravity === true;
 
   useEffect(() => {
     if (!enabled) {
@@ -43,7 +44,8 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
         showDsh ? getDshUsage().then((usage) => ({ usage, problem: null }), (error: unknown) => ({ usage: null, problem: dshProblem(error) })) : Promise.resolve(null),
         showKimi ? getKimiUsage().catch(log("Kimi Code")) : Promise.resolve(null),
         showZcode ? getZcodeUsage().catch(log("Z Code")) : Promise.resolve(null),
-      ]).then(([claude, codex, dsh, kimi, zcode]) => {
+        showAntigravity ? getAntigravityUsage().catch(log("Antigravity")) : Promise.resolve(null),
+      ]).then(([claude, codex, dsh, kimi, zcode, antigravity]) => {
         if (cancelled) return;
         const now = Date.now();
         setUsages((previous) => ({
@@ -53,6 +55,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
           dshProblem: dsh?.problem ?? null,
           kimi: withoutPastWindows(kimi ?? null, now),
           zcode: revision === zcodeRevision ? withoutPastWindows(zcode ?? null, now) : previous.zcode,
+          antigravity: withoutPastWindows(antigravity ?? null, now),
           readAt: now,
         }));
       });
@@ -76,7 +79,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
       unlisten?.();
       window.clearInterval(timer);
     };
-  }, [enabled, showClaude, showCodex, showDsh, showKimi, showZcode]);
+  }, [enabled, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity]);
 
   return useMemo(() => ({
     ...usages,
@@ -86,6 +89,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     dshProblem: enabled && showDsh ? usages.dshProblem : null,
     kimi: enabled && showKimi ? usages.kimi : null,
     zcode: enabled && showZcode ? usages.zcode : null,
+    antigravity: enabled && showAntigravity ? usages.antigravity : null,
     plugins: enabled ? Object.entries(plugins.live).flatMap(([id, live]) => plugins.registry.installed[id]?.enabled && live.status === "running" ? live.quota.map((q) => ({ ...q, id: `${id}/${q.id}` })) : []) : [],
-  }), [enabled, usages, showClaude, showCodex, showDsh, showKimi, showZcode, plugins]);
+  }), [enabled, usages, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity, plugins]);
 }

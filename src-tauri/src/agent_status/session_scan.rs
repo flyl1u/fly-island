@@ -421,7 +421,7 @@ fn read_first_line(path: &Path) -> Option<String> {
 }
 
 /// The last `TAIL_BYTES` of a file, starting at a whole line.
-fn read_tail(path: &Path) -> Option<String> {
+pub(super) fn read_tail(path: &Path) -> Option<String> {
     let mut file = File::open(path).ok()?;
     let len = file.metadata().ok()?.len();
     let start = len.saturating_sub(TAIL_BYTES);

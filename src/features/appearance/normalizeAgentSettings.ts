@@ -10,6 +10,8 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
   const agentShowDsh = settings?.agentShowDsh !== false;
   const agentShowWorkbuddy = settings?.agentShowWorkbuddy !== false;
   const quotaSources = settings?.agentQuotaSources;
+  // Settings saved before Antigravity had neither a source switch nor a quota checkbox.
+  const addAntigravityRing = settings?.agentShowAntigravity === undefined && Array.isArray(quotaSources) && quotaSources.length > 0;
   return {
     agentShowClaudeCode,
     agentShowCodex,
@@ -19,9 +21,10 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentShowKimiCode: settings?.agentShowKimiCode !== false,
     agentShowHermes: settings?.agentShowHermes !== false,
     agentShowZcode: settings?.agentShowZcode !== false,
+    agentShowAntigravity: settings?.agentShowAntigravity !== false,
     agentQuotaSources: Array.isArray(quotaSources)
-      ? AGENT_QUOTA_SOURCES.filter((source) => quotaSources.includes(source))
-      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy, kimiCode: true, zcode: true })[source]),
+      ? AGENT_QUOTA_SOURCES.filter((source) => quotaSources.includes(source) || (addAntigravityRing && source === "antigravity"))
+      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy, kimiCode: true, zcode: true, antigravity: true })[source]),
     agentSessionSort: oneOf(AGENT_SESSION_SORTS, settings?.agentSessionSort, DEFAULT_SETTINGS.agentSessionSort),
     agentSessionGroup: oneOf(AGENT_SESSION_GROUPS, settings?.agentSessionGroup, DEFAULT_SETTINGS.agentSessionGroup),
     agentAlertCompleted: settings?.agentAlertCompleted !== false,

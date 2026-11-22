@@ -22,7 +22,7 @@ export { QUOTA_COLORS } from "./quotaColors";
 export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
   const own = useAgentUsages(given === undefined);
   const usages = given ?? own;
-  const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex], ["kimiCode", usages.kimi ?? null], ["zcode", usages.zcode ?? null]];
+  const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex], ["kimiCode", usages.kimi ?? null], ["zcode", usages.zcode ?? null], ["antigravity", usages.antigravity ?? null]];
   const shown = agents.filter((entry): entry is [AgentProvider, AgentUsage] => quotaRings(entry[1]) !== null);
   if (usageLineCount(usages) === 0) return null;
   return (

@@ -27,6 +27,7 @@ export const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   kimiCode: "Kimi Code",
   hermes: "Hermes",
   zcode: "Z Code",
+  antigravity: "Antigravity",
 };
 /** One row of agent status: a built-in provider or a source reported by a plugin or the local API. */
 export type AgentStatusEntry = {
