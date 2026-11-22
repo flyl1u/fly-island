@@ -5,7 +5,7 @@ import type { IslandPage } from "./types";
 /**
  * The pages Ctrl + wheel steps through, in the header's order: the Agent page, the page dots
  * (translation only while it opens inside the island, a detached clipboard not at all, since
- * both open a window of their own), then messages.
+ * both open a window of their own), installed plugin pages, then messages.
  */
 export function wheelPageOrder(pageOrder: PageDot[], features: IslandFeatures, clipboardDetached: boolean): IslandPage[] {
   const pages: IslandPage[] = [];
@@ -14,6 +14,7 @@ export function wheelPageOrder(pageOrder: PageDot[], features: IslandFeatures, c
     if (dot === "clipboard" && clipboardDetached) continue;
     if (features[dot]) pages.push(dot);
   }
+  pages.push(...(features.pluginPages ?? []).map((info) => info.page));
   if (isPageEnabled("qq", features)) pages.push("qq");
   return pages;
 }

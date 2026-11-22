@@ -12,11 +12,21 @@ use tauri::Manager;
 use service::{Host, Snapshot};
 use serde_json::Value;
 
-type PluginHost = Arc<Host>;
+pub(crate) use manifest::Manifest as PluginManifest;
+pub(crate) use protocol::Contributions as PluginContributions;
+pub(crate) use service::EVENT;
+
+pub(crate) type PluginHost = Arc<Host>;
 
 pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
-    let host = Arc::new(Host::new(app.path().app_data_dir().map_err(|e| e.to_string())?, Some(app.clone()), crate::release_flags::PLUGINS_ENABLED)?);
-    let registry = host.snapshot().registry;
+    crate::eye_care::init(app);
+    let root = app.path().app_data_dir().map_err(|error| error.to_string())?;
+    let host = Arc::new(if crate::release_flags::plugin_market_enabled() && !crate::release_flags::PLUGINS_ENABLED {
+        Host::market(root, Some(app.clone()))?
+    } else {
+        Host::new(root, Some(app.clone()), crate::release_flags::PLUGINS_ENABLED)?
+    });
+    let registry = host.public_snapshot().registry;
     for (id, p) in registry.installed {
         if p.enabled && (!p.development || registry.developer_mode) {
             if let Err(error) = host.start(&id) { eprintln!("Plugin {id} could not start: {error}"); }
@@ -26,10 +36,10 @@ pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-pub fn shutdown(app: &tauri::AppHandle) { if let Some(host) = app.try_state::<PluginHost>() { host.shutdown(); } }
+pub fn shutdown(app: &tauri::AppHandle) { crate::eye_care::shutdown(app); if let Some(host) = app.try_state::<PluginHost>() { host.shutdown(); } }
 
 #[tauri::command]
-pub async fn get_plugins(host: tauri::State<'_, PluginHost>) -> Result<Snapshot, String> { Ok(host.snapshot()) }
+pub async fn get_plugins(host: tauri::State<'_, PluginHost>) -> Result<Snapshot, String> { Ok(host.public_snapshot()) }
 #[tauri::command]
 pub async fn get_plugins_index(host: tauri::State<'_, PluginHost>) -> Result<Vec<packages::IndexEntry>, String> { host.catalog().await }
 #[tauri::command]
@@ -60,6 +70,7 @@ pub async fn run_plugin_action(id: String, action: String, host: tauri::State<'_
 #[tauri::command]
 pub async fn configure_plugins(developer_mode: bool, index_url: String, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
     let _guard = host.operation.lock().await;
+    if !host.allows_development() { return Err("Developer mode is unavailable in this build".into()); }
     let mut registry = host.snapshot().registry;
     registry.developer_mode = developer_mode;
     registry.index_url = index_url;
@@ -71,7 +82,7 @@ pub async fn configure_plugins(developer_mode: bool, index_url: String, host: ta
 #[tauri::command]
 pub async fn load_development_plugin(directory: String, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
     let _guard = host.operation.lock().await;
-    if !host.enabled() { return Ok(()); }
+    if !host.allows_development() { return Err("Developer mode is unavailable in this build".into()); }
     let mut registry = host.snapshot().registry;
     if !registry.developer_mode { return Err("Developer mode is disabled".into()); }
     let directory = std::path::PathBuf::from(directory).canonicalize().map_err(|e| e.to_string())?;
