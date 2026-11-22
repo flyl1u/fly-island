@@ -1,41 +1,58 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { getPlugins, onPluginsChanged, type PluginsSnapshot } from "./api";
-import { PLUGINS_ENABLED } from "../releaseFlags.ts";
+import { PLUGIN_RUNTIME_ENABLED } from "../releaseFlags.ts";
 
 const EMPTY: PluginsSnapshot = { registry: { developerMode: false, indexUrl: "", installed: {} }, live: {} };
 let current = EMPTY;
 const listeners = new Set<() => void>();
-let reading = false;
+let reading: Promise<void> | undefined;
 let dirty = false;
-export async function refreshPlugins() {
-  if (!PLUGINS_ENABLED) return;
-  if (reading) { dirty = true; return; }
-  reading = true;
-  try {
-    const next = await getPlugins();
-    if (!next?.registry?.installed || !next.live) return;
-    if (JSON.stringify(next) !== JSON.stringify(current)) {
-      current = next;
-      listeners.forEach((listener) => listener());
-    }
-  } catch { /* Old web demos have no native plugin host. */ }
-  finally {
-    reading = false;
-    if (dirty) { dirty = false; void refreshPlugins(); }
+let generation = 0;
+let unlisten: (() => void) | undefined;
+
+async function readPending() {
+  while (dirty) {
+    dirty = false;
+    try {
+      const next = await getPlugins();
+      if (next?.registry?.installed && next.live && JSON.stringify(next) !== JSON.stringify(current)) {
+        current = next;
+        listeners.forEach((listener) => listener());
+      }
+    } catch { /* The web demo has no native plugin host. */ }
   }
 }
-function subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }
-export function usePlugins() {
-  const snapshot = useSyncExternalStore(subscribe, () => current);
-  useEffect(() => {
-    if (!PLUGINS_ENABLED) return;
-    let disposed = false;
-    let unlisten: (() => void) | undefined;
-    void onPluginsChanged(() => { void refreshPlugins(); }).then((stop) => {
-      if (disposed) stop(); else unlisten = stop;
-      void refreshPlugins();
-    }).catch(() => { void refreshPlugins(); });
-    return () => { disposed = true; unlisten?.(); };
-  }, []);
-  return PLUGINS_ENABLED ? snapshot : EMPTY;
+
+export function refreshPlugins() {
+  if (!PLUGIN_RUNTIME_ENABLED) return Promise.resolve();
+  dirty = true;
+  reading ??= readPending().finally(() => {
+    reading = undefined;
+    if (dirty) void refreshPlugins();
+  });
+  return reading;
 }
+
+function subscribe(listener: () => void) {
+  if (!PLUGIN_RUNTIME_ENABLED) return () => {};
+  listeners.add(listener);
+  if (listeners.size === 1) {
+    const subscribed = ++generation;
+    void onPluginsChanged(() => { void refreshPlugins(); }).then((stop) => {
+      if (subscribed !== generation) { stop(); return; }
+      unlisten = stop;
+      void refreshPlugins();
+    }).catch(() => { if (subscribed === generation) void refreshPlugins(); });
+  }
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) {
+      generation += 1;
+      unlisten?.();
+      unlisten = undefined;
+    }
+  };
+}
+
+const getSnapshot = () => current;
+export function usePlugins() { return useSyncExternalStore(subscribe, getSnapshot); }

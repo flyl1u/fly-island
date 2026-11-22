@@ -10,7 +10,7 @@ import { useOfficeImSnapshot } from "./office-im/useOfficeIm";
 import { useSourceReorder } from "./useSourceReorder";
 import "./MessageToolbar.css";
 import { PluginMessagesPanel } from "./PluginMessagesPanel";
-import { PLUGINS_ENABLED } from "../plugins";
+import { PLUGIN_RUNTIME_ENABLED } from "../releaseFlags.ts";
 
 export type MessageView = MessageSource;
 
@@ -29,7 +29,7 @@ type MessagesProps = {
 /** The sources whose tabs show, for the reorder hook (hidden ones keep their place). */
 function visibleSources(enabled: MessagesProps["enabledSources"]): MessageSource[] {
   return (["wechat", "qq", "qqMail", ...OFFICE_SOURCES, "plugin"] as MessageSource[])
-    .filter((source) => source === "plugin" ? PLUGINS_ENABLED && enabled.plugin === true : enabled[source] === true);
+    .filter((source) => source === "plugin" ? PLUGIN_RUNTIME_ENABLED && enabled.plugin === true : enabled[source] === true);
 }
 
 export function messagePanelHeight(source: MessageView, readingMail = false) {
@@ -38,7 +38,7 @@ export function messagePanelHeight(source: MessageView, readingMail = false) {
 
 export function MessagesPanel({ qqMail, qqNotifications, wechatReminders, source: requestedSource, enabledSources, onSourceChange, onOpenMailSettings }: MessagesProps) {
   const t = useTranslation();
-  const source = requestedSource === "plugin" && !PLUGINS_ENABLED
+  const source = requestedSource === "plugin" && !PLUGIN_RUNTIME_ENABLED
     ? enabledSources.wechat ? "wechat" : enabledSources.qq ? "qq" : "qqMail"
     : requestedSource;
   const { snapshot: qq } = qqNotifications;

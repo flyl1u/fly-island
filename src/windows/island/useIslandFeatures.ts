@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { MessageView } from "../../features/messages/Messages";
 import type { MailController } from "../../features/messages/mail/MailPanel";
-import { islandPageFor, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
+import { useOfficeSources } from "../../features/messages/office-im/useOfficeIm";
+import { usePlugins } from "../../features/plugins";
+import { PLUGIN_RUNTIME_ENABLED } from "../../features/releaseFlags.ts";
+import { islandPageFor, pluginPagesFrom, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
 
 type IslandFeatureOptions = {
@@ -39,6 +42,10 @@ export function useIslandFeatures({
   const plugins = usePlugins();
   const office = useOfficeSources();
   const hasPluginMessages = Object.values(plugins.registry.installed).some((p) => p.enabled && p.manifest.contributes.includes("notifications"));
+  const pluginPages = useMemo(
+    () => (PLUGIN_RUNTIME_ENABLED ? pluginPagesFrom(plugins.registry.installed, plugins.live) : []),
+    [plugins],
+  );
   const features = useMemo<IslandFeatures>(() => ({
     plugin: hasPluginMessages,
     dingtalk: office.dingtalk,
@@ -53,7 +60,8 @@ export function useIslandFeatures({
     qqMail: settings.mailEnabled,
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages, office.dingtalk, office.feishu, office.wecom]);
+    pluginPages,
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
 
   useEffect(() => {
     const next = islandPageFor(page, features, settings.clipboardDetached);
@@ -89,5 +97,3 @@ export function useIslandFeatures({
 
   return { features, openEnabledPage };
 }
-import { usePlugins } from "../../features/plugins";
-import { useOfficeSources } from "../../features/messages/office-im/useOfficeIm";

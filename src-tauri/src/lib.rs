@@ -11,6 +11,8 @@ mod media_control;
 mod media_plugins;
 mod legacy_migration;
 mod plugin_host;
+mod eye_care;
+mod device_battery;
 mod release_flags;
 mod messenger_activation;
 mod notification_diagnostics;
@@ -146,6 +148,8 @@ pub fn run() {
             media_control;
             media_plugins;
             plugin_host;
+            eye_care;
+            device_battery;
             lyrics;
             clipboard_history;
             translation;
