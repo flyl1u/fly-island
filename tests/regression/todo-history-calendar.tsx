@@ -158,13 +158,15 @@ try {
     const cell = day(today)!;
     const number = cell.querySelector(".todo-calendar__number")!;
     return !!cell.querySelector(".todo-calendar__caption-text")
-      && getComputedStyle(number).backgroundColor === "rgb(116, 214, 255)"
+      && getComputedStyle(number).textDecorationLine === "underline"
+      && getComputedStyle(number).backgroundColor === "rgba(0, 0, 0, 0)"
       && getComputedStyle(number).fontSize === normalNumberSize
       && getComputedStyle(number).boxShadow === "none" && getComputedStyle(cell).boxShadow.includes("inset")
       && cell.getAttribute("aria-current") === "date";
   };
   for (let step = 0; step < 60 && !usesMarks(); step += 1) await frame();
-  check(usesMarks(), "启用日历标记后日期字号不变，今天仍用实心圆，选中时整格描边");
+  check(usesMarks(), "启用日历标记后日期字号不变，今天有下划线，选中只描整格");
+  check(day(today)?.querySelectorAll(".todo-calendar__dot").length === 3, "日期说明不占用待办圆点的位置");
   check(sideBySide() && detail().dataset.date === today && $(".todo-day-detail__title")?.textContent === "今天" && dayList().textContent!.includes("核对这周的录屏素材"),
     "日历在左侧，今天的待办默认显示在右侧");
   if (!day(yesterday)) await click(button("上个月"));
@@ -257,8 +259,9 @@ try {
 
   const plainSaturday = day("2027-01-09");
   check(plainSaturday?.classList.contains("todo-calendar__day--rest") && badgeOf(plainSaturday) === ""
+    && getComputedStyle(plainSaturday!).backgroundColor === "rgba(0, 0, 0, 0)"
     && /^(初|十|廿|三)/.test(captionOf(plainSaturday)) && plainSaturday.getAttribute("aria-label")?.includes("休息日"),
-    "普通周六只用底色区分，仍显示农历并播报休息日");
+    "普通周六不铺底色，仍显示农历并播报休息日");
 
   const plainWeekday = day(fixtureToday);
   const todaySpoken = plainWeekday?.getAttribute("aria-label") ?? "";
@@ -270,6 +273,17 @@ try {
   check(badgeOf(makeUpDay) === "班" && makeUpDay?.classList.contains("todo-calendar__day--work")
     && !makeUpDay.classList.contains("todo-calendar__day--rest") && makeUpDay.getAttribute("aria-label")?.includes("调休上班"),
     "调休上班的周日显示「班」并播报调休上班，不按休息日标红");
+
+  fixture.style.width = "360px";
+  fixture.style.setProperty("--island-font-scale", "1.2");
+  const cellBox = makeUpDay!.getBoundingClientRect();
+  const numberBox = makeUpDay!.querySelector(".todo-calendar__number")!.getBoundingClientRect();
+  const badgeBox = makeUpDay!.querySelector(".todo-calendar__badge")!.getBoundingClientRect();
+  const captionBox = makeUpDay!.querySelector(".todo-calendar__caption-text")!.getBoundingClientRect();
+  check(numberBox.left >= cellBox.left && badgeBox.left >= numberBox.right && badgeBox.right <= cellBox.right
+    && badgeBox.bottom <= captionBox.top, "窄面板的两位数日期、休班标记和农历各有足够空间");
+  fixture.style.removeProperty("width");
+  fixture.style.removeProperty("--island-font-scale");
 
   check($$(".todo-calendar__weekday--rest").length === 2
     && $$(".todo-calendar__weekday--rest").map((element) => element.textContent).join("") === "六日",

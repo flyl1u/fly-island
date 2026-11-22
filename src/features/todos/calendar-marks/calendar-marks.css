@@ -1,112 +1,70 @@
 .todo-calendar__grid--marks {
-  --todo-calendar-rest-ink: color-mix(in srgb, var(--color-danger) 70%, var(--text-1));
-  row-gap: 1px;
+  --todo-calendar-rest-ink: color-mix(in srgb, var(--color-danger) 55%, var(--text-1));
+  --todo-calendar-today-ink: color-mix(in srgb, var(--color-accent) 82%, var(--text-1));
+  grid-auto-rows: 29px;
+  column-gap: 0;
 }
 
-/* 28px 内放下号码和说明，六周月历依旧不用滚动。 */
 .todo-calendar__grid--marks .todo-calendar__day {
-  position: relative;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 17px 11px;
+  grid-template-rows: 15px 11px 3px;
+  align-items: center;
   gap: 0;
 }
 
-.todo-calendar__grid--marks .todo-calendar__number {
-  width: 17px;
-  height: 17px;
-}
-
-.todo-calendar__grid--marks .todo-calendar__day:has(> .todo-calendar__badge) .todo-calendar__number {
-  margin-inline-end: 6px;
-}
-
-/* 悬浮与按下：整格一块底色，不再只亮号码。 */
-.todo-calendar__grid--marks .todo-calendar__day::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: var(--corner-xs);
-  background: transparent;
-  pointer-events: none;
-}
-
-.todo-calendar__grid--marks .todo-calendar__day:hover::after {
+.todo-calendar__grid--marks .todo-calendar__day:hover {
   background: var(--color-white-a08);
 }
 
-.todo-calendar__grid--marks .todo-calendar__day:active::after {
+.todo-calendar__grid--marks .todo-calendar__day:active {
   background: var(--color-white-a16);
 }
 
-.todo-calendar__grid--marks .todo-calendar__day:not(.todo-calendar__day--today):is(:hover, :active) .todo-calendar__number {
-  background: transparent;
-}
-
-/* 选中用整格描边，今天继续用实心圆。 */
 .todo-calendar__grid--marks .todo-calendar__day[aria-pressed="true"] {
-  border-radius: var(--corner-xs);
-  box-shadow: inset 0 0 0 1.5px var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 78%, transparent);
 }
 
-.todo-calendar__grid--marks .todo-calendar__day[aria-pressed="true"] .todo-calendar__number {
+.todo-calendar__grid--marks .todo-calendar__date-line {
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+}
+
+.todo-calendar__grid--marks .todo-calendar__day .todo-calendar__number {
+  width: auto;
+  height: auto;
+  color: inherit;
+  background: transparent;
   box-shadow: none;
 }
 
-.todo-calendar__grid--marks .todo-calendar__day[aria-pressed="true"]:not(.todo-calendar__day--today) .todo-calendar__number {
-  color: inherit;
-}
-
-/* 休息日：淡红底填满格子，号码标红。取 22% 是为了在深色主题上也看得出来。 */
-.todo-calendar__grid--marks .todo-calendar__day--rest:not(.todo-calendar__day--outside) {
+.todo-calendar__grid--marks .todo-calendar__day--rest:not(.todo-calendar__day--outside),
+.todo-calendar__grid--marks .todo-calendar__weekday--rest {
   color: var(--todo-calendar-rest-ink);
 }
 
-.todo-calendar__grid--marks .todo-calendar__day--rest::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: calc(2px * var(--corner-scale));
-  background: color-mix(in srgb, var(--color-danger) 22%, transparent);
-  pointer-events: none;
-}
-
-.todo-calendar__grid--marks .todo-calendar__day--outside.todo-calendar__day--rest::before {
-  opacity: 0.5;
-}
-
-/* 号码与说明行压在底色之上。 */
-.todo-calendar__grid--marks .todo-calendar__number,
-.todo-calendar__grid--marks .todo-calendar__caption {
-  position: relative;
-  z-index: 1;
-}
-
-/* 说明行：节日名、节气、纪念日或农历日，最多两三个字。 */
-.todo-calendar__grid--marks .todo-calendar__caption {
-  min-width: 0;
-  justify-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
+/* 今天用短下划线，选中整格时也只保留一层边框。 */
+.todo-calendar__grid--marks .todo-calendar__day--today .todo-calendar__number {
+  color: var(--todo-calendar-today-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 1px;
 }
 
 .todo-calendar__grid--marks .todo-calendar__caption-text {
-  min-width: 0;
+  grid-row: 2;
+  max-width: 100%;
   overflow: hidden;
   color: var(--text-2);
   font-size: clamp(9px, calc(10px * var(--island-font-scale, 1)), 11px);
-  line-height: 11px;
+  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.todo-calendar__grid--marks .todo-calendar__day--outside .todo-calendar__caption-text {
-  color: var(--text-3);
-}
-
 .todo-calendar__grid--marks .todo-calendar__dots {
-  flex: none;
+  grid-row: 3;
   gap: 1px;
 }
 
@@ -115,32 +73,17 @@
   height: 2.5px;
 }
 
-/* 只给通知里列出的放假和调休日加角标。 */
 .todo-calendar__grid--marks .todo-calendar__badge {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-end: 0;
-  z-index: 2;
-  min-width: 10px;
-  height: 10px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  color: var(--color-white);
-  background: var(--color-danger);
-  border-radius: 1.5px;
-  font-family: var(--font-ui);
+  color: var(--todo-calendar-rest-ink);
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 
 .todo-calendar__grid--marks .todo-calendar__day--work .todo-calendar__badge {
-  color: var(--text-1);
-  background: var(--color-white-a18);
+  color: var(--text-2);
 }
 
-/* 周末的表头跟日期一起标红。 */
-.todo-calendar__grid--marks .todo-calendar__weekday--rest {
-  color: var(--todo-calendar-rest-ink);
+.todo-calendar__grid--marks .todo-calendar__day--outside :is(.todo-calendar__caption-text, .todo-calendar__badge) {
+  color: var(--text-3);
 }
