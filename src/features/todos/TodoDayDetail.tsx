@@ -7,26 +7,28 @@ import "./TodoDayDetail.css";
 export function TodoDayDetail({
   date,
   today,
+  calendarNote,
   summary,
   composer,
   children,
 }: {
   date: string;
   today: string;
+  calendarNote?: string;
   summary?: string;
   composer?: ReactNode;
   children: ReactNode[];
 }) {
   const t = useTranslation();
   const titleId = useId();
-  const format = useMemo(() => new Intl.DateTimeFormat(t.localeTag, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    weekday: "short",
+  const formats = useMemo(() => ({
+    date: new Intl.DateTimeFormat(t.localeTag, { year: "numeric", month: "short", day: "numeric" }),
+    weekday: new Intl.DateTimeFormat(t.localeTag, { weekday: "short" }),
   }), [t.localeTag]);
   const parsed = new Date(`${date}T00:00:00`);
-  const fullDate = Number.isNaN(parsed.getTime()) ? date : format.format(parsed);
+  const valid = !Number.isNaN(parsed.getTime());
+  const dateLabel = valid ? formats.date.format(parsed) : date;
+  const weekday = valid ? formats.weekday.format(parsed) : "";
   const relative = relativeDay(date, today);
   const hasTodos = children.length > 0;
 
@@ -35,9 +37,15 @@ export function TodoDayDetail({
       <header className="todo-day-detail__header" aria-live="polite">
         <div>
           <h3 className="todo-day-detail__title" id={titleId}>
-            {relative ? dayHeading(date, today, t.notebook) : <time dateTime={date}>{fullDate}</time>}
+            {relative ? dayHeading(date, today, t.notebook) : <time dateTime={date}>{dateLabel}</time>}
           </h3>
-          {relative && <time className="todo-day-detail__date" dateTime={date}>{fullDate}</time>}
+          {(relative || weekday || calendarNote) && (
+            <p className="todo-day-detail__meta">
+              {relative && <time dateTime={date}>{dateLabel}</time>}
+              {weekday && <span>{weekday}</span>}
+              {calendarNote && <span className="todo-day-detail__calendar-note">{calendarNote}</span>}
+            </p>
+          )}
         </div>
         {summary && <span className="todo-day-detail__summary">{summary}</span>}
       </header>

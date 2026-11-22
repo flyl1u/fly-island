@@ -32,7 +32,9 @@ export function TodoCalendar({
     weekday: new Intl.DateTimeFormat(t.localeTag, { weekday: "narrow" }),
   }), [t.localeTag]);
   const toDate = (date: string) => new Date(`${date}T00:00:00`);
+  const monthTitle = formats.month.format(toDate(`${month}-01`));
   const marksEnabled = useNativePlugins().calendarMarks && locale === "zh-CN";
+  const selectedMark = marksEnabled ? calendarMarkOn(selected, t.notebook.calendarMarks) : null;
   const selectedTodos = dayTodos.get(selected) ?? [];
   const selectedLabel = dayHeading(selected, today, t.notebook);
   const canAdd = selected >= today;
@@ -51,16 +53,10 @@ export function TodoCalendar({
   };
 
   return (
-    <div className="todo-date-overview todo-calendar">
-      <nav className="todo-date-overview__sidebar" aria-label={t.notebook.pickDate}>
+    <div className="todo-calendar">
+      <nav className="todo-calendar__month" aria-label={t.notebook.pickDate}>
         <div className="todo-calendar__nav">
-          <button type="button" aria-label={t.notebook.previousMonth} onClick={() => setMonth(shiftMonth(month, -1))}>
-            <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
-          </button>
-          <span className="todo-calendar__title" aria-live="polite">{formats.month.format(toDate(`${month}-01`))}</span>
-          <button type="button" aria-label={t.notebook.nextMonth} onClick={() => setMonth(shiftMonth(month, 1))}>
-            <ChevronRight size={15} strokeWidth={2.2} aria-hidden="true" />
-          </button>
+          <time className="todo-calendar__title" dateTime={month} title={monthTitle} aria-live="polite">{monthTitle}</time>
           <button
             className="todo-calendar__today"
             type="button"
@@ -70,32 +66,32 @@ export function TodoCalendar({
           >
             {t.notebook.dateToday}
           </button>
+          <div className="todo-calendar__arrows">
+            <button type="button" aria-label={t.notebook.previousMonth} onClick={() => setMonth(shiftMonth(month, -1))}>
+              <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
+            </button>
+            <button type="button" aria-label={t.notebook.nextMonth} onClick={() => setMonth(shiftMonth(month, 1))}>
+              <ChevronRight size={15} strokeWidth={2.2} aria-hidden="true" />
+            </button>
+          </div>
         </div>
         <div className={marksEnabled ? "todo-calendar__grid todo-calendar__grid--marks" : "todo-calendar__grid"}>
-          {grid.slice(0, 7).map((date) => {
-            const weekday = toDate(date).getDay();
-            const rest = marksEnabled && (weekday === 0 || weekday === 6);
-            return (
-              <span
-                key={`w${date}`}
-                className={`todo-calendar__weekday${rest ? " todo-calendar__weekday--rest" : ""}`}
-                aria-hidden="true"
-              >
-                {formats.weekday.format(toDate(date))}
-              </span>
-            );
-          })}
+          {grid.slice(0, 7).map((date) => (
+            <span key={`w${date}`} className="todo-calendar__weekday" aria-hidden="true">
+              {formats.weekday.format(toDate(date))}
+            </span>
+          ))}
           {grid.map((date) => {
             const items = dayTodos.get(date) ?? [];
             const mark = marksEnabled ? calendarMarkOn(date, t.notebook.calendarMarks) : null;
+            const outside = monthOf(date) !== month;
             const dayLabel = t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length);
             const dots = dayDots(items);
             const className = [
               "todo-calendar__day",
-              monthOf(date) !== month ? "todo-calendar__day--outside" : "",
+              outside ? "todo-calendar__day--outside" : "",
               date === today ? "todo-calendar__day--today" : "",
               mark?.rest ? "todo-calendar__day--rest" : "",
-              mark?.work ? "todo-calendar__day--work" : "",
             ].filter(Boolean).join(" ");
             return (
               <button
@@ -109,12 +105,9 @@ export function TodoCalendar({
                 data-date={date}
                 onClick={() => select(date)}
               >
-                <span className="todo-calendar__date-line" aria-hidden="true">
-                  <span className="todo-calendar__number">{Number(date.slice(8))}</span>
-                  {mark?.badge ? <span className="todo-calendar__badge">{mark.badge}</span> : null}
-                </span>
-                {mark?.caption ? (
-                  <span className="todo-calendar__caption-text" aria-hidden="true">{mark.caption}</span>
+                <span className="todo-calendar__number" aria-hidden="true">{Number(date.slice(8))}</span>
+                {!outside && mark?.caption ? (
+                  <span className="todo-calendar__caption-text" data-tone={mark.tone} aria-hidden="true">{mark.caption}</span>
                 ) : null}
                 {dots.length > 0 ? (
                   <span className="todo-calendar__dots" aria-hidden="true">
@@ -129,6 +122,7 @@ export function TodoCalendar({
       <TodoDayDetail
         date={selected}
         today={today}
+        calendarNote={selectedMark?.detail}
         summary={selectedTodos.length > 0 ? t.notebook.doneOf(
           selectedTodos.filter((todo) => todo.completed).length, selectedTodos.length,
         ) : undefined}

@@ -1,58 +1,16 @@
 .todo-calendar__grid--marks {
-  --todo-calendar-rest-ink: color-mix(in srgb, var(--color-danger) 55%, var(--text-1));
-  --todo-calendar-today-ink: color-mix(in srgb, var(--color-accent) 82%, var(--text-1));
-  grid-auto-rows: 29px;
-  column-gap: 0;
+  --todo-calendar-off-ink: color-mix(in srgb, var(--color-danger) 58%, var(--text-1));
 }
 
 .todo-calendar__grid--marks .todo-calendar__day {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 15px 11px 3px;
-  align-items: center;
-  gap: 0;
+  --todo-calendar-caption-row: 11px;
 }
 
-.todo-calendar__grid--marks .todo-calendar__day:hover {
-  background: var(--color-white-a08);
+.todo-calendar__day--rest:not(.todo-calendar__day--outside) {
+  color: var(--text-2);
 }
 
-.todo-calendar__grid--marks .todo-calendar__day:active {
-  background: var(--color-white-a16);
-}
-
-.todo-calendar__grid--marks .todo-calendar__day[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 78%, transparent);
-}
-
-.todo-calendar__grid--marks .todo-calendar__date-line {
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-}
-
-.todo-calendar__grid--marks .todo-calendar__day .todo-calendar__number {
-  width: auto;
-  height: auto;
-  color: inherit;
-  background: transparent;
-  box-shadow: none;
-}
-
-.todo-calendar__grid--marks .todo-calendar__day--rest:not(.todo-calendar__day--outside),
-.todo-calendar__grid--marks .todo-calendar__weekday--rest {
-  color: var(--todo-calendar-rest-ink);
-}
-
-/* 今天用短下划线，选中整格时也只保留一层边框。 */
-.todo-calendar__grid--marks .todo-calendar__day--today .todo-calendar__number {
-  color: var(--todo-calendar-today-ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 1px;
-}
-
-.todo-calendar__grid--marks .todo-calendar__caption-text {
+.todo-calendar__caption-text {
   grid-row: 2;
   max-width: 100%;
   overflow: hidden;
@@ -63,27 +21,11 @@
   white-space: nowrap;
 }
 
-.todo-calendar__grid--marks .todo-calendar__dots {
-  grid-row: 3;
-  gap: 1px;
-}
-
-.todo-calendar__grid--marks .todo-calendar__dot {
-  width: 2.5px;
-  height: 2.5px;
-}
-
-.todo-calendar__grid--marks .todo-calendar__badge {
-  color: var(--todo-calendar-rest-ink);
-  font-size: 9px;
+.todo-calendar__caption-text:is([data-tone="occasion"], [data-tone="work"], [data-tone="off"]) {
+  color: var(--text-1);
   font-weight: 600;
-  line-height: 1;
 }
 
-.todo-calendar__grid--marks .todo-calendar__day--work .todo-calendar__badge {
-  color: var(--text-2);
-}
-
-.todo-calendar__grid--marks .todo-calendar__day--outside :is(.todo-calendar__caption-text, .todo-calendar__badge) {
-  color: var(--text-3);
+.todo-calendar__caption-text[data-tone="off"] {
+  color: var(--todo-calendar-off-ink);
 }

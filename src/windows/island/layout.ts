@@ -19,7 +19,7 @@ export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
  * The todo calendar fits a six-week month beside the day's list. Allow for the island chrome,
  * notebook padding and view switch above the calendar grid and its month controls.
  */
-export const TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT = 384;
+export const TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT = 424;
 // Room below the new-task field for a six-week date picker, plus the panel's bottom inset.
 export const TODO_DATE_PICKER_EXPANDED_ISLAND_HEIGHT = 440;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
