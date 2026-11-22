@@ -15,6 +15,8 @@ type IslandFeatureOptions = {
   wechatEnabled: boolean;
   qqMail: MailController;
   page: IslandPage;
+  /** The Battery plugin is installed and this computer has a battery. */
+  hasBattery: boolean;
   messageSource: MessageView;
   setPage: (page: IslandPage) => void;
   setMessageSource: (source: MessageView) => void;
@@ -34,6 +36,7 @@ export function useIslandFeatures({
   wechatEnabled,
   qqMail,
   page,
+  hasBattery,
   messageSource,
   setPage,
   setMessageSource,
@@ -61,11 +64,13 @@ export function useIslandFeatures({
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
     pluginPages,
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
+    battery: hasBattery,
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasBattery, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
 
   useEffect(() => {
     const next = islandPageFor(page, features, settings.clipboardDetached);
     if (next && next !== page) setPage(next);
+    else if (!next && page === "battery") setPage("settings");
   }, [features, page, setPage, settings.clipboardDetached]);
 
   useEffect(() => {

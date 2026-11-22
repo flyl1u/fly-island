@@ -1,5 +1,6 @@
 import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import { useTranslation } from "../../i18n";
+import { useNativePlugins } from "../plugins";
 import { AgentPagePreview } from "./AgentPagePreview";
 import type { IslandSettings } from "./types";
 import { islandPreviewStyle } from "./islandPreviewStyle";
@@ -15,6 +16,7 @@ import "./IslandPreview.css";
  */
 export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const text = useTranslation().settings.appearance.preview;
+  const batteryInstalled = useNativePlugins().battery;
   const { style, islandClass, tone } = islandPreviewStyle(settings, useResolvedScheme(settings.colorScheme));
 
   return (
@@ -35,7 +37,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
       </div>
       <div className="island-preview__desktop">
         <div className={`${islandClass} island-preview__island--expanded`}>
-          <AgentPagePreview pageOrder={settings.pageOrder} pageButtonStyle={settings.pageButtonStyle} />
+          <AgentPagePreview pageOrder={settings.pageOrder.filter((page) => page !== "battery" || batteryInstalled)} pageButtonStyle={settings.pageButtonStyle} />
         </div>
         <figcaption className="island-preview__caption">{text.expanded}</figcaption>
       </div>

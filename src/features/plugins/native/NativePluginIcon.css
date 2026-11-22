@@ -6,9 +6,18 @@
   corner-shape: var(--corner-shape);
 }
 
-.native-plugin-icon--weather {
+.native-plugin-icon--weather,
+.native-plugin-icon--battery {
   display: grid;
   place-items: center;
+}
+
+.native-plugin-icon--battery {
+  color: color-mix(in srgb, var(--color-success) 68%, var(--color-text));
+  background: color-mix(in srgb, var(--color-success) 18%, var(--color-white-a06));
+}
+
+.native-plugin-icon--weather {
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 16%, var(--color-white-a06));
 }

@@ -1,0 +1,72 @@
+.battery-readout {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 1.5px;
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  --battery-outline: color-mix(in srgb, currentColor 58%, transparent);
+  --battery-charge: color-mix(in srgb, currentColor 90%, transparent);
+  /* What reads on the charge: the island's own surface, dark on a dark island and light on a light one. */
+  --battery-on-charge: var(--color-surface-dark);
+}
+
+.battery-readout[data-charging] {
+  --battery-charge: color-mix(in srgb, var(--color-success) 70%, currentColor);
+}
+
+.battery-readout[data-low] {
+  color: var(--color-warning);
+}
+
+/* A fixed width (slotWidth.ts): 100%, 2:10 and a charging 99% all fit, so no reading moves its neighbours. */
+.battery-readout__body {
+  position: relative;
+  display: grid;
+  box-sizing: border-box;
+  inline-size: calc(38px * var(--island-font-scale, 1));
+  block-size: calc(17px * var(--island-font-scale, 1));
+  overflow: hidden;
+  border: 1px solid var(--battery-outline);
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+}
+
+.battery-readout__fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--battery-fill);
+  background: var(--battery-charge);
+  transition: inline-size 260ms ease, background-color 180ms ease;
+}
+
+.battery-readout__value {
+  position: relative;
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-inline-size: 0;
+}
+
+.battery-readout__value--on-fill {
+  color: var(--battery-on-charge);
+  clip-path: inset(0 calc(100% - var(--battery-fill)) 0 0);
+  transition: clip-path 260ms ease;
+}
+
+.battery-readout__bolt {
+  flex: none;
+}
+
+.battery-readout__cap {
+  inline-size: 2px;
+  block-size: calc(6px * var(--island-font-scale, 1));
+  border-radius: 0 1px 1px 0;
+  background: var(--battery-outline);
+}

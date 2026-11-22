@@ -1,3 +1,5 @@
+import type { BatteryPreferences } from "../battery/preferences";
+
 export type TranslationTarget = "window" | "island";
 
 /**
@@ -52,11 +54,11 @@ export type CollapsedItem = "agent" | "lyrics" | "todo";
  * the new-mail badge, files on the shelf, the music waveform, running Agent sessions (or the tuck
  * dot). Icons before the text sit on its left.
  */
-export type CollapsedSlot = "pulse" | "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather";
+export type CollapsedSlot = "pulse" | "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather" | "battery";
 /** The page dots in the expanded island's header, which the user can drag into any order. */
-export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation";
+export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation" | "battery";
 
-export type IslandSettings = {
+export type IslandSettings = BatteryPreferences & {
   topEdgeLayoutVersion: 1;
   material: Material;
   colorScheme: ColorScheme;

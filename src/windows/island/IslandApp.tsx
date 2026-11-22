@@ -26,6 +26,7 @@ import { useGameMode } from "./useGameMode";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useCtrlWheelPages, wheelPageOrder } from "./useCtrlWheelPages";
 import { useIslandFeatures } from "./useIslandFeatures";
+import { useIslandBattery } from "./useIslandBattery";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
 import { useQuotaAlert } from "../../features/agent-status/useQuotaAlert";
@@ -77,6 +78,7 @@ export function IslandApp() {
   });
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
+  const battery = useIslandBattery(settings.batteryHistoryEnabled, mode, page, isTucked);
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
   const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer } =
@@ -87,7 +89,7 @@ export function IslandApp() {
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
       { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
-        activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [] },
+        activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [], hasBattery: battery.snapshot !== null },
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
@@ -113,6 +115,7 @@ export function IslandApp() {
     wechatEnabled: wechatReminders.snapshot.enabled,
     qqMail,
     page,
+    hasBattery: battery.snapshot !== null,
     messageSource,
     setPage,
     setMessageSource,
@@ -155,6 +158,7 @@ export function IslandApp() {
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
     pluginPanel: pluginPage ? { rows: pluginPage.rows, actions: pluginPage.actions } : undefined,
+    showBatteryHistory: settings.batteryHistoryEnabled,
   }));
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
@@ -243,6 +247,9 @@ export function IslandApp() {
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
         collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, settings.collapsedHidden)}
+        battery={battery.snapshot}
+        batteryEstimate={battery.estimate}
+        batteryDisplay={settings.batteryDisplayMode}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}
@@ -281,6 +288,9 @@ export function IslandApp() {
           onDetachedSettingsChange={(value) => void changePresentation(value)}
           onSettingsHeight={reportSettingsHeight}
           features={features}
+          battery={battery.snapshot}
+          batteryHistory={battery.history}
+          batteryEstimate={battery.estimate}
           qqMail={qqMail}
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}

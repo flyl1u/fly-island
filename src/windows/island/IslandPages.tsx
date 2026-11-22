@@ -10,6 +10,10 @@ import { openSettingsWindow } from "../settings/api";
 import { SettingsPanel } from "../settings/SettingsPanel";
 import "../settings/IslandSettingsPage.css";
 import { TranslationPanel } from "../../features/translation/TranslationPanel";
+import type { BatteryPowerEstimate } from "../../features/battery/powerEstimate";
+import type { BatteryHistory } from "../../features/battery/history";
+import type { BatterySnapshot } from "../../features/battery/snapshot";
+import { BatteryPanel } from "../../features/battery/BatteryPanel";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import type { AgentSessionSummary } from "../../features/agent-status/api";
 import type { UnseenSessions } from "../../features/agent-status/useUnseenSessions";
@@ -44,6 +48,9 @@ type IslandPagesProps = {
   /** The height the open settings page needs (useSettingsPageHeight). */
   onSettingsHeight: (height: number) => void;
   features: ReturnType<typeof useIslandFeatures>["features"];
+  battery?: BatterySnapshot | null;
+  batteryHistory: BatteryHistory;
+  batteryEstimate: BatteryPowerEstimate | null;
   qqMail: ReturnType<typeof useMail>;
   qqNotifications: ReturnType<typeof useQQNotifications>;
   wechatReminders: ReturnType<typeof useWeChatReminders>;
@@ -72,6 +79,9 @@ export function IslandPages({
   onDetachedSettingsChange,
   onSettingsHeight,
   features,
+  battery,
+  batteryHistory,
+  batteryEstimate,
   qqMail,
   qqNotifications,
   wechatReminders,
@@ -145,6 +155,7 @@ export function IslandPages({
       )}
       {page === "agents" && <AgentSessionsPanel sessions={agentSessions} view={settings.agentSessionView} sort={settings.agentSessionSort} group={settings.agentSessionGroup} archiveMotion={settings.agentArchiveMotion} cardEffects={settings.agentCardEffects} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} removal={agentRemoval} reveal={alertedSession} showUsage={settings.agentShowUsage} usages={agentUsages} approvals={agentApprovals} />}
       {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
+      {page === "battery" && battery && <BatteryPanel snapshot={battery} estimate={batteryEstimate} history={settings.batteryHistoryEnabled ? batteryHistory : null} />}
       {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
       {page === "plugin:device-battery"
         ? mode === "expanded" && isPageEnabled(page, features) && <DeviceDashboard onOpenSettings={() => openSettingsWindow("devices")} />

@@ -15,6 +15,9 @@ import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
 import { isPluginPage } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
+import type { BatteryPowerEstimate } from "../../features/battery/powerEstimate";
+import type { BatterySnapshot } from "../../features/battery/snapshot";
+import type { BatteryDisplayMode } from "../../features/battery/preferences";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
@@ -65,6 +68,9 @@ type IslandShellProps = {
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
   collapsedLayout: readonly CollapsedSlot[];
+  battery?: BatterySnapshot | null;
+  batteryEstimate?: BatteryPowerEstimate | null;
+  batteryDisplay: BatteryDisplayMode;
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
   /** Where the collapsed island's lyric line comes from. */
@@ -141,6 +147,9 @@ export function IslandShell({
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
+  battery,
+  batteryEstimate,
+  batteryDisplay,
   collapsedCover,
   lyricsSettings,
   pageOrder,
@@ -268,6 +277,9 @@ export function IslandShell({
             collapsedTodoCount={collapsedTodoCount}
             collapsedItem={collapsedItem}
             collapsedLayout={collapsedLayout}
+            battery={battery}
+            batteryEstimate={batteryEstimate}
+            batteryDisplay={batteryDisplay}
             collapsedCover={collapsedCover}
             lyricsSettings={lyricsSettings}
             agentSession={agentSession}

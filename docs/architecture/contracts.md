@@ -96,6 +96,14 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `fly-island-update-dot-seen`（2026-11-14 已移除：更新红点不再记录已看过，只要有待安装的更新（含安装失败）就显示，直到安装。旧数据不再被读取，可以残留） | 已删除 `features/updater/storage.ts` 中的读写 |
 | `fly-island-update-channel`（`"stable"` / `"beta"`；3.0.2 及更早的设置写入，现已不读，一律按稳定版检查） | — |
 
+## 笔记本电池
+
+- 电池是插件市场里的内置插件：`fly-island-native-plugins` 的 id 列表接受 `battery`；启用状态沿用市场卡片的开关（`fly-island-native-plugins-disabled`），没有自己的开关字段。
+- `fly-island-settings` 的 `collapsedLayout` 和 `pageOrder` 接受 `battery`，旧布局的相对顺序保留；未安装时这一位不显示、位置保留。
+- `batteryDisplayMode` 保存收起态的读数，取值 `percent`（缺省）或 `remaining`；其他值按缺省读取。
+- `batteryHistoryEnabled` 保存电量曲线开关，缺省为 `true`。采样只驻留内存，关闭曲线或卸载插件时清除；电池页显示最近 24 小时。
+- `get_notebook_battery(includeDetails)` 返回 `{ percent, pluggedIn, charging, secondsRemaining, details }`。已确定无内置电池时返回 `null`。未知字段为 `null`，`details` 包含 `remainingMwh`、`fullMwh`、`designMwh` 和有符号 `rateMw`。电池遥测仅在内存中使用。
+
 ## 媒体诊断命令
 
 新增命令 `get_media_diagnostics()` 返回 `{ players }`：逐会话的 `sourceAppId`、`label`、`hasSession`、`hasTimeline`、`hasPluginTrackId`、`exePath`、`directory`、`version`、`status` 与 `neteasePluginState`（非网易云为 null），并补入正在运行但没有会话的已知播放器。只读检查，不安装插件。`get_media_state` 新增 `hasTimeline` 布尔字段；前端兼容缺少字段的旧状态，估算位置始终保留 false 标记。

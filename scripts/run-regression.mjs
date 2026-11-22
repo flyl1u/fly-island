@@ -43,6 +43,14 @@ export const PAGES = [
   "island-tour.html?test=1&update=1",
   "island-tour.html?test=1&pageButtons=iconLabel",
   "island-tour.html?test=1&pageButtons=iconLabel&lang=en",
+  "island-tour.html?test=1&battery=normal&batterySamples=1",
+  "island-tour.html?test=1&battery=normal&batteryDisplay=remaining&notch=1&font=120&lang=en&theme=light",
+  "island-tour.html?test=1&battery=limited&batteryDisplay=remaining&notch=1&font=120&lang=en&theme=light&material=frostedGlass",
+  "island-tour.html?test=1&battery=charging&batteryDisplay=remaining&theme=light",
+  "island-tour.html?test=1&battery=low&batteryDisplay=remaining&material=liquidGlass",
+  "island-tour.html?test=1&battery=full&batteryDisplay=remaining",
+  "island-tour.html?test=1&battery=drainingOnAc&batteryDisplay=remaining",
+  "island-tour.html?test=1&battery=absent",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
   // cover the line and hidden tucked looks.
   "island-tour.html?test=1&scale=0.85&tuck=line&shoulders=1",

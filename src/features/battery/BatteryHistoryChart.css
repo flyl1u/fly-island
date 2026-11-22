@@ -1,0 +1,140 @@
+.battery-history {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-xs) var(--space-sm);
+  padding-block-start: var(--space-lg);
+  border-block-start: 1px solid var(--color-white-a12);
+  font-size: calc(10px * var(--island-font-scale, 1));
+  color: var(--text-3);
+  --battery-history-series-color: var(--color-accent);
+}
+
+/* The three guide lines of the plot, named: 100%, 50%, 0%. */
+.battery-history__axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  line-height: 1;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.battery-history__inspect {
+  position: relative;
+  min-inline-size: 0;
+  cursor: crosshair;
+}
+
+.battery-history__inspect:focus-visible {
+  outline: 1px solid var(--color-focus-ring-soft);
+  outline-offset: 2px;
+}
+
+.battery-history__plot {
+  display: block;
+  width: 100%;
+  height: 84px;
+}
+
+.battery-history__times {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  line-height: 1.2;
+}
+
+.battery-history__guide {
+  stroke: var(--color-white-a12);
+  vector-effect: non-scaling-stroke;
+}
+
+.battery-history [data-charging] {
+  --battery-history-series-color: var(--color-success);
+}
+
+.battery-history__area {
+  fill: var(--battery-history-series-color);
+  fill-opacity: 0.18;
+}
+
+.battery-history__line {
+  fill: none;
+  stroke: var(--battery-history-series-color);
+  stroke-width: 1.6;
+}
+
+.battery-history__point {
+  fill: var(--battery-history-series-color);
+  animation: battery-history-sample-in 420ms ease-out;
+}
+
+@keyframes battery-history-sample-in {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battery-history__point {
+    animation: none;
+  }
+}
+
+.battery-history__cursor {
+  stroke: var(--battery-history-series-color);
+  stroke-opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+
+.battery-history__selected {
+  fill: var(--battery-history-series-color);
+  stroke: var(--color-surface-dark);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.battery-history__detail {
+  position: absolute;
+  inset-block-start: var(--space-xs);
+  inset-inline-end: var(--space-xs);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-xs);
+  max-inline-size: calc(100% - 2 * var(--space-xs));
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-white-a18);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--color-surface-dark);
+  color: var(--text-2);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  pointer-events: none;
+}
+
+.battery-history__detail[data-left] {
+  inset-inline: var(--space-xs) auto;
+}
+
+.battery-history__detail strong {
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.battery-history__announcement {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.battery-history__empty {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  /* As tall as the plot and its time line, so the page does not jump when the second reading arrives. */
+  block-size: calc(84px + var(--space-xs) + 12px * var(--island-font-scale, 1));
+  margin: 0;
+  font-size: calc(12px * var(--island-font-scale, 1));
+}

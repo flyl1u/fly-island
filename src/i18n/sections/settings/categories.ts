@@ -12,6 +12,7 @@ export type SettingsCategoriesText = {
   messages: string;
   /** The standalone Clock & Weather island plugin page. */
   clockWeather: string;
+  battery: string;
   /** Mail's group on the Messages page. */
   mail: string;
   todos: string;
@@ -40,6 +41,7 @@ export const zhCN: SettingsCategoriesText = {
   shortcuts: "快捷键",
   messages: "消息",
   clockWeather: "时间与天气",
+  battery: "电池",
   mail: "邮箱",
   todos: "待办",
   music: "音乐",
@@ -65,6 +67,7 @@ export const en: SettingsCategoriesText = {
   shortcuts: "Shortcuts",
   messages: "Messages",
   clockWeather: "Time & weather",
+  battery: "Battery",
   mail: "Mail",
   todos: "Todos",
   music: "Music",

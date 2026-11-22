@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "clockWeather" | "calendarMarks" | "battery";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -11,6 +11,7 @@ export type NativePluginKind = "messages" | "agent" | "island";
 export type PluginAuthor = { name: string; url: string };
 
 const FLYLIU: PluginAuthor = { name: "flyliu", url: "https://github.com/flyl1u" };
+const QXIAOLINGSHANG: PluginAuthor = { name: "QXiaoLingShang", url: "https://github.com/QXiaoLingShang" };
 
 export type NativePlugin = {
   id: NativePluginId;
@@ -33,6 +34,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "hermes", kind: "agent", accent: "#b9a6ff", author: FLYLIU },
   { id: "calendarMarks", kind: "island", accent: "#f29389", author: { name: "gyl-coding", url: "https://github.com/gyl-coding" } },
   { id: "clockWeather", kind: "island", accent: "#63b9b6", author: FLYLIU, settings: { category: "clockWeather", standalone: true } },
+  { id: "battery", kind: "island", accent: "#8fd9a8", author: QXIAOLINGSHANG, settings: { category: "battery", standalone: true } },
 ];
 
 export const PACKAGED_MARKET_PLUGINS = [

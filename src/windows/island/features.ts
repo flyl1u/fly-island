@@ -35,11 +35,12 @@ export type IslandFeatures = {
   agents: boolean;
   /** Translation is on and set to open as an island page rather than its own window. */
   translation: boolean;
+  battery?: boolean;
   /** Installed, enabled plugins that bring a page of their own. */
   pluginPages?: readonly PluginPageInfo[];
 };
 
-const PAGE_ORDER: BuiltinPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
+const PAGE_ORDER: BuiltinPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation", "battery"];
 const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail", "dingtalk", "feishu", "wecom", "plugin"];
 
 /** The page id of a plugin's page; the plugin id is namespaced so it can never meet a built-in. */

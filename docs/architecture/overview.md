@@ -48,6 +48,8 @@ Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先�
 
 外观颜色逻辑位于 `features/appearance/`：`HexColorInput` / `hexColor.ts` 处理输入，`colorPalette.ts` 校验三色，`colorRefresh.ts` 编排一次性刷新，`colorPresets.ts` 处理预设去重与上限，`ColorPresetRow` 呈现芯片；所有备份、迁移标记和预设读写仍收口在同目录 `storage.ts`，复用 `lib/storage.ts` 的安全读写。
 
+笔记本电池是插件市场里的内置插件（`features/plugins/native/catalog.ts` 的 `battery`），偏好、快照观察和读数规则位于 `features/battery/`。`windows/island/useIslandBattery.ts` 按安装状态读取，并提供窗口可见性和 Tauri 读取适配器；收起岛为电池位加宽（`slotWidth.ts`）。`BatteryReadout` 画收起态的电池，也用在「岛上的排列」预览里。原生命令在 `system/battery.rs`，通过 `win32/battery.rs` 读取系统电源状态和 WinRT 容量报告。在「设置 → 插件」安装，装上后侧栏多一个「电池」设置栏目（`catalog.ts` 里声明 `settings: { category: "battery", standalone: true }`）。启用曲线时复用系统电源快照，以至少 30 秒的间隔记录电量与充电状态，长时间运行后降低采样密度以保留完整时间跨度。
+
 ### 前端依赖方向
 
 ```text

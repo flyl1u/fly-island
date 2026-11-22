@@ -1,6 +1,7 @@
 //! Windows integration: launch at startup, updater proxy and config, todo Markdown
 //! export, folder picker, full-screen app detection, settings backups.
 
+pub(crate) mod battery;
 pub(crate) mod folder_dialog;
 pub(crate) mod fonts;
 pub(crate) mod fullscreen;
@@ -37,6 +38,7 @@ pub(crate) fn windows_home_dir() -> Result<PathBuf, String> {
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
+            crate::system::battery::get_notebook_battery,
             crate::system::todo_export::save_todo_markdown,
             crate::system::todo_export::get_default_todo_save_directory,
             crate::system::todo_sync::read_todo_markdown,

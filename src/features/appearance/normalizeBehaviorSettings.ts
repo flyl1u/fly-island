@@ -1,5 +1,6 @@
 // Reading saved settings, part 3 (normalizeSettings in settings.ts): behaviour and modules.
 import { normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
+import { normalizeBatteryPreferences } from "../battery/preferences.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { normalizeOrder } from "../../utils/order.ts";
 import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS, TUCK_EDGE_HEIGHT, COLLAPSED_ITEMS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
@@ -51,6 +52,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     // Module switches: anything but an explicit false keeps the module on.
     todoEnabled: settings?.todoEnabled !== false,
+    ...normalizeBatteryPreferences(settings),
     musicEnabled: settings?.musicEnabled !== false,
     agentStatusEnabled: settings?.agentStatusEnabled !== false,
     agentTitleEnabled: settings?.agentTitleEnabled !== false,

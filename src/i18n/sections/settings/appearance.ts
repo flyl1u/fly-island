@@ -76,7 +76,7 @@ export type SettingsAppearanceText = {
       title: string;
       footer: string;
       reset: string;
-      slots: Record<"pulse" | "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather", string>;
+      slots: Record<"pulse" | "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather" | "battery", string>;
       textSample: string;
       moveLabel: (name: string) => string;
       /** The box under the island for what is dragged off it. */
@@ -154,7 +154,7 @@ export const zhCN: SettingsAppearanceText = {
       title: "岛上的排列",
       footer: "按住图标左右拖动，放在文字左边的会显示在岛的左侧；拖进下面的盒子就不在岛上显示。灰色的是还没打开的功能，位置会保留。",
       reset: "恢复默认",
-      slots: { pulse: "状态灯", text: "文字", mail: "新邮件", shelf: "置物架文件数", music: "音乐波形", agents: "Agent 会话数", clock: "时间", weather: "天气" },
+      slots: { pulse: "状态灯", text: "文字", mail: "新邮件", shelf: "置物架文件数", music: "音乐波形", agents: "Agent 会话数", clock: "时间", weather: "天气", battery: "电池" },
       textSample: "收起时的文字",
       moveLabel: (name) => `移动"${name}"，可以拖动或按左右方向键；按下方向键放进下面的盒子，不在岛上显示`,
       hidden: "不在岛上显示",
@@ -231,7 +231,7 @@ export const en: SettingsAppearanceText = {
       title: "On the island",
       footer: "Hold an icon and drag it left or right; icons left of the text sit on the island's left. Drop one in the box below to take it off the island. Grey ones are switched off and keep their place.",
       reset: "Reset",
-      slots: { pulse: "Status light", text: "Text", mail: "New mail", shelf: "Shelf files", music: "Music waveform", agents: "Agent sessions", clock: "Time", weather: "Weather" },
+      slots: { pulse: "Status light", text: "Text", mail: "New mail", shelf: "Shelf files", music: "Music waveform", agents: "Agent sessions", clock: "Time", weather: "Weather", battery: "Battery" },
       textSample: "Collapsed text",
       moveLabel: (name) => `Move "${name}": drag, or press the left and right arrow keys; the down arrow takes it off the island`,
       hidden: "Not on the island",

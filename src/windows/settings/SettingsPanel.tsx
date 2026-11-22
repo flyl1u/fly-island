@@ -12,6 +12,7 @@ import { PluginsSettingsPage } from "./PluginsSettingsPage";
 import { DeviceBatterySettings } from "../../features/device-battery/DeviceBatterySettings";
 import { usePlugins } from "../../features/plugins/usePlugins";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
+import { BatterySettings } from "../../features/battery/BatterySettings";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
@@ -146,6 +147,9 @@ export function SettingsPanel({
         const Page = STANDALONE_SETTINGS_PAGES[activeCategory];
         return Page ? <Page /> : null;
       })()}
+      {activeCategory === "battery" && (
+        <BatterySettings preferences={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
+      )}
       {activeCategory === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {activeCategory === "about" && <AboutSettingsPage />}
     </LayoutEditor>

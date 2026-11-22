@@ -57,8 +57,10 @@ export async function checkCollapsedLayout(check: (condition: unknown, message: 
   check(box().textContent?.includes("不在岛上显示"), "The box is labelled once something is in it");
   await drag("text", centre(box()));
   check(island().querySelector("[data-slot='text']") && !hiddenOrder().includes("text"), "The text stays on the island");
-  const [, textY] = centre(slot("text"));
-  await drag("music", [slot("text").getBoundingClientRect().left + 1, textY]);
+  const layout = island();
+  const layoutRect = layout.getBoundingClientRect();
+  const textLeft = layoutRect.left + slot("text").offsetLeft * layoutRect.width / layout.offsetWidth;
+  await drag("music", [textLeft - 1, layoutRect.top + layoutRect.height / 2]);
   check(hiddenOrder() === "" && order().indexOf("music") < order().indexOf("text") && (saved().collapsedHidden ?? []).length === 0,
     `Dragged back, the slot returns where it is dropped (${order()})`);
 

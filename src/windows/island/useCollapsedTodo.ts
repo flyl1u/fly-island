@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
 import { clockWeatherWidth } from "../../features/weather";
+import { batteryIslandWidth } from "../../features/battery/slotWidth";
 import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
@@ -40,7 +41,7 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[] } = {},
+  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers, hasBattery = false }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[]; hasBattery?: boolean } = {},
 ) {
   const t = useTranslation();
   const clockWeather = useClockWeather();
@@ -48,7 +49,8 @@ export function useCollapsedTodo(
   const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
-  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null, settings.islandFontPercent / 100);
+  const batteryOn = hasBattery && !settings.collapsedHidden.includes("battery");
+  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null || batteryOn, settings.islandFontPercent / 100);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -119,6 +121,7 @@ export function useCollapsedTodo(
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
     settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
 
-  const collapsedIslandWidth = clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum);
+  const fontScale = settings.islandFontPercent / 100;
+  const collapsedIslandWidth = clockWeatherWidth(batteryIslandWidth(baseIslandWidth, batteryOn, fontScale, statusMinimum), clockOn, weather !== null, fontScale, statusMinimum);
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
 }
