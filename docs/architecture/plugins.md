@@ -10,10 +10,17 @@ API v1 已实现为独立进程平台，协议见 [API](../plugins/api.md)。没
 
 前端 `features/plugins/` 提供类型化 IPC、共享快照与 manifest 设置行。额度和会话适配在 `features/agent-status/PluginQuotaRings.tsx`、`pluginSessions.ts`；消息在 `features/messages/PluginMessagesPanel.tsx` 和 `pluginNotifications.ts`。原有渲染组件继续负责视觉、列表和预览仲裁。
 
-默认索引 `https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json`；环境变量 FLY_ISLAND_PLUGINS_INDEX 优先，其次显式开发模式配置，最后默认。插件的可执行文件和 API schema 都经维护者 review；权限是声明，没有把普通进程称为沙箱。
+默认索引 `https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json`；启用开发发布开关的构建先读取 FLY_ISLAND_PLUGINS_INDEX，再使用开发者模式的自定义索引。插件的可执行文件和 API schema 都经维护者 review；权限是声明，没有把普通进程称为沙箱。
 
 ## 内置时间与天气（2026-11-19）
 
 `features/plugins/native/catalog.ts` 新增 `clockWeather`，kind 为 `island`，并声明独立设置分类 `clockWeather`。它沿用内置插件安装列表和发布市场开关，不启动独立插件进程。`features/weather/` 自包含设置、缓存、类型化 IPC、WMO 映射和收起态叶子组件；`PluginMarket` 只负责安装卡片，安装后在设置侧栏显示独立的时间与天气页面，`CollapsedLayoutEditor` 安装后展示可排序状态位。
 
 Rust `weather/` 用已有 reqwest 异步请求固定 Open-Meteo 端点；城市搜索质量不足时补充 Nominatim，用户点击定位时优先 Windows Geolocator，再以 `ipwho.is` 粗定位兜底；没有凭据或原生后台服务。天气每三十分钟刷新，失败静默保留有效观测，三小时到期隐藏；时间只由叶子组件整分钟刷新。细节见 [时间与天气](../plugins/clock-weather.md)。
+
+`plugins/eye-care/` 是独立护眼插件：`clock.rs` 管理单调时钟与一次推迟状态，`panel.rs` 输出宿主面板，`win32/` 只隔离空闲 / 全屏探测。0.2.0 多屏休息窗口由宿主 `src-tauri/src/eye_care` 与 `src/windows/eye-care` 按需创建，复用共享主题与控件。它只依赖插件 SDK 与 Windows API，不向主程序引入依赖；配置复用宿主插件设置，生命周期随启停和 stdin EOF 结束。详见 [护眼插件](../plugins/eye-care.md)。
+
+
+## 正式市场包
+
+插件市场打开时，正式宿主只运行 plugins/market-packages.json 指定的已验证包，固定使用官方版本索引。开发目录和自定义源仍由 plugins 发布开关控制。发布流程使用同一清单选择 ZIP；先完成包构建，再上传对应索引和所列 ZIP。日历标记沿用内置插件开关。设备市场包只在设备/设置页或收起态的低频电量检查时使用独立读取器，由宿主解析安装目录与结束读取进程。MiniMax Code 与护眼提醒使用 stdio。

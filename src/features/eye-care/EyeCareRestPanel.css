@@ -1,0 +1,45 @@
+.eye-care-rest {
+  width: min(100%, 560px);
+  margin: auto;
+  flex: 0 0 auto;
+  padding: clamp(20px, 4vw, 36px);
+  color: var(--text-1);
+  background: var(--color-surface-dark);
+  border: 1px solid var(--color-white-a12);
+  border-radius: var(--corner-2xl);
+  corner-shape: var(--corner-shape);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.eye-care-rest__name {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.eye-care-rest h1 { margin: 16px 0 var(--space-lg); font-size: clamp(22px, 5vw, 28px); font-weight: 700; }
+.eye-care-rest__hint { margin: 0; color: var(--text-2); line-height: 1.6; }
+.eye-care-rest__clock { margin: 24px 0 var(--space-lg); font-size: clamp(44px, 12vw, 76px); line-height: 1.15; font-weight: 600; font-variant-numeric: tabular-nums; }
+.eye-care-rest__note { margin: var(--space-md) 0; color: var(--text-3); font-size: 13px; line-height: 1.6; }
+.eye-care-rest__postpone { margin-top: 24px; }
+.eye-care-rest__postpone p { margin: 0 0 var(--space-md); color: var(--text-2); font-size: 13px; line-height: 1.6; }
+.eye-care-rest__choices { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-sm) var(--space-xl); }
+.eye-care-rest__choices .settings-link-button { min-height: 36px; padding: var(--space-md); }
+.eye-care-rest__skip { margin-top: 20px; }
+.eye-care-rest__skip .settings-link-button { min-height: 36px; white-space: normal; }
+.eye-care-rest__error { margin: var(--space-xl) 0 0; color: var(--color-error-text); font-size: 13px; line-height: 1.6; }
+
+:root[data-material="liquidGlass"] .eye-care-rest {
+  background: linear-gradient(180deg, var(--color-white-a12), transparent 46%), var(--color-surface-dark);
+  box-shadow: inset 0 1px 0 var(--color-white-a12);
+}
+
+:root[data-material="frostedGlass"] .eye-care-rest {
+  background: color-mix(in srgb, var(--color-surface-dark) 88%, var(--color-window));
+  backdrop-filter: blur(12px);
+}

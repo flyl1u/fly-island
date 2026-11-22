@@ -1,0 +1,24 @@
+/* A low-battery alert on the collapsed island, laid out like the usage alert line. */
+.device-battery-alert {
+  min-width: 0;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(var(--island-ink-rgb, 241, 240, 246), 0.92);
+}
+
+.device-battery-alert__icon {
+  flex: none;
+  color: color-mix(in srgb, #c46a00 calc(var(--is-light) * 100%), #ff9f0a);
+}
+
+.device-battery-alert__text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

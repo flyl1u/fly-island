@@ -37,8 +37,8 @@ export default defineConfig(async ({ command }) => ({
         }
       : undefined,
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      // The packager writes locked temporary ZIPs, which the Windows watcher cannot open.
+      ignored: ["**/src-tauri/**", "**/artifacts/plugins/**"],
     },
   },
 }));

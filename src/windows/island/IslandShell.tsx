@@ -2,6 +2,7 @@ import { shoulderedShapeCss } from "../../features/appearance/cornerShape";
 import { isGlass } from "../../features/appearance/settings";
 import type { CSSProperties, ReactNode, TransitionEvent } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
+import type { BatteryAlert } from "../../features/device-battery/lowBattery";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { CollapsedItem, CollapsedSlot, IslandCornerShape, IslandShape, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
@@ -12,6 +13,7 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
+import { isPluginPage } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
@@ -84,6 +86,7 @@ type IslandShellProps = {
   shelfCount: number | null;
   /** Claude's or Codex's usage reaching the alert level, or resetting. */
   quotaAlert?: QuotaAlert | null;
+  batteryAlert?: BatteryAlert | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -151,6 +154,7 @@ export function IslandShell({
   features,
   shelfCount,
   quotaAlert = null,
+  batteryAlert = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -180,7 +184,7 @@ export function IslandShell({
   const className = [
     "island",
     `island--${mode}`,
-    `island--${page}`,
+    `island--${isPluginPage(page) ? "plugin" : page}`,
     `island--material-${material}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached || islandShape === "capsule" ? "island--detached" : "island--docked",
@@ -272,6 +276,7 @@ export function IslandShell({
             showMusic={features.music}
             shelfCount={shelfCount}
             quotaAlert={quotaAlert}
+            batteryAlert={batteryAlert}
             agentVisualState={agentVisualState}
             onOpenPage={onOpenPage}
             onOpenMessages={onOpenMessages}

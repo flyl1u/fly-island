@@ -92,3 +92,11 @@ WebView2 localStorage 的 `fly-island-native-plugins` 记录安装的内置插�
 前端 `features/weather/storage.ts` 通过安全读写保存 WebView2 localStorage：`fly-island-clock-weather` 存两个显示开关和用户选择的城市名/经纬度，`fly-island-weather-cache` 存一条城市坐标、摄氏温度、WMO code、观测时间与获取时间（Unix 毫秒）。安装记录沿用 `fly-island-native-plugins` 的 `clockWeather` id；卸载保留城市、显示偏好和缓存；重装只打开两个显示开关。开关与城市更新各自从最新记录合并，搜索本身不写入城市。缓存超过三小时不显示。
 
 Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；城市搜索结果质量不足时会向 `nominatim.openstreetmap.org` 补充一项。用户点击定位时才同时请求 Windows Geolocator 和 `ipwho.is` 的网络大致位置；Windows 坐标用 Nominatim 反向解析城市。坐标只发给这些地理编码/天气服务，不写应用数据文件、凭据或独立位置记录，也不在后台自动定位。前端订阅在关闭天气、关闭插件或卸载后停止刷新；同窗口共享请求和缓存。说明见 [时间与天气](../plugins/clock-weather.md)。
+护眼插件 `eye-care` 的非秘密配置复用 `plugins-state.json` 中对应插件的 settings（`period`、`rest-minutes`、`idle`、`allow-skip`、`language`）。周期、剩余时间和本轮推迟标记仅在插件内存；重启 / 保存设置后从完整用眼周期开始。不保存输入记录，不新增文件或 localStorage key。
+
+护眼宿主休息窗口的显示器列表、首帧状态、重试和会话令牌只在内存；不新增持久化文件或 localStorage key。`_host-eye-care-windows` 是初始化时临时注入的能力标记，不持久化。
+
+
+## 日历标记、MiniMax Code 与设备电量
+
+日历标记沿用内置插件的安装/停用记录。设备的音频绑定写入 WebView localStorage 的 fly-island-device-battery，设备读数及低电量状态仅在内存。MiniMax 可选密钥走宿主凭据管理器，额度和会话只读 MiniMax 本机数据。审批接入由用户在插件设置中显式启用，仅修改 ~/.minimax/hooks.json 内本插件登记的处理器，临时审批保存在 %LOCALAPPDATA%/fly-island-minimax/approvals.json。

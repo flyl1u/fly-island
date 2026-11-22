@@ -231,3 +231,12 @@
 .plugin-card__action--remove:focus-visible .plugin-card__remove {
   opacity: 1;
 }
+
+.plugin-card__package {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--plugin-accent);
+  background: var(--color-white-a08);
+}

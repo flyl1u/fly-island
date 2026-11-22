@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="UTF-8" />
+<title>Plugin page regression</title>
+<style>
+  body { margin: 24px; background: #0b0b0f; }
+  /* The height a two-row page with its buttons gets from expandedHeight.ts (329 - 86 chrome).
+     Content box on purpose: the panel fills the content box the island gives it. */
+  #fixture { box-sizing: content-box; width: 340px; height: 243px; padding: 18px; color: #fff; background: #141419; border-radius: 20px; }
+  #results { color: #ddd; white-space: pre-wrap; }
+</style>
+<div id="fixture"></div><pre id="results" role="status">Running…</pre>
+<script type="module" src="./plugin-panel.tsx"></script>
+</html>
