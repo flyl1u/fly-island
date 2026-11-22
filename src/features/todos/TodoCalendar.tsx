@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, CornerUpLeft, Plus, Trash2 } from "lucide-react";
-import { useTranslation } from "../../i18n";
+import { useLocale, useTranslation } from "../../i18n";
 import { dayDots, dayHeading, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
 import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
@@ -22,6 +22,7 @@ export function TodoCalendar({
   onDeleteScheduled: (id: string) => void;
 }) {
   const t = useTranslation();
+  const { locale } = useLocale();
   const [month, setMonth] = useState(() => monthOf(today));
   const [selected, setSelected] = useState(today);
   const [draft, setDraft] = useState("");
@@ -31,7 +32,7 @@ export function TodoCalendar({
     weekday: new Intl.DateTimeFormat(t.localeTag, { weekday: "narrow" }),
   }), [t.localeTag]);
   const toDate = (date: string) => new Date(`${date}T00:00:00`);
-  const marksEnabled = useNativePlugins().calendarMarks;
+  const marksEnabled = useNativePlugins().calendarMarks && locale === "zh-CN";
   const selectedTodos = dayTodos.get(selected) ?? [];
   const selectedLabel = dayHeading(selected, today, t.notebook);
   const canAdd = selected >= today;
@@ -86,7 +87,7 @@ export function TodoCalendar({
           })}
           {grid.map((date) => {
             const items = dayTodos.get(date) ?? [];
-            const mark = marksEnabled ? calendarMarkOn(date, today, t.notebook.calendarMarks) : null;
+            const mark = marksEnabled ? calendarMarkOn(date, t.notebook.calendarMarks) : null;
             const dayLabel = t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length);
             const dots = dayDots(items);
             const className = [

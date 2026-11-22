@@ -1,18 +1,17 @@
 import { addDays } from "../schedule.ts";
 
 /**
- * Statutory holidays in mainland China. The State Council publishes the arrangement for the
- * following year every November; 维护步骤见 docs/holidays.md。
+ * Mainland China holiday and make-up workday notices. 维护步骤见 docs/holidays.md。
  *
  * Each year lists the days off and the weekends worked. Every day inside a break is marked
  * off, and only its first day carries the holiday's name. A day outside the years here is
- * left unmarked, so the calendar falls back to plain numbers.
+ * left to the regular weekend and date captions.
  */
 export type HolidayMark =
   | { kind: "off"; name: string | null }
   | { kind: "work" };
 
-/** A run of days off. `name` is a key in `notebook.holidayNames`; omit `to` for a single day. */
+/** A run of days off. `name` is a key in the calendar marks translations; omit `to` for a single day. */
 export type Break = { name: string; from: string; to?: string };
 
 /** One year exactly as its notice reads: 放假区间 plus 调休上班的周末. */
@@ -87,7 +86,7 @@ for (const plan of Object.values(PLANS)) {
   for (const date of plan.workdays) MARKS.set(date, { kind: "work" });
 }
 
-/** What the calendar prints under the number: nothing, a holiday, 休, or 班. */
+/** The official status for a date, if the notice lists it. */
 export function holidayOn(date: string): HolidayMark | undefined {
   return MARKS.get(date);
 }
