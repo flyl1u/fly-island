@@ -9,6 +9,8 @@ import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
 import { MessagesSettingsPage } from "./MessagesSettingsPage";
 import { PluginsSettingsPage } from "./PluginsSettingsPage";
+import { DeviceBatterySettings } from "../../features/device-battery/DeviceBatterySettings";
+import { usePlugins } from "../../features/plugins/usePlugins";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
@@ -26,6 +28,7 @@ import { NATIVE_PLUGINS, useNativePlugins } from "../../features/plugins/native"
 
 const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType>> = {
   clockWeather: ClockWeatherSettingsPage,
+  devices: DeviceBatterySettings,
 };
 
 /**
@@ -56,17 +59,19 @@ export function SettingsPanel({
   const saveDirectory = useSaveDirectorySetting();
   const [category, setCategory] = useState<SettingsCategory>(DEFAULT_SETTINGS_CATEGORY);
   const nativePlugins = useNativePlugins();
+  const showDevices = usePlugins().registry.installed["device-battery"]?.enabled === true;
   const standaloneCategories = new Set(
     NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone).map((plugin) => plugin.settings?.category),
   );
   const installedStandaloneCategories = new Set(
     NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone && nativePlugins[plugin.id]).map((plugin) => plugin.settings?.category),
   );
-  const activeCategory = standaloneCategories.has(category) && !installedStandaloneCategories.has(category) ? "plugins" : category;
+  const activeCategory = category === "devices" && !showDevices ? "plugins" : standaloneCategories.has(category) && !installedStandaloneCategories.has(category) ? "plugins" : category;
   const highlightSaveDirectory = saveDirectory.highlight;
 
   useEffect(() => {
-    if (activeCategory !== category) setCategory(activeCategory);
+    // A settings window can receive the Devices link before the first plugin snapshot arrives.
+    if (category !== "devices" && activeCategory !== category) setCategory(activeCategory);
   }, [activeCategory, category]);
 
   // The island asks for the save path when an export has nowhere to go; it lives on the todos page.
@@ -80,8 +85,10 @@ export function SettingsPanel({
     if (section === "savePath") focusSavePath();
     if (section === "translation") setCategory("translation");
     if (section === "music") setCategory("music");
+    if (section === "devices") setCategory("devices");
     if (section === "mail") setCategory("messages");
     if (section === "updates") setCategory("about");
+    if (section === "plugins") setCategory("plugins");
   }, [focusSavePath]);
 
   useEffect(() => {

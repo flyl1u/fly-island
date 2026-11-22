@@ -1,0 +1,146 @@
+{
+  "id": "eye-care",
+  "name": {
+    "zh-CN": "护眼提醒",
+    "en": "Eye Care"
+  },
+  "description": {
+    "zh-CN": "在小岛和多屏休息窗口显示护眼倒计时，复用宿主主题，支持一次推迟与可选跳过",
+    "en": "Eye-break countdowns with host-themed multi-monitor windows, one postponement and optional skipping"
+  },
+  "version": "0.2.0",
+  "apiVersion": 1,
+  "runtime": {
+    "command": "eye-care.exe"
+  },
+  "permissions": [
+    "panel",
+    "desktop-windows"
+  ],
+  "contributes": [
+    "panel"
+  ],
+  "panel": {
+    "icon": "heart-pulse"
+  },
+  "settings": [
+    {
+      "key": "period",
+      "label": {
+        "zh-CN": "用眼时长（1–720 分钟）",
+        "en": "Screen time (1–720 minutes)"
+      },
+      "type": "number",
+      "min": 1,
+      "max": 720,
+      "default": "20"
+    },
+    {
+      "key": "rest-minutes",
+      "label": {
+        "zh-CN": "休息时长（1–60 分钟）",
+        "en": "Break length (1–60 minutes)"
+      },
+      "type": "number",
+      "min": 1,
+      "max": 60,
+      "default": "1"
+    },
+    {
+      "key": "idle",
+      "label": {
+        "zh-CN": "空闲阈值（1–120 分钟）",
+        "en": "Idle threshold (1–120 minutes)"
+      },
+      "type": "number",
+      "min": 1,
+      "max": 120,
+      "default": "5"
+    },
+    {
+      "key": "allow-skip",
+      "label": {
+        "zh-CN": "是否允许跳过休息",
+        "en": "Allow skipping a break"
+      },
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "language",
+      "label": {
+        "zh-CN": "提醒语言",
+        "en": "Reminder language"
+      },
+      "type": "select",
+      "default": "zh-CN",
+      "options": [
+        {
+          "value": "zh-CN",
+          "label": {
+            "zh-CN": "简体中文",
+            "en": "Simplified Chinese"
+          }
+        },
+        {
+          "value": "en",
+          "label": {
+            "zh-CN": "英语",
+            "en": "English"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "rest_now",
+      "label": {
+        "zh-CN": "现在休息",
+        "en": "Take a break now"
+      }
+    },
+    {
+      "id": "snooze_10",
+      "label": {
+        "zh-CN": "推迟 10 分钟",
+        "en": "Postpone 10 minutes"
+      }
+    },
+    {
+      "id": "snooze_15",
+      "label": {
+        "zh-CN": "推迟 15 分钟",
+        "en": "Postpone 15 minutes"
+      }
+    },
+    {
+      "id": "snooze_20",
+      "label": {
+        "zh-CN": "推迟 20 分钟",
+        "en": "Postpone 20 minutes"
+      }
+    },
+    {
+      "id": "snooze_25",
+      "label": {
+        "zh-CN": "推迟 25 分钟",
+        "en": "Postpone 25 minutes"
+      }
+    },
+    {
+      "id": "snooze_30",
+      "label": {
+        "zh-CN": "推迟 30 分钟",
+        "en": "Postpone 30 minutes"
+      }
+    },
+    {
+      "id": "skip",
+      "label": {
+        "zh-CN": "跳过本次休息",
+        "en": "Skip break"
+      }
+    }
+  ]
+}

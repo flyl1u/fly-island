@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "eye-care",
+  "description": "Host-rendered Eye Care break windows; no opener or updater access",
+  "windows": [
+    "eye-care-rest-*"
+  ],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten"
+  ]
+}

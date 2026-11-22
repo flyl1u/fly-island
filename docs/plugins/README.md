@@ -6,7 +6,7 @@
 
 ---
 
-内置插件使用说明：[时间与天气 / Clock & Weather](clock-weather.md)。
+使用说明见 [时间与天气 / Clock & Weather](clock-weather.md)、[日历标记 / Calendar Marks](../holidays.md)、[护眼提醒 / Eye Care](eye-care.md)、[设备电量与音频 / Device Battery & Audio](../../plugins/device-battery/README.md) 和 [MiniMax Code](minimax.md)。
 
 ## 一、插件是什么
 

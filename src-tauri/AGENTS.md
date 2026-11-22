@@ -109,4 +109,6 @@ src-tauri/src/
 - 验证：`cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle`。涉及窗口、托盘、注册表行为的改动，在风险需要时用 `pnpm tauri dev` 手动检查折叠态、展开态、贴边收起和托盘隐藏。
 - 成功生成 release 可执行文件后，按根目录规则同步桌面快捷方式。
 
+市场设备读取入口位于 device_battery，由插件宿主提供受管理的安装目录。护眼休息窗口位于 eye_care，Win32 层级控制位于 win32/eye_care.rs。
+
 插件 API v1：`plugin_host/` 为 manifest / protocol / packages / storage / process / service 分层，插件源码在仓库 `plugins/<id>/` 独立 crate；这些 crate 不加入主程序 workspace。新增插件不能把网络、数据库或客户端依赖引入主程序。

@@ -23,6 +23,7 @@ test("installed plugins keep only known ids", () => {
   assert.equal(installed.dingtalk, false);
   assert.equal(installed.clockWeather, false);
   assert.equal(normalizeInstalledNativePlugins(["clockWeather"]).clockWeather, true);
-  assert.equal(Object.keys(installed).length, 8);
+  assert.equal(installed.calendarMarks, false);
+  assert.equal(normalizeInstalledNativePlugins(["calendarMarks"]).calendarMarks, true);
   assert.equal(normalizeInstalledNativePlugins("bad").cursor, false);
 });

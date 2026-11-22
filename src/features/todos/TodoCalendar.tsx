@@ -5,6 +5,9 @@ import { dayDots, dayHeading, getMonthGrid, monthOf, shiftMonth, type CalendarTo
 import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
 import "./TodoCalendar.css";
+import { useNativePlugins } from "../plugins/native";
+import { calendarMarkOn } from "./calendar-marks";
+import "./calendar-marks/calendar-marks.css";
 
 /** A compact month beside the chosen day's list; today or a later day can take new todos. */
 export function TodoCalendar({
@@ -28,6 +31,7 @@ export function TodoCalendar({
     weekday: new Intl.DateTimeFormat(t.localeTag, { weekday: "narrow" }),
   }), [t.localeTag]);
   const toDate = (date: string) => new Date(`${date}T00:00:00`);
+  const marksEnabled = useNativePlugins().calendarMarks;
   const selectedTodos = dayTodos.get(selected) ?? [];
   const selectedLabel = dayHeading(selected, today, t.notebook);
   const canAdd = selected >= today;
@@ -66,16 +70,31 @@ export function TodoCalendar({
             {t.notebook.dateToday}
           </button>
         </div>
-        <div className="todo-calendar__grid">
-          {grid.slice(0, 7).map((date) => (
-            <span key={`w${date}`} className="todo-calendar__weekday" aria-hidden="true">{formats.weekday.format(toDate(date))}</span>
-          ))}
+        <div className={marksEnabled ? "todo-calendar__grid todo-calendar__grid--marks" : "todo-calendar__grid"}>
+          {grid.slice(0, 7).map((date) => {
+            const weekday = toDate(date).getDay();
+            const rest = marksEnabled && (weekday === 0 || weekday === 6);
+            return (
+              <span
+                key={`w${date}`}
+                className={`todo-calendar__weekday${rest ? " todo-calendar__weekday--rest" : ""}`}
+                aria-hidden="true"
+              >
+                {formats.weekday.format(toDate(date))}
+              </span>
+            );
+          })}
           {grid.map((date) => {
             const items = dayTodos.get(date) ?? [];
+            const mark = marksEnabled ? calendarMarkOn(date, today, t.notebook.calendarMarks) : null;
+            const dayLabel = t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length);
+            const dots = dayDots(items);
             const className = [
               "todo-calendar__day",
               monthOf(date) !== month ? "todo-calendar__day--outside" : "",
               date === today ? "todo-calendar__day--today" : "",
+              mark?.rest ? "todo-calendar__day--rest" : "",
+              mark?.work ? "todo-calendar__day--work" : "",
             ].filter(Boolean).join(" ");
             return (
               <button
@@ -84,14 +103,30 @@ export function TodoCalendar({
                 type="button"
                 aria-pressed={date === selected}
                 aria-current={date === today ? "date" : undefined}
-                aria-label={t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length)}
+                aria-label={mark?.spoken ? `${dayLabel}${t.notebook.calendarMarks.separator}${mark.spoken}` : dayLabel}
+                title={mark?.spoken || undefined}
                 data-date={date}
                 onClick={() => select(date)}
               >
                 <span className="todo-calendar__number">{Number(date.slice(8))}</span>
-                <span className="todo-calendar__dots" aria-hidden="true">
-                  {dayDots(items).map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
-                </span>
+                {mark ? (
+                  <span className="todo-calendar__caption" aria-hidden="true">
+                    {mark.caption ? <span className="todo-calendar__caption-text">{mark.caption}</span> : null}
+                    {dots.length > 0 ? (
+                      <span className="todo-calendar__dots">
+                        {/* 说明行放不下三个点：有说明时只留两个，窄面板才不会把说明挤掉。 */}
+                        {(mark.caption ? dots.slice(0, 2) : dots).map((dot, index) => (
+                          <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />
+                        ))}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : (
+                  <span className="todo-calendar__dots" aria-hidden="true">
+                    {dots.map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
+                  </span>
+                )}
+                {mark?.badge ? <span className="todo-calendar__badge" aria-hidden="true">{mark.badge}</span> : null}
               </button>
             );
           })}
