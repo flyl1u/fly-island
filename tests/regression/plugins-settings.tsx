@@ -11,7 +11,7 @@ import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 import type { IslandSettings } from "../../src/features/appearance/types";
 import { OFFICE_IM_ENABLED_KEY } from "../../src/features/messages/office-im/storage";
-import { MARKET_PACKAGES } from "../../src/features/plugins/native/catalog";
+import { MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS } from "../../src/features/plugins/native/catalog";
 import eyeCareManifest from "../../plugins/eye-care/fly-island-plugin.json";
 import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
@@ -91,7 +91,7 @@ try {
     check(cards.length === 0, "正式版不显示插件市场");
   } else {
     const market = TRANSLATIONS[locale].settings.plugins.market;
-    check(cards.length === NATIVE_PLUGINS.length + MARKET_PACKAGES.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
+    check(cards.length === NATIVE_PLUGINS.length + PACKAGED_MARKET_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
     const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
     await act(async () => get.click());
     check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
@@ -148,6 +148,17 @@ try {
   }
   if (!PLUGINS_ENABLED) {
     if (PLUGIN_MARKET_ENABLED) {
+      for (const { id } of PACKAGED_MARKET_PLUGINS) {
+        if (MARKET_PACKAGES.some((entry) => entry.id === id)) continue;
+        const name = t.market.items[id].name;
+        const card = cards.find((item) => item.querySelector("h3")?.textContent === name);
+        const preview = card?.querySelector<HTMLButtonElement>("button");
+        check(preview?.disabled && preview.textContent?.trim() === t.market.inDevelopment, `${name} 显示不可点击的开发中按钮`);
+        await act(async () => { preview?.click(); });
+      }
+      check(!hostCalls.includes("install_plugin"), "开发中卡片不会触发安装请求");
+    }
+    if (PLUGIN_MARKET_ENABLED && MARKET_PACKAGES.some(({ id }) => id === "eye-care")) {
       const market = t.market;
       const name = market.items["eye-care"].name;
       const install = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.installNamed(name)}"]`)!;

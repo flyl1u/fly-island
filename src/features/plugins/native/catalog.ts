@@ -44,7 +44,7 @@ export const PACKAGED_MARKET_PLUGINS = [
 export type PackagedMarketId = (typeof PACKAGED_MARKET_PLUGINS)[number]["id"];
 export type MarketPluginId = NativePluginId | PackagedMarketId;
 
-export const MARKET_PACKAGES = PACKAGED_MARKET_PLUGINS.filter(({ id }) => marketPackageIds.includes(id));
+export const MARKET_PACKAGES = PACKAGED_MARKET_PLUGINS.filter(({ id }) => marketPackageIds.some((approved) => approved === id));
 
 export const NATIVE_PLUGIN_IDS: readonly NativePluginId[] = NATIVE_PLUGINS.map((plugin) => plugin.id);
 

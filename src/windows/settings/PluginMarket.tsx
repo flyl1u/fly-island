@@ -10,13 +10,13 @@ import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
 import type { IslandSettings } from "../../features/appearance/types";
 import { setClockWeatherSettings } from "../../features/weather";
-import { isNativePluginId, MARKET_PACKAGES, type PackagedMarketId } from "../../features/plugins/native/catalog";
+import { isNativePluginId, MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS, type PackagedMarketId } from "../../features/plugins/native/catalog";
 import { installPlugin, setPluginEnabled, uninstallPlugin } from "../../features/plugins/api";
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
 import { useTranslation } from "../../i18n";
 import "./PluginMarket.css";
 
-const MARKET_CARDS = [...NATIVE_PLUGINS, ...MARKET_PACKAGES];
+const MARKET_CARDS = [...NATIVE_PLUGINS, ...PACKAGED_MARKET_PLUGINS];
 const PACKAGE_ICONS = { minimax: Bot, "device-battery": Headphones, "eye-care": HeartPulse };
 
 function PackageIcon({ id }: { id: PackagedMarketId }) {
@@ -76,6 +76,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
         const p = registry.installed[id];
         const isInstalled = isNative ? installed[id] : Boolean(p && !p.development);
         const isEnabled = isNative ? enabled[id] : isInstalled && p?.enabled === true;
+        const inDevelopment = !isNative && !isInstalled && !MARKET_PACKAGES.some((plugin) => plugin.id === id);
         const toggle = (checked: boolean) => {
           if (isNative) setNativePluginEnabled(id, checked);
           else void withPackage(id, () => setPluginEnabled(id, checked));
@@ -119,7 +120,9 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
               disabled={!isNative && busy !== null}
               onChange={toggle}
             />}
-            <button
+            {inDevelopment ? <button type="button" className="plugin-card__action plugin-card__action--preview" disabled>
+              {t.inDevelopment}
+            </button> : <button
               type="button"
               className={`plugin-card__action${isInstalled ? " plugin-card__action--remove" : ""}`}
               aria-label={isInstalled ? t.uninstallNamed(item.name) : t.installNamed(item.name)}
@@ -128,7 +131,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
               onClick={changeInstallation}
             >
               {isInstalled ? <><span className="plugin-card__state">{t.installed}</span><span className="plugin-card__remove">{t.uninstall}</span></> : t.install}
-            </button>
+            </button>}
           </div>
         </li>;
       })}

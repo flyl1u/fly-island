@@ -35,7 +35,7 @@
 
 ## 自行构建和验收
 
-正式版在设置 → 插件安装。开发者可按[快速开始](quickstart.md)启用外部插件开发模式，用本地索引安装或更新。休息到时宿主也会清理窗口，插件进程即使停止上报，遮罩仍会消失。
+插件市场中显示「开发中」，暂未开放安装。开发者可按[快速开始](quickstart.md)启用外部插件开发模式，用本地索引安装或更新。休息到时宿主也会清理窗口，插件进程即使停止上报，遮罩仍会消失。
 
 真实桌面验收包括多屏与混合 DPI、热插拔、折叠与贴边、托盘隐藏、退出和资源占用。原作者的单屏演示及已完成的实测记录见 [Fly Island #92](https://github.com/flyl1u/fly-island/pull/92)。
 
@@ -47,4 +47,4 @@ The plugin retains its monotonic clock, legacy duration migration, idle/full-scr
 
 Windows are created only during an enabled break, shown after initial state and first paint, and destroyed on completion, disable/uninstall, plugin failure/restart or shutdown. Partial failures are cleaned up, readiness is bounded and retries limited. Coalesced updates and session tokens prevent unbounded UI queues and stale messages reopening closed windows. No networking, telemetry, unrelated file reads or desktop capture is introduced.
 
-Install Eye Care from Settings → Plugins. The host also expires break windows at the deadline if the worker goes quiet. Physical multi-monitor/DPI behavior, desktop layering and resource use should be checked on the target setup.
+Eye Care is listed as In development in the plugin market. Developers can use a local index as described in the [quickstart](quickstart.md). The host also expires break windows at the deadline if the worker goes quiet. Physical multi-monitor/DPI behavior, desktop layering and resource use should be checked on the target setup.
