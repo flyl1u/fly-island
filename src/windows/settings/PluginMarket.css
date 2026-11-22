@@ -185,17 +185,23 @@
   transition: background-color 140ms ease, color 140ms ease, transform 120ms ease;
 }
 
-.plugin-card__action:hover {
+.plugin-card__action:enabled:hover {
   background: color-mix(in srgb, var(--color-accent) 24%, transparent);
 }
 
-.plugin-card__action:active {
+.plugin-card__action:enabled:active {
   transform: scale(0.96);
 }
 
 .plugin-card__action:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
+}
+
+.plugin-card__action--preview {
+  color: var(--color-text-subtle);
+  background: var(--color-white-a06);
+  cursor: default;
 }
 
 /* Installed: a quiet "Installed" that turns into "Remove" under the pointer or keyboard focus. */
@@ -217,17 +223,17 @@
   color: var(--color-error-text);
 }
 
-.plugin-card__action--remove:hover,
+.plugin-card__action--remove:enabled:hover,
 .plugin-card__action--remove:focus-visible {
   background: color-mix(in srgb, var(--color-danger) 16%, transparent);
 }
 
-.plugin-card__action--remove:hover .plugin-card__state,
+.plugin-card__action--remove:enabled:hover .plugin-card__state,
 .plugin-card__action--remove:focus-visible .plugin-card__state {
   opacity: 0;
 }
 
-.plugin-card__action--remove:hover .plugin-card__remove,
+.plugin-card__action--remove:enabled:hover .plugin-card__remove,
 .plugin-card__action--remove:focus-visible .plugin-card__remove {
   opacity: 1;
 }

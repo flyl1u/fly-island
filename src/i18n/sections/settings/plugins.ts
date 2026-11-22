@@ -15,6 +15,7 @@ export type SettingsPluginsText = {
 
 export type SettingsPluginMarketText = {
   title: string; hint: string; officeTitle: string; officeHint: string; install: string; uninstall: string; installed: string;
+  inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
   by: string; operationFailed: (name: string) => string;
   items: Record<MarketPluginId, { name: string; description: string }>;
@@ -32,7 +33,7 @@ export const zhCN: SettingsPluginsText = {
   market: {
     title: "插件市场", officeTitle: "办公消息", officeHint: "钉钉、飞书、企业微信的任务栏图标闪动时在岛上提醒，看不到消息内容；点提醒回到对应软件。",
     hint: "装上后，插件会出现在对应的小岛功能里。卡片上的开关可随时停用插件并保留设置。",
-    install: "安装", uninstall: "卸载", installed: "已安装",
+    install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
     by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
     items: {
@@ -64,7 +65,7 @@ export const en: SettingsPluginsText = {
   market: {
     title: "Plugin market", officeTitle: "Work messages", officeHint: "Get a heads-up when DingTalk, Feishu or WeCom flashes in the taskbar; message text is not read. Click the reminder to switch to the app.",
     hint: "Installed plugins appear where you use them on the island. Use the switch on a card to turn its plugin off and keep its settings.",
-    install: "Get", uninstall: "Remove", installed: "Installed",
+    install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
     by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
     items: {

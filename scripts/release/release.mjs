@@ -36,7 +36,8 @@ const MSI_OVERLAY = `${RELEASE_DIR}/msi-version.conf.json`;
 const BETA_CHANNEL_DIR = `${RELEASE_DIR}/beta-channel`;
 const REPO = "flyl1u/fly-island";
 const releaseFeatures = JSON.parse(readFileSync("release-features.json", "utf8"));
-const shipPlugins = releaseFeatures.plugins || releaseFeatures.pluginMarket;
+const marketPackages = JSON.parse(readFileSync("plugins/market-packages.json", "utf8"));
+const shipPlugins = releaseFeatures.plugins || (releaseFeatures.pluginMarket && marketPackages.length > 0);
 const LEGACY_NAME_PATTERN = /focus[\s_-]?d(?![a-z])/i;
 
 const args = process.argv.slice(2);

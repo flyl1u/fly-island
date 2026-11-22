@@ -70,7 +70,6 @@ fn all_bundled_manifests_are_accepted() {
     }
     assert!(ids.contains("example-hello"));
     let market: Vec<String> = serde_json::from_str(include_str!("../../../plugins/market-packages.json")).unwrap();
-    assert!(!market.is_empty());
     assert!(market.iter().all(|id| ids.contains(id)));
 }
 
@@ -404,11 +403,18 @@ fn market_host_only_exposes_approved_non_development_packages() {
     registry.installed.insert("minimax".into(), from("minimax", mini, true));
     host.persist(registry).unwrap();
     let public = host.public_snapshot();
-    assert_eq!(public.registry.installed.keys().collect::<Vec<_>>(), vec!["eye-care"]);
+    let market: Vec<String> = serde_json::from_str(include_str!("../../../plugins/market-packages.json")).unwrap();
+    assert!(!public.registry.installed.contains_key("example-hello"));
+    assert!(!public.registry.installed.contains_key("minimax"));
+    assert_eq!(public.registry.installed.contains_key("eye-care"), market.iter().any(|id| id == "eye-care"));
     assert!(!public.registry.developer_mode && public.registry.index_url.is_empty());
     assert!(!host.allows_development());
     assert!(!host.source().1);
     assert!(host.start("example-hello").is_err());
+    assert_eq!(
+        tauri::async_runtime::block_on(host.install("example-hello")).unwrap_err(),
+        "Plugin is unavailable in this build"
+    );
     assert!(host.start("minimax").is_err());
     assert!(host.uninstall("minimax").is_err());
     assert_eq!(host.snapshot().registry.installed.len(), 3);

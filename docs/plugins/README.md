@@ -1,12 +1,14 @@
 # 插件开发规范 / Plugin development guide
 
-> **插件功能即将上线。** 现在就可以按这份规范开发插件并提交 PR，flyl1u 审核、适配后统一上线。
+> **插件市场已开放。** 可以按这份规范开发插件并提交 PR，由 flyl1u 审核、适配后上线。
 >
-> **Plugins are coming soon.** You can build one now and open a PR; flyl1u reviews, adapts and ships it. An English summary is at the end.
+> **The plugin market is open.** You can build a plugin and open a PR; flyl1u reviews, adapts and ships it. An English summary is at the end.
 
 ---
 
-使用说明见 [时间与天气 / Clock & Weather](clock-weather.md)、[日历标记 / Calendar Marks](../holidays.md)、[护眼提醒 / Eye Care](eye-care.md)、[设备电量与音频 / Device Battery & Audio](../../plugins/device-battery/README.md) 和 [MiniMax Code](minimax.md)。
+使用说明 / Available: [时间与天气 / Clock & Weather](clock-weather.md)、[日历标记 / Calendar Marks](../holidays.md)。
+
+开发中 / In development: [护眼提醒 / Eye Care](eye-care.md)、[设备电量与音频 / Device Battery & Audio](../../plugins/device-battery/README.md)、[MiniMax Code](minimax.md)。
 
 ## 一、插件是什么
 
