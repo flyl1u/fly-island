@@ -115,9 +115,7 @@ AI 要执行命令、改文件时，直接在岛上点「允许」或「拒绝�
 
 ## 下载安装
 
-1. 到 [Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载 `fly-island_版本号_x64-setup.exe`，双击安装。
-2. 装好后小岛出现在屏幕顶部，鼠标移上去就能用。
-3. 想用哪个功能，到「设置」里打开就行。之后有新版本会自动更新。
+到 [Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载 `fly-island_版本号_x64-setup.exe`，双击安装。
 
 <details>
 <summary><b>各功能怎么打开？</b></summary>
