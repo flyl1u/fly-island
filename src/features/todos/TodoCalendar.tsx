@@ -109,25 +109,18 @@ export function TodoCalendar({
                 data-date={date}
                 onClick={() => select(date)}
               >
-                <span className="todo-calendar__number">{Number(date.slice(8))}</span>
-                {mark ? (
-                  <span className="todo-calendar__caption" aria-hidden="true">
-                    {mark.caption ? <span className="todo-calendar__caption-text">{mark.caption}</span> : null}
-                    {dots.length > 0 ? (
-                      <span className="todo-calendar__dots">
-                        {/* 说明行放不下三个点：有说明时只留两个，窄面板才不会把说明挤掉。 */}
-                        {(mark.caption ? dots.slice(0, 2) : dots).map((dot, index) => (
-                          <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />
-                        ))}
-                      </span>
-                    ) : null}
-                  </span>
-                ) : (
+                <span className="todo-calendar__date-line" aria-hidden="true">
+                  <span className="todo-calendar__number">{Number(date.slice(8))}</span>
+                  {mark?.badge ? <span className="todo-calendar__badge">{mark.badge}</span> : null}
+                </span>
+                {mark?.caption ? (
+                  <span className="todo-calendar__caption-text" aria-hidden="true">{mark.caption}</span>
+                ) : null}
+                {dots.length > 0 ? (
                   <span className="todo-calendar__dots" aria-hidden="true">
                     {dots.map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
                   </span>
-                )}
-                {mark?.badge ? <span className="todo-calendar__badge" aria-hidden="true">{mark.badge}</span> : null}
+                ) : null}
               </button>
             );
           })}
