@@ -149,10 +149,9 @@ AI 要执行命令、改文件时，直接在岛上点「允许」或「拒绝�
 
 ## 参与开发
 
-<details>
-<summary>从源码运行、开发插件</summary>
+### 从源码运行
 
-需要 Windows 10/11、Node.js、pnpm、Rust、Visual Studio C++ Build Tools 和 WebView2 Runtime。
+开发环境需要 Windows 10/11、Git、Node.js、pnpm、Rust、Visual Studio C++ Build Tools 和 WebView2 Runtime。
 
 ```powershell
 git clone https://github.com/flyl1u/fly-island.git
@@ -161,19 +160,13 @@ pnpm install
 pnpm tauri dev
 ```
 
-提交前运行 `pnpm check`。仓库规则见 [AGENTS.md](AGENTS.md)，发布流程见 [docs/updater.md](docs/updater.md)。
+### 提交代码
 
-想给小岛做插件，可以按[插件开发规范](docs/plugins/README.md)开发并提交 PR（附演示录屏、作者和联系方式），审核后上线。
+提交前运行 `pnpm check`。仓库规则和发布步骤分别见 [AGENTS.md](AGENTS.md) 和[发布指南](docs/updater.md)。
 
-感谢 [@TixXin](https://github.com/TixXin) 在 [PR #36](https://github.com/flyl1u/fly-island/pull/36) 中提出的模块化架构方案，详见[改造说明](docs/architecture/refactor-plan.md)。
+### 开发插件
 
-</details>
-
-## 开源协议
-
-[GPL-3.0](LICENSE)：可以免费使用、修改和分发；分发修改版时需要同样开源。3.0.8 及以前的版本按 MIT 发布。第三方资源遵循各自的许可证，见[字体说明](src/assets/fonts/README.md)和[网易云插件说明](src-tauri/resources/media-plugins/README.md)。
-
-Copyright (C) 2026 flyl1u and contributors
+在本地测试插件后提交 PR，附上演示录屏、作者和联系方式。插件经审核后上线，具体流程见[插件开发规范](docs/plugins/README.md)。
 
 ## Star History
 
