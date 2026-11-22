@@ -3,16 +3,20 @@ export type GameModeSettings = {
   gameDoNotDisturb: boolean;
   /** While a full-screen app fills the island's monitor: the island tucks to the top edge, and comes back after. */
   gameAutoTuck: boolean;
+  /** Tuck while a recognized browser is foregrounded on the island's monitor. */
+  browserAutoTuck: boolean;
 };
 
 /** Same shape as ForegroundFullscreen in api.ts, kept here so tests can import this file alone. */
-export type FullscreenState = { active: boolean; onIslandMonitor: boolean };
+export type FullscreenState = { active: boolean; onIslandMonitor: boolean; browserOnIslandMonitor: boolean };
 
 export type GameModeEffects = {
   /** Hold back hover opening, hover focus and message previews. */
   quiet: boolean;
   /** Keep the island tucked to the top edge. */
   tuck: boolean;
+  /** Whether a recognized browser is foregrounded on the island's monitor. */
+  browserOnIslandMonitor: boolean;
 };
 
 /**
@@ -24,5 +28,6 @@ export function gameModeEffects(fullscreen: FullscreenState, settings: GameModeS
   return {
     quiet: fullscreen.active && settings.gameDoNotDisturb,
     tuck: fullscreen.active && fullscreen.onIslandMonitor && settings.gameAutoTuck,
+    browserOnIslandMonitor: fullscreen.browserOnIslandMonitor && settings.browserAutoTuck,
   };
 }

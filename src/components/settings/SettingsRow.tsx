@@ -12,6 +12,7 @@ export function SettingsRow({
   control,
   labelFor,
   indent = false,
+  disabled = false,
   children,
 }: {
   title: ReactNode;
@@ -20,10 +21,11 @@ export function SettingsRow({
   /** Id of the input the title names; clicking the title then focuses or toggles it. */
   labelFor?: string;
   indent?: boolean;
+  disabled?: boolean;
   children?: ReactNode;
 }) {
   return (
-    <div className={indent ? "settings-row settings-row--indent" : "settings-row"}>
+    <div className={`settings-row${indent ? " settings-row--indent" : ""}${disabled ? " settings-row--disabled" : ""}`} aria-disabled={disabled || undefined}>
       <div className="settings-row__main">
         <div className="settings-row__text">
           {labelFor ? (

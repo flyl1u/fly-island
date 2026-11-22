@@ -3,7 +3,7 @@ import { getForegroundFullscreen, listenForegroundFullscreen, setIslandGameQuiet
 import { gameModeEffects, type FullscreenState, type GameModeEffects, type GameModeSettings } from "./gameMode";
 import type { IslandMode } from "./types";
 
-const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false };
+const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false, browserOnIslandMonitor: false };
 
 function logError(error: unknown) {
   console.error("Failed to watch for full-screen apps", error);
@@ -28,7 +28,7 @@ export function useGameMode(
   settings: GameModeSettings,
   { mode, isTucked, collapseIsland, tuckIsland, revealIsland }: GameModeActions,
 ): GameModeEffects {
-  const watching = settings.gameDoNotDisturb || settings.gameAutoTuck;
+  const watching = settings.gameDoNotDisturb || settings.gameAutoTuck || settings.browserAutoTuck;
   const [fullscreen, setFullscreen] = useState<FullscreenState>(NOT_FULLSCREEN);
   const effects = gameModeEffects(watching ? fullscreen : NOT_FULLSCREEN, settings);
   const tuckedByGameRef = useRef(false);

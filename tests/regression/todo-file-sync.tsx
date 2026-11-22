@@ -32,7 +32,7 @@ window.setInterval = ((handler: TimerHandler, period?: number, ...args: unknown[
   }
   return realInterval(handler, period, ...args);
 }) as typeof window.setInterval;
-window.clearInterval = (id?: number) => { if (id !== undefined && ticks.delete(id)) return; realClear(id); };
+window.clearInterval = ((id?: number) => { if (id !== undefined && ticks.delete(id)) return; realClear(id); }) as typeof window.clearInterval;
 for (const key of original.keys()) localStorage.removeItem(key);
 const today = getLocalDateString();
 const initial = [{ id: "a", title: "Alpha", completed: false, createdAt: 7 }, { id: "b", title: "Beta", completed: false, createdAt: 8 }];

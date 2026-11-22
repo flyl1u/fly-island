@@ -29,6 +29,21 @@ test("installed fonts preserve legacy modes and safely fall back for missing gly
   assert.equal(withAppearanceFrom(custom, DEFAULT_SETTINGS).localFontFamily, "");
 });
 
+test("browser-tucked hover defaults to a 2.5 second dwell and normalizes hundredths", () => {
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuck, true);
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuckClickToOpen, false);
+  assert.equal(normalizeSettings({}).browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(normalizeSettings({ browserAutoTuck: false, browserAutoTuckDelaySeconds: 7.26 }).browserAutoTuck, false);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 7.26 }).browserAutoTuckDelaySeconds, 7.26);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: -10 }).browserAutoTuckDelaySeconds, 0);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 100 }).browserAutoTuckDelaySeconds, 10);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: Number.NaN }).browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 1.239 }).browserAutoTuckDelaySeconds, 1.24);
+  assert.equal(normalizeSettings({ browserAutoTuckClickToOpen: true }).browserAutoTuckClickToOpen, true);
+  assert.equal(normalizeSettings({ browserAutoTuckClickToOpen: "true" }).browserAutoTuckClickToOpen, false);
+});
+
 test("tucked style defaults to line and rejects unknown saved values", () => {
   assert.equal(DEFAULT_SETTINGS.tuckStyle, "line");
   for (const value of [undefined, null, "", "unknown", "LINE", 1, true, {}]) {

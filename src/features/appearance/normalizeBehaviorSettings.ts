@@ -2,7 +2,7 @@
 import { normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { normalizeOrder } from "../../utils/order.ts";
-import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS, TUCK_EDGE_HEIGHT, COLLAPSED_ITEMS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
+import { AUTO_COLLAPSE_SECONDS, BROWSER_AUTO_TUCK_DELAY_SECONDS, TUCK_DELAY_SECONDS, TUCK_EDGE_HEIGHT, COLLAPSED_ITEMS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 import { normalizeCollapsedHidden, normalizeCollapsedLayout } from "./collapsedLayout.ts";
 import { TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, MESSAGE_PREVIEW_SECONDS, MESSAGE_EXPAND_MAX_WIDTH, MESSAGE_EXPAND_MAX_HEIGHT, MESSAGE_EXPAND_SECONDS, GAME_NOTICE_SECONDS } from "./settingsLimits.ts";
@@ -38,6 +38,14 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     enableTodoReorder: settings?.todoReorderVersion === 1
       && typeof settings.enableTodoReorder === "boolean" ? settings.enableTodoReorder : true,
     autoTuck,
+    browserAutoTuck: typeof settings?.browserAutoTuck === "boolean"
+      ? settings.browserAutoTuck : DEFAULT_SETTINGS.browserAutoTuck,
+    browserAutoTuckDelaySeconds: steppedSeconds(
+      settings?.browserAutoTuckDelaySeconds,
+      BROWSER_AUTO_TUCK_DELAY_SECONDS,
+      BROWSER_AUTO_TUCK_DELAY_SECONDS.default,
+    ),
+    browserAutoTuckClickToOpen: settings?.browserAutoTuckClickToOpen === true,
     tuckStyle: oneOf(["edge", "line", "hidden"] as const, settings?.tuckStyle, DEFAULT_SETTINGS.tuckStyle),
     tuckEdgeHeight: wholeSeconds(settings?.tuckEdgeHeight, TUCK_EDGE_HEIGHT, TUCK_EDGE_HEIGHT.default),
     // Saved before this was a setting: an open panel closed only when the island tucked after
@@ -79,4 +87,12 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
 function wholeSeconds(value: unknown, range: { min: number; max: number }, fallback: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.min(range.max, Math.max(range.min, Math.round(value)));
+}
+
+/** A saved delay rounded to its setting step. */
+function steppedSeconds(value: unknown, range: { min: number; max: number; step: number }, fallback: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  const precision = String(range.step).split(".")[1]?.length ?? 0;
+  const rounded = Number((Math.round(value / range.step) * range.step).toFixed(precision));
+  return Math.min(range.max, Math.max(range.min, rounded));
 }

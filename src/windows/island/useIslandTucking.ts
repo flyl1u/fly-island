@@ -4,7 +4,7 @@ import { listenIslandHover } from "./api";
 import { idlePlan } from "./idleCollapse";
 import { keepIslandVisible, keepVisibleChangesAt } from "./keepVisible";
 import { retractsPeek, revealsForKeepVisible } from "./tuckRules";
-import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
+import { useBrowserAutoTuck, useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { isEditingText } from "./useHoverExpand";
 import type { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
@@ -18,15 +18,25 @@ type IslandTuckingOptions = {
   activity: Parameters<typeof keepIslandVisible>[1];
   /** Game mode holds the island back or tucked it; keep-visible does not undo that. */
   gameHolds: boolean;
+  browserOnIslandMonitor?: boolean;
 };
 
 /**
  * Collapsing the open island once the cursor has been away long enough (A), tucking the
  * collapsed island away when idle (B), sliding it out for what needs to be seen, and ending a peek.
  */
-export function useIslandTucking({ settings, navigation, hasMessagePreview, activity, gameHolds }: IslandTuckingOptions) {
+export function useIslandTucking({ settings, navigation, hasMessagePreview, activity, gameHolds, browserOnIslandMonitor }: IslandTuckingOptions) {
   const { mode, page, isTucked, isPeeking, peekRetractDelayMs, tuckedAutomatically, idleTuck, collapseIsland, revealIsland, revealForMessage, endPeek } = navigation;
   const isHovering = useIslandHovering();
+  useBrowserAutoTuck(
+    browserOnIslandMonitor ?? false,
+    settings.browserAutoTuck,
+    isTucked,
+    isHovering,
+    gameHolds,
+    navigation.tuckIsland,
+    revealIsland,
+  );
   const pickerOpen = useIslandPickerOpen();
   const keepVisible = useKeepVisible(settings, activity);
   const tuckState = {

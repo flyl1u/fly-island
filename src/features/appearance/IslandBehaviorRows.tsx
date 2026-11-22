@@ -5,7 +5,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
-import { AUTO_COLLAPSE_SECONDS, GAME_NOTICE_SECONDS, TUCK_DELAY_SECONDS } from "./settingsLimits";
+import { AUTO_COLLAPSE_SECONDS, BROWSER_AUTO_TUCK_DELAY_SECONDS, GAME_NOTICE_SECONDS, TUCK_DELAY_SECONDS } from "./settingsLimits";
 import type { ExpandTrigger, IslandSettings } from "./types";
 
 type RowsProps = {
@@ -69,6 +69,39 @@ export function TuckRows({ settings, onSettingsChange }: RowsProps) {
         checked={settings.autoTuck}
         onChange={(autoTuck) => update({ autoTuck })}
       />
+      <SettingsToggleRow
+        title={t.settings.layout.browserAutoTuck}
+        description={t.settings.layout.browserAutoTuckHint}
+        checked={settings.browserAutoTuck}
+        onChange={(browserAutoTuck) => update({ browserAutoTuck })}
+      />
+      {settings.browserAutoTuck ? (
+        <>
+          <SettingsSliderRow
+            title={t.settings.layout.browserAutoTuckDelay}
+            description={t.settings.layout.browserAutoTuckDelayHint}
+            value={settings.browserAutoTuckDelaySeconds}
+            min={BROWSER_AUTO_TUCK_DELAY_SECONDS.min}
+            max={BROWSER_AUTO_TUCK_DELAY_SECONDS.max}
+            step={BROWSER_AUTO_TUCK_DELAY_SECONDS.step}
+            format={(value) => value + " " + expand.secondsUnit}
+            editable
+            unit={expand.secondsUnit}
+            disabled={settings.browserAutoTuckClickToOpen}
+            defaultValue={BROWSER_AUTO_TUCK_DELAY_SECONDS.default}
+            resetLabel={t.settings.layout.resetToDefault}
+            indent
+            onChange={(browserAutoTuckDelaySeconds) => update({ browserAutoTuckDelaySeconds })}
+          />
+          <SettingsToggleRow
+            title={t.settings.layout.browserAutoTuckClickToOpen}
+            description={t.settings.layout.browserAutoTuckClickToOpenHint}
+            checked={settings.browserAutoTuckClickToOpen}
+            indent
+            onChange={(browserAutoTuckClickToOpen) => update({ browserAutoTuckClickToOpen })}
+          />
+        </>
+      ) : null}
       {settings.autoTuck ? (
         <SettingsNumberRow
           title={expand.tuckDelay}

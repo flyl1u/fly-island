@@ -24,6 +24,8 @@ pub struct ForegroundFullscreen {
     active: bool,
     /// It fills the monitor the island is on, so the island sits over it.
     on_island_monitor: bool,
+    /// A browser is in the foreground on the island's monitor.
+    browser_on_island_monitor: bool,
 }
 
 impl ForegroundFullscreen {
@@ -36,7 +38,23 @@ impl ForegroundFullscreen {
 static STATE: Mutex<ForegroundFullscreen> = Mutex::new(ForegroundFullscreen {
     active: false,
     on_island_monitor: false,
+    browser_on_island_monitor: false,
 });
+
+const BROWSER_EXECUTABLES: [&str; 21] = [
+    "arc.exe", "baidubrowser.exe", "brave.exe", "chrome.exe", "chromium.exe", "360chrome.exe",
+    "360se.exe", "firefox.exe", "floorp.exe", "librewolf.exe", "liebao.exe", "msedge.exe",
+    "opera.exe", "opera_gx.exe", "qqbrowser.exe", "sogouexplorer.exe", "vivaldi.exe",
+    "waterfox.exe", "yandex.exe", "ucbrowser.exe", "zen.exe",
+];
+
+fn is_browser_image_path(image_path: Option<&str>) -> bool {
+    let Some(path) = image_path else { return false };
+    let normalized = path.replace('/', "\\").to_ascii_lowercase();
+    let Some(name) = normalized.rsplit('\\').next() else { return false };
+    BROWSER_EXECUTABLES.contains(&name)
+        || (name == "browser.exe" && normalized.contains(r"\yandex\yandexbrowser\"))
+}
 
 /// Shell windows that can sit in front covering a whole monitor without being an app in
 /// full screen: the desktop (after Win+D or a click on it) and the taskbars.
@@ -75,6 +93,9 @@ fn read(app: &AppHandle) -> ForegroundFullscreen {
     if !foreground.is_invalid() && win32::process::window_process_id(foreground) == std::process::id() {
         return get_foreground_fullscreen();
     }
+    let browser = is_browser_image_path(
+        win32::process::image_path(win32::process::window_process_id(foreground)).as_deref(),
+    );
     let active = is_fullscreen_foreground(
         win32::notification_state::fullscreen_signal(),
         (!foreground.is_invalid() && win32::window::is_visible(foreground))
@@ -83,14 +104,17 @@ fn read(app: &AppHandle) -> ForegroundFullscreen {
         win32::window::monitor_rect(foreground),
         &win32::window::class_name(foreground),
     );
-    let on_island_monitor = active
-        && island::main_window(app)
-            .and_then(|window| window.hwnd().map_err(|error| error.to_string()))
-            // When the island cannot be found, assume it shares the screen.
-            .map_or(true, |island| {
-                win32::window::share_monitor(win32::window::foreground_window(), island)
-            });
-    ForegroundFullscreen { active, on_island_monitor }
+    let island_window = island::main_window(app)
+        .and_then(|window| window.hwnd().map_err(|error| error.to_string()));
+    // When the island cannot be found, assume it shares the screen.
+    let same_monitor = island_window.map_or(true, |island| {
+        win32::window::share_monitor(foreground, island)
+    });
+    ForegroundFullscreen {
+        active,
+        on_island_monitor: active && same_monitor,
+        browser_on_island_monitor: browser && same_monitor,
+    }
 }
 
 pub(crate) fn start(app: &AppHandle) {
@@ -142,5 +166,24 @@ mod tests {
     fn presentation_settings_count_and_a_quiet_shell_never_does() {
         assert!(is_fullscreen_foreground(FullscreenSignal::Presentation, None, None, ""));
         assert!(!is_fullscreen_foreground(FullscreenSignal::None, Some(MONITOR), Some(MONITOR), "UnityWndClass"));
+    }
+
+    #[test]
+    fn recognizes_common_browser_executables_without_matching_embedded_browsers() {
+        for path in [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\MSEDGE.EXE",
+            r"C:\Program Files\Mozilla Firefox\firefox.exe",
+            r"C:\Users\user\AppData\Local\Vivaldi\Application\vivaldi.exe",
+            r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+            r"C:\Users\user\AppData\Local\Yandex\YandexBrowser\Application\browser.exe",
+        ] {
+            assert!(is_browser_image_path(Some(path)), "{path}");
+        }
+        assert!(!is_browser_image_path(Some(
+            r"C:\Program Files\Microsoft\EdgeWebView\msedgewebview2.exe",
+        )));
+        assert!(!is_browser_image_path(Some(r"C:\Windows\System32\notepad.exe")));
+        assert!(!is_browser_image_path(None));
     }
 }

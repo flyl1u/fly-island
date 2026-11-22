@@ -99,6 +99,8 @@ type IslandShellProps = {
   onOpenSettings: () => void;
   onTuck: () => void;
   onReveal: () => void;
+  clickTuckedToOpen?: boolean;
+  onClickTucked?: () => void;
   onPageChange: (page: IslandPage) => void;
   /** Buttons of the open page, first among the window actions. */
   pageActions?: ReactNode;
@@ -165,6 +167,8 @@ export function IslandShell({
   onOpenSettings,
   onTuck,
   onReveal,
+  clickTuckedToOpen = false,
+  onClickTucked,
   onPageChange,
   pageActions,
   children,
@@ -215,6 +219,10 @@ export function IslandShell({
       className={className}
       aria-label={collapsedLabel}
       onClick={(event) => {
+        if (isTucked && clickTuckedToOpen) {
+          onClickTucked?.();
+          return;
+        }
         if (!isExpanded && event.target === event.currentTarget) {
           onOpenPage(page);
         }
