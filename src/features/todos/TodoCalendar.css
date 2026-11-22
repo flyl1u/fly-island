@@ -119,7 +119,7 @@
 .todo-calendar__day--today .todo-calendar__number,
 .todo-calendar__day--today:hover .todo-calendar__number,
 .todo-calendar__day--today[aria-pressed="true"] .todo-calendar__number {
-  color: var(--color-black);
+  color: var(--color-surface-dark);
   background: var(--color-accent);
   font-weight: 700;
 }

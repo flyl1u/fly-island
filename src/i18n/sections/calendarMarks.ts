@@ -5,7 +5,6 @@ export type CalendarMarksText = {
   lunar: (day: number, name: string) => string;
   off: string;
   work: string;
-  today: string;
   offLabel: string;
   workLabel: string;
   separator: string;
@@ -43,7 +42,7 @@ export const zhCN: CalendarMarksText = {
     memorialDay: "公祭",
   },
 
-  /** 右上角角标：休息日、调休上班、今天。 */
+  /** 按「小寒」到「冬至」排列。 */
   solarTermNames: [
     "小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨",
     "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑",
@@ -52,7 +51,6 @@ export const zhCN: CalendarMarksText = {
   lunar: (_, name) => name,
   off: "休",
   work: "班",
-  today: "今",
   offLabel: "休息日",
   workLabel: "调休上班",
   separator: "，",
@@ -81,7 +79,6 @@ export const en: CalendarMarksText = {
   lunar: (day) => `Lunar ${day}`,
   off: "R",
   work: "W",
-  today: "T",
   offLabel: "Rest day",
   workLabel: "Make-up workday",
   separator: ", ",
