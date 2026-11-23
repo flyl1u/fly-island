@@ -12,7 +12,7 @@ import { useWorkbuddyUsage } from "./useWorkbuddyUsage";
  */
 export function WorkbuddySignInRow({ polling }: { polling: boolean }) {
   const text = useTranslation().settings.agent.workbuddy;
-  const { state, retry } = useWorkbuddyUsage(true, polling);
+  const { state } = useWorkbuddyUsage(true, polling);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const run = (action: () => Promise<void>) => {
@@ -21,9 +21,11 @@ export function WorkbuddySignInRow({ polling }: { polling: boolean }) {
     void action().catch(() => setFailed(true)).finally(() => setBusy(false));
   };
   const signedIn = state.status === "ready" || state.status === "connected";
-  const [label, action] = state.status === "unavailable"
-    ? [text.retry, retry]
-    : signedIn ? [text.signOut, disconnectWorkbuddy] : [text.signIn, openWorkbuddyLogin];
+  // Any not-connected state (including `unavailable`, where the cookie channel cannot read
+  // credits) must offer a way into the official login, otherwise the user is stuck on "retry".
+  const [label, action] = signedIn
+    ? [text.signOut, disconnectWorkbuddy]
+    : [text.signIn, openWorkbuddyLogin];
   return (
     <SettingsRow
       indent

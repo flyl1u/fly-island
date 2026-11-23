@@ -55,6 +55,7 @@ mod workbuddy_auth;
 pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
 mod workbuddy_cookie_vault;
+mod workbuddy_official;
 mod workbuddy_usage;
 pub(crate) mod zcode_api_key;
 mod zcode_credentials;
