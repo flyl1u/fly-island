@@ -13,8 +13,9 @@
 }
 
 .native-plugin-icon--battery {
-  color: color-mix(in srgb, var(--color-success) 68%, var(--color-text));
-  background: color-mix(in srgb, var(--color-success) 18%, var(--color-white-a06));
+  /* A filled tile like the brand icons beside it; the same in both colour schemes, as they are. */
+  color: #fff;
+  background: linear-gradient(150deg, #63d68f, #1f9a62);
 }
 
 .native-plugin-icon--weather {
