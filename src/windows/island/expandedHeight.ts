@@ -154,8 +154,8 @@ export function getExpandedIslandHeight({
       : page === "shelf"
         ? Math.min(getShelfExpandedHeight(shelfItems), maxPanelHeight)
       : page === "battery"
-        // The summary, bar and stats (88px), plus the chart (120px); text grows with the font size.
-        ? (showBatteryHistory ? 296 : 176) + Math.round(Math.max(0, fontScale - 1) * (showBatteryHistory ? 75 : 55))
+        // The summary, bar and stats (104px), plus the chart (120px); text grows with the font size.
+        ? (showBatteryHistory ? 312 : 192) + Math.round(Math.max(0, fontScale - 1) * (showBatteryHistory ? 90 : 70))
       : page === "translation"
         ? Math.min(TRANSLATION_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"

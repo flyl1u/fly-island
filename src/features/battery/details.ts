@@ -13,7 +13,7 @@ export function formatBatteryDetails(snapshot: BatterySnapshot, estimate: Batter
   const { state, percent, low, flow } = summary;
   const percentFormat = new Intl.NumberFormat(locale, { style: "percent" });
   const oneDecimal = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  const { fullMwh = null, designMwh = null, rateMw = null } = snapshot.details ?? {};
+  const { remainingMwh = null, fullMwh = null, designMwh = null, rateMw = null } = snapshot.details ?? {};
 
   // The measured rate when there is one, as the time estimate uses it; the direction is the status line's to say.
   const milliwatts = flow === null ? null : estimate?.rateMw ?? rateMw;
@@ -21,9 +21,10 @@ export function formatBatteryDetails(snapshot: BatterySnapshot, estimate: Batter
   const health = batteryHealth(fullMwh, designMwh);
   const capacity = (mwh: number | null) => mwh === null ? null : oneDecimal.format(mwh / 1000) + " Wh";
   const stats = [
-    { key: "health", label: text.health, value: health === null ? null : percentFormat.format(health / 100) },
+    { key: "current", label: text.current, value: capacity(remainingMwh) },
     { key: "full", label: text.full, value: capacity(fullMwh) },
     { key: "design", label: text.design, value: capacity(designMwh) },
+    { key: "health", label: text.health, value: health === null ? null : percentFormat.format(health / 100) },
   ].flatMap(({ key, label, value }) => value === null ? [] : [{ key, label, value }]);
 
   return {

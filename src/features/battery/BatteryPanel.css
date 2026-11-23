@@ -97,17 +97,19 @@
   }
 }
 
+/* Label over value, one column a stat: now, full, design, and the health the last two give. */
 .battery-panel__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px var(--space-2xl);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--space-md);
   margin: 0;
 }
 
 .battery-panel__stats > div {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
+  display: grid;
+  gap: 1px;
+  min-inline-size: 0;
 }
 
 .battery-panel__stats dt {

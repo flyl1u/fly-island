@@ -167,9 +167,9 @@ export async function runBatteryTour(
       check(panel.querySelector(".battery-panel__facts")?.textContent === t.detailsUnavailable && !panel.querySelector("dl"),
         "Without capacity data the page says so in one line and draws no empty rows");
     } else {
-      check(stat("health") === "90%" && stat("full") === "50.4 Wh" && stat("design") === "56.0 Wh"
+      check(stat("health") === "90%" && stat("full") === "50.4 Wh" && stat("design") === "56.0 Wh" && /^\d+\.\d Wh$/.test(stat("current") ?? "")
         && new Set([...panel.querySelectorAll("[data-stat]")].map((item) => Math.round(item.getBoundingClientRect().top))).size === 1,
-      "Health and the two capacities it comes from share one row");
+      "What the battery holds now, its full and design capacity and its health share one row");
       if (full) {
         check(fact("runtime") === null && fact("power") === null, "A full battery shows no estimate and no power reading");
       } else {

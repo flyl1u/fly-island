@@ -22,6 +22,7 @@ export type BatteryText = {
   untilFull: (duration: string) => string;
   duration: (hours: number, minutes: number) => string;
   health: string;
+  current: string;
   full: string;
   design: string;
 };
@@ -63,6 +64,7 @@ export const zhCN: BatteryText = {
   untilFull: (duration) => `约 ${duration}充满`,
   duration: zhDuration,
   health: "电池健康",
+  current: "当前容量",
   full: "满充容量",
   design: "设计容量",
 };
@@ -96,6 +98,7 @@ export const en: BatteryText = {
   untilFull: (duration) => `About ${duration} until full`,
   duration: enDuration,
   health: "Health",
+  current: "Now",
   full: "Full charge",
   design: "Design",
 };

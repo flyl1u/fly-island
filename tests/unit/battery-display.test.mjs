@@ -75,7 +75,7 @@ test("the details say each thing once: where it is heading, how fast, and what t
   assert.equal(charging.status, "Charging");
   assert.equal(charging.runtime, "About 1 hr 3 min until full");
   assert.equal(charging.power, "14.0 W", "the measured rate, unsigned");
-  assert.deepEqual(charging.stats.map(({ key, value }) => [key, value]), [["health", "90%"], ["full", "50.4 Wh"], ["design", "56.0 Wh"]]);
+  assert.deepEqual(charging.stats.map(({ key, value }) => [key, value]), [["current", "35.8 Wh"], ["full", "50.4 Wh"], ["design", "56.0 Wh"], ["health", "90%"]]);
 
   const discharging = formatBatteryDetails({ ...snapshot, details: { ...details, rateMw: -16_500 } }, null, "en", en);
   assert.equal(discharging.power, "16.5 W", "the driver's rate until samples arrive");
@@ -91,7 +91,7 @@ test("the details say each thing once: where it is heading, how fast, and what t
 
   const bare = formatBatteryDetails({ ...snapshot, pluggedIn: true, secondsRemaining: null }, null, "en", en);
   assert.deepEqual([bare.runtime, bare.power, bare.stats.length], [null, null, 0], "missing readings leave no placeholder rows");
-  assert.deepEqual(formatBatteryDetails({ ...snapshot, details: { ...details, designMwh: null } }, null, "en", en).stats.map(({ key }) => key), ["full"]);
+  assert.deepEqual(formatBatteryDetails({ ...snapshot, details: { ...details, designMwh: null } }, null, "en", en).stats.map(({ key }) => key), ["current", "full"]);
 });
 
 test("the collapsed island makes room for the battery slot", () => {
