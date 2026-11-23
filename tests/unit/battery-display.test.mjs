@@ -26,6 +26,12 @@ test("runtime is rounded to minutes and only shown when on battery", () => {
   assert.equal(summarizeBattery({ ...snapshot, pluggedIn: true }).minutes, null);
   const onAC = { ...snapshot, pluggedIn: true, charging: true, secondsRemaining: null };
   assert.equal(summarizeBattery(onAC).minutes, null);
+  // Charging: the driver's rate gives an estimate from the first reading; samples replace it.
+  const charging = { ...onAC, details: { remainingMwh: 30_000, fullMwh: 50_000, designMwh: 56_000, rateMw: 20_000 } };
+  assert.equal(summarizeBattery(charging).minutes, 60);
+  assert.equal(summarizeBattery(charging, { rateMw: 40_000, minutes: 30 }).minutes, 30);
+  assert.equal(summarizeBattery({ ...charging, details: { ...charging.details, rateMw: 0 } }).minutes, null);
+  assert.equal(summarizeBattery({ ...snapshot, secondsRemaining: null, details: { ...charging.details, rateMw: -15_000 } }).minutes, 120);
   assert.equal(summarizeBattery(onAC, { rateMw: -500, minutes: 50 }).minutes, 50);
 });
 

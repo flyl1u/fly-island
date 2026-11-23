@@ -94,8 +94,8 @@ export async function runBatteryTour(
     const button = slot()!;
 
     check(button.getAttribute("aria-label")?.startsWith(t.buttonLabel(full ? null : percentValue, "").slice(0, -1))
-      && shown() === (wantsTime && systemTime ? systemTime : percentValue),
-    "The collapsed slot shows the chosen reading, or the charge while there is no estimate");
+      && shown() === (wantsTime ? systemTime ?? (charging || draining ? "1:11" : percentValue) : percentValue),
+    "The collapsed slot shows the chosen reading: Windows' estimate on battery, the driver's rate while charging, else the charge");
     const fill = readout().querySelector<HTMLElement>(".battery-readout__fill")!;
     const percent = full ? 100 : low ? 12 : 71;
     const clip = getComputedStyle(layers()[1]).clipPath;
