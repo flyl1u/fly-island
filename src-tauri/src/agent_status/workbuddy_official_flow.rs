@@ -64,7 +64,7 @@ pub(super) async fn read_usage_official(
             connection.failures = FailedChecks::default();
             connection.retry_at = None;
             connection.restored_startup = true;
-            return Ok(usage);
+            Ok(usage)
         }
         Err(official::ProtocolError::LoginRequired) => {
             // One refresh attempt, then persist the rotated credential.
@@ -84,15 +84,15 @@ pub(super) async fn read_usage_official(
                             });
                             connection.failures = FailedChecks::default();
                             connection.retry_at = None;
-                            return Ok(usage);
+                            Ok(usage)
                         }
-                        Err(error) => return Err(Some(map_official_error(error))),
+                        Err(error) => Err(Some(map_official_error(error))),
                     }
                 }
-                Err(error) => return Err(Some(map_official_error(error))),
+                Err(error) => Err(Some(map_official_error(error))),
             }
         }
-        Err(error) => return Err(Some(map_official_error(error))),
+        Err(error) => Err(Some(map_official_error(error))),
     }
 }
 

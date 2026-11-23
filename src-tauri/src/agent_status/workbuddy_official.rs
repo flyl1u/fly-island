@@ -331,9 +331,9 @@ fn format_local_datetime(now: i64) -> String {
     // The billing API expects local wall-clock "YYYY-MM-DD HH:MM:SS".
     use chrono::TimeZone;
     use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = if now > 0 { now as i64 / 1000 } else { SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0) };
+    let secs = if now > 0 { now / 1000 } else { SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0) };
     chrono::Local
-        .timestamp_opt(secs as i64, 0)
+        .timestamp_opt(secs, 0)
         .single()
         .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
         .unwrap_or_else(|| "2000-01-01 00:00:00".to_string())
