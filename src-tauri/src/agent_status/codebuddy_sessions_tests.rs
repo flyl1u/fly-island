@@ -23,7 +23,11 @@ fn assistant(text: &str, status: &str) -> Value {
 }
 
 fn call(id: &str) -> Value {
-    json!({ "type": "function_call", "name": "Bash", "callId": id, "arguments": "{\"command\":\"ls -la\"}" })
+    json!({ "type": "function_call", "name": "Bash", "callId": id, "providerData": { "requestModelName": "DeepSeek-V4.1-Flash" }, "arguments": "{\"command\":\"ls -la\"}" })
+}
+
+fn result(id: &str) -> Value {
+    json!({ "type": "function_call_result", "name": "Bash", "callId": id, "status": "completed" })
 }
 
 #[test]
@@ -46,7 +50,7 @@ fn phase_follows_the_turn_its_age_and_the_registry() {
     };
     assert_eq!(phase(working.clone(), now - 1_000, false), "running");
     assert_eq!(phase(working, now - AGENT_RUNNING_STALE_AFTER_MS, false), "stale");
-    let done = parse(&lines(&[user("hi", 1), call("a"), assistant("done", "completed")]));
+    let done = parse(&lines(&[user("hi", 1), call("a"), result("a"), assistant("done", "completed")]));
     assert_eq!(phase(done, now - 1_000, false), "completed");
 }
 
