@@ -184,6 +184,15 @@ pub(super) fn focus_session(
         log.note("record=yes");
     }
     let chain = process_chain(is_codex, session_id, cwd, record.as_ref(), seen.as_ref(), &mut log);
+    // CodeBuddy's CLI registers the process of each open conversation; follow it to its terminal.
+    let chain = if chain.is_empty() && provider == "codebuddy" {
+        session_id
+            .zip(windows_home_dir().ok())
+            .map(|(id, home)| super::codebuddy_sessions::live_process_chain(&home, id))
+            .unwrap_or_default()
+    } else {
+        chain
+    };
     let lookup = Lookup { app_dir, record: record.as_ref(), is_codex, session_id, cwd, title };
     let handle = orca_handle(&lookup, &chain, seen.as_ref(), &mut log);
 

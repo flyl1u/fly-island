@@ -5,7 +5,7 @@ import type { AgentEffortLabels } from "./effortLabels";
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
 export type AgentProvider = "codex" | "claudeCode" | "dsh" | "workbuddy" | "plugin" | NativeAgentProvider;
 /** Agents installed from the plugin market; Z Code has quota rings but no sessions yet. */
-export type NativeAgentProvider = "cursor" | "kimiCode" | "hermes" | "zcode";
+export type NativeAgentProvider = "cursor" | "kimiCode" | "codebuddy" | "hermes" | "zcode";
 /** Only these providers install lifecycle hooks and write agent-status.json. */
 export type HookAgentProvider = Exclude<AgentProvider, "dsh" | "workbuddy" | "plugin" | NativeAgentProvider>;
 /** `waiting` (asked the user mid-turn) only comes from the session list, for Claude Code. */

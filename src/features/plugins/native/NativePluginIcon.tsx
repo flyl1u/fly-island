@@ -4,6 +4,7 @@ import feishuIcon from "../../../assets/brands/feishu.svg";
 import wecomIcon from "../../../assets/brands/wecom.svg";
 import cursorIcon from "../../../assets/brands/cursor.svg";
 import kimiCodeIcon from "../../../assets/brands/kimi-code.svg";
+import codebuddyIcon from "../../../assets/brands/codebuddy.svg";
 import zcodeIcon from "../../../assets/brands/zcode.svg";
 import hermesIcon from "../../../assets/brands/hermes.svg";
 import type { NativePluginId } from "./catalog";
@@ -15,6 +16,7 @@ export const NATIVE_PLUGIN_ICONS: Record<Exclude<NativePluginId, "clockWeather" 
   wecom: wecomIcon,
   cursor: cursorIcon,
   kimiCode: kimiCodeIcon,
+  codebuddy: codebuddyIcon,
   zcode: zcodeIcon,
   hermes: hermesIcon,
 };

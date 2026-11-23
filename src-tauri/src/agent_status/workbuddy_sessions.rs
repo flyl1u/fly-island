@@ -55,7 +55,7 @@ pub(super) struct Parsed {
     pub(super) working: bool,
 }
 
-type Stamp = (u64, i64);
+pub(super) type Stamp = (u64, i64);
 static CACHE: Mutex<Option<HashMap<PathBuf, (Stamp, Parsed)>>> = Mutex::new(None);
 
 /// WorkBuddy's data folder: `WORKBUDDY_CONFIG_DIR` when set, as WorkBuddy itself reads it.
@@ -64,6 +64,15 @@ pub(super) fn data_root(home: &Path) -> PathBuf {
         .map(PathBuf::from)
         .filter(|dir| !dir.as_os_str().is_empty())
         .unwrap_or_else(|| home.join(".workbuddy"))
+}
+
+/// Local command output, wrapped reminders and the note CodeBuddy writes after a command are not
+/// prompts the user typed; none names a session.
+fn is_local_command_note(text: &str) -> bool {
+    let text = text.trim_start();
+    text.starts_with("Caveat:")
+        || text.starts_with("<local-command")
+        || text.starts_with("<system-reminder")
 }
 
 fn texts(content: &Value, kind: &str) -> Option<String> {
@@ -95,7 +104,11 @@ pub(super) fn parse(text: &str) -> Parsed {
                 }
             }
             ("message", Some("user")) => {
-                if let Some(prompt) = texts(&record["content"], "input_text").as_deref().and_then(prompt_title) {
+                let prompt = texts(&record["content"], "input_text")
+                    .filter(|text| !is_local_command_note(text))
+                    .as_deref()
+                    .and_then(prompt_title);
+                if let Some(prompt) = prompt {
                     parsed.first_prompt.get_or_insert_with(|| prompt.clone());
                     parsed.last_prompt = Some(prompt);
                     parsed.last_prompt_at = record["timestamp"].as_i64();
@@ -117,6 +130,19 @@ pub(super) fn parse(text: &str) -> Parsed {
                 parsed.working = record["status"] != "completed" || !pending.is_empty();
             }
             ("function_call", _) => {
+                // The call already carries the model and the context size, so a turn that has not
+                // written a reply yet still shows both (CodeBuddy runs long tool-only turns).
+                let data = &record["providerData"];
+                if let Some(model) = data["requestModelName"]
+                    .as_str()
+                    .or_else(|| data["model"].as_str())
+                    .and_then(|model| shorten(model, 40))
+                {
+                    parsed.model = Some(model);
+                }
+                if let Some(tokens) = record["message"]["usage"]["total_tokens"].as_u64() {
+                    parsed.context_tokens = Some(tokens);
+                }
                 if let Some(id) = record["callId"].as_str() {
                     pending.push((id.to_string(), record.clone()));
                 }
@@ -156,7 +182,7 @@ fn read_excerpt(path: &Path, length: u64) -> Option<String> {
     Some(format!("{head}{tail}"))
 }
 
-fn parsed(path: &Path, stamp: Stamp) -> Option<Parsed> {
+pub(super) fn parsed(path: &Path, stamp: Stamp) -> Option<Parsed> {
     let mut cache = CACHE.lock().unwrap_or_else(PoisonError::into_inner);
     let entries = cache.get_or_insert_with(HashMap::new);
     if let Some((_, parsed)) = entries.get(path).filter(|(known, _)| *known == stamp) {

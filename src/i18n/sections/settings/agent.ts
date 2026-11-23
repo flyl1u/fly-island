@@ -15,7 +15,7 @@ export type SettingsAgentText = {
   sources: {
     title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string;
     /** Agents installed from the plugin market; their rows appear only once installed. */
-    native: Record<"cursor" | "kimiCode" | "hermes" | "zcode", string>;
+    native: Record<"cursor" | "kimiCode" | "codebuddy" | "hermes" | "zcode", string>;
   };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
   zcodeApiKey: {
@@ -83,6 +83,7 @@ export const zhCN: SettingsAgentText = {
     native: {
       cursor: "只读取 Cursor 本机的 Agent 对话。点击会话可切到对应的 Cursor 窗口。",
       kimiCode: "读取 Kimi Code CLI 的会话记录，并在 Agent 页显示套餐额度环。",
+      codebuddy: "读取 CodeBuddy CLI 的会话记录。点击会话可切到运行它的终端窗口。",
       hermes: "只读取 Hermes Agent 的会话记录。",
       zcode: "用 Z Code 客户端登录或 Coding Plan API Key，在 Agent 页显示套餐额度环。",
     } },
@@ -177,6 +178,7 @@ export const en: SettingsAgentText = {
     native: {
       cursor: "Reads Cursor's local agent chats, read-only. Select a session to bring its Cursor window forward.",
       kimiCode: "Reads Kimi Code CLI sessions and shows its plan's quota rings on the Agent page.",
+      codebuddy: "Reads CodeBuddy CLI sessions, read-only. Select a session to bring its terminal window forward.",
       hermes: "Reads Hermes Agent sessions, read-only.",
       zcode: "Shows Z Code's plan quota rings on the Agent page using its desktop sign-in or a Coding Plan API key.",
     } },

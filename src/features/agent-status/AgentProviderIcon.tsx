@@ -4,6 +4,7 @@ import deepseekIcon from "../../assets/brands/deepseek.png";
 import workbuddyIcon from "../../assets/brands/workbuddy.png";
 import cursorIcon from "../../assets/brands/cursor.svg";
 import kimiCodeIcon from "../../assets/brands/kimi-code.svg";
+import codebuddyIcon from "../../assets/brands/codebuddy.svg";
 import hermesIcon from "../../assets/brands/hermes.svg";
 import zcodeIcon from "../../assets/brands/zcode.svg";
 import type { AgentProvider } from "./api";
@@ -18,6 +19,7 @@ const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin">, string> = {
   workbuddy: workbuddyIcon,
   cursor: cursorIcon,
   kimiCode: kimiCodeIcon,
+  codebuddy: codebuddyIcon,
   hermes: hermesIcon,
   zcode: zcodeIcon,
 };

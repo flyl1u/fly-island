@@ -51,6 +51,7 @@ pub(crate) mod transfer;
 mod usage;
 mod wezterm;
 mod window_focus;
+mod codebuddy_sessions;
 mod workbuddy_auth;
 pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
@@ -291,6 +292,11 @@ pub async fn list_agent_sessions(
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions.extend(dsh_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
             sessions.extend(workbuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
+            if wants("codebuddy") {
+                sessions.extend(throttled(&CODEBUDDY, window_ms, || {
+                    codebuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)
+                }));
+            }
             if wants("cursor") {
                 sessions.extend(throttled(&CURSOR, window_ms, || cursor_sessions::list_sessions(current_unix_millis(), window_ms)));
             }
@@ -314,6 +320,7 @@ type NativeSessions = std::sync::Mutex<Option<(std::time::Instant, i64, Vec<sess
 static CURSOR: NativeSessions = std::sync::Mutex::new(None);
 static KIMI: NativeSessions = std::sync::Mutex::new(None);
 static HERMES: NativeSessions = std::sync::Mutex::new(None);
+static CODEBUDDY: NativeSessions = std::sync::Mutex::new(None);
 
 /// The plugin-market agents are read at most every two seconds: the island asks every second,
 /// and Cursor's store is a database rather than a file whose change time says enough.

@@ -25,6 +25,7 @@ export const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   plugin: "Plugin",
   cursor: "Cursor",
   kimiCode: "Kimi Code",
+  codebuddy: "CodeBuddy",
   hermes: "Hermes",
   zcode: "Z Code",
 };
