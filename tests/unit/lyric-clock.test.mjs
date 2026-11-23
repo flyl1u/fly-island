@@ -16,8 +16,8 @@ test("collapsing after time passed in the expanded island selects the current li
 test("late lyrics use elapsed playback, preserving the lead and song offset", () => {
   assert.equal(lyricClockAt(null, state, 1000, 0).index, -1);
   assert.equal(lyricClockAt(lines, state, 9800, 0).index, 2);
-  // A positive offset moves the lyrics on, so the next line shows sooner.
-  assert.equal(lyricClockAt(lines, state, 9800, 500).index, 2);
+  // A positive offset moves the lyrics back, so the previous line is still the current one.
+  assert.equal(lyricClockAt(lines, state, 9800, 500).index, 1);
   assert.equal(lyricClockAt(lines, { ...state, playbackStatus: "paused", positionMs: 5100 }, 9800, 0).index, 1);
 });
 
