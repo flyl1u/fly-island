@@ -6,8 +6,8 @@ import { checkArguments, type UpdateTarget } from "./updateChannel.ts";
 export type UpdateRequest =
   | { action: "snapshot" | "check" | "install" | "dismiss" | "beta" | "restore" }
   | { action: "auto"; enabled: boolean };
-const UPDATE_STATE_EVENT = "focusd-update-state";
-const UPDATE_REQUEST_EVENT = "focusd-update-request";
+const UPDATE_STATE_EVENT = "fly-island-update-state";
+const UPDATE_REQUEST_EVENT = "fly-island-update-request";
 
 export function listenUpdateState(callback: (state: UpdateState) => void) {
   return listen<UpdateState>(UPDATE_STATE_EVENT, (event) => callback(event.payload));
@@ -27,6 +27,10 @@ export function requestUpdateAction(request: UpdateRequest) {
 
 export function isUpdaterConfigured() {
   return invoke<boolean>("updater_configured");
+}
+
+export function isAutostartLaunch() {
+  return invoke<boolean>("is_autostart_launch");
 }
 
 export function getUpdaterProxy() {

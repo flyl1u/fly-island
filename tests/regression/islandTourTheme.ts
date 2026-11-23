@@ -16,7 +16,7 @@ export function checkTone(check: (condition: unknown, message: string) => void, 
   const stage = document.querySelector<HTMLElement>(".stage")!;
   const island = document.querySelector<HTMLElement>(".island")!;
   check(stage.dataset.tone === (light ? "light" : "dark"), `岛屿的明暗跟随背景（data-tone=${stage.dataset.tone}）`);
-  const background = luminance(getComputedStyle(island).backgroundColor);
+  const background = luminance(tourMaterialBackground(island));
   const probe = document.createElement("span");
   probe.style.color = "var(--text-3)";
   island.append(probe);
@@ -27,7 +27,7 @@ export function checkTone(check: (condition: unknown, message: string) => void, 
 }
 
 /**
- * The glass materials (?material=): drawn in CSS without any blur, liquid glass nearly clear with a
+ * The glass materials (?material=): liquid glass nearly clear with a
  * lit rim, frosted glass mostly opaque. <html> carries the material for the other windows.
  */
 export function checkMaterial(check: (condition: unknown, message: string) => void, material: string) {
@@ -35,9 +35,17 @@ export function checkMaterial(check: (condition: unknown, message: string) => vo
   const style = getComputedStyle(island);
   check(island.classList.contains(`island--material-${material}`) && document.documentElement.dataset.material === material,
     `岛屿和页面都标上了质感（${material}）`);
-  check(document.querySelector(".island__glass") && style.backdropFilter === "none", "玻璃只用 CSS 画，不模糊桌面");
-  const alpha = Number((style.backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1);
+  check(document.querySelector(".island__glass") && style.backdropFilter === "none", "玻璃亮边保留独立的 CSS 层");
+  const alpha = Number((tourMaterialBackground(island).match(/[\d.]+/g) ?? [])[3] ?? 1);
   check(material === "liquidGlass" ? alpha < 0.5 : alpha >= 0.6, `玻璃底色的不透明度合适（${alpha.toFixed(2)}）`);
+  const materialLayer = island.querySelector(".island__material")!;
+  const glassLayer = island.querySelector(".island__glass")!;
+  if (getComputedStyle(materialLayer).clipPath === "none") {
+    const surface = island.querySelector(".island__surface")!;
+    check(getComputedStyle(materialLayer).display === "contents" && getComputedStyle(surface).overflow === "hidden"
+      && getComputedStyle(glassLayer).borderRadius === getComputedStyle(surface).borderRadius,
+    "关闭贴边圆角时，玻璃仍由原岛身裁剪并继承同一圆角");
+  }
   // Inner panels (translation, the file shelf) swap their deep base (0.88) for a faint white mist.
   const probe = document.createElement("div");
   probe.style.background = "var(--inner-panel-fill)";
@@ -53,4 +61,42 @@ export function checkMaterial(check: (condition: unknown, message: string) => vo
     const rim = document.querySelector(".island__glass-refraction");
     check(rim && getComputedStyle(rim).boxShadow.includes("inset"), "液态玻璃有折射亮边");
   }
+}
+
+function tourMaterialBackground(island: HTMLElement) {
+  const material = getComputedStyle(island.querySelector(".island__material")!);
+  return material.clipPath === "none" ? getComputedStyle(island).backgroundColor : material.backgroundColor;
+}
+
+/** One live canvas stays on the window's coordinates under both shoulders and the island. */
+export function checkGlassShoulders(check: (condition: unknown, message: string) => void) {
+  const island = document.querySelector<HTMLElement>(".island")!;
+  const material = island.querySelector<HTMLElement>(".island__material")!;
+  const backdrop = material.querySelector<HTMLElement>(".island__glass-backdrop")!;
+  const canvas = backdrop.querySelector("canvas")!;
+  const rect = island.getBoundingClientRect();
+  const frame = canvas.getBoundingClientRect();
+  check(material.parentElement?.classList.contains("island__surface") && !material.querySelector(".island__glass, .island__expanded"),
+    "??????????????????????");
+  check(getComputedStyle(material).clipPath.startsWith("shape(")
+    && getComputedStyle(backdrop).display === "block" && getComputedStyle(canvas).position === "static",
+    "???????????????????");
+  check(Math.abs(frame.left - (rect.left + rect.width / 2 - innerWidth / 2)) < 0.05
+    && Math.abs(frame.width - innerWidth) < 0.05, "??????????????????????");
+}
+
+export function checkClassicShoulders(check: (condition: unknown, message: string) => void) {
+  const island = document.querySelector<HTMLElement>(".island")!;
+  const style = getComputedStyle(island);
+  const material = getComputedStyle(island.querySelector(".island__material")!);
+  const opacity = Number(style.getPropertyValue("--island-fill-alpha"));
+  const alpha = Number((tourMaterialBackground(island).match(/[\d.]+/g) ?? [])[3] ?? 1);
+  check(opacity === 0.8 && alpha === opacity, "???????????? 80%");
+  if (island.classList.contains("island--capsule")) {
+    check(!island.classList.contains("island--shoulders") && material.clipPath === "none", "???????????");
+    return;
+  }
+  check(style.backgroundColor === "rgba(0, 0, 0, 0)" && style.backgroundImage === "none"
+    && material.backgroundImage.includes("linear-gradient"), "????????????????????");
+  check(material.clipPath.startsWith("shape(") && material.maskImage === "none", "?????????????????");
 }

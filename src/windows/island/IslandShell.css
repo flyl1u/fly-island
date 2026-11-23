@@ -58,7 +58,8 @@
   color: var(--color-text);
   /* A flat fill, the same colour the collapsed island shows, without grid lines or shading.
      The opacity setting fades only this fill (stageStyle.ts), never the text on it. */
-  background: var(--island-fill, var(--island-background-color));
+  --island-material-fill: var(--island-fill, var(--island-background-color));
+  background: var(--island-material-fill);
   border: 0;
   overflow: visible;
   /*
@@ -139,7 +140,7 @@
   border-radius: 0 0 var(--island-shape-radius-collapsed) var(--island-shape-radius-collapsed);
   /* The island is a surface, not a link: only its small buttons show the hand. */
   cursor: default;
-  background:
+  --island-material-fill:
     /* The shading fades with the fill (classic opacity). */
     linear-gradient(180deg, color-mix(in srgb, var(--island-shade-top) calc(var(--island-fill-alpha, 1) * 100%), transparent), color-mix(in srgb, var(--island-shade-bottom) calc(var(--island-fill-alpha, 1) * 100%), transparent)),
     var(--island-fill, var(--island-background-color));

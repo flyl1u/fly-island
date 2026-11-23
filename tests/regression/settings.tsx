@@ -18,39 +18,37 @@ import { checkTodoRotation } from "./settingsTodoRotation";
 import { checkTodoFileSync } from "./settingsTodoFileSync";
 import { checkMessagePreview } from "./settingsMessagePreview";
 import { checkMusicShortcuts } from "./settingsMusicShortcuts";
+import { checkClockWeatherSettingsPage, prepareClockWeatherSettings } from "./clockWeatherSettings";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
-
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const restore = () => {
-  for (const key of Object.keys(localStorage).filter(key => key.startsWith("focusd-island-"))) {
+  for (const key of Object.keys(localStorage).filter(key => key.startsWith("fly-island-"))) {
     if (!original.has(key)) localStorage.removeItem(key);
   }
   for (const [key, value] of original) localStorage.setItem(key, value);
 };
 window.addEventListener("beforeunload", restore);
 
-localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "zh-CN");
+const locale = query.get("locale") === "en" ? "en" : "zh-CN";
+localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 // The checks below expect a customized look plus a General page choice that a reset must keep.
-if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
-else localStorage.removeItem("focusd-island-settings");
+if (automated) localStorage.setItem("fly-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
+else localStorage.removeItem("fly-island-settings");
 if (automated) prepareColorRegression();
-if (query.has("clockWeather")) {
-  localStorage.setItem("focusd-island-native-plugins", JSON.stringify(["clockWeather"]));
-  localStorage.setItem("focusd-island-clock-weather", JSON.stringify({ showClock: true, showWeather: true, location: { name: "北京 · 中国", latitude: 39.9, longitude: 116.4 } }));
-} else localStorage.removeItem("focusd-island-native-plugins");
-localStorage.setItem("focusd-island-save-directory", "");
-localStorage.removeItem("focusd-island-todo-file-sync");
-localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+prepareClockWeatherSettings(query.has("clockWeather"), automated);
+localStorage.setItem("fly-island-save-directory", "");
+localStorage.removeItem("fly-island-todo-file-sync");
+localStorage.setItem("fly-island-qq-notification-access-requested", "true");
 // Other pages in the same run leave their own agent settings behind; start from the defaults.
-localStorage.removeItem("focusd-island-agent-approval");
-localStorage.removeItem("focusd-island-agent-sounds");
-localStorage.removeItem("focusd-island-detached-settings");
-localStorage.removeItem("focusd-island-music-shortcuts");
+localStorage.removeItem("fly-island-agent-approval");
+localStorage.removeItem("fly-island-agent-sounds");
+localStorage.removeItem("fly-island-detached-settings");
+localStorage.removeItem("fly-island-music-shortcuts");
 // The player order as the old Music page saved it.
-localStorage.setItem("focusd-island-music-sources", JSON.stringify([{ id: "Spotify.exe", label: "Spotify" }, { id: "QQMusic", label: "QQ音乐" }]));
+localStorage.setItem("fly-island-music-sources", JSON.stringify([{ id: "Spotify.exe", label: "Spotify" }, { id: "QQMusic", label: "QQ音乐" }]));
 
 const root = createRoot(document.getElementById("root")!);
 const mount = () => root.render(<StrictMode><I18nProvider><SettingsWindow /></I18nProvider></StrictMode>);
@@ -101,7 +99,7 @@ if (!automated) {
       const panel = element(".editor-panel");
       check(item.getAttribute("aria-current") === "page", `${category}: the sidebar marks the open page`);
       check(element(".settings-page__title").textContent === item.textContent, `${category}: the page title matches the sidebar`);
-      check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
+      check(panel.querySelector(".settings-group, .settings-section, .plugin-market"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
@@ -122,7 +120,10 @@ if (!automated) {
       // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
       // Music 8 -> 9: the Apple Music official lyrics switch (its token rows are always shown, next to it).
       // 2026-11-19: the tucked look (+1) moves from general (16 -> 15) to appearance (22 -> 23).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 17 : category === "appearance" ? 24 : category === "clipboard" || category === "todos" ? 9 : category === "music" ? 9 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 17 : category === "appearance" ? 24 : category === "clipboard" ? 10 : category === "todos" ? 9 : category === "music" ? 9 : 8;
+      if (category === "clipboard") check([...panel.querySelectorAll("label")].some((label) =>
+        label.textContent === "悬停时预览完整内容" && label.control?.matches('[role="switch"]:not(:checked)')),
+      "Clipboard hover preview defaults off in settings");
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
@@ -135,8 +136,8 @@ if (!automated) {
           Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(slider, "16");
           slider.dispatchEvent(new Event("input", { bubbles: true }));
         });
-        check(JSON.parse(localStorage.getItem("focusd-island-settings")!).topEdgeShoulderSize === 16
-          && JSON.parse(localStorage.getItem("focusd-island-panel-preview")!).mode === "collapsed", "Dragging curves saves each step and previews the attached collapsed shape");
+        check(JSON.parse(localStorage.getItem("fly-island-settings")!).topEdgeShoulderSize === 16
+          && JSON.parse(localStorage.getItem("fly-island-panel-preview")!).mode === "collapsed", "Dragging curves saves each step and previews the attached collapsed shape");
         await act(async () => toggle.click());
         check(!size(), "Disabling curves hides the slider again");
       }
@@ -151,7 +152,8 @@ if (!automated) {
       check(category === "messages" || rowCount <= maxRows, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
-      && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");
+      && settingsCategoryFor("shelf") === "clipboard" && settingsCategoryFor("weather") === "clockWeather", "Old names of merged pages open the page they became");
+    if (query.has("clockWeather")) await checkClockWeatherSettingsPage(locale, openPage, click, check);
     if (PLUGINS_ENABLED) {
       await openPage("plugins");
       const plugins = element(".editor-panel .plugins-settings");
@@ -180,10 +182,10 @@ if (!automated) {
     check(detachedSwitch?.checked && !commands.includes("dock_settings_window"), "Settings start in a separate window by default");
     await act(async () => { detachedSwitch!.click(); });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-    check(localStorage.getItem("focusd-island-detached-settings") === "false" && commands.includes("dock_settings_window"),
+    check(localStorage.getItem("fly-island-detached-settings") === "false" && commands.includes("dock_settings_window"),
       "Switching it off from the window moves settings back into the island");
     await act(async () => { detachedSwitch!.click(); });
-    check(localStorage.getItem("focusd-island-detached-settings") === "true" && detachedSwitch!.checked,
+    check(localStorage.getItem("fly-island-detached-settings") === "true" && detachedSwitch!.checked,
       "Choosing the separate window is saved on its own");
     const lockRow = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "锁定小岛位置");
     const lockSwitch = lockRow?.querySelector<HTMLInputElement>("[role='switch']");
@@ -191,7 +193,7 @@ if (!automated) {
     await act(async () => { lockSwitch!.click(); });
     await openPage("appearance");
     await openPage("general");
-    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { positionLocked?: boolean }).positionLocked === true
+    check((JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}") as { positionLocked?: boolean }).positionLocked === true
       && [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.textContent?.includes("锁定小岛位置"))?.querySelector<HTMLInputElement>("[role='switch']")?.checked,
       "Locking the position is saved and stays on after changing pages");
 
@@ -201,8 +203,8 @@ if (!automated) {
     check(agentPolls() === pollsAway, "Agent status is not polled while its page is closed");
 
     await act(async () => {
-      localStorage.setItem("focusd-island-settings-focus", JSON.stringify({ section: "savePath", requestedAt: Date.now() }));
-      window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings-focus", newValue: "x", storageArea: localStorage }));
+      localStorage.setItem("fly-island-settings-focus", JSON.stringify({ section: "savePath", requestedAt: Date.now() }));
+      window.dispatchEvent(new StorageEvent("storage", { key: "fly-island-settings-focus", newValue: "x", storageArea: localStorage }));
     });
     check(element(".settings-sidebar__item[data-category='todos']").getAttribute("aria-current") === "page", "A save path request from the island opens the todos page");
     check(document.querySelector(".editor-panel .save-path-panel--attention"), "A save path request from the island highlights the save path");
@@ -230,7 +232,7 @@ if (!automated) {
     await act(async () => { element<HTMLButtonElement>(".mail-settings__form button[type='submit']").click(); });
     check(mailCalls.some((call) => call.command === "connect_qq_mail" && call.args.host === "imap.example.edu.cn") && rows().length === 2,
       "Adding a mailbox sends the typed server and lists it");
-    const saved = JSON.parse(localStorage.getItem("focusd-island-qq-mail-settings") ?? "{}") as { accounts?: { email: string; host: string }[] };
+    const saved = JSON.parse(localStorage.getItem("fly-island-qq-mail-settings") ?? "{}") as { accounts?: { email: string; host: string }[] };
     check(saved.accounts?.some((account) => account.email === "new@example.edu.cn" && account.host === "imap.example.edu.cn"),
       "The typed server is saved with the mailbox");
 
@@ -261,13 +263,13 @@ if (!automated) {
     const agentRow = (title: string) => [...document.querySelectorAll<HTMLElement>(".editor-panel .settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === title);
     for (const [title, stored] of [["Claude Code", "agentShowClaudeCode"], ["Codex", "agentShowCodex"], ["DeepSeek Harness（DSH）", "agentShowDsh"]] as [string, string][]) {
       const sourceSwitch = agentRow(title)?.querySelector<HTMLInputElement>("[role='switch']"); check(sourceSwitch?.checked, `${title} source is enabled by default`);
-      await act(async () => { sourceSwitch!.click(); }); check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as Record<string, boolean>)[stored] === false, `Switching ${title} off persists`);
+      await act(async () => { sourceSwitch!.click(); }); check((JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}") as Record<string, boolean>)[stored] === false, `Switching ${title} off persists`);
     }
     check(!document.querySelector(".session-filter__form"), "Hide-session rules are no longer offered");
     const soundSwitch = agentRow("AI Agent 音效")?.querySelector<HTMLInputElement>("[role='switch']");
     check(soundSwitch?.checked, "Agent sounds are a single switch on the sessions page, on by default");
     await act(async () => { soundSwitch!.click(); });
-    check((JSON.parse(localStorage.getItem("focusd-island-agent-sounds") ?? "{}") as { enabled?: boolean }).enabled === false, "Switching agent sounds off is saved");
+    check((JSON.parse(localStorage.getItem("fly-island-agent-sounds") ?? "{}") as { enabled?: boolean }).enabled === false, "Switching agent sounds off is saved");
     const approvalSwitch = agentRow("在岛上允许或拒绝 Agent 的操作")?.querySelector<HTMLInputElement>("[role='switch']");
     check(approvalSwitch && !approvalSwitch.checked, "Approving on the island sits on the sessions page, off by default");
 
@@ -284,7 +286,7 @@ if (!automated) {
     await act(async () => {
       document.querySelectorAll<HTMLElement>(".reorder-list__handle")[2].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
     });
-    const savedPlayers = JSON.parse(localStorage.getItem("focusd-island-music-sources") ?? "[]") as { id: string; label: string }[];
+    const savedPlayers = JSON.parse(localStorage.getItem("fly-island-music-sources") ?? "[]") as { id: string; label: string }[];
     check(players().join() === "Spotify,网易云音乐,QQ音乐" && savedPlayers.map((source) => source.id).join() === "Spotify.exe,cloudmusic.exe,QQMusic"
       && savedPlayers[1].label === "网易云音乐", "Moving a player saves the order in the same key and format");
 
@@ -305,7 +307,7 @@ if (!automated) {
       await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     };
     const recordButtonText = () => element(".editor-panel .shortcut-record-button").textContent;
-    const storedShortcut = () => (JSON.parse(localStorage.getItem("focusd-island-translation-settings") ?? "{}") as { shortcut?: string }).shortcut;
+    const storedShortcut = () => (JSON.parse(localStorage.getItem("fly-island-translation-settings") ?? "{}") as { shortcut?: string }).shortcut;
     await openPage("translation");
     await record({ key: "!", code: "Digit1", ctrlKey: true, shiftKey: true }, { focusMoves: false });
     check(translationShortcutCalls[translationShortcutCalls.length - 1] === "Ctrl+Shift+1" && storedShortcut() === "Ctrl+Shift+1",
@@ -351,11 +353,11 @@ if (!automated) {
 
     // About: one group holds the community group (red dots lead to it until it is opened), the star
     // and the tip; no update row, history or issue links (the changelog and the group took them over).
-    localStorage.removeItem("focusd-island-community-invite-seen");
-    await act(async () => { window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-community-invite-seen" })); });
+    localStorage.removeItem("fly-island-community-invite-seen");
+    await act(async () => { window.dispatchEvent(new StorageEvent("storage", { key: "fly-island-community-invite-seen" })); });
     check(document.querySelector("[data-category='about'] .settings-sidebar__dot"), "Until the invite is seen, About carries a red dot");
     await openPage("about");
-    check(!document.querySelector(".settings-sidebar__dot, .community-group__dot") && localStorage.getItem("focusd-island-community-invite-seen") === "true",
+    check(!document.querySelector(".settings-sidebar__dot, .community-group__dot") && localStorage.getItem("fly-island-community-invite-seen") === "true",
       "One click on About clears the red dots for good");
     const linkCard = [...document.querySelectorAll<HTMLElement>(".settings-group__card")].find((card) => card.querySelector(".project-link"));
     const linkTitles = [...(linkCard?.querySelectorAll<HTMLElement>(".project-link__copy strong") ?? [])].map((title) => title.textContent);

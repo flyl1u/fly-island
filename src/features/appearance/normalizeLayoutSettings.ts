@@ -4,6 +4,7 @@ import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { TODO_VISIBLE_ROWS, CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_PADDING, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
 import { CAPSULE_SHAPE_ENABLED } from "./islandShape.ts";
+import { normalizeLocalFontFamily } from "./localFont.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
@@ -30,11 +31,16 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
   const collapsedScale = hasPreviousDefaultScales
     ? 0.82
     : settings?.collapsedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.collapsedScale;
+  const pageButtonStyle = settings?.pageButtonStyle;
+  const font = settings?.fontFamily;
   return {
     topEdgeLayoutVersion: 1,
-    fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
+    fontFamily: font === "pixel" || font === "local" ? font : "system",
+    localFontFamily: normalizeLocalFontFamily(settings?.localFontFamily),
     islandFontPercent: normalizeSize(settings?.islandFontPercent, ISLAND_FONT_PERCENT),
-    pageButtonStyle: settings?.pageButtonStyle === "capsule" ? "capsule" : DEFAULT_SETTINGS.pageButtonStyle,
+    pageButtonStyle: pageButtonStyle === "capsule" || pageButtonStyle === "icon" || pageButtonStyle === "iconLabel"
+      ? pageButtonStyle
+      : DEFAULT_SETTINGS.pageButtonStyle,
     material: normalizeMaterial(settings),
     colorScheme: settings?.colorScheme === "light" || settings?.colorScheme === "system" ? settings.colorScheme : DEFAULT_SETTINGS.colorScheme,
     glassIntensity: clamp(
@@ -76,6 +82,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     topEdgeShoulderSize: normalizeSize(settings?.topEdgeShoulderSize, TOP_EDGE_SHOULDER_SIZE),
     // Clipboard: retain the user's visible row count, including older saved values.
     clipboardVisibleRows: normalizeSize(settings?.clipboardVisibleRows, CLIPBOARD_VISIBLE_ROWS),
+    clipboardHoverPreview: settings?.clipboardHoverPreview === true,
     todoVisibleRows: normalizeSize(settings?.todoVisibleRows, TODO_VISIBLE_ROWS),
     // Clipboard: only an explicit saved true opens the separate window.
     clipboardDetached: settings?.clipboardDetached === true,

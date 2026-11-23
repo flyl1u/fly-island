@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Duration;
 
-use super::snapshot::current_unix_millis;
+use super::{snapshot::current_unix_millis, workbuddy_auth::AuthError};
 
 pub(super) const USAGE_PAGE: &str = "https://www.workbuddy.cn/profile/plans-usage";
 pub(super) const SUMMARY_URL: &str =
@@ -20,22 +20,19 @@ pub(crate) struct WorkbuddyUsage {
     updated_at: i64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum ReadError {
-    LoginRequired,
-    Unavailable,
-}
-
 #[derive(Deserialize)]
 struct Summary {
-    code: i64,
+    code: Option<i64>,
+    error: Option<String>,
     data: Option<SummaryData>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct SummaryData {
-    packages: Vec<Package>,
+    packages: Option<Vec<Package>>,
+    #[serde(rename = "msg")]
+    message: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -55,72 +52,100 @@ fn amount(value: Option<Value>) -> Option<f64> {
     (value.is_finite() && value >= 0.0).then_some(value)
 }
 
-fn parse_summary(body: &[u8], now: i64) -> Option<WorkbuddyUsage> {
-    let summary: Summary = serde_json::from_slice(body).ok()?;
-    if summary.code != 0 {
-        return None;
+fn parse_summary(body: &[u8], now: i64) -> Result<WorkbuddyUsage, AuthError> {
+    let summary: Summary = serde_json::from_slice(body).map_err(|_| AuthError::InvalidResponse)?;
+    if summary.error.as_deref() == Some("invalid_token")
+        || summary
+            .data
+            .as_ref()
+            .and_then(|data| data.message.as_deref())
+            == Some("登录态已失效，请重新登录")
+    {
+        return Err(AuthError::NotLoggedIn);
     }
+    if summary.code != Some(0) {
+        return Err(AuthError::InvalidResponse);
+    }
+    let packages = summary
+        .data
+        .and_then(|data| data.packages)
+        .ok_or(AuthError::InvalidResponse)?;
     let mut total = 0.0;
     let mut remaining = 0.0;
     let mut has_credits = false;
     // The summary already includes bonus and reward packages. CreditGroups describes the same credits.
-    for package in summary.data?.packages {
+    for package in packages {
         if package.capacity_unit != "credits" {
             continue;
         }
         has_credits = true;
-        total += amount(package.cycle_total_capacity)?;
-        remaining += amount(package.cycle_remain_capacity)?;
+        total += amount(package.cycle_total_capacity).ok_or(AuthError::InvalidResponse)?;
+        remaining += amount(package.cycle_remain_capacity).ok_or(AuthError::InvalidResponse)?;
     }
-    (has_credits && total.is_finite() && remaining.is_finite()).then_some(WorkbuddyUsage {
-        total,
-        remaining,
-        updated_at: now,
-    })
+    (has_credits && total.is_finite() && remaining.is_finite())
+        .then_some(WorkbuddyUsage {
+            total,
+            remaining,
+            updated_at: now,
+        })
+        .ok_or(AuthError::InvalidResponse)
+}
+
+fn status_result(status: StatusCode) -> Result<(), AuthError> {
+    match status {
+        StatusCode::OK => Ok(()),
+        StatusCode::UNAUTHORIZED => Err(AuthError::Unauthorized),
+        StatusCode::FORBIDDEN => Err(AuthError::Forbidden),
+        status => Err(AuthError::HttpStatus(status.as_u16())),
+    }
+}
+
+fn transport_error(error: reqwest::Error) -> AuthError {
+    if error.is_timeout() {
+        AuthError::Timeout
+    } else {
+        AuthError::Network
+    }
 }
 
 pub(super) async fn query(
     url: Url,
-    mut cookie: header::HeaderValue,
+    cookie: Option<header::HeaderValue>,
     user_agent: &str,
-) -> Result<WorkbuddyUsage, ReadError> {
-    cookie.set_sensitive(true);
+) -> Result<WorkbuddyUsage, AuthError> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(8))
         .redirect(Policy::none())
         .build()
-        .map_err(|_| ReadError::Unavailable)?;
-    let mut response = client
+        .map_err(transport_error)?;
+    let mut request = client
         .post(url)
         .header(header::ACCEPT, "application/json")
         .header(header::USER_AGENT, user_agent)
         .header(header::ORIGIN, "https://www.workbuddy.cn")
         .header(header::REFERER, USAGE_PAGE)
-        .header(header::COOKIE, cookie)
         .header(header::CONTENT_TYPE, "application/json")
-        .body("{}")
-        .send()
-        .await
-        .map_err(|_| ReadError::Unavailable)?;
-    match response.status() {
-        StatusCode::OK => {}
-        StatusCode::UNAUTHORIZED => return Err(ReadError::LoginRequired),
-        _ => return Err(ReadError::Unavailable),
+        .body("{}");
+    if let Some(mut cookie) = cookie {
+        cookie.set_sensitive(true);
+        request = request.header(header::COOKIE, cookie);
     }
+    let mut response = request.send().await.map_err(transport_error)?;
+    status_result(response.status())?;
     if response
         .content_length()
         .is_some_and(|size| size > MAX_RESPONSE_BYTES as u64)
     {
-        return Err(ReadError::Unavailable);
+        return Err(AuthError::InvalidResponse);
     }
     let mut body = Vec::new();
-    while let Some(chunk) = response.chunk().await.map_err(|_| ReadError::Unavailable)? {
+    while let Some(chunk) = response.chunk().await.map_err(transport_error)? {
         if body.len() + chunk.len() > MAX_RESPONSE_BYTES {
-            return Err(ReadError::Unavailable);
+            return Err(AuthError::InvalidResponse);
         }
         body.extend_from_slice(&chunk);
     }
-    parse_summary(&body, current_unix_millis()).ok_or(ReadError::Unavailable)
+    parse_summary(&body, current_unix_millis())
 }
 
 #[cfg(test)]
@@ -146,9 +171,47 @@ mod tests {
         let zero = br#"{"code":0,"data":{"Packages":[{"CapacityUnit":"credits","CycleTotalCapacity":"100","CycleRemainCapacity":"0"}]}}"#;
         assert_eq!(parse_summary(zero, 0).unwrap().remaining, 0.0);
         let no_packages = br#"{"code":0,"data":{"Packages":[]}}"#;
-        assert_eq!(parse_summary(no_packages, 0), None);
-        let bad_amount = br#"{"code":0,"data":{"Packages":[{"CapacityUnit":"credits","CycleTotalCapacity":"100","CycleRemainCapacity":"NaN"}]}}"#;
-        assert_eq!(parse_summary(bad_amount, 0), None);
-        assert_eq!(parse_summary(br#"{"code":400,"data":null}"#, 0), None);
+        assert_eq!(
+            parse_summary(no_packages, 0),
+            Err(AuthError::InvalidResponse)
+        );
+        let bad_amount = br#"{"code":0,"data":{"Packages":[{"CapacityUnit":"credits","CycleTotalCapacity":"NaN","CycleRemainCapacity":"0"}]}}"#;
+        assert_eq!(
+            parse_summary(bad_amount, 0),
+            Err(AuthError::InvalidResponse)
+        );
+        assert_eq!(
+            parse_summary(br#"{"code":400,"data":null}"#, 0),
+            Err(AuthError::InvalidResponse)
+        );
+    }
+
+    #[test]
+    fn only_explicit_auth_errors_count_as_rejections() {
+        assert_eq!(
+            status_result(StatusCode::UNAUTHORIZED),
+            Err(AuthError::Unauthorized)
+        );
+        assert_eq!(
+            status_result(StatusCode::FORBIDDEN),
+            Err(AuthError::Forbidden)
+        );
+        assert_eq!(
+            status_result(StatusCode::SERVICE_UNAVAILABLE),
+            Err(AuthError::HttpStatus(503))
+        );
+        assert_eq!(
+            status_result(StatusCode::FOUND),
+            Err(AuthError::HttpStatus(302))
+        );
+        for body in [
+            r#"{"error":"invalid_token","data":null}"#,
+            r#"{"data":{"msg":"登录态已失效，请重新登录"}}"#,
+        ] {
+            assert_eq!(
+                parse_summary(body.as_bytes(), 0),
+                Err(AuthError::NotLoggedIn)
+            );
+        }
     }
 }

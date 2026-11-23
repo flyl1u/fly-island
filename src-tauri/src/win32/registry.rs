@@ -7,13 +7,19 @@ use windows::{
     core::HSTRING,
     Win32::{
         Foundation::ERROR_FILE_NOT_FOUND,
-        System::Registry::{RegDeleteKeyValueW, RegGetValueW, RegSetKeyValueW, HKEY, REG_SZ, RRF_RT_REG_SZ},
+        System::Registry::{
+            RegDeleteKeyValueW, RegGetValueW, RegSetKeyValueW, HKEY, REG_BINARY, REG_SZ, RRF_RT_REG_BINARY,
+            RRF_RT_REG_SZ,
+        },
     },
 };
 
 /// UTF-16 units read per value, including the terminating NUL. Longer values
 /// fail with `ERROR_MORE_DATA` and are reported as missing.
 const MAX_STRING_UNITS: usize = 2048;
+/// StartupApproved values are short binary blobs; keep malformed or unexpectedly large values
+/// out of the caller instead of allocating based on registry data.
+const MAX_BINARY_BYTES: usize = 64;
 
 /// Reads a `REG_SZ` value under `root\subkey`. Returns `None` when the key or
 /// value does not exist, is not a string, or does not fit in the buffer.
@@ -46,7 +52,32 @@ pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<Strin
     Some(String::from_utf16_lossy(&data[..length]))
 }
 
-
+/// Reads a `REG_BINARY` value under `root\\subkey`. Returns `None` when the key or value does
+/// not exist, is not binary, or does not fit in the bounded buffer.
+pub(crate) fn read_binary(root: HKEY, subkey: &str, value: &str) -> Option<Vec<u8>> {
+    let subkey = HSTRING::from(subkey);
+    let value = HSTRING::from(value);
+    let mut data = [0u8; MAX_BINARY_BYTES];
+    let mut bytes = data.len() as u32;
+    // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the call.
+    // `data` is a writable buffer of exactly `bytes` bytes, and `bytes` is a valid in/out
+    // pointer; RegGetValueW writes at most that many bytes.
+    let result = unsafe {
+        RegGetValueW(
+            root,
+            &subkey,
+            &value,
+            RRF_RT_REG_BINARY,
+            None,
+            Some(data.as_mut_ptr().cast()),
+            Some(&mut bytes),
+        )
+    };
+    if result.is_err() || bytes as usize > data.len() {
+        return None;
+    }
+    Some(data[..bytes as usize].to_vec())
+}
 
 /// Writes `data` as the `REG_SZ` value `value` under `root\subkey`, creating the key if needed.
 pub(crate) fn write_string(root: HKEY, subkey: &str, value: &str, data: &str) -> windows::core::Result<()> {
@@ -57,6 +88,16 @@ pub(crate) fn write_string(root: HKEY, subkey: &str, value: &str, data: &str) ->
     // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the call, and
     // `wide` is a NUL-terminated buffer of exactly `bytes` bytes that RegSetKeyValueW only reads.
     unsafe { RegSetKeyValueW(root, &subkey, &value, REG_SZ.0, Some(wide.as_ptr().cast()), bytes) }.ok()
+}
+
+/// Writes `data` as the `REG_BINARY` value `value` under `root\subkey`, creating the key if needed.
+pub(crate) fn write_binary(root: HKEY, subkey: &str, value: &str, data: &[u8]) -> windows::core::Result<()> {
+    let subkey = HSTRING::from(subkey);
+    let value = HSTRING::from(value);
+    let bytes = u32::try_from(data.len()).map_err(|_| windows::core::Error::from(windows::Win32::Foundation::E_INVALIDARG))?;
+    // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the call, and
+    // `data` is a buffer of exactly `bytes` bytes that RegSetKeyValueW only reads.
+    unsafe { RegSetKeyValueW(root, &subkey, &value, REG_BINARY.0, Some(data.as_ptr().cast()), bytes) }.ok()
 }
 
 /// Deletes the value `value` under `root\subkey`; a value or key that is already gone is fine.
@@ -96,7 +137,7 @@ mod tests {
 
     #[test]
     fn missing_keys_and_values_read_as_none() {
-        let missing_key = r"Software\FocuSD\NoSuchKey";
+        let missing_key = r"Software\Fly Island\NoSuchKey";
         assert_eq!(read_string(HKEY_CURRENT_USER, missing_key, "Value"), None);
         assert_eq!(
             read_string(HKEY_LOCAL_MACHINE, CURRENT_VERSION, "NoSuchValue"),

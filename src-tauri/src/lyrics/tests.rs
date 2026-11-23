@@ -8,7 +8,7 @@ fn found(lrc: &str, translation: Option<&str>) -> FoundLyrics {
 
 #[test]
 fn the_cache_keeps_lyrics_with_their_source_and_recent_misses() {
-    let dir = std::env::temp_dir().join(format!("focusd-lyrics-cache-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("fly-island-lyrics-cache-{}", std::process::id()));
     let now = 1_800_000_000;
     assert_eq!(read_cache(&dir, "a", now), None);
     write_cache(&dir, "a", Some(&("kugou", found("[00:01.00]x", Some("[00:01.00]译")))), now);
@@ -154,7 +154,7 @@ fn apple_lyrics_cached_under_the_plain_key_are_dropped_when_they_may_not_be_used
 
 #[test]
 fn pruning_keeps_the_newest_files() {
-    let dir = std::env::temp_dir().join(format!("focusd-lyrics-prune-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("fly-island-lyrics-prune-{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     for name in ["1", "2", "3"] {
         fs::write(dir.join(name), name).unwrap();

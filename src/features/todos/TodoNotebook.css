@@ -16,26 +16,6 @@
   grid-template-rows: auto minmax(0, 1fr);
 }
 
-.todo-calendar {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: clamp(186px, 42%, 218px) minmax(0, 1fr);
-  gap: var(--space-xl);
-}
-
-.todo-date-overview__sidebar {
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--space-xs);
-  padding: var(--space-sm);
-  background: var(--color-white-a04);
-  border: 1px solid var(--color-white-a08);
-  border-radius: var(--corner-sm);
-  corner-shape: var(--corner-shape);
-}
-
 .todo-notebook__topline {
   min-height: 22px;
   display: flex;

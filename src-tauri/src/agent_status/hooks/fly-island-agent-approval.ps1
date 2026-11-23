@@ -1,5 +1,5 @@
 # Codex PermissionRequest hook: Codex has no HTTP hooks, so this forwards the hook input to
-# FocuSD Island's approval endpoint (src-tauri/src/agent_approval) and prints its answer, which is
+# Fly Island's approval endpoint (src-tauri/src/agent_approval) and prints its answer, which is
 # already in the format Codex reads. The endpoint's address and token are read from
 # agent-approval.json next to this script on every run, so a changed port needs no reinstall.
 # It prints nothing, and Codex asks in the terminal as usual, when the island is not running,

@@ -20,7 +20,8 @@ const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot
 });
 let mailboxes: MailSnapshot[] = [mailbox("demo@qq.com"), mailbox("louis@163.com", { status: "authRequired", enabled: false, unreadCount: null })];
 let replyMarkerOn = false;
-export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-island-reply-marker.md", content: "<!-- focusd-island: reply marker v2 -->\n## Reply status marker" };
+let zcodeApiKeySettings = { platform: "bigmodel", hasKey: false, maskedKey: null as string | null };
+export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\fly-island-reply-marker.md", content: "<!-- fly-island: reply marker v2 -->\n## Reply status marker" };
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
 export const translationShortcutCalls: string[] = [];
@@ -31,7 +32,12 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "list_installed_fonts": return [
+      { family: "Consolas", label: "Consolas" },
+      { family: "Microsoft YaHei", label: args.locale === "zh-CN" ? "微软雅黑" : "Microsoft YaHei" },
+    ];
     case "search_weather_cities": return [{ name: "北京 · 中国", latitude: 39.9, longitude: 116.4 }];
+    case "locate_weather": return { location: { name: "深圳市 · 广东省", latitude: 22.54, longitude: 114.06 }, source: "windows" };
     case "get_current_weather": return { temperature: 23, code: 2, observedAt: Date.now(), fetchedAt: Date.now() };
     case "get_workbuddy_usage": {
       if (args.refreshNow) return setMockWorkbuddy({ status: "connected", usage: { remaining: 50, total: 500, updatedAt: Date.now() } }).then(() => workbuddy);
@@ -53,6 +59,7 @@ mockIPC((command, payload) => {
     // Two players open, NetEase playing; Spotify is in the saved order but not open.
     case "get_media_state": return { sessions: [{ id: "QQMusic", label: "QQ音乐", playing: false }, { id: "cloudmusic.exe", label: "网易云音乐", playing: true }] };
     case "get_launch_at_startup": return false;
+    case "is_launch_at_startup_disabled": return false;
     case "get_config_import_report": return null;
     case "dismiss_config_import_report": return null;
     case "export_config": return true;
@@ -66,7 +73,19 @@ mockIPC((command, payload) => {
     case "set_clipboard_history_settings":
       clipboardSettings = { ...clipboardSettings, ...(args.settings as object | undefined) };
       return { settings: clipboardSettings, items: [] };
-    case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\agent-status.json" };
+    case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.flyisland.app\\agent-status.json" };
+    case "get_zcode_api_key_settings": return zcodeApiKeySettings;
+    case "save_zcode_api_key_settings":
+      zcodeApiKeySettings = {
+        platform: String(args.platform),
+        hasKey: args.apiKey === null ? zcodeApiKeySettings.hasKey : Boolean(args.apiKey),
+        maskedKey: args.apiKey === null ? zcodeApiKeySettings.maskedKey : args.apiKey ? "********" : null,
+      };
+      return zcodeApiKeySettings;
+    case "clear_zcode_api_key": zcodeApiKeySettings = { ...zcodeApiKeySettings, hasKey: false, maskedKey: null }; return zcodeApiKeySettings;
+    case "get_zcode_usage": return zcodeApiKeySettings.hasKey ? {
+      updatedAt: Date.now(), fiveHour: { name: "", used: 10, resetsAt: null }, sevenDay: { name: "", used: 20, resetsAt: null }, models: [], plan: "Coding Plan", source: "zcode",
+    } : null;
     case "get_qq_mail_state": return mailboxes;
     case "connect_qq_mail":
     case "disconnect_qq_mail":

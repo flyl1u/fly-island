@@ -137,7 +137,7 @@ mod tests {
         let expected = std::env::var("PATH").ok();
         assert!(expected.is_some());
         assert_eq!(environment_variable(std::process::id(), "path"), expected);
-        assert_eq!(environment_variable(std::process::id(), "FOCUSD_SURELY_UNSET_VARIABLE"), None);
+        assert_eq!(environment_variable(std::process::id(), "FLY_ISLAND_SURELY_UNSET_VARIABLE"), None);
         assert_eq!(environment_variable(u32::MAX, "PATH"), None);
     }
 

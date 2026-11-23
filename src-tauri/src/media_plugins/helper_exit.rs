@@ -103,7 +103,7 @@ pub(super) fn split_report(args: &[String]) -> (&[String], Option<PathBuf>) {
 
 /// A fresh report path for one helper run, in the user's temp folder.
 pub(super) fn report_path() -> PathBuf {
-    std::env::temp_dir().join(format!("focusd-plugin-helper-{}.txt", unique_suffix()))
+    std::env::temp_dir().join(format!("fly-island-plugin-helper-{}.txt", unique_suffix()))
 }
 
 /// Reads and removes the report; `None` when the helper wrote none, for example

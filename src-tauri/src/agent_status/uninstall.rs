@@ -12,7 +12,7 @@ use std::{fs, path::Path};
 use serde_json::Value;
 
 use super::{
-    claude_hooks::{remove_managed_claude_code_hooks, value_contains_focusd_hook_signature},
+    claude_hooks::{remove_managed_claude_code_hooks, value_contains_fly_island_hook_signature},
     codex_hooks::remove_managed_codex_hook_block,
     reply_marker, write_text_file,
 };
@@ -37,6 +37,7 @@ pub(crate) fn handle_startup() {
 
 fn remove_all() -> Result<(), String> {
     let home = crate::system::windows_home_dir()?;
+    crate::legacy_migration::remove_hook_files_everywhere();
     let mut errors = Vec::new();
     for result in [
         remove_codex_hooks(&home.join(".codex").join("config.toml")),
@@ -96,7 +97,7 @@ pub(super) fn without_island_hooks(config: &mut Value) -> bool {
     let ours: Vec<String> = hooks
         .iter()
         .filter(|(_, entries)| {
-            matches!(entries, Value::Array(list) if list.iter().any(value_contains_focusd_hook_signature))
+            matches!(entries, Value::Array(list) if list.iter().any(value_contains_fly_island_hook_signature))
         })
         .map(|(name, _)| name.clone())
         .collect();
@@ -126,7 +127,7 @@ mod tests {
     #[test]
     fn only_the_island_hooks_come_out_of_claude_settings() {
         let ours = super::super::claude_hooks::claude_code_status_hook_entry(
-            Path::new("C:/Users/me/AppData/Roaming/com.focusd.island/focusd-agent-status.ps1"),
+            Path::new("C:/Users/me/AppData/Roaming/com.flyisland.app/fly-island-agent-status.ps1"),
             "completed",
         );
         let mut config = json!({
@@ -147,7 +148,7 @@ mod tests {
 
     #[test]
     fn hooks_go_once_the_island_was_all_there_was() {
-        let ours = super::super::claude_hooks::claude_code_status_hook_entry(Path::new("focusd-agent-status.ps1"), "completed");
+        let ours = super::super::claude_hooks::claude_code_status_hook_entry(Path::new("fly-island-agent-status.ps1"), "completed");
         let mut config = json!({ "hooks": { "Stop": [ours] } });
         assert!(without_island_hooks(&mut config));
         assert_eq!(config, json!({}));

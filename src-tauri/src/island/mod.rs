@@ -33,7 +33,7 @@ use glass::{apply_glass_material, parse_hex_color};
 use crate::win32;
 use state::{mutate_window_state, read_window_state, window_state, CornerShape, IslandMode, MonitorFollow};
 
-pub(crate) use geometry::apply_stage_geometry;
+pub(crate) use geometry::{apply_stage_geometry, start_taskbar_tracking};
 pub(crate) use follow::start_monitor_follow_loop;
 pub(crate) use passthrough::start_cursor_passthrough_loop;
 pub(crate) use state::{record_dragged_position, IslandPosition, IslandWindowState};

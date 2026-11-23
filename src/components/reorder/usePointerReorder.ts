@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { moveItem } from "../../utils/order.ts";
+import { crossedReorderMidpoint, moveItem } from "../../utils/order.ts";
 
 /** How far (px) the pointer moves before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 4;
@@ -18,6 +18,7 @@ export function usePointerReorder<T extends string>(
   items: readonly T[],
   onReorder: (next: T[]) => void,
   axis: "x" | "y",
+  crossing: "edge" | "midpoint" = "edge",
 ) {
   const containerRef = useRef<HTMLElement | null>(null);
   const press = useRef<Press | null>(null);
@@ -49,10 +50,16 @@ export function usePointerReorder<T extends string>(
       if (!container) return;
       const others = [...container.querySelectorAll<HTMLElement>("[data-reorder-id]")];
       const at = axis === "x" ? event.clientX : event.clientY;
-      // The item whose half the pointer is over takes the dragged one's place.
+      const currentIndex = items.indexOf(id);
+      // With unequal widths, crossing the middle prevents an item from moving back as its neighbour shifts.
       const target = others.find((element) => {
         const rect = element.getBoundingClientRect();
-        return axis === "x" ? at >= rect.left && at <= rect.right : at >= rect.top && at <= rect.bottom;
+        const start = axis === "x" ? rect.left : rect.top;
+        const end = axis === "x" ? rect.right : rect.bottom;
+        if (at < start || at > end) return false;
+        if (crossing === "edge") return true;
+        const targetIndex = items.indexOf(element.dataset.reorderId as T);
+        return crossedReorderMidpoint(at, start, end, targetIndex < currentIndex);
       });
       const targetId = target?.dataset.reorderId as T | undefined;
       if (!targetId || targetId === id) return;
@@ -70,7 +77,7 @@ export function usePointerReorder<T extends string>(
       press.current = null;
       setDraggingId(null);
     },
-  }), [axis, items, onReorder]);
+  }), [axis, crossing, items, onReorder]);
 
   const wasDragged = useCallback(() => dragged.current, []);
 

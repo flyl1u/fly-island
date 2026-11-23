@@ -59,6 +59,16 @@ fn only_windows_taskbars_push_the_island_down() {
 }
 
 #[test]
+fn a_taskbar_snapshot_uses_only_the_current_reserved_top_space() {
+    let monitor = (0, -1080, 1920, 1080);
+    let top_bar = [(0, -1080, 1920, -1032)];
+    assert_eq!(reserved_top_inset(monitor, -1080, &top_bar), 0);
+    assert_eq!(reserved_top_inset(monitor, -1032, &top_bar), 48);
+    assert_eq!(reserved_top_inset(monitor, -1020, &top_bar), 48);
+    assert_eq!(reserved_top_inset(monitor, -1020, &[]), 0);
+}
+
+#[test]
 fn custom_position_survives_tuck_and_reveal() {
     let mut custom = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
     custom.custom_position = Some(IslandPosition { x: 420, y: 180 });

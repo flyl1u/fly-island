@@ -4,6 +4,7 @@ export type SettingsClipboardText = {
   captureImages: string;
   maxItems: string;
   visibleRows: string;
+  hoverPreview: string;
   detached: string;
   /** Unpinned clipboard window closes when another window is clicked. */
   closeOnBlur: string;
@@ -28,6 +29,7 @@ export const zhCN: SettingsClipboardText = {
   captureImages: "记录图片",
   maxItems: "最多保存几条",
   visibleRows: "一次显示几条",
+  hoverPreview: "悬停时预览完整内容",
   detached: "在单独窗口中打开剪贴板",
   closeOnBlur: "点击窗口外时关闭",
   closeOnBlurHint: "仅在窗口未钉选时生效",
@@ -50,6 +52,7 @@ export const en: SettingsClipboardText = {
   captureImages: "Record images",
   maxItems: "Max entries",
   visibleRows: "Visible rows",
+  hoverPreview: "Preview full content on hover",
   detached: "Open in a separate window",
   closeOnBlur: "Close when clicking elsewhere",
   closeOnBlurHint: "Only while the window is not pinned",

@@ -9,3 +9,4 @@ export const MAIL_OTP_ENABLED: boolean = features.mailOtp;
  * 2026-11-19); while off nothing counts as installed, so the island and settings look as they did in 3.2.6.
  */
 export const PLUGIN_MARKET_ENABLED: boolean = features.pluginMarket;
+export const PLUGIN_RUNTIME_ENABLED = PLUGINS_ENABLED || PLUGIN_MARKET_ENABLED;

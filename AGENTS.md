@@ -12,7 +12,7 @@
 
 **Fly Island**（仓库名、安装包名 `fly-island`）是 Windows 优先的桌面效率工具，以透明、无边框、始终置顶的 Tauri 悬浮岛形式运行。主要功能：待办、每日笔记与归档，外观设置与预设，媒体控制，剪贴板历史，快捷翻译，QQ 通知、QQ 邮箱和微信提醒，AI 代理状态，以及自动更新。
 
-**命名**：产品名一律写 **Fly Island**（文件名、包名、链接里写 `fly-island`）。README、文章、发布说明、安装包、界面文案和新代码里都不要再写旧名 FocuSD。旧名只留在不能改的对外契约里（`com.focusd.island`、`focusd-island-*` localStorage key、开机自启值 `FocuSD Island`、`focusd-agent-*` hook 脚本、`FOCUSD_*` 环境变量等，见下文「对外契约」），看到这些不要据此把产品叫成 FocuSD。
+**命名**：产品名一律写 **Fly Island**（文件名、包名、链接里写 `fly-island`）。README、文章、发布说明、安装包、界面文案和新代码统一使用新名字；旧产品名只允许出现在 `src-tauri/src/legacy_migration/`、`src/shared/storage/legacyMigration.ts`、NSIS 迁移钩子和守卫白名单中，`pnpm check` 会拦截其他位置的残留。
 
 **配图**：写 README、文章、发布说明时，只用 README 当前引用的图片；仓库外或 git 历史里的旧截图、旧宣传素材都已过时，不要拿来参考。
 
@@ -99,13 +99,13 @@
 
 下列标识会被已安装用户的数据、配置或外部程序引用。纯重构提交中**一律不得改变**：
 
-- `localStorage` key（`focusd-island-*`，完整清单见 [contracts.md](docs/architecture/contracts.md)）及其存储的数据格式
+- `localStorage` key（`fly-island-*`，完整清单见 [contracts.md](docs/architecture/contracts.md)）及其存储的数据格式
 - Tauri 命令名（即 Rust 函数名）、参数名，以及事件名
 - 窗口 label（`main` / `translation` / `settings` / `clipboard`）和 `?window=` 参数值
-- 应用标识 `com.focusd.island`、开机自启注册表值 `FocuSD Island`、凭据管理器条目、应用数据目录下的文件名（如 `agent-status.json`）
+- 应用标识 `com.flyisland.app`、开机自启注册表值 `Fly Island`、凭据管理器条目、应用数据目录下的文件名（如 `agent-status.json`）
 - 更新端点和 `latest.json` 格式
 
-确实需要变更时，必须在同一个提交里同步修改前后端，提供旧数据的迁移或兼容读取，并在提交说明中写明。
+名称契约统一使用新标识；迁移前用户数据由专门迁移模块兼容读取、幂等转换并在成功后清理旧值。变更时必须同步修改前后端，并在提交说明中写明迁移规则。
 
 ## 重构约定
 

@@ -2,8 +2,8 @@ import { readString } from "../../lib/storage.ts";
 
 // Read here as literals to keep this module free of the features it serves (the same keys as
 // STORAGE_KEY in appearance/storage.ts and TODOS_STORAGE_KEY in todos/storage.ts).
-const SETTINGS_KEY = "focusd-island-settings";
-const TODOS_KEY = "focusd-island-todos";
+const SETTINGS_KEY = "fly-island-settings";
+const TODOS_KEY = "fly-island-todos";
 
 let firstLaunch = false;
 let captured = false;

@@ -1,0 +1,10 @@
+.eye-care-window {
+  height: 100%;
+  display: flex;
+  overflow: auto;
+  padding: clamp(16px, 4vw, 40px);
+  color: var(--text-1);
+  background: var(--color-window);
+  font-family: var(--font-ui);
+  font-size: 15px;
+}

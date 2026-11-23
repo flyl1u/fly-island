@@ -5,6 +5,7 @@ import {
   downloadAndInstallUpdate,
   downloadUpdate,
   getUpdaterProxy,
+  isAutostartLaunch,
   isUpdaterConfigured,
   listenUpdateRequests,
   listenUpdateState,
@@ -12,7 +13,7 @@ import {
   requestUpdateAction,
   type DownloadEvent,
 } from "./api";
-import { nextCheckDelay } from "./autoUpdateSchedule.ts";
+import { AUTOSTART_CHECK_DELAY_MS, nextCheckDelay } from "./autoUpdateSchedule.ts";
 import { automaticTarget, type UpdateTarget } from "./updateChannel.ts";
 import { loadAutoUpdate, saveAutoUpdate } from "./storage.ts";
 
@@ -145,7 +146,10 @@ async function initialize() {
     stage: configured ? state.stage : "disabled",
   });
 
-  if (configured && state.autoUpdate) scheduleCheck(0);
+  if (configured && state.autoUpdate) {
+    const autostart = await isAutostartLaunch().catch(() => false);
+    scheduleCheck(autostart ? AUTOSTART_CHECK_DELAY_MS : 0);
+  }
 }
 
 /** Asked before every check: a proxy turned on or off since startup would otherwise fail all three endpoints. */

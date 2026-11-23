@@ -27,7 +27,7 @@ const QQ_APP_ID: &str = "QQ";
 const REGISTRATION_REPAIR: &str =
     include_str!("repair-qq-notification-registration.ps1");
 
-const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
+const DIAGNOSTIC_TITLE: &str = "Fly Island QQ 通知诊断";
 
 const DIAGNOSTIC_BODY: &str = "这是本机通道测试，不是聊天消息。";
 
@@ -291,10 +291,10 @@ fn read_qq_notification(
     {
         return Ok(None);
     }
-    // The island's own channel test, under its current name or the former one.
+    // The island's own channel test.
     if parts
         .first()
-        .is_some_and(|title| title == "Fly Island QQ notification diagnostic" || title == "FocuSD QQ notification diagnostic")
+        .is_some_and(|title| title == "Fly Island QQ notification diagnostic")
         && parts
             .iter()
             .any(|body| body == "Local channel test; this is not a chat message.")

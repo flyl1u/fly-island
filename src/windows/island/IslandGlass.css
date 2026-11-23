@@ -19,7 +19,7 @@
   /* The glass draws its own rim. */
   --island-rim: transparent;
   isolation: isolate;
-  background:
+  --island-material-fill:
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 46%),
     var(--glass-tint-color);
   /* The shadow is .island__glass-shadow, which does not repaint as the shape moves. */
@@ -211,7 +211,8 @@
   pointer-events: none;
 }
 
-.island__glass::after {
+.island__glass::after,
+.island__material--glass::after {
   inset: 0;
   background-image: var(--glass-grain);
   background-size: 128px;
@@ -248,13 +249,19 @@
 
 /* The lens edge: light gathering where the glass thickens, as gradients rather than a blurred
    inset shadow, which repainted a 16px blur around the whole shape on every frame. */
-.island__glass-refraction::before {
+.island__glass-refraction::before,
+.island__material--glass::before {
   content: "";
   position: absolute;
   inset: 0;
   background:
     radial-gradient(130% 120% at 50% 0%, transparent 58%, rgba(255, 255, 255, var(--glass-inner-glow-alpha)) 100%),
     linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-inner-glow-alpha) * 1.4)), transparent 18%);
+}
+
+.island__material--glass::before {
+  content: var(--glass-shouldered-lens, none);
+  z-index: 1;
 }
 
 /* A short specular streak along the top edge, following the pointer. */
@@ -280,13 +287,15 @@
 .island--material-liquidGlass .island__glass-refraction,
 .island--material-liquidGlass .island__glass-highlight,
 .island--material-liquidGlass .island__glass::before,
+.island--material-liquidGlass .island__material--glass::before,
 .island--material-frostedGlass .island__glass::before {
   animation: glassRimIn 200ms ease-out backwards;
 }
 
 .island[data-moving] .island__glass-refraction,
 .island[data-moving] .island__glass-highlight,
-.island[data-moving] .island__glass::before {
+.island[data-moving] .island__glass::before,
+.island[data-moving] .island__material--glass::before {
   visibility: hidden;
   animation: none;
 }
@@ -295,12 +304,6 @@
   from {
     opacity: 0;
   }
-}
-
-/* Attached to the screen edge: the shoulders take the flat tint, liquid glass's streak moves to the bottom edge. */
-:root[data-island-top-edge="attached"] .island--shoulders:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--tucked),
-:root:not([data-island-top-edge]) .island--docked.island--shoulders:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--tucked) {
-  background: var(--glass-tint-color);
 }
 
 :root[data-island-top-edge="attached"] .island__glass-highlight,
@@ -317,7 +320,7 @@
  */
 .island.island--material-frostedGlass {
   --glass-backdrop-wash: rgba(255, 255, 255, calc(0.06 + var(--is-light) * 0.16));
-  background:
+  --island-material-fill:
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%),
     linear-gradient(var(--glass-backdrop-wash), var(--glass-backdrop-wash)),
     var(--glass-tint-color);
@@ -360,7 +363,8 @@
 @media (prefers-reduced-motion: reduce) {
   .island__glass-refraction,
   .island__glass-highlight,
-  .island__glass::before {
+  .island__glass::before,
+  .island__material--glass::before {
     animation: none !important;
   }
 }

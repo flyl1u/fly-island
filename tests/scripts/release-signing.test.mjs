@@ -6,7 +6,7 @@ import test from "node:test";
 import { loadSigningEnvironment } from "../../scripts/release/release-signing.mjs";
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "focusd-signing-test-"));
+  const root = mkdtempSync(join(tmpdir(), "fly-island-signing-test-"));
   const config = {
     schemaVersion: 1,
     privateKeyPath: join(root, "private.key"),

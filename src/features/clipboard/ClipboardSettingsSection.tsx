@@ -9,11 +9,16 @@ import { CLIPBOARD_VISIBLE_ROWS } from "../appearance/settingsLimits";
  * The clipboard history options below the module switch (which is `enabled`, set by the
  * page): what is recorded, then how the list shows. Its shortcut is the next group on the page.
  */
-export function ClipboardSettingsSection({ clipboardSettings, onClipboardSettingsChange, visibleRows, onVisibleRowsChange, detached, onDetachedChange, closeOnBlur, onCloseOnBlurChange }: {
+export function ClipboardSettingsSection({
+  clipboardSettings, onClipboardSettingsChange, visibleRows, onVisibleRowsChange,
+  hoverPreview, onHoverPreviewChange, detached, onDetachedChange, closeOnBlur, onCloseOnBlurChange,
+}: {
   clipboardSettings: ClipboardHistorySettings;
   onClipboardSettingsChange: (settings: ClipboardHistorySettings) => void;
   visibleRows: number;
   onVisibleRowsChange: (rows: number) => void;
+  hoverPreview: boolean;
+  onHoverPreviewChange: (enabled: boolean) => void;
   detached: boolean;
   onDetachedChange: (detached: boolean) => void;
   closeOnBlur: boolean;
@@ -45,6 +50,7 @@ export function ClipboardSettingsSection({ clipboardSettings, onClipboardSetting
         max={CLIPBOARD_VISIBLE_ROWS.max}
         onChange={onVisibleRowsChange}
       />
+      <SettingsToggleRow title={t.settings.clipboard.hoverPreview} checked={hoverPreview} onChange={onHoverPreviewChange} />
       <SettingsToggleRow title={t.settings.clipboard.detached} checked={detached} onChange={onDetachedChange} />
       {detached && (
         <SettingsToggleRow indent title={t.settings.clipboard.closeOnBlur} description={t.settings.clipboard.closeOnBlurHint}

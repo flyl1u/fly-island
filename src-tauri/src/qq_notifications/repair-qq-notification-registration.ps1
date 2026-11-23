@@ -51,7 +51,7 @@ foreach ($root in @([Environment]::GetFolderPath('StartMenu'), [Environment]::Ge
 }
 if (-not $qqShortcut) { throw 'A valid QQ shortcut with AppUserModelID QQ and a Tencent-signed QQ.exe was not found.' }
 
-$backup = Join-Path $env:LOCALAPPDATA ('FocuSD\diagnostics\qq-notification-repair-' + [Guid]::NewGuid().ToString('N'))
+$backup = Join-Path $env:LOCALAPPDATA ('Fly Island\diagnostics\qq-notification-repair-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $backup | Out-Null
 if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\QQ') {
     & reg.exe export 'HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\QQ' (Join-Path $backup 'settings-before.reg') /y | Out-Null
@@ -63,7 +63,7 @@ if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Noti
 $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
 $xml.LoadXml('<toast><visual><binding template="ToastGeneric"><text>Fly Island QQ notification diagnostic</text><text>Local channel test; this is not a chat message.</text></binding></visual><audio silent="true" /></toast>')
 $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-$tag = 'FocusdDiag'
+$tag = 'FlyIslandDiag'
 $toast.Tag = $tag
 $toast.Group = $tag
 $toast.SuppressPopup = $true

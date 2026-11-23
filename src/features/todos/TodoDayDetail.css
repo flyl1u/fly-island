@@ -3,7 +3,9 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-md);
+  padding-inline-start: var(--space-lg);
+  border-inline-start: 1px solid var(--color-white-a08);
   container: todo-day-detail / inline-size;
 }
 
@@ -15,8 +17,7 @@
   align-content: flex-start;
   justify-content: space-between;
   gap: 2px var(--space-md);
-  padding: 2px var(--space-xs) var(--space-sm) var(--space-md);
-  border-bottom: 1px solid var(--color-white-a08);
+  padding: var(--space-xs) 0 0;
 }
 
 .todo-day-detail__title {
@@ -28,7 +29,7 @@
   overflow-wrap: anywhere;
 }
 
-.todo-day-detail__date,
+.todo-day-detail__meta,
 .todo-day-detail__summary {
   color: var(--text-2);
   font-size: calc(11px * var(--island-font-scale, 1));
@@ -40,8 +41,16 @@
   padding-top: 3px;
 }
 
-.todo-day-detail__date {
-  display: block;
+.todo-day-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-xs);
+  margin: 2px 0 0;
+}
+
+.todo-day-detail__calendar-note:not(:first-child)::before {
+  content: "·";
+  padding-inline-end: var(--space-xs);
 }
 
 .todo-day-detail__body {

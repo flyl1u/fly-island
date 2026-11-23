@@ -2,6 +2,7 @@ use std::{collections::BTreeMap, path::{Path, PathBuf}};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use super::manifest::Manifest;
+use crate::legacy_migration;
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,12 +45,12 @@ pub fn save(root: &Path, registry: &Registry) -> Result<(), String> {
 }
 
 fn entry(id: &str, key: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new("com.focusd.island.plugins", &format!("{id}/{key}")).map_err(|e| e.to_string())
+    keyring::Entry::new("com.flyisland.app.plugins", &format!("{id}/{key}")).map_err(|e| e.to_string())
 }
 
 pub fn set_secret(id: &str, key: &str, value: &str) -> Result<(), String> {
     if value.is_empty() {
-        match entry(id, key)?.delete_credential() {
+        match legacy_migration::delete_credential_with_fallback("com.flyisland.app.plugins", &format!("{id}/{key}")) {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(_) => Err("Cannot remove plugin credential".into()),
         }
@@ -60,13 +61,39 @@ pub fn runtime_settings(plugin: &Installed) -> Result<Value, String> {
     let mut map = serde_json::Map::new();
     for s in &plugin.manifest.settings {
         let value = if s.kind == "secret" {
-            match entry(&plugin.manifest.id, &s.key)?.get_password() {
-                Ok(v) => Value::String(v),
-                Err(keyring::Error::NoEntry) => s.default.clone(),
+            match legacy_migration::read_credential_with_fallback("com.flyisland.app.plugins", &format!("{}/{}", plugin.manifest.id, s.key)) {
+                Ok(Some(v)) => Value::String(v),
+                Ok(None) | Err(keyring::Error::NoEntry) => s.default.clone(),
                 Err(_) => return Err("Cannot read plugin credential".into()),
             }
         } else { plugin.settings.get(&s.key).filter(|v| s.accepts(v)).unwrap_or(&s.default).clone() };
         map.insert(s.key.clone(), value);
     }
     Ok(Value::Object(map))
+}
+
+/// Migrate legacy eye-care seconds and round existing fractional numeric settings up.
+pub fn upgrade_settings(previous: Option<&Installed>, manifest: &Manifest) -> BTreeMap<String, Value> {
+    let mut settings = previous.map(|p| p.settings.clone()).unwrap_or_default();
+    if manifest.id == "eye-care" && manifest.settings.iter().any(|s| s.key == "rest-minutes")
+        && !settings.contains_key("rest-minutes") {
+        if let Some(old) = previous.and_then(|p| p.manifest.settings.iter().find(|s| s.key == "rest")) {
+            let seconds = settings.get("rest").unwrap_or(&old.default).as_str()
+                .and_then(|value| value.trim().parse::<u64>().ok())
+                .filter(|seconds| (1..=3600).contains(seconds)).unwrap_or(20);
+            settings.insert("rest-minutes".into(), Value::String((seconds as f64 / 60.0).to_string()));
+        }
+    }
+    for setting in manifest.settings.iter().filter(|s| s.kind == "number") {
+        if let (Some(value), Some(min), Some(max)) = (settings.get(&setting.key), setting.min, setting.max) {
+            if let Some(number) = value.as_str().and_then(|s| s.trim().parse::<f64>().ok())
+                .filter(|n| n.is_finite() && *n >= 0.0 && *n <= f64::from(max)) {
+                let whole = (number.ceil() as u32).clamp(min, max);
+                settings.insert(setting.key.clone(), Value::String(whole.to_string()));
+            }
+        }
+    }
+    settings.retain(|key, value| manifest.settings.iter()
+        .any(|s| &s.key == key && s.kind != "secret" && s.accepts(value)));
+    settings
 }

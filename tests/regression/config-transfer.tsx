@@ -9,23 +9,23 @@ import "../../src/styles/base.css";
 
 const locale: LocaleCode = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "zh-CN";
 const t = TRANSLATIONS[locale].settings.configTransfer;
-const previousStorage = Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const previousStorage = Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 function restoreFixtureStorage() {
-  for (const key of Object.keys(localStorage).filter(key => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter(key => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of Object.entries(previousStorage)) localStorage.setItem(key, value);
 }
 Object.defineProperty(window, "isTauri", { value: true, configurable: true });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, configurable: true });
-localStorage.setItem("focusd-island-locale", locale);
-localStorage.setItem("focusd-island-future-setting", "raw data");
-localStorage.setItem("focusd-island-position", "local coordinates");
+localStorage.setItem("fly-island-locale", locale);
+localStorage.setItem("fly-island-future-setting", "raw data");
+localStorage.setItem("fly-island-position", "local coordinates");
 const calls: { command: string; args: Record<string, unknown> }[] = [];
 let save = false;
 let invalid = false;
 let pendingStorage = false;
 let startupReady = false;
 const backup = { app: "fly-island", formatVersion: 1, exportedAt: "2026-11-19T00:00:00Z", appVersion: "3.2.8",
-  localStorage: { "focusd-island-locale": locale, "focusd-island-restored": "raw restored" }, files: { clipboard: { history: null } } };
+  localStorage: { "fly-island-locale": locale, "fly-island-restored": "raw restored" }, files: { clipboard: { history: null } } };
 mockWindows("settings");
 mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
@@ -64,7 +64,7 @@ async function run() {
   check(Boolean(checkbox()), "Cancelling the native save dialog keeps the export choices");
   const firstExport = calls.find(c => c.command === "export_config")!;
   const storage = firstExport.args.localStorage as Record<string, string>;
-  check(firstExport.args.includeClipboardHistory === false && storage["focusd-island-future-setting"] === "raw data" && !("focusd-island-position" in storage), "Export discovers future keys and excludes this machine's coordinates");
+  check(firstExport.args.includeClipboardHistory === false && storage["fly-island-future-setting"] === "raw data" && !("fly-island-position" in storage), "Export discovers future keys and excludes this machine's coordinates");
   save = true;
   await act(async () => { checkbox().click(); });
   await click(t.continue);
@@ -86,8 +86,8 @@ async function run() {
   check(document.getElementById("root")!.scrollWidth <= document.getElementById("root")!.clientWidth, "The 340px panel does not overflow");
   pendingStorage = true;
   await restoreConfigBeforeMount();
-  check(localStorage.getItem("focusd-island-restored") === "raw restored" && localStorage.getItem("focusd-island-future-setting") === null
-    && localStorage.getItem("focusd-island-position") === "local coordinates" && calls.some(c => c.command === "finish_config_import" && c.args.success === true), "Startup restores raw values, clears absent keys, preserves coordinates and acknowledges the native transaction");
+  check(localStorage.getItem("fly-island-restored") === "raw restored" && localStorage.getItem("fly-island-future-setting") === null
+    && localStorage.getItem("fly-island-position") === "local coordinates" && calls.some(c => c.command === "finish_config_import" && c.args.success === true), "Startup restores raw values, clears absent keys, preserves coordinates and acknowledges the native transaction");
   restoreFixtureStorage();
   document.documentElement.dataset.testResult = "passed";
 }

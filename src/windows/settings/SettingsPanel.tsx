@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ComponentType } from "react";
 import { AppearanceSettingsPage } from "./AppearanceSettingsPage";
 import { DEFAULT_SETTINGS_CATEGORY, type SettingsCategory } from "./categories";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
@@ -9,6 +9,9 @@ import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
 import { MessagesSettingsPage } from "./MessagesSettingsPage";
 import { PluginsSettingsPage } from "./PluginsSettingsPage";
+import { DeviceBatterySettings } from "../../features/device-battery/DeviceBatterySettings";
+import { usePlugins } from "../../features/plugins/usePlugins";
+import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
@@ -21,6 +24,12 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { useLocale } from "../../i18n";
+import { NATIVE_PLUGINS, useNativePlugins } from "../../features/plugins/native";
+
+const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType>> = {
+  clockWeather: ClockWeatherSettingsPage,
+  devices: DeviceBatterySettings,
+};
 
 /**
  * Every settings page with its sidebar. Shown as a page of the island or in the
@@ -49,7 +58,21 @@ export function SettingsPanel({
   const setSettings = onSettingsChange;
   const saveDirectory = useSaveDirectorySetting();
   const [category, setCategory] = useState<SettingsCategory>(DEFAULT_SETTINGS_CATEGORY);
+  const nativePlugins = useNativePlugins();
+  const showDevices = usePlugins().registry.installed["device-battery"]?.enabled === true;
+  const standaloneCategories = new Set(
+    NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone).map((plugin) => plugin.settings?.category),
+  );
+  const installedStandaloneCategories = new Set(
+    NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone && nativePlugins[plugin.id]).map((plugin) => plugin.settings?.category),
+  );
+  const activeCategory = category === "devices" && !showDevices ? "plugins" : standaloneCategories.has(category) && !installedStandaloneCategories.has(category) ? "plugins" : category;
   const highlightSaveDirectory = saveDirectory.highlight;
+
+  useEffect(() => {
+    // A settings window can receive the Devices link before the first plugin snapshot arrives.
+    if (category !== "devices" && activeCategory !== category) setCategory(activeCategory);
+  }, [activeCategory, category]);
 
   // The island asks for the save path when an export has nowhere to go; it lives on the todos page.
   const focusSavePath = useCallback(() => {
@@ -62,8 +85,10 @@ export function SettingsPanel({
     if (section === "savePath") focusSavePath();
     if (section === "translation") setCategory("translation");
     if (section === "music") setCategory("music");
+    if (section === "devices") setCategory("devices");
     if (section === "mail") setCategory("messages");
     if (section === "updates") setCategory("about");
+    if (section === "plugins") setCategory("plugins");
   }, [focusSavePath]);
 
   useEffect(() => {
@@ -83,12 +108,13 @@ export function SettingsPanel({
 
   return (
     <LayoutEditor
-      category={category}
+      key={activeCategory}
+      category={activeCategory}
       onCategoryChange={setCategory}
       onContentHeight={onContentHeight}
-      titleAction={category === "appearance" && <ResetAppearanceButton onReset={resetAppearance} />}
+      titleAction={activeCategory === "appearance" && <ResetAppearanceButton onReset={resetAppearance} />}
     >
-      {category === "general" && (
+      {activeCategory === "general" && (
         <GeneralSettingsPage
           locale={locale}
           settings={settings}
@@ -98,26 +124,30 @@ export function SettingsPanel({
           onDetachedSettingsChange={onDetachedChange}
         />
       )}
-      {category === "appearance" && (
+      {activeCategory === "appearance" && (
         <AppearanceSettingsPage settings={settings} onSettingsChange={setSettings} />
       )}
-      {category === "todos" && (
+      {activeCategory === "todos" && (
         <TodosSettingsPage
           settings={settings}
           saveDirectory={saveDirectory}
           onSettingsChange={setSettings}
         />
       )}
-      {category === "messages" && (
+      {activeCategory === "messages" && (
         <MessagesSettingsPage settings={settings} qqNotifications={qqNotifications} wechatReminders={wechatReminders} onSettingsChange={setSettings} />
       )}
-      {category === "translation" && <TranslationSettingsPage settings={settings} onSettingsChange={setSettings} />}
-      {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
-      {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
-      {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
-      {category === "agentConnect" && <AgentConnectSettingsPage />}
-      {category === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={setSettings} />}
-      {category === "about" && <AboutSettingsPage />}
+      {activeCategory === "translation" && <TranslationSettingsPage settings={settings} onSettingsChange={setSettings} />}
+      {activeCategory === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
+      {activeCategory === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
+      {activeCategory === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
+      {activeCategory === "agentConnect" && <AgentConnectSettingsPage />}
+      {(() => {
+        const Page = STANDALONE_SETTINGS_PAGES[activeCategory];
+        return Page ? <Page /> : null;
+      })()}
+      {activeCategory === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={setSettings} />}
+      {activeCategory === "about" && <AboutSettingsPage />}
     </LayoutEditor>
   );
 }

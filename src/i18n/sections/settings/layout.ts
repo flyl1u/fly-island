@@ -2,6 +2,7 @@ export type SettingsLayoutText = {
   title: string;
   opacity: string;
   launchAtStartup: string;
+  launchAtStartupDisabledHint: string;
   autoTuck: string;
   autoTuckHint: string;
   /** Game mode: quiet while a full-screen app (usually a game) is in front. */
@@ -15,6 +16,7 @@ export const zhCN: SettingsLayoutText = {
   title: "尺寸与位置",
   opacity: "不透明度",
   launchAtStartup: "开机自启动",
+  launchAtStartupDisabledHint: "Windows 启动应用已将 Fly Island 禁用；请在任务管理器的启动应用中重新启用。",
   autoTuck: "闲置时贴边隐藏",
   autoTuckHint: "收起的岛屿一段时间没有操作后，贴到屏幕顶部，只露出一条边。",
   gameTitle: "游戏模式",
@@ -27,6 +29,7 @@ export const en: SettingsLayoutText = {
   title: "Size & position",
   opacity: "Opacity",
   launchAtStartup: "Launch at startup",
+  launchAtStartupDisabledHint: "Windows Startup Apps has disabled Fly Island; re-enable it in Task Manager.",
   autoTuck: "Tuck to the edge when idle",
   autoTuckHint: "After a while without use, the collapsed island slides up to the top of the screen and shows only an edge.",
   gameTitle: "Game mode",

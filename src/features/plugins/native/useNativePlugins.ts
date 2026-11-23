@@ -1,41 +1,42 @@
 import { useSyncExternalStore } from "react";
 import { PLUGIN_MARKET_ENABLED } from "../../releaseFlags.ts";
-import type { NativePluginId } from "./catalog.ts";
-import { loadInstalledNativePlugins, NATIVE_PLUGINS_KEY, normalizeInstalledNativePlugins, saveNativePluginInstalled, type InstalledNativePlugins } from "./storage.ts";
+import { NATIVE_PLUGIN_IDS, type NativePluginId } from "./catalog.ts";
+import {
+  DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS_KEY, loadNativePluginStates, normalizeNativePluginStates,
+  saveNativePluginEnabled, saveNativePluginInstalled, type NativePluginStates,
+} from "./storage.ts";
 
-// One snapshot per window, refreshed by `storage` events: the settings window installs, the
-// island (another window) picks it up; same-window writes announce themselves too.
-let current: InstalledNativePlugins | null = null;
+// One snapshot per window, refreshed after local writes and across windows via storage events.
+let current: NativePluginStates | null = null;
 const listeners = new Set<() => void>();
 
 function snapshot() {
-  current ??= loadInstalledNativePlugins();
+  current ??= loadNativePluginStates();
   return current;
 }
 
-function onStorage(event: StorageEvent) {
-  if (event.key !== null && event.key !== NATIVE_PLUGINS_KEY) return;
-  const next = loadInstalledNativePlugins();
-  if (current && Object.entries(next).every(([id, value]) => current?.[id as NativePluginId] === value)) return;
+function reread() {
+  const next = loadNativePluginStates();
+  const previous = current;
+  if (previous && NATIVE_PLUGIN_IDS.every((id) =>
+    next.installed[id] === previous.installed[id] && next.enabled[id] === previous.enabled[id])) return;
   current = next;
   listeners.forEach((listener) => listener());
 }
 
-/** Reads the list again: a `storage` event from the settings window is the usual way, this the fallback. */
-function reread() {
-  onStorage(new StorageEvent("storage", { key: NATIVE_PLUGINS_KEY }));
+function onStorage(event: StorageEvent) {
+  if (event.key === null || event.key === NATIVE_PLUGINS_KEY || event.key === DISABLED_NATIVE_PLUGINS_KEY) reread();
 }
 
 function subscribe(listener: () => void) {
-  if (listeners.size === 0) {
+  listeners.add(listener);
+  if (listeners.size === 1) {
     window.addEventListener("storage", onStorage);
-    // Also on reaching the window (the island takes the pointer only over its shape) or focusing it:
-    // a plugin installed in the settings window is then on the island by the time anyone looks,
-    // even if the storage event never arrived (2026-11-19, owner: installed plugins not on the island).
+    // Webviews can miss a storage event. Reread on focus or when the island takes the pointer.
     window.addEventListener("focus", reread);
     document.documentElement.addEventListener("pointerenter", reread);
+    reread();
   }
-  listeners.add(listener);
   return () => {
     listeners.delete(listener);
     if (listeners.size === 0) {
@@ -46,17 +47,27 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** With the market off (releaseFlags.ts) none, whatever an earlier beta saved. */
-const NONE = normalizeInstalledNativePlugins([]);
+const NONE = normalizeNativePluginStates([], []);
 const noSubscription = () => () => {};
 const none = () => NONE;
+const getSnapshot = PLUGIN_MARKET_ENABLED ? snapshot : none;
 
-/** Which built-in plugins are installed, kept in step across windows. */
-export function useNativePlugins(): InstalledNativePlugins {
-  return useSyncExternalStore(PLUGIN_MARKET_ENABLED ? subscribe : noSubscription, PLUGIN_MARKET_ENABLED ? snapshot : none, PLUGIN_MARKET_ENABLED ? snapshot : none);
+/** Installation and effective enabled state for the market cards. */
+export function useNativePluginStates(): NativePluginStates {
+  return useSyncExternalStore(PLUGIN_MARKET_ENABLED ? subscribe : noSubscription, getSnapshot, getSnapshot);
+}
+
+/** Which built-in plugins are installed and enabled. */
+export function useNativePlugins() {
+  return useNativePluginStates().enabled;
 }
 
 export function setNativePluginInstalled(id: NativePluginId, installed: boolean) {
   saveNativePluginInstalled(id, installed);
+  reread();
+}
+
+export function setNativePluginEnabled(id: NativePluginId, enabled: boolean) {
+  saveNativePluginEnabled(id, enabled);
   reread();
 }

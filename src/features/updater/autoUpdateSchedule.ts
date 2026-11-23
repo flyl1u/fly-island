@@ -4,6 +4,8 @@ export const CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000;
 export const RETRY_DELAYS_MS = [60 * 1000, 5 * 60 * 1000, 30 * 60 * 1000] as const;
 /** How long the collapsed island must go untouched before a downloaded update installs itself. */
 export const IDLE_INSTALL_MS = 60 * 1000;
+/** Gives startup apps and the staggered media plugins time to settle before first update IO. */
+export const AUTOSTART_CHECK_DELAY_MS = 5 * 60 * 1000;
 
 /** Delay before the next automatic check, given how many checks in a row have failed. */
 export function nextCheckDelay(failures: number) {

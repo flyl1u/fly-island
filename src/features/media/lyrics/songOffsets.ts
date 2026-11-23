@@ -1,6 +1,6 @@
 import { readJson, writeJson } from "../../../lib/storage.ts";
 
-export const SONG_OFFSETS_STORAGE_KEY = "focusd-island-lyrics-offsets";
+export const SONG_OFFSETS_STORAGE_KEY = "fly-island-lyrics-offsets";
 /** Older entries are dropped past this many songs. */
 export const MAX_SONG_OFFSETS = 500;
 /** One press of the music page's earlier / later buttons. */

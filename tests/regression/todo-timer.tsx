@@ -14,7 +14,7 @@ import { checkTodoReminders } from "./todoTimerReminder";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const realNow = Date.now;
 const realAudio = window.Audio;
 let now = realNow();
@@ -31,23 +31,23 @@ Object.defineProperty(window, "Audio", { configurable: true, value: class {
 window.addEventListener("beforeunload", () => {
   Date.now = realNow;
   Object.defineProperty(window, "Audio", { configurable: true, value: realAudio });
-  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 });
 for (const key of original.keys()) localStorage.removeItem(key);
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh-CN");
-localStorage.setItem("focusd-island-current-date", getLocalDateString());
-localStorage.setItem("focusd-island-todos", JSON.stringify([
+localStorage.setItem("fly-island-current-date", getLocalDateString());
+localStorage.setItem("fly-island-todos", JSON.stringify([
   { id: "t1", title: "核对录屏素材和脚本中的演示步骤", completed: false, createdAt: now },
   { id: "t2", title: "Review the release notes and prepare screenshots", completed: false, createdAt: now },
 ]));
-localStorage.setItem("focusd-island-settings", JSON.stringify({
+localStorage.setItem("fly-island-settings", JSON.stringify({
   agentStatusEnabled: false, musicEnabled: false, shelfEnabled: false,
   rotateTodos: false, todoRotationSeconds: 3, autoCollapseSeconds: 0,
   autoTuck: false, expandedScale: Number(query.get("scale") ?? 1),
   carryOverIncompleteTodos: false, todoTimerEnabled: true,
 }));
-localStorage.setItem("focusd-island-save-directory", "");
+localStorage.setItem("fly-island-save-directory", "");
 
 mockIPC((command, payload) => {
   switch (command) {
@@ -154,25 +154,25 @@ try {
   await pointer("pointermove", handle, target.x + 30, below);
   await pointer("pointerup", handle, target.x + 30, below);
   const order = () => [...document.querySelectorAll<HTMLElement>("[data-todo-id]")].map((node) => node.dataset.todoId).join();
-  check(order() === "t2,t1" && JSON.parse(localStorage.getItem("focusd-island-todos")!)[0].id === "t2", "Dragging reorders DOM and persisted todos");
-  check(!document.querySelector(".todo-title-input, .todo-duration-picker") && !localStorage.getItem("focusd-island-active-todo"), "Dragging never edits or starts a todo");
+  check(order() === "t2,t1" && JSON.parse(localStorage.getItem("fly-island-todos")!)[0].id === "t2", "Dragging reorders DOM and persisted todos");
+  check(!document.querySelector(".todo-title-input, .todo-duration-picker") && !localStorage.getItem("fly-island-active-todo"), "Dragging never edits or starts a todo");
   await mount();
   await open();
   check(order() === "t2,t1", "Reordered todos survive remount");
   const settings = (patch: object) => act(async () => {
-    localStorage.setItem("focusd-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("focusd-island-settings")!), ...patch }));
-    window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings" }));
+    localStorage.setItem("fly-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("fly-island-settings")!), ...patch }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "fly-island-settings" }));
   });
   await settings({ enableTodoReorder: false, todoReorderVersion: 1, todoTimerEnabled: false });
   check(!document.querySelector(".todo-drag-handle"), "Storage sync hides handles when disabled");
   await start("t1");
-  check(!stored() && !document.querySelector(".todo-duration-picker") && localStorage.getItem("focusd-island-active-todo") === "t1", "Disabled timer starts immediately without picker");
+  check(!stored() && !document.querySelector(".todo-duration-picker") && localStorage.getItem("fly-island-active-todo") === "t1", "Disabled timer starts immediately without picker");
   await open();
   await start("t1");
-  check(!localStorage.getItem("focusd-island-active-todo"), "Disabled timer stops immediately");
+  check(!localStorage.getItem("fly-island-active-todo"), "Disabled timer stops immediately");
   await settings({ todoTimerEnabled: true, enableTodoReorder: true });
   await start("t1");
-  check(!stored() && !document.querySelector(".todo-duration-picker") && localStorage.getItem("focusd-island-active-todo") === "t1",
+  check(!stored() && !document.querySelector(".todo-duration-picker") && localStorage.getItem("fly-island-active-todo") === "t1",
     "开启计时器后直接点开始只开始任务，不倒计时");
   await open();
   await start("t1");
@@ -180,7 +180,7 @@ try {
   await go();
   check(stored()?.durationMinutes === 15, "点怀表里的开始才按默认 15 分钟倒计时");
   await settings({ todoTimerEnabled: false });
-  check(!stored() && localStorage.getItem("focusd-island-active-todo") === "t1" && !document.querySelector(".todo-countdown"), "Disabling cancels timer and preserves active todo");
+  check(!stored() && localStorage.getItem("fly-island-active-todo") === "t1" && !document.querySelector(".todo-countdown"), "Disabling cancels timer and preserves active todo");
   await advance(900_000);
   check(sounds === 0 && !document.querySelector(".todo-timer-actions"), "Disabled deadline cannot notify");
   await settings({ todoTimerEnabled: true });
@@ -225,7 +225,7 @@ try {
   visible = true;
   await open();
   await click(".todo-timer-actions button:first-of-type");
-  check(stored() === null && localStorage.getItem("focusd-island-active-todo") === null, "完成清除倒计时及进行中状态");
+  check(stored() === null && localStorage.getItem("fly-island-active-todo") === null, "完成清除倒计时及进行中状态");
 
   check(watchLabel("t2")?.includes("15"), "另一项待办有自己的默认 15 分钟");
   await choose("t2");
@@ -245,7 +245,7 @@ try {
   await start("t2");
   check(stored() === null && watchLabel("t2")?.includes("7 分钟"), "结束立即取消当前倒计时，怀表记住 7 分钟");
   await start("t2");
-  check(!stored() && localStorage.getItem("focusd-island-active-todo") === "t2", "直接点开始不沿用 7 分钟，只开始任务");
+  check(!stored() && localStorage.getItem("fly-island-active-todo") === "t2", "直接点开始不沿用 7 分钟，只开始任务");
   await open();
   await start("t2");
   await choose("t2");
@@ -287,50 +287,57 @@ try {
   await choose("t1");
   await pick(90);
   await go();
-  await advance(3_600_000);
-  check(stored()?.todoId === "t1" && !stored()?.notified && localStorage.getItem("focusd-island-active-todo") === "t1" && sounds === 4,
-    "开始另一项取消旧轮，旧截止时间不再提醒");
+  const parallel = () => JSON.parse(localStorage.getItem(TODO_TIMERS_STORAGE_KEY) ?? "[]") as TodoTimer[];
+  check(parallel().length === 2 && stored()?.todoId === "t1" && collapsedTime()?.includes("90:00"),
+    "轮换关闭时两个计时共存，折叠岛显示最近开始的一项");
+  await mount();
   await open();
+  check(document.querySelectorAll(".todo-list .todo-countdown").length === 2, "重启后两项各自显示倒计时");
+  await advance(3_600_000);
+  check(stored()?.todoId === "t1" && !stored()?.notified && parallel().find((timer) => timer.todoId === "t2")?.notified && sounds === 5,
+    "后台一项独立到时，另一项仍在计时");
   await start("t1");
+  check(stored()?.todoId === "t2" && stored()?.notified, "停止最近一项后露出另一项的到时状态");
+  await start("t2");
   await choose("t2");
   await pick(60);
   await go();
   await open();
   await click('[data-todo-id="t2"] .todo-delete');
   await advance(3_600_000);
-  check(stored() === null && sounds === 4, "删除正在计时的待办取消本轮，不再到时提醒");
+  check(stored() === null && sounds === 5, "删除正在计时的待办取消本轮，不再到时提醒");
   await choose("t1");
   await pick(15);
   await go();
   await open();
   await click('[data-todo-id="t1"] .todo-check');
   await advance(900_000);
-  check(stored() === null && sounds === 4, "提前完成取消本轮，不会在原截止时间响铃");
+  check(stored() === null && sounds === 5, "提前完成取消本轮，不会在原截止时间响铃");
 
   // Restore an unannounced deadline missed while the app was closed.
   const todo = { id: "restored", title: "重启后继续核对发布说明", completed: false, createdAt: now };
-  localStorage.setItem("focusd-island-todos", JSON.stringify([todo]));
-  localStorage.setItem("focusd-island-active-todo", todo.id);
+  localStorage.setItem("fly-island-todos", JSON.stringify([todo]));
+  localStorage.setItem("fly-island-active-todo", todo.id);
   // A previous day's pending round must survive the normal archive/rollover on startup.
   const previousDay = new Date();
   previousDay.setDate(previousDay.getDate() - 1);
-  localStorage.setItem("focusd-island-current-date", getLocalDateString(previousDay));
+  localStorage.setItem("fly-island-current-date", getLocalDateString(previousDay));
   localStorage.setItem(TODO_TIMER_STORAGE_KEY, JSON.stringify({ todoId: todo.id, endsAt: now - 1, durationMinutes: 1, notified: false }));
   // Model an old installation with only the original single-task keys.
   localStorage.removeItem(ACTIVE_TODOS_STORAGE_KEY);
   localStorage.removeItem(TODO_TIMERS_STORAGE_KEY);
   await mount();
-  check(document.querySelector(".todo-timer-actions") && stored()?.notified && sounds === 5, "关闭期间已过期的倒计时恢复为时间到，补一次提醒");
-  check(localStorage.getItem("focusd-island-current-date") === getLocalDateString() && stored()?.todoId === todo.id,
+  check(document.querySelector(".todo-timer-actions") && stored()?.notified && sounds === 6, "关闭期间已过期的倒计时恢复为时间到，补一次提醒");
+  check(localStorage.getItem("fly-island-current-date") === getLocalDateString() && stored()?.todoId === todo.id,
     "启动跨日归档保留计时任务及其标识，时间到不会被归档流程清掉");
   await mount();
-  check(sounds === 5, "离线过期的提醒重启后也不重复");
+  check(sounds === 6, "离线过期的提醒重启后也不重复");
   await open();
   await click(".todo-timer-actions button:first-of-type");
 
   // English and both scale limits use the real constrained island, not a free-growing fixture.
   localStorage.setItem(LOCALE_STORAGE_KEY, "en");
-  localStorage.setItem("focusd-island-todos", JSON.stringify([{ ...todo, completed: false }]));
+  localStorage.setItem("fly-island-todos", JSON.stringify([{ ...todo, completed: false }]));
   localStorage.setItem(TODO_DURATIONS_STORAGE_KEY, JSON.stringify({ [todo.id]: 240 }));
   await mount();
   await open();

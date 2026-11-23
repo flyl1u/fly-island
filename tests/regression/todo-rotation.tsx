@@ -11,7 +11,7 @@ import { ACTIVE_TODOS_STORAGE_KEY, TODO_TIMERS_STORAGE_KEY } from "../../src/fea
 import type { TodoTimer } from "../../src/features/todos/timer";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const realNow = Date.now;
 const realAudio = window.Audio;
 let now = realNow();
@@ -25,16 +25,16 @@ Object.defineProperty(window, "Audio", { configurable: true, value: class {
 } });
 for (const key of original.keys()) localStorage.removeItem(key);
 localStorage.setItem(LOCALE_STORAGE_KEY, "en");
-localStorage.setItem("focusd-island-current-date", getLocalDateString());
+localStorage.setItem("fly-island-current-date", getLocalDateString());
 const titles = ["First running task", "Review the release notes and prepare screenshots", "Third running task", "Never started"];
-localStorage.setItem("focusd-island-todos", JSON.stringify(titles.map((title, i) => ({ id: `t${i + 1}`, title, completed: false, createdAt: now }))));
-localStorage.setItem("focusd-island-settings", JSON.stringify({
+localStorage.setItem("fly-island-todos", JSON.stringify(titles.map((title, i) => ({ id: `t${i + 1}`, title, completed: false, createdAt: now }))));
+localStorage.setItem("fly-island-settings", JSON.stringify({
   agentStatusEnabled: false, musicEnabled: false, shelfEnabled: false, autoTuck: false, autoCollapseSeconds: 0,
   carryOverIncompleteTodos: false, todoTimerEnabled: true, rotateTodos: true, todoRotationSeconds: 1, todoRotationCount: 1,
 }));
 const legacy: TodoTimer = { todoId: "t1", endsAt: now + 240_000, durationMinutes: 4, notified: false };
-localStorage.setItem("focusd-island-active-todo", "t1");
-localStorage.setItem("focusd-island-todo-timer", JSON.stringify(legacy));
+localStorage.setItem("fly-island-active-todo", "t1");
+localStorage.setItem("fly-island-todo-timer", JSON.stringify(legacy));
 mockIPC((command, payload) => {
   switch (command) {
     case "plugin:window|is_visible": return true;
@@ -70,8 +70,8 @@ const expanded = () => Boolean(document.querySelector(".island--expanded"));
 const current = () => document.querySelector<HTMLElement>(".todo-rotation[data-rotating-todo-id]");
 const pill = () => current()?.querySelector(".todo-rotation__layer:last-child .island__timer-pill")?.textContent;
 const settings = (patch: object) => act(async () => {
-  localStorage.setItem("focusd-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("focusd-island-settings")!), ...patch }));
-  window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings" }));
+  localStorage.setItem("fly-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("fly-island-settings")!), ...patch }));
+  window.dispatchEvent(new StorageEvent("storage", { key: "fly-island-settings" }));
 });
 const advance = (milliseconds: number) => act(async () => { now += milliseconds; document.dispatchEvent(new Event("visibilitychange")); });
 const wait = (ms: number) => act(async () => { await new Promise(resolve => setTimeout(resolve, ms)); });
@@ -153,6 +153,9 @@ try {
   check(getComputedStyle(document.querySelector(".todo-rotation__track")!).animationPlayState === "paused", "expanded panels pause scrolling");
   await mount();
   check(ids().length === 3 && timers().length === 3 && timers().find(timer => timer.todoId === "t2")?.endsAt === secondEnd, "remount restores all started tasks and independent deadlines");
+  await settings({ rotateTodos: false });
+  check(ids().length === 3 && timers().length === 3 && !current(), "turning rotation off keeps every timer and stops switching the collapsed display");
+  await settings({ rotateTodos: true });
   await advance(60_000);
   check(sounds === 1 && timers().find(timer => timer.todoId === "t3")?.notified && !timers().find(timer => timer.todoId === "t1")?.notified, "only the elapsed task expires and rings");
   await mount();
@@ -167,12 +170,13 @@ try {
   check(ids().join() === "t1" && timers().length === 1, "deleting a running task removes its own round");
   await start("t4");
   await settings({ rotateTodos: false });
-  check(ids().join() === "t1" && timers().length === 1, "disabling rotation retains the primary task and stops other tasks");
+  check(ids().join() === "t1" && timers().length === 1, "disabling rotation drops the extra task without a timer");
   await start("t4");
-  check(!expanded() && ids().join() === "t4" && timers().length === 0, "single-task Start replaces the old task, cancels its timer and collapses the island");
+  check(!expanded() && ids().join() === "t4,t1" && timers().length === 1, "plain Start collapses the island and leaves an existing timer running");
   await click(".island__open-button");
   await start("t4");
-  check(ids().length === 0, "single-task Stop preserves the original behavior");
+  check(ids().join() === "t1" && timers().length === 1, "stopping the plain task returns to the task with a timer");
+  await start("t1");
   await settings({ rotateTodos: true });
   await startTimed("t1", 2);
   await startTimed("t4", 3);
@@ -183,11 +187,11 @@ try {
   await start("t1"); await start("t4");
   await startTimed("t1", 2); await startTimed("t4", 3);
   const previousDay = new Date(); previousDay.setDate(previousDay.getDate() - 1);
-  localStorage.setItem("focusd-island-current-date", getLocalDateString(previousDay));
+  localStorage.setItem("fly-island-current-date", getLocalDateString(previousDay));
   const beforeRollover = timers().map(timer => timer.endsAt).join();
   await mount();
   check(ids().join() === "t1,t4" && timers().map(timer => timer.endsAt).join() === beforeRollover
-    && localStorage.getItem("focusd-island-current-date") === getLocalDateString(), "midnight rollover preserves every running timed task and its ID");
+    && localStorage.getItem("fly-island-current-date") === getLocalDateString(), "midnight rollover preserves every running timed task and its ID");
   await advance(180_000);
   check(timers().every(timer => timer.notified) && sounds === 2, "simultaneous expiry persists every notification flag before one alert");
   await click('.todo-list [data-todo-id="t1"] .todo-timer-actions button:last-child');
@@ -207,7 +211,7 @@ try {
   await act(async () => root.unmount());
   Date.now = realNow;
   Object.defineProperty(window, "Audio", { configurable: true, value: realAudio });
-  for (const key of Object.keys(localStorage).filter(key => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter(key => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
   document.getElementById("results")!.textContent = checks.join("\n");
 }

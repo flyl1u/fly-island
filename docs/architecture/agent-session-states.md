@@ -41,7 +41,7 @@
 | 6 | 回归页、`DESIGN.md`、中英文文案 | 已完成 | fly-island-c6 · lane 6 | 同上。文案沿用已有的「等你回复」，不需要新文案 |
 | 7 | 回合结束后仍有后台任务时保持绿色（没有标记时） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): a turn waiting on its own background task stays green`。`background_tasks.rs`：工具结果里的 `running in background with ID` / `moved to the background (ID:` 记为启动，带 `<task-id>` 的任务通知或 TaskStop 的 `stopped task` 记为结束；只数最近一轮启动的。回复在问你时仍是黄色。开发服务器这类一直跑的任务也会让那一轮显示绿色，直到你发下一条指令；子 Agent 只在回合进行中计数，回合结束后不再算 |
 | 8 | 实测：问句判断的准确率（拿本机最近的会话记录统计） | 已完成 | fly-island-c6 · lane 6 | 见下方实测记录；补了「同意的话」「要的话」两种征询句 |
-| 9 | 后台任务运行中，收起条标题、活跃计数、「仅 Agent 任务运行时不收起岛屿」用同一个判定 | 已完成 | v3.2.6 | `sessionList.ts::isSessionActive` / `hasBackgroundWork`：回合已完成但 `backgroundTasks > 0` 算仍在工作，`pickAgentSession`、`countActiveSessions`（由它得出状态灯与不收起）、「隐藏已完成」都用它；全部结束后照常收起。Claude Code 新增 `SubagentStop` 钩子（后台运行，走 `focusd-agent-status.ps1 completed`），后台子 Agent 结束时清掉运行标记，不再拖 10 分钟。已安装用户的设置页会提示「更新」，点一次「安装/修复」生效 |
+| 9 | 后台任务运行中，收起条标题、活跃计数、「仅 Agent 任务运行时不收起岛屿」用同一个判定 | 已完成 | v3.2.6 | `sessionList.ts::isSessionActive` / `hasBackgroundWork`：回合已完成但 `backgroundTasks > 0` 算仍在工作，`pickAgentSession`、`countActiveSessions`（由它得出状态灯与不收起）、「隐藏已完成」都用它；全部结束后照常收起。Claude Code 新增 `SubagentStop` 钩子（后台运行，走 `fly-island-agent-status.ps1 completed`），后台子 Agent 结束时清掉运行标记，不再拖 10 分钟。已安装用户的设置页会提示「更新」，点一次「安装/修复」生效 |
 
 ## 实测记录
 
@@ -57,5 +57,5 @@
 
 ## 看过之后不再催（B15，2026-11-07）
 
-红（等你确认、出错）和黄（等你回复）只在用户**还没看过**时算提醒：在 Agent 页点过这个会话，或者它的窗口到了前台（`agent_sessions_in_front`，和 B1 同一套判断），就不再计入会话环和收起条的「待确认」，Agent 页的状态灯变灰、状态文字变淡但仍写「等待确认」「等你回复」，「没处理时再提醒」也不再补。会话的状态本身不变：回复后重新开始跑，下一次再卡住或再问你，按新的一次重新算没看过。判断在 `features/agent-status/unseen.ts`（`asksUser`、`isUnseen`）：卡在半路的会话按文件最后写入时间区分每一次等待，回合结束的按这一轮的开始时间；还在问你的会话即使在岛屿启动前就开始了，也算没看过。看过的记录存在 localStorage（`focusd-island-agent-seen-turns`），重启岛屿后不会再提醒。在 Agent 页点 × 移除的会话，只有开始新的一轮（发了新消息）才回来；Claude Code 闲着时往文件里写的摘要不算。
+红（等你确认、出错）和黄（等你回复）只在用户**还没看过**时算提醒：在 Agent 页点过这个会话，或者它的窗口到了前台（`agent_sessions_in_front`，和 B1 同一套判断），就不再计入会话环和收起条的「待确认」，Agent 页的状态灯变灰、状态文字变淡但仍写「等待确认」「等你回复」，「没处理时再提醒」也不再补。会话的状态本身不变：回复后重新开始跑，下一次再卡住或再问你，按新的一次重新算没看过。判断在 `features/agent-status/unseen.ts`（`asksUser`、`isUnseen`）：卡在半路的会话按文件最后写入时间区分每一次等待，回合结束的按这一轮的开始时间；还在问你的会话即使在岛屿启动前就开始了，也算没看过。看过的记录存在 localStorage（`fly-island-agent-seen-turns`），重启岛屿后不会再提醒。在 Agent 页点 × 移除的会话，只有开始新的一轮（发了新消息）才回来；Claude Code 闲着时往文件里写的摘要不算。
 

@@ -1,5 +1,5 @@
 import { useTranslation } from "../../i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ClipboardHistoryItem, ClipboardHistorySnapshot } from "./api";
 import { ClipboardFilters } from "./ClipboardFilters";
 import { ClipboardHistoryItemRow } from "./ClipboardHistoryItemRow";
@@ -10,6 +10,8 @@ import { useClipboardNoteEditor } from "./useClipboardNoteEditor";
 import { useClipboardSelection } from "./useClipboardSelection";
 import { selectableIds } from "./selection";
 import { ClipboardImagePreview } from "./ClipboardImagePreview";
+import { ClipboardHoverPreview } from "./ClipboardHoverPreview";
+import { useClipboardHoverPreview } from "./useClipboardHoverPreview";
 import "./ClipboardHistoryPanel.css";
 import "./ClipboardSelection.css";
 
@@ -20,6 +22,7 @@ export function ClipboardHistoryPanel({
   onUpdateNote,
   onDeleteItem,
   onDeleteItems,
+  hoverPreview = false,
   variant = "island",
 }: {
   snapshot: ClipboardHistorySnapshot;
@@ -28,6 +31,7 @@ export function ClipboardHistoryPanel({
   onUpdateNote: (id: string, note: string) => Promise<boolean> | boolean;
   onDeleteItem: (id: string) => Promise<void> | void;
   onDeleteItems: (ids: string[]) => Promise<boolean> | boolean;
+  hoverPreview?: boolean;
   variant?: "island" | "window";
 }) {
   const t = useTranslation();
@@ -53,17 +57,6 @@ export function ClipboardHistoryPanel({
   const selectable = selectableIds(filteredItems);
   const selection = useClipboardSelection(snapshot.items.map((item) => item.id), selectable, onDeleteItems);
   const [preview, setPreview] = useState<ClipboardHistoryItem | null>(null);
-  useEffect(() => {
-    if (!preview && !selection.selecting) return;
-    const escape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (preview) setPreview(null); else selection.exit();
-    };
-    document.addEventListener("keydown", escape, true);
-    return () => document.removeEventListener("keydown", escape, true);
-  }, [preview, selection]);
   const {
     copiedItemId,
     editingNoteId,
@@ -82,10 +75,28 @@ export function ClipboardHistoryPanel({
     onUpdateNote,
     dismissConfirmations,
   );
+  const panel = useRef<HTMLElement>(null);
+  const canHover = hoverPreview && !preview && !selection.selecting && !editingNoteId;
+  const hover = useClipboardHoverPreview(canHover, panel);
+  const hoveredItem = hover.preview && renderedItems.find((item) => item.id === hover.preview?.id);
+  const dismissHover = hover.dismiss;
+  useEffect(() => {
+    if (!preview && !hoveredItem && !selection.selecting) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (preview) setPreview(null);
+      else if (hoveredItem) dismissHover();
+      else selection.exit();
+    };
+    document.addEventListener("keydown", escape, true);
+    return () => document.removeEventListener("keydown", escape, true);
+  }, [dismissHover, hoveredItem, preview, selection]);
 
   return (
-    <section className={`clipboard-panel clipboard-panel--${variant}`} aria-label={t.clipboard.title}>
-      <div className="clipboard-panel__content" inert={preview !== null}>
+    <section ref={panel} className={`clipboard-panel clipboard-panel--${variant}`} aria-label={t.clipboard.title}>
+      <div className="clipboard-panel__content" inert={preview !== null} onClickCapture={canHover ? dismissHover : undefined}>
         <ClipboardPanelHeader
           itemCount={snapshot.items.length}
           favoriteCount={favoriteItems.length}
@@ -113,7 +124,10 @@ export function ClipboardHistoryPanel({
           onKindChange={setKindFilter}
         />
 
-        <div className="clipboard-list" role="list" onScroll={(event) => onListScroll(event.currentTarget)}>
+        <div className="clipboard-list" role="list" onScroll={(event) => {
+          if (canHover) dismissHover();
+          onListScroll(event.currentTarget);
+        }}>
           {filteredItems.length === 0 ? (
             <div className="clipboard-empty">
               {snapshot.items.length === 0
@@ -150,6 +164,8 @@ export function ClipboardHistoryPanel({
                 selected={selection.selectedIds.includes(item.id)}
                 onSelect={selection.toggle}
                 onPreview={setPreview}
+                onHover={canHover ? hover.start : undefined}
+                onHoverLeave={canHover ? hover.leave : undefined}
               />
             ))
           )}
@@ -157,6 +173,10 @@ export function ClipboardHistoryPanel({
       </div>
       {selection.failed && <p className="clipboard-selection-error" role="alert">{t.clipboard.deleteFailed}</p>}
       {preview && <ClipboardImagePreview key={preview.id} item={preview} onClose={() => setPreview(null)} />}
+      {hover.preview && hoveredItem && (
+        <ClipboardHoverPreview key={hoveredItem.id} item={hoveredItem} above={hover.preview.above}
+          offset={hover.preview.offset} height={hover.preview.height} onEnter={hover.hold} onLeave={hover.leave} />
+      )}
     </section>
   );
 }

@@ -1,12 +1,36 @@
+.todo-calendar {
+  --todo-calendar-accent-ink: color-mix(in srgb, var(--color-accent) 72%, var(--text-1));
+  --todo-calendar-selection: color-mix(in srgb, var(--color-accent) 19%, transparent);
+  min-height: 0;
+  display: grid;
+  grid-template-columns: clamp(192px, 54%, 290px) minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+.todo-calendar__month {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-xs);
+}
+
 .todo-calendar__nav {
+  min-height: 32px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-xs);
+  padding-inline-start: var(--space-xs);
+}
+
+.todo-calendar__arrows {
+  display: flex;
+  align-items: center;
 }
 
 .todo-calendar__nav button {
   height: 28px;
-  min-width: 24px;
+  min-width: 23px;
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
@@ -28,9 +52,10 @@
   flex: 1;
   overflow: hidden;
   color: var(--text-1);
-  font-size: calc(13px * var(--island-font-scale, 1));
+  font-size: min(18px, calc(16px * var(--island-font-scale, 1)));
   font-weight: 600;
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -40,12 +65,10 @@
   font-family: var(--font-ui);
   font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
-  background: var(--color-white-a06);
 }
 
 .todo-calendar__nav .todo-calendar__today:disabled {
-  color: var(--text-3);
-  background: transparent;
+  color: var(--text-placeholder);
   cursor: default;
 }
 
@@ -54,9 +77,9 @@
   display: grid;
   align-content: start;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: 28px;
-  grid-template-rows: 18px;
-  column-gap: 1px;
+  grid-auto-rows: 36px;
+  grid-template-rows: 20px;
+  gap: 1px 2px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: var(--color-white-a18) transparent;
@@ -64,41 +87,46 @@
 }
 
 .todo-calendar__weekday {
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: calc(10px * var(--island-font-scale, 1));
   font-weight: 600;
-  line-height: 18px;
+  line-height: 20px;
   text-align: center;
 }
 
 .todo-calendar__day {
+  --todo-calendar-caption-row: 0px;
   display: grid;
-  grid-template-rows: 21px 3px;
+  grid-template-rows: 18px var(--todo-calendar-caption-row) 3px;
   justify-items: center;
   align-content: center;
-  gap: 3px;
+  align-items: center;
+  row-gap: 1px;
   padding: 0;
   color: var(--text-1);
   background: transparent;
   border: 0;
-  border-radius: var(--corner-xs);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   font-family: var(--font-ui);
   cursor: pointer;
+  transition: background-color 140ms ease;
 }
 
 .todo-calendar__number {
-  width: 21px;
-  height: 21px;
+  grid-row: 1;
+  min-width: 22px;
+  height: 18px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-pill);
-  font-size: calc(12px * var(--island-font-scale, 1));
+  font-size: calc(14px * var(--island-font-scale, 1));
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  transition: background-color 140ms ease, box-shadow 140ms ease;
 }
 
-.todo-calendar__day:hover .todo-calendar__number {
+.todo-calendar__day:hover {
   background: var(--color-white-a08);
 }
 
@@ -106,27 +134,22 @@
   color: var(--text-placeholder);
 }
 
-.todo-calendar__day[aria-pressed="true"] .todo-calendar__number {
-  color: var(--color-accent);
-  box-shadow: inset 0 0 0 1.5px var(--color-accent);
-}
-
-.todo-calendar__day:active .todo-calendar__number,
+.todo-calendar__day:active,
 .todo-calendar__nav button:active:not(:disabled) {
   background: var(--color-white-a16);
 }
 
-.todo-calendar__day--today .todo-calendar__number,
-.todo-calendar__day--today:hover .todo-calendar__number,
-.todo-calendar__day--today[aria-pressed="true"] .todo-calendar__number {
-  color: var(--color-black);
-  background: var(--color-accent);
-  font-weight: 700;
+.todo-calendar__day[aria-pressed="true"] {
+  background: var(--todo-calendar-selection);
 }
 
-/* Today and chosen: a ring around the filled circle. */
-.todo-calendar__day--today[aria-pressed="true"] .todo-calendar__number {
-  box-shadow: 0 0 0 1px var(--color-surface-dark), 0 0 0 2px var(--color-accent);
+.todo-calendar__day[aria-pressed="true"] .todo-calendar__number,
+.todo-calendar__day--today .todo-calendar__number {
+  color: var(--todo-calendar-accent-ink);
+}
+
+.todo-calendar__day--today:not([aria-pressed="true"]) .todo-calendar__number {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, transparent);
 }
 
 .todo-calendar__day:focus-visible,
@@ -136,6 +159,7 @@
 }
 
 .todo-calendar__dots {
+  grid-row: 3;
   display: flex;
   gap: 2px;
 }
@@ -151,7 +175,7 @@
 
 .todo-calendar__add {
   min-width: 0;
-  min-height: 32px;
+  min-height: 34px;
   flex: 0 0 auto;
   display: flex;
   align-items: center;

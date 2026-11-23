@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { cornerShapeCss } from "../../features/appearance/cornerShape";
+import { localIslandFontStyle } from "../../features/appearance/localFont";
 import { hexToRgba, isGlass } from "../../features/appearance/settings";
 import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -19,6 +20,7 @@ export function getIslandStageStyle(
   noticeHeight: number | null = null,
 ) {
   return ({
+    ...localIslandFontStyle(settings),
     // Classic opacity fades the fill only, so text and icons on it stay solid.
     "--island-fill": hexToRgba(colors.islandBackgroundColor, settings.opacity / 100),
     "--island-fill-alpha": settings.opacity / 100,
@@ -35,6 +37,7 @@ export function getIslandStageStyle(
     "--island-collapsed-corner-radius-size": settings.collapsedCornerRadius,
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
+    "--island-shoulder-size-factor": settings.islandCornerShape === "squircle" ? 1.4 : 1,
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,
     // The expanded page's resting transform. At scale 1 it is none: a transform, even scale(1), keeps
     // the page on its own compositing layer, and the text there is drawn again once the layer goes.

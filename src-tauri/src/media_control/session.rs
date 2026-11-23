@@ -2,6 +2,7 @@
 
 use base64::Engine;
 use std::{
+    cell::RefCell,
     sync::{Mutex, OnceLock},
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -88,6 +89,25 @@ pub(super) fn request_manager() -> Result<MediaSessionManager, String> {
     })?;
     pollster::block_on(operation)
         .map_err(|error| media_error("Failed to open the Windows media session manager", error))
+}
+
+thread_local! {
+    static POLL_MANAGER: RefCell<Option<MediaSessionManager>> = const { RefCell::new(None) };
+}
+
+fn poll_manager() -> Result<MediaSessionManager, String> {
+    POLL_MANAGER.with(|cached| {
+        if let Some(manager) = cached.borrow().as_ref() {
+            return Ok(manager.clone());
+        }
+        let manager = request_manager()?;
+        cached.replace(Some(manager.clone()));
+        Ok(manager)
+    })
+}
+
+pub(super) fn release_poll_manager() {
+    POLL_MANAGER.with(|cached| cached.replace(None));
 }
 
 pub(super) fn resolve_session(
@@ -287,8 +307,9 @@ pub(super) fn send_media_key(key: VIRTUAL_KEY) {
 }
 
 pub(super) fn read_media_state(target: Option<&str>) -> Result<MediaState, String> {
-    match request_manager() {
-        Ok(manager) => read_media_state_from_manager(&manager, target),
+    match poll_manager() {
+        Ok(manager) => read_media_state_from_manager(&manager, target)
+            .inspect_err(|_| release_poll_manager()),
         Err(_) => read_media_state_without_session(),
     }
 }
@@ -374,7 +395,7 @@ pub(super) fn read_media_state_from_manager(
     Ok(MediaState {
         available: true,
         // With a session the level comes from get_audio_level, which the island polls while music
-        // plays; reading the device here as well cost a full audio-endpoint open on every poll.
+        // plays, so this state read does not sample the meter a second time.
         audio_active: false,
         audio_peak: 0.0,
         playback_status: if is_playing { "playing" } else { "paused" },

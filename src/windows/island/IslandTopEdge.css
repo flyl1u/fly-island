@@ -5,67 +5,31 @@
  * below uses the same pair of selectors for that reason.
  */
 
-/* A child, since ::before is the tucked hover target and ::after is the rim. */
 @property --island-shoulder-length {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
-.island__shoulders {
-  --island-shoulder-length: 0px;
-  --island-shoulder-scale: var(--island-expanded-scale);
-  --island-shoulder-duration: var(--island-motion-duration);
-  --island-shoulder-curve: var(--island-motion);
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(-1 * var(--island-shoulder-length));
-  right: calc(-1 * var(--island-shoulder-length));
-  pointer-events: none;
-  background: inherit;
-  opacity: 0;
-  /* Full parent height preserves the collapsed fill's vertical shading at the join. Each curve's
-     tile reaches 1px into the island: two edges meeting on a fractional pixel would each cover it
-     only partly and leave a light seam beside the curve, longer the larger the curve. */
-  mask:
-    radial-gradient(circle var(--island-shoulder-length) at 0 100%,
-      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
-      left top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat,
-    radial-gradient(circle var(--island-shoulder-length) at 100% 100%,
-      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
-      right top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat;
-  transition:
-    --island-shoulder-length var(--island-shoulder-duration) var(--island-shoulder-curve),
-    opacity var(--island-panel-fade-duration) ease;
+@property --island-outline-radius {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
 }
 
-.island--collapsed > .island__shoulders {
-  --island-shoulder-scale: var(--island-collapsed-scale);
+/* These wrappers keep the original glass and text box tree when the material needs no shoulder. */
+.island__material,
+.island__surface-contents {
+  display: contents;
 }
 
-:root[data-island-top-edge="attached"] .island--shoulders:not(.island--tucked) > .island__shoulders,
-:root:not([data-island-top-edge]) .island--docked.island--shoulders:not(.island--tucked) > .island__shoulders {
-  --island-shoulder-length: calc(var(--island-shoulder-size-target, 10px) * var(--island-shoulder-scale));
-  opacity: 1;
+.island__surface-contents {
+  border-radius: inherit;
 }
 
-.island--untuck-line > .island__shoulders,
-.island--untuck-hidden > .island__shoulders {
-  --island-shoulder-duration: var(--island-tuck-out-duration);
-  --island-shoulder-curve: var(--island-spring-open);
-}
-
-:root[data-island-top-edge="attached"] .island--shoulders .island__glass,
-:root:not([data-island-top-edge]) .island--docked.island--shoulders .island__glass {
+:root[data-island-top-edge="attached"] .island--shoulders.island--tucked .island__glass,
+:root:not([data-island-top-edge]) .island--docked.island--shoulders.island--tucked .island__glass {
   mask-image: linear-gradient(transparent var(--island-shoulder-size-target), var(--color-black) 30px);
-}
-
-/* Like the shape it follows, this local transition plays fully under reduced motion. */
-@media (prefers-reduced-motion: reduce) {
-  .island__shoulders {
-    transition-duration: var(--island-shoulder-duration), var(--island-panel-fade-duration) !important;
-  }
 }
 
 /* A dragged island dropped flush with the top gets the docked flat top. */
@@ -115,10 +79,8 @@
  */
 :root[data-island-top-edge="attached"] .island--collapsed:has(:focus-visible),
 :root:not([data-island-top-edge]) .island--docked.island--collapsed:has(:focus-visible) {
-  box-shadow:
-    inset 0 -1px 0 rgba(var(--overlay-rgb), 0.26),
-    inset 0 -14px 14px -10px var(--color-white-a08),
-    0 5px 16px rgba(0, 0, 0, 0.12);
+  --island-attached-focus-inset: inset 0 -1px 0 rgba(var(--overlay-rgb), 0.26), inset 0 -14px 14px -10px var(--color-white-a08);
+  box-shadow: var(--island-attached-focus-inset), 0 5px 16px rgba(0, 0, 0, 0.12);
 }
 
 /*
@@ -126,10 +88,10 @@
  * frosted 1px rim) ran up both sides into the screen edge, so the pane read as cut off from it at
  * the sides; like the classic rim above it now fades out over the top of the island. The mask is
  * on the whole glass layer, not the refraction alone, which composites differently when masked.
- * With shoulders the rule above already fades the glass further down.
+ * The shouldered branch below clips the rims individually.
  */
-:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders) .island__glass,
-:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders) .island__glass {
+:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders.island--tucked) .island__glass,
+:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders.island--tucked) .island__glass {
   -webkit-mask-image: linear-gradient(transparent 2px, #000 30px);
   mask-image: linear-gradient(transparent 2px, #000 30px);
 }
@@ -145,4 +107,141 @@
 :root[data-island-top-edge="attached"] .island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)),
 :root:not([data-island-top-edge]) .island--docked.island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)) {
   box-shadow: 0 12px 22px -10px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
+}
+
+@supports (clip-path: shape(from 0 0, line to 1px 1px, close)) and (corner-shape: superellipse(1.6)) and (opacity: calc(1px / 1px)) {
+  .island--shoulders > .island__surface,
+  .island--shoulders::after {
+    --island-shoulder-scale: var(--island-collapsed-scale);
+    --island-outline-radius: var(--island-shape-radius-collapsed);
+    --island-shoulder-duration: var(--island-motion-duration);
+    --island-shoulder-curve: var(--island-motion);
+    /* Keep the corner boxes square when their combined radii exceed the island's height. */
+    --island-shoulder-ratio: calc(var(--island-shoulder-length) / max(1px, var(--island-shoulder-length) + var(--island-outline-radius)));
+    --island-shoulder-radius: min(var(--island-shoulder-length), 100cqh * var(--island-shoulder-ratio));
+    --island-outline-bottom-radius: min(var(--island-outline-radius), 50cqw, max(0px, 100cqh - var(--island-shoulder-radius)));
+    --island-shouldered-rim-fade: linear-gradient(transparent max(2px, var(--island-shoulder-radius)), #000 max(30px, var(--island-shoulder-radius) + 8px));
+    transition:
+      --island-shoulder-length var(--island-shoulder-duration) var(--island-shoulder-curve),
+      --island-outline-radius var(--island-shoulder-duration) var(--island-shoulder-curve);
+  }
+
+  .island--shoulders.island--expanded > .island__surface,
+  .island--shoulders.island--expanded::after {
+    --island-shoulder-scale: var(--island-expanded-scale);
+    --island-outline-radius: var(--island-shape-radius);
+  }
+
+  .island--shoulders.island--tuck-line > .island__surface,
+  .island--shoulders.island--tuck-line::after {
+    --island-outline-radius: calc(2.5px * var(--island-collapsed-scale));
+  }
+
+  .island--shoulders:is(.island--untuck-line, .island--untuck-hidden) > .island__surface,
+  .island--shoulders:is(.island--untuck-line, .island--untuck-hidden)::after {
+    --island-shoulder-duration: var(--island-tuck-out-duration);
+    --island-shoulder-curve: var(--island-spring-open);
+  }
+
+  :is(:root[data-island-top-edge="attached"] .island--shoulders,
+      :root:not([data-island-top-edge]) .island--docked.island--shoulders):not(.island--tucked) {
+    container-type: size;
+    background: transparent;
+
+    & > .island__surface,
+    &::after {
+      --island-shoulder-length: calc(var(--island-shoulder-size-target, 10px) * var(--island-shoulder-scale) * var(--island-shoulder-size-factor, 1));
+    }
+
+    & > .island__surface {
+      overflow: visible;
+    }
+
+    & .island__material {
+      display: block;
+      position: absolute;
+      inset: 0 calc(-1 * var(--island-shoulder-radius));
+      background: var(--island-material-fill);
+      clip-path: var(--island-shouldered-shape);
+      pointer-events: none;
+    }
+
+    & .island__surface-contents {
+      display: block;
+      position: absolute;
+      inset: 0;
+      corner-shape: var(--island-corner-shape, round);
+    }
+
+    &::after,
+    & .island__surface-contents {
+      border-bottom-left-radius: var(--island-outline-bottom-radius);
+      border-bottom-right-radius: var(--island-outline-bottom-radius);
+    }
+
+    &:not(.island--preparing.island--collapsed) .island__surface-contents {
+      overflow: hidden;
+    }
+
+    &::after {
+      mask-image: var(--island-shouldered-rim-fade);
+    }
+
+    /* Start the rim on the straight edge, a few pixels below the shoulder tangent. */
+    & .island__surface .island__glass {
+      --glass-shoulder-rim-start: calc(var(--island-shoulder-radius) + 4px);
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    & .island__glass-refraction {
+      --refraction-band: var(--glass-shoulder-rim-start);
+    }
+
+    /* The lens glow follows the whole silhouette; clipping it with the rim would cut across it. */
+    & .island__glass-refraction::before {
+      content: none;
+    }
+
+    &.island--material-liquidGlass .island__material--glass {
+      --glass-shouldered-lens: "";
+    }
+
+    &.island--material-frostedGlass .island__glass::before {
+      clip-path: inset(var(--glass-shoulder-rim-start) 0 0);
+    }
+
+    & .island__glass::after {
+      display: none;
+    }
+
+    /* Before the first capture the grain shares the same clipped layer as the tint. */
+    :root:not([data-glass-backdrop]) & .island__material--glass::after {
+      content: "";
+      position: absolute;
+      background-position: var(--island-shoulder-radius) 0;
+      mask-image: var(--island-shouldered-rim-fade);
+    }
+
+    &.island--material-classic.island--collapsed:has(:focus-visible) {
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.12);
+
+      & .island__surface-contents {
+        box-shadow: var(--island-attached-focus-inset);
+      }
+    }
+  }
+
+  /* The backdrop's centre and size are fixed. A slider retargets the clip, so keep the captured
+     pixels and grain on their own layer until that clip stops moving, as on open and close. */
+  .island__surface[data-shoulder-moving] .island__glass-backdrop {
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .island--shoulders > .island__surface,
+    .island--shoulders::after {
+      transition-duration: var(--island-shoulder-duration) !important;
+    }
+  }
 }

@@ -1,7 +1,7 @@
 {
   "name": "fly-island",
   "private": true,
-  "version": "3.2.8",
+  "version": "3.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,10 +12,12 @@
     "tauri": "tauri",
     "test": "node --test \"tests/**/*.test.mjs\"",
     "check:size": "node scripts/check-file-size.mjs",
+    "check:legacy-name": "node scripts/check-legacy-name.mjs",
+    "check:holidays": "node scripts/check-holidays.mjs",
     "test:regression": "node scripts/run-regression.mjs",
     "check:tests-types": "tsc -p tsconfig.tests.json",
     "lint": "eslint src",
-    "check": "tsc && pnpm run check:tests-types && pnpm run lint && pnpm run check:size && pnpm run test"
+    "check": "pnpm run check:legacy-name && tsc && pnpm run check:tests-types && pnpm run lint && pnpm run check:size && pnpm run test"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

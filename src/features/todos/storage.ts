@@ -16,26 +16,26 @@ import {
 export { createTodoId, normalizeTodo };
 
 // Todos planned for later days (ScheduledTodo[]); added for upstream issue #30.
-export const SCHEDULED_TODOS_STORAGE_KEY = "focusd-island-scheduled-todos";
-export const TODOS_STORAGE_KEY = "focusd-island-todos";
-export const ACTIVE_TODO_STORAGE_KEY = "focusd-island-active-todo";
-export const TODO_TIMER_STORAGE_KEY = "focusd-island-todo-timer";
-export const ACTIVE_TODOS_STORAGE_KEY = "focusd-island-active-todos";
-export const TODO_TIMERS_STORAGE_KEY = "focusd-island-todo-timers";
-// 旧的 "focusd-island-todo-duration"（所有待办共用一个时长）已不再读取：每项待办各自记时长。
-export const TODO_DURATIONS_STORAGE_KEY = "focusd-island-todo-durations";
+export const SCHEDULED_TODOS_STORAGE_KEY = "fly-island-scheduled-todos";
+export const TODOS_STORAGE_KEY = "fly-island-todos";
+export const ACTIVE_TODO_STORAGE_KEY = "fly-island-active-todo";
+export const TODO_TIMER_STORAGE_KEY = "fly-island-todo-timer";
+export const ACTIVE_TODOS_STORAGE_KEY = "fly-island-active-todos";
+export const TODO_TIMERS_STORAGE_KEY = "fly-island-todo-timers";
+// 旧的 "fly-island-todo-duration"（所有待办共用一个时长）已不再读取：每项待办各自记时长。
+export const TODO_DURATIONS_STORAGE_KEY = "fly-island-todo-durations";
 // v3.2.6: minutes before the end the last reminder was asked for (0: none), the next round's default.
-export const TODO_REMIND_MINUTES_STORAGE_KEY = "focusd-island-todo-remind-minutes";
-export const TODO_DATE_STORAGE_KEY = "focusd-island-current-date";
-export const TODO_ARCHIVE_STORAGE_KEY = "focusd-island-archives";
-export const DAILY_NOTE_STORAGE_KEY = "focusd-island-daily-note";
+export const TODO_REMIND_MINUTES_STORAGE_KEY = "fly-island-todo-remind-minutes";
+export const TODO_DATE_STORAGE_KEY = "fly-island-current-date";
+export const TODO_ARCHIVE_STORAGE_KEY = "fly-island-archives";
+export const DAILY_NOTE_STORAGE_KEY = "fly-island-daily-note";
 // Settings for exporting archives; they stay in localStorage.
-export const TODO_SAVE_DIRECTORY_STORAGE_KEY = "focusd-island-save-directory";
+export const TODO_SAVE_DIRECTORY_STORAGE_KEY = "fly-island-save-directory";
 export const TODO_SAVE_DIRECTORY_CHANGED_EVENT = "fly-island-todo-save-directory-changed";
-export const TODO_FILE_SYNC_STORAGE_KEY = "focusd-island-todo-file-sync";
+export const TODO_FILE_SYNC_STORAGE_KEY = "fly-island-todo-file-sync";
 export const TODO_FILE_SYNC_CHANGED_EVENT = "fly-island-todo-file-sync-changed";
 export const TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY =
-  "focusd-island-last-saved-signature";
+  "fly-island-last-saved-signature";
 
 export function loadScheduledTodos(): ScheduledTodo[] {
   return parseScheduledTodos(readString(SCHEDULED_TODOS_STORAGE_KEY));

@@ -3,13 +3,14 @@
 //! the hooks Install/Repair would write and compares, so it follows any future hook change.
 
 use std::path::Path;
+use crate::legacy_migration;
 
 use serde::Serialize;
 use serde_json::Value;
 
 use super::claude_hooks::{claude_code_installed_entries, ApprovalHook};
 use super::codex_hooks::build_codex_hook_block;
-use super::{normalize_windows_line_endings, FOCUSD_AGENT_HOOK_SIGNATURE};
+use super::{normalize_windows_line_endings};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -43,7 +44,7 @@ pub(super) fn claude_code_hooks_state(
         return HookInstallState::NotInstalled;
     };
     let hooks = &config["hooks"];
-    if !hooks.to_string().contains(FOCUSD_AGENT_HOOK_SIGNATURE) {
+    if !legacy_migration::contains_managed_hook_signature(&hooks.to_string()) {
         return HookInstallState::NotInstalled;
     }
 
@@ -73,10 +74,8 @@ pub(super) fn codex_hooks_state(
     let Some(config) = config_toml else {
         return HookInstallState::NotInstalled;
     };
-    // Hooks written before the rename say "FocuSD" in their status line and are otherwise the
-    // same; they still count as current rather than asking every user to repair them.
-    let config = normalize_windows_line_endings(config)
-        .replace("Updating FocuSD agent status", "Updating Fly Island agent status");
+    // Normalize a managed block written before the rename before comparing it with this build.
+    let config = normalize_windows_line_endings(&legacy_migration::normalize_hook_text(config));
     let holds = |async_start: bool| {
         let expected = build_codex_hook_block(running_script_path, status_script_path, async_start);
         config.contains(&normalize_windows_line_endings(&expected))
@@ -87,7 +86,7 @@ pub(super) fn codex_hooks_state(
     };
     if current {
         HookInstallState::Current
-    } else if config.contains(FOCUSD_AGENT_HOOK_SIGNATURE) {
+    } else if legacy_migration::contains_managed_hook_signature(&config) {
         HookInstallState::Outdated
     } else {
         HookInstallState::NotInstalled

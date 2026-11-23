@@ -40,7 +40,7 @@ function useLiveMediaSessions() {
  * Settings → Music → Player order: which player the island follows when several have a media
  * session. A playing one comes before a paused one, and among each the list's order decides
  * (useMediaState). Players join the list the first time they are seen; the order is kept in
- * `focusd-island-music-sources`, as before Settings were slimmed down.
+ * `fly-island-music-sources`, as before Settings were slimmed down.
  */
 export function MusicSourcePrioritySection() {
   const text = useTranslation().settings.musicSources;

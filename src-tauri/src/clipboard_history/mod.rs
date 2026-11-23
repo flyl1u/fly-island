@@ -131,9 +131,8 @@ pub struct ClipboardHistoryItem {
     preview: String,
     text: Option<String>,
     image: Option<ClipboardHistoryImage>,
-    /// Files copied in Explorer (CF_HDROP). Such an item is kept as a text item whose text is
-    /// the paths, one per line, so an older version that does not know files still reads
-    /// the history (and pastes the paths) instead of discarding the whole file.
+    /// Files from CF_HDROP. Pure image captures may retain these paths for file-compatible
+    /// copy-back; other file-list captures remain text items whose text contains one path per line.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     files: Option<Vec<String>>,
 }

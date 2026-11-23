@@ -1,3 +1,4 @@
+import "./shared/storage/runLegacyMigration";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/tokens.css";
@@ -6,6 +7,7 @@ import "./styles/base.css";
 import { IslandApp } from "./windows/island/IslandApp";
 import { TranslationWindow } from "./windows/translation/TranslationWindow";
 import { SettingsWindow } from "./windows/settings/SettingsWindow";
+import { EyeCareWindow } from "./windows/eye-care/EyeCareWindow";
 import { ClipboardWindow } from "./windows/clipboard/ClipboardWindow";
 import { I18nProvider, loadLocale, TRANSLATIONS } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
@@ -61,7 +63,9 @@ async function mountApp() {
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
       <I18nProvider>
-        {windowKind === "translation" ? (
+        {windowKind === "eye-care" ? (
+          <EyeCareWindow />
+        ) : windowKind === "translation" ? (
           <TranslationWindow />
         ) : windowKind === "settings" ? (
           <SettingsWindow />

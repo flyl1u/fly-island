@@ -16,7 +16,7 @@ export async function checkGeneralControls(
   const first = timers[0];
   const plus = first.parentElement!.querySelector<HTMLButtonElement>("button:last-child")!;
   await act(async () => plus.click());
-  check(first.value === "31" && JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCollapseSeconds === 31, "Plus increments by 1 and saves");
+  check(first.value === "31" && JSON.parse(localStorage.getItem("fly-island-settings")!).autoCollapseSeconds === 31, "Plus increments by 1 and saves");
   await type(first, "9999");
   await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
   check(first.value === "600" && plus.disabled, `Blur clamps to max and disables Plus (${first.value}, ${plus.disabled}, connected=${first.isConnected})`);

@@ -69,15 +69,15 @@ function Copy-AgentTaskStatus {
 }
 
 function Get-DefaultStatusPath {
-  if ($env:FOCUSD_AGENT_STATUS_PATH) {
-    return $env:FOCUSD_AGENT_STATUS_PATH
+  if ($env:FLY_ISLAND_AGENT_STATUS_PATH) {
+    return $env:FLY_ISLAND_AGENT_STATUS_PATH
   }
 
   if ($env:APPDATA) {
-    return Join-Path $env:APPDATA "com.focusd.island\agent-status.json"
+    return Join-Path $env:APPDATA "com.flyisland.app\agent-status.json"
   }
 
-  return Join-Path $env:LOCALAPPDATA "com.focusd.island\agent-status.json"
+  return Join-Path $env:LOCALAPPDATA "com.flyisland.app\agent-status.json"
 }
 
 function Get-AgentMarkerNames {
@@ -139,13 +139,13 @@ if (-not $StatusPath) {
   $StatusPath = Get-DefaultStatusPath
 }
 
-$mutex = New-Object System.Threading.Mutex($false, "FocuSD.AgentStatus")
+$mutex = New-Object System.Threading.Mutex($false, "Fly Island.AgentStatus")
 $hasLock = $false
 
 try {
   $hasLock = $mutex.WaitOne([TimeSpan]::FromSeconds(5))
   if (-not $hasLock) {
-    throw "Timed out waiting for the FocuSD agent status file lock."
+    throw "Timed out waiting for the Fly Island agent status file lock."
   }
 
   $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()

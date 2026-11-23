@@ -33,7 +33,7 @@ export type MusicText = {
   lyricsLabel: string;
   /** No lyrics for a Chinese song while only LRCLIB is asked; opens Settings → Music. */
   lyricsChineseHint: { text: string; label: string };
-  lyricsOffset: { label: string; slower: string; faster: string; reset: (seconds: number) => string; fast: string };
+  lyricsOffset: { label: string; earlier: string; later: string; reset: (seconds: number) => string; fast: string };
   unknownArtist: string;
   previous: string;
   previousTrack: string;
@@ -90,9 +90,9 @@ export const zhCN: MusicText = {
   lyricsChineseHint: { text: "没找到歌词 · 试试酷狗和网易云", label: "这首歌没找到歌词。打开设置，开启「也查酷狗和网易云」" },
   lyricsOffset: {
     label: "这首歌的歌词快慢",
-    slower: "歌词慢 0.5 秒",
-    faster: "歌词快 0.5 秒",
-    reset: (seconds) => (seconds === 0 ? "没有调整" : `已${seconds > 0 ? "快" : "慢"} ${Math.abs(seconds)} 秒，点击恢复`),
+    earlier: "歌词提前 0.5 秒",
+    later: "歌词推后 0.5 秒",
+    reset: (seconds) => (seconds === 0 ? "没有调整" : `已${seconds > 0 ? "推后" : "提前"} ${Math.abs(seconds)} 秒，点击恢复`),
     fast: "长按可一次调整 5 秒",
   },
   unknownArtist: "未知艺术家",
@@ -151,9 +151,9 @@ export const en: MusicText = {
   lyricsChineseHint: { text: "No lyrics · try Kugou and NetEase", label: "No lyrics found for this song. Open settings to also ask Kugou and NetEase" },
   lyricsOffset: {
     label: "Lyrics timing for this song",
-    slower: "Lyrics 0.5 s slower",
-    faster: "Lyrics 0.5 s faster",
-    reset: (seconds) => (seconds === 0 ? "Not moved" : `Moved ${Math.abs(seconds)} s ${seconds > 0 ? "faster" : "slower"}; click to reset`),
+    earlier: "Lyrics 0.5 s earlier",
+    later: "Lyrics 0.5 s later",
+    reset: (seconds) => (seconds === 0 ? "Not moved" : `Moved ${Math.abs(seconds)} s ${seconds > 0 ? "later" : "earlier"}; click to reset`),
     fast: "Hold to move 5 s at a time",
   },
   unknownArtist: "Unknown artist",

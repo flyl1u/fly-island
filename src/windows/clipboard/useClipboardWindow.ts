@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { loadSettings, STORAGE_KEY } from "../../features/appearance/storage";
 import { closeClipboardWindow, closesClipboardWindowOnBlur, isClipboardWindowFocused, listenClipboardWindowFocus, setClipboardWindowPinned, setClipboardWindowTitle, showClipboardWindow } from "./api";
 import { loadClipboardWindowPinned, saveClipboardWindowPinned } from "./storage";
 
@@ -7,6 +8,14 @@ export function useClipboardWindow(title: string) {
   const [pinned, setPinned] = useState(loadClipboardWindowPinned);
   const [busy, setBusy] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [hoverPreview, setHoverPreview] = useState(() => loadSettings().clipboardHoverPreview);
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) setHoverPreview(loadSettings().clipboardHoverPreview);
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
   useEffect(() => {
     void setClipboardWindowTitle(title).catch(() => setFailed(true));
   }, [title]);
@@ -63,5 +72,5 @@ export function useClipboardWindow(title: string) {
     } catch { setFailed(true); }
     finally { setBusy(false); }
   };
-  return { pinned, busy, failed, togglePinned, reportFailure: () => setFailed(true) };
+  return { pinned, busy, failed, hoverPreview, togglePinned, reportFailure: () => setFailed(true) };
 }

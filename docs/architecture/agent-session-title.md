@@ -76,7 +76,7 @@
 
 ```text
 Agent hook（UserPromptSubmit）
-  └─ focusd-agent-running.cmd <provider> capture
+  └─ fly-island-agent-running.cmd <provider> capture
        ├─ 写运行标记 agent-<provider>-running.flag（不变）
        └─ 把 stdin 原样写入 agent-<provider>-hook-input.json（新增，只转存不解析）
 
@@ -88,7 +88,7 @@ Agent hook（UserPromptSubmit）
 
 - 只有 `UserPromptSubmit` 转存输入。Claude Code 的 `PreToolUse` 仍只写标记：它的输入含工具参数（如整个待写文件），可能很大，且不带新信息。为此运行脚本增加第二个参数 `capture`，没有该参数时行为与现在完全相同，所以未重新安装 hook 的用户不受影响。
 - 同一 Agent 多个会话共用一个 hook-input 文件，后提问的覆盖先提问的，与"显示最近有动静的会话"一致。
-- `Stop` / `StopFailure` 走的 `focusd-agent-status.ps1` 不改。
+- `Stop` / `StopFailure` 走的 `fly-island-agent-status.ps1` 不改。
 
 ## 6. 契约变化
 
@@ -98,9 +98,9 @@ Agent hook（UserPromptSubmit）
 | `get_agent_status` 返回值 | `codex`、`claudeCode` 各新增可选字段 `title?: string` | 只增不改；前端缺字段时不显示标题 |
 | `agent-status.json` | 不变 | — |
 | 应用数据目录 | 新增 `agent-codex-hook-input.json`、`agent-claudeCode-hook-input.json` | 新文件；"清除状态"时一并删除 |
-| `focusd-agent-running.cmd` | 新增可选第二参数 `capture` | 旧调用方式行为不变 |
+| `fly-island-agent-running.cmd` | 新增可选第二参数 `capture` | 旧调用方式行为不变 |
 | hook 受管区块 | `UserPromptSubmit` 的命令多一个 `capture` 参数；标记、签名前缀不变 | 用户点"安装/修复"后生效，旧配置继续只亮灯 |
-| `localStorage` | `focusd-island-settings` 新增布尔字段 `agentTitleEnabled`（缺省为 `true`） | 按现有 normalize 规则补默认值 |
+| `localStorage` | `fly-island-settings` 新增布尔字段 `agentTitleEnabled`（缺省为 `true`） | 按现有 normalize 规则补默认值 |
 
 实施时同步更新 [agent-status-hooks.md](../agent-status-hooks.md)（顺带把其中过时的"运行中为红色"改为蓝色）和 [overview.md](overview.md) 的数据存放位置表。
 
@@ -108,7 +108,7 @@ Agent hook（UserPromptSubmit）
 
 | 位置 | 内容 |
 |---|---|
-| `src-tauri/src/agent_status/hooks/focusd-agent-running.cmd` | `capture` 参数：把 stdin 写入 hook-input 文件 |
+| `src-tauri/src/agent_status/hooks/fly-island-agent-running.cmd` | `capture` 参数：把 stdin 写入 hook-input 文件 |
 | `src-tauri/src/agent_status/claude_hooks.rs`、`codex_hooks.rs` | `UserPromptSubmit` 命令加 `capture` 参数 |
 | `src-tauri/src/agent_status/title.rs`（新增） | 纯逻辑：解析 hook 输入、读记录尾部 / 开头、查 Codex 索引、后备与截断、路径校验 |
 | `src-tauri/src/agent_status/title_cache.rs`（如需要） | 缓存与 Codex 首句提问的内存记录；全局状态封装在模块内部 |

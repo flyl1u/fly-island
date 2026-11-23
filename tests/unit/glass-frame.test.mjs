@@ -37,6 +37,9 @@ test("clipboard rows are text, image or files, and the type filter matches them"
   assert.equal(clipboardItemKind({ kind: "text", files: [] }), "text");
   assert.equal(clipboardItemKind({ kind: "text", files: ["C:/a.txt"] }), "file");
   assert.equal(clipboardItemKind({ kind: "image" }), "image");
+  assert.equal(clipboardItemKind({ kind: "image", files: ["C:/a.png"] }), "image");
+  assert.equal(matchesKind({ kind: "image", files: ["C:/a.png"] }, "image"), true);
+  assert.equal(matchesKind({ kind: "image", files: ["C:/a.png"] }, "file"), false);
   assert.equal(matchesKind({ kind: "image" }, "any"), true);
   assert.equal(matchesKind({ kind: "image" }, "text"), false);
 });

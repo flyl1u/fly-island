@@ -22,18 +22,18 @@ Object.assign(globalThis, { isTauri: true });
 
 // Every visit starts from the same island: clear what an earlier visit left, then write the demo's
 // own settings and tasks.
-for (const key of Object.keys(localStorage)) if (key.startsWith("focusd-island-")) localStorage.removeItem(key);
+for (const key of Object.keys(localStorage)) if (key.startsWith("fly-island-")) localStorage.removeItem(key);
 const now = Date.now();
 const today = new Date();
 localStorage.setItem(LOCALE_STORAGE_KEY, language === "en" ? "en" : "zh-CN");
-localStorage.setItem("focusd-island-current-date", `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`);
-localStorage.setItem("focusd-island-detached-settings", "false");
-localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+localStorage.setItem("fly-island-current-date", `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`);
+localStorage.setItem("fly-island-detached-settings", "false");
+localStorage.setItem("fly-island-qq-notification-access-requested", "true");
 // The demo has no About page to open, so the community group's red dots would never go away.
-localStorage.setItem("focusd-island-community-invite-seen", "true");
+localStorage.setItem("fly-island-community-invite-seen", "true");
 // A started task shows on the collapsed island ahead of the Agent task, so starting one is visible.
-localStorage.setItem("focusd-island-settings", JSON.stringify({ lyricsOnline: true, collapsedPriority: ["todo", "agent", "lyrics"] }));
-localStorage.setItem("focusd-island-todos", JSON.stringify(data.todos.map((title, index) => ({
+localStorage.setItem("fly-island-settings", JSON.stringify({ lyricsOnline: true, collapsedPriority: ["todo", "agent", "lyrics"] }));
+localStorage.setItem("fly-island-todos", JSON.stringify(data.todos.map((title, index) => ({
   id: `t${index}`, title, completed: index === 2, createdAt: now - (3 - index) * 3_600_000,
 }))));
 

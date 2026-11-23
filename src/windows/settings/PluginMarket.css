@@ -6,16 +6,8 @@
 
 .plugin-market__header {
   display: grid;
-  gap: 2px;
+  gap: 0;
   padding: 0 var(--space-xs);
-}
-
-.plugin-market__title {
-  margin: 0;
-  color: var(--color-text);
-  font-size: calc(13px * var(--island-font-scale, 1));
-  font-weight: 600;
-  line-height: 1.3;
 }
 
 .plugin-market__hint {
@@ -45,8 +37,9 @@
   min-height: 168px;
   padding: var(--space-2xl);
   overflow: hidden;
+  --plugin-card-glow: color-mix(in srgb, var(--plugin-accent) 16%, transparent);
   background:
-    radial-gradient(120px 96px at 34px 30px, color-mix(in srgb, var(--plugin-accent) 16%, transparent), transparent 72%),
+    radial-gradient(120px 96px at 34px 30px, var(--plugin-card-glow), transparent 72%),
     var(--color-white-a04);
   border: 1px solid var(--color-white-a06);
   border-radius: var(--corner-2xl);
@@ -61,9 +54,9 @@
 
 .plugin-card__top {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-md);
+  align-items: center;
+  gap: var(--space-lg);
+  min-width: 0;
 }
 
 .plugin-card__icon {
@@ -92,18 +85,7 @@
   border-radius: var(--radius-circle);
 }
 
-.plugin-card__kind {
-  padding: 2px 7px;
-  color: var(--color-text-subtle);
-  background: var(--color-white-a06);
-  border-radius: var(--radius-pill);
-  font-size: calc(10.5px * var(--island-font-scale, 1));
-  font-weight: 500;
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-.plugin-card__text {
+.plugin-card__heading {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -120,6 +102,32 @@
   white-space: nowrap;
 }
 
+.plugin-card__author {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-subtle);
+  font-size: calc(11.5px * var(--island-font-scale, 1));
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-card__author-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-radius: var(--corner-xs);
+}
+
+.plugin-card__author-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.plugin-card__author-link:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
 .plugin-card__description {
   display: -webkit-box;
   margin: 0;
@@ -132,13 +140,38 @@
   line-clamp: 3;
 }
 
+.plugin-card--disabled {
+  --plugin-card-glow: var(--color-white-a06);
+}
+
+.plugin-card--disabled .plugin-card__tile,
+.plugin-card--disabled .plugin-card__check {
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+
+.plugin-card--disabled .plugin-card__name {
+  color: var(--color-text-muted);
+}
+
+.plugin-card--disabled .plugin-card__description {
+  color: color-mix(in srgb, var(--color-text-subtle) 90%, transparent);
+}
+
+.plugin-card__footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: auto;
+}
+
 .plugin-card__action {
   display: inline-grid;
-  align-self: flex-start;
   place-items: center;
   min-width: 64px;
   height: 26px;
-  margin-top: auto;
   padding: 0 14px;
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 16%, transparent);
@@ -152,11 +185,11 @@
   transition: background-color 140ms ease, color 140ms ease, transform 120ms ease;
 }
 
-.plugin-card__action:hover {
+.plugin-card__action:enabled:hover {
   background: color-mix(in srgb, var(--color-accent) 24%, transparent);
 }
 
-.plugin-card__action:active {
+.plugin-card__action:enabled:active {
   transform: scale(0.96);
 }
 
@@ -165,8 +198,16 @@
   outline-offset: 2px;
 }
 
+.plugin-card__action--preview {
+  color: var(--color-text-subtle);
+  background: var(--color-white-a06);
+  cursor: default;
+}
+
 /* Installed: a quiet "Installed" that turns into "Remove" under the pointer or keyboard focus. */
 .plugin-card__action--remove {
+  min-width: 0;
+  padding-inline: var(--space-lg);
   color: var(--color-text-subtle);
   background: var(--color-white-a06);
 }
@@ -182,17 +223,26 @@
   color: var(--color-error-text);
 }
 
-.plugin-card__action--remove:hover,
+.plugin-card__action--remove:enabled:hover,
 .plugin-card__action--remove:focus-visible {
   background: color-mix(in srgb, var(--color-danger) 16%, transparent);
 }
 
-.plugin-card__action--remove:hover .plugin-card__state,
+.plugin-card__action--remove:enabled:hover .plugin-card__state,
 .plugin-card__action--remove:focus-visible .plugin-card__state {
   opacity: 0;
 }
 
-.plugin-card__action--remove:hover .plugin-card__remove,
+.plugin-card__action--remove:enabled:hover .plugin-card__remove,
 .plugin-card__action--remove:focus-visible .plugin-card__remove {
   opacity: 1;
+}
+
+.plugin-card__package {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--plugin-accent);
+  background: var(--color-white-a08);
 }

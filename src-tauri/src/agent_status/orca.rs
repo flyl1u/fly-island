@@ -1,7 +1,7 @@
 //! Orca (an agent workspace that runs many terminals in one window) support. Its window title is
 //! always "Orca", so titles cannot tell sessions apart, but each terminal has a handle in
 //! `ORCA_TERMINAL_HANDLE` and `orca terminal switch --terminal <handle>` brings that tab to the
-//! front. Claude Code's SessionStart hook (focusd-agent-running.cmd ... session) saves its input,
+//! front. Claude Code's SessionStart hook (fly-island-agent-running.cmd ... session) saves its input,
 //! which names the session, as `agent-terminals/<handle>.json` in the app data folder.
 
 use std::{

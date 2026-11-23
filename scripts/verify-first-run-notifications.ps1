@@ -11,8 +11,8 @@ $taskExecutable = if ($ExecutablePath) { (Resolve-Path -LiteralPath $ExecutableP
 $taskRunId = [Guid]::NewGuid().ToString('N')
 $taskRunDirectory = Join-Path $taskRepository ('src-tauri\target\first-run-verification\' + $taskRunId)
 $taskProfile = Join-Path $taskRunDirectory 'WebView2'
-$taskIdentifier = 'com.focusd.island.verification.' + $taskRunId
-$taskReportPath = Join-Path ([IO.Path]::GetTempPath()) ('FocuSD-notification-verification\' + $taskRunId + '.json')
+$taskIdentifier = 'com.flyisland.app.verification.' + $taskRunId
+$taskReportPath = Join-Path ([IO.Path]::GetTempPath()) ('Fly Island-notification-verification\' + $taskRunId + '.json')
 foreach ($taskRoot in @([Environment]::GetFolderPath('ApplicationData'), [Environment]::GetFolderPath('LocalApplicationData'))) {
     if (Test-Path -LiteralPath (Join-Path $taskRoot $taskIdentifier)) { throw 'Verification application data already exists.' }
 }
@@ -36,9 +36,9 @@ try {
     $taskStart.CreateNoWindow = $true
     $taskStart.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
     $taskStart.EnvironmentVariables['WEBVIEW2_USER_DATA_FOLDER'] = $taskProfile
-    $taskStart.EnvironmentVariables['FOCUSD_VERIFY_NOTIFICATIONS'] = '1'
-    $taskStart.EnvironmentVariables['FOCUSD_NOTIFICATION_VERIFICATION_ID'] = $taskRunId
-    $taskStart.EnvironmentVariables['FOCUSD_VERIFY_NOTIFICATION_SECONDS'] = [string]$ObservationSeconds
+    $taskStart.EnvironmentVariables['FLY_ISLAND_VERIFY_NOTIFICATIONS'] = '1'
+    $taskStart.EnvironmentVariables['FLY_ISLAND_NOTIFICATION_VERIFICATION_ID'] = $taskRunId
+    $taskStart.EnvironmentVariables['FLY_ISLAND_VERIFY_NOTIFICATION_SECONDS'] = [string]$ObservationSeconds
     $taskProcess = [Diagnostics.Process]::Start($taskStart)
     [pscustomobject]@{ Phase='Started'; Pid=$taskProcess.Id; Directory=$taskRunDirectory; NativeReport=$taskReportPath; Sha256=$taskSourceHash } | ConvertTo-Json -Compress
     $taskDeadline = [DateTime]::UtcNow.AddSeconds($ObservationSeconds + 30)

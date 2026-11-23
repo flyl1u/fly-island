@@ -5,7 +5,7 @@ import { normalizeLayoutSettings } from "./normalizeLayoutSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
-// Island settings (focusd-island-settings): limits in settingsLimits.ts, first-launch values in
+// Island settings (fly-island-settings): limits in settingsLimits.ts, first-launch values in
 // settingsDefaults.ts, and reading saved ones in normalize*Settings.ts by area. New settings go in
 // those files; this one keeps the entry points other code imports.
 export * from "./settingsLimits.ts";
@@ -44,6 +44,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "material",
   "colorScheme",
   "fontFamily",
+  "localFontFamily",
   "islandFontPercent",
   "pageButtonStyle",
   "glassIntensity",

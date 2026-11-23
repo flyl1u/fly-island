@@ -1,8 +1,5 @@
-// pnpm dev, then open /tests/regression/island-tour.html. The whole island with believable data
-// behind a fake desktop, for looking at every page by eye: ?media=playing|paused|nocover|long|
-// nolyrics|none picks what the player reports (?lyrics=0 turns online lyrics off), ?empty=1 empties every list, ?lang=en switches the
-// interface, ?detached=1 floats the island below the top edge, ?capsule=1 picks the capsule shape. With ?test=1 it opens each page and
-// checks that nothing sticks out of the island's rounded shape.
+// Run pnpm dev and open /tests/regression/island-tour.html for the island against a mock desktop.
+// ?media=playing|paused|nocover|long|nolyrics|none, ?lyrics=0, ?empty=1, ?lang=en, ?detached=1, ?capsule=1 and ?test=1 configure the tour.
 import { checkClockWeatherIsland, clockWeatherMock } from "./clockWeatherIsland";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -11,9 +8,11 @@ import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
+import { checkIslandTourPageButtons } from "./islandTourPageButtons";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkCollapsedShape } from "./islandTourShape";
-import { checkMaterial, checkTone } from "./islandTourTheme";
+import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } from "./islandTourTheme";
+import { prepareTourGlassBackdrop, runShoulderFixture } from "./islandTourShoulders";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
 import { TOUR_CLIPBOARD, TOUR_KIMI_USAGE, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SHELF, TOUR_TODOS, tourMediaState, tourSessions, type TourMedia } from "./islandTourMocks";
 
@@ -23,16 +22,14 @@ const empty = query.has("empty");
 const media = (query.get("media") ?? "playing") as TourMedia;
 const customNotch = query.has("notch");
 const fontPercent = Number(query.get("font")) || 100;
-// ?theme=dark|light|system picks the colour scheme, ?bg=FFFFFF a background colour of the user's own,
-// ?material=liquidGlass|frostedGlass the material.
-// ?tuck=line|hidden picks the tucked look (default edge).
+// ?theme=dark|light|system picks the colour scheme; ?bg=FFFFFF sets the background and ?material=classic|liquidGlass|frostedGlass the material.
 const tuckStyle = query.get("tuck") ?? "edge";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
 
 // The tour writes the island's own keys; whatever the browser profile had comes back on leaving.
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const restore = () => {
-  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 };
 window.addEventListener("beforeunload", restore);
@@ -41,28 +38,27 @@ for (const key of original.keys()) localStorage.removeItem(key);
 const today = new Date();
 const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh-CN");
-localStorage.setItem("focusd-island-current-date", date);
+localStorage.setItem("fly-island-current-date", date);
 // This tour exercises the embedded settings page even though new users get a separate window.
-localStorage.setItem("focusd-island-detached-settings", "false");
+localStorage.setItem("fly-island-detached-settings", "false");
 // Exercise the explicitly selected style after the one-time default migration.
 installTourPlugins();
-localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
-localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+localStorage.setItem("fly-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
+localStorage.setItem("fly-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
 // ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it,
 // ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.85…1.2 sets the expanded size.
-localStorage.setItem("focusd-island-settings", JSON.stringify({
+localStorage.setItem("fly-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
   islandFontPercent: fontPercent,
   ...(query.get("theme") ? { colorScheme: query.get("theme") } : {}),
   ...(query.get("bg") ? { islandBackgroundColor: `#${query.get("bg")}` } : {}),
-  ...(query.get("material") ? { material: query.get("material") } : {}),
-  topEdgeShoulders: query.has("shoulders"), topEdgeShoulderSize: 20,
+  ...(query.get("material") ? { material: query.get("material") } : {}), ...(query.get("opacity") ? { opacity: Number(query.get("opacity")) } : {}), ...(query.get("corner") ? { islandCornerShape: query.get("corner") } : {}),
+  topEdgeShoulders: query.has("shoulders") || query.has("shoulderSweep") || query.has("shapePerf"), topEdgeShoulderSize: 20,
   ...(query.has("capsule") ? { islandShape: "capsule" } : {}),
   tuckStyle,
-  // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
-  pageButtonStyle: "capsule",
+  pageButtonStyle: query.get("pageButtons") === "iconLabel" ? "iconLabel" : "capsule",
   // The waiting session would pop the Agent page open at a random moment and race the geometry checks.
   agentAlertWaiting: false, agentAlertCompleted: false, agentAlertFailed: false,
   lyricsOnline: query.get("lyrics") !== "0",
@@ -71,8 +67,8 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("layout") ? { collapsedLayout: query.get("layout")!.split(",") } : {}),
 }));
 // A colour of the user's own survives the one-time colour refresh (storage.ts) as it would for a real user.
-if (query.has("bg")) localStorage.setItem("focusd-island-color-refresh-v1", "1");
-if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
+if (query.has("bg")) localStorage.setItem("fly-island-color-refresh-v1", "1");
+if (query.has("detached")) localStorage.setItem("fly-island-position", JSON.stringify({ x: 300, y: 60 }));
 
 let revision = 0;
 let windowDrags = 0;
@@ -147,7 +143,6 @@ const click = async (selector: string) => {
   await settle(700);
 };
 
-// Product decision (2026-11-13): the island's opening/closing is an exception to reduced motion.
 function checkShapeMotion(expectedSeconds: number) {
   const style = getComputedStyle(document.querySelector<HTMLElement>(".island")!);
   const properties = style.transitionProperty.split(",").map((value) => value.trim());
@@ -190,13 +185,17 @@ function strays() {
   return out;
 }
 
-if (!automated) {
+if (query.has("shoulderSweep") || query.has("shapePerf")) {
+  mount(); await runShoulderFixture(query, results);
+} else if (!automated) {
   mount();
   results.remove();
+} else if (query.get("pageButtons") === "iconLabel") {
+  await checkIslandTourPageButtons({ mount, click, settle, check, results, messages }).finally(restore);
 } else {
   try {
     await act(async () => { mount(); });
-    await settle(300);
+    await settle(300); if (query.has("glassBackdrop")) prepareTourGlassBackdrop();
     const island = () => document.querySelector<HTMLElement>(".island")!;
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     if (query.has("clockWeather")) await checkClockWeatherIsland(check, settle);
@@ -205,6 +204,7 @@ if (!automated) {
     const expectedHeight = customNotch ? 32 : 38;
     checkShapeMotion(0.38);
     checkCollapsedShape(query.has("capsule"), { island: island(), expectedHeight, interaction, check });
+    if (query.has("classicShoulders")) checkClassicShoulders(check);
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
     if (customNotch) {
       const title = bar.querySelector<HTMLElement>(".island__agent-session, .island__active-task, .island__todo-count, .collapsed-lyric")!;
@@ -228,7 +228,7 @@ if (!automated) {
     }
     checkShapeMotion(0.56);
     if (query.has("theme") || query.has("bg")) checkTone(check, query.get("theme") === "light" || (query.get("bg") ?? "").toUpperCase() === "FFFFFF");
-    if (query.get("material")) checkMaterial(check, query.get("material")!);
+    if (query.get("material") && query.get("material") !== "classic") checkMaterial(check, query.get("material")!); if (query.has("glassBackdrop")) checkGlassShoulders(check);
     const panelMotion = getComputedStyle(panel());
     check(panelMotion.transitionProperty === "opacity, transform" && panelMotion.transitionDuration === "0.24s, 0.42s"
       && panelMotion.transitionDelay === "0.12s, 0.08s", "展开面板完整淡入，保留原时长与延迟");
@@ -249,7 +249,7 @@ if (!automated) {
       await act(async () => { fire("pointerup", target.left + target.width / 2); source.click(); });
     };
     await drag(".dot-button--todo", ".dot-button--clipboard");
-    const savedOrder = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageOrder as string[] | undefined;
+    const savedOrder = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").pageOrder as string[] | undefined;
     check(dotOrder().join() === "music,clipboard,todo,shelf,translation" && savedOrder?.join() === "music,clipboard,todo,shelf,translation" && island().className === pageBefore,
       `拖动页面圆点可以调整顺序并保存，拖完不切页（${dotOrder().join()}）`);
     await drag(".dot-button--todo", ".dot-button--music");
@@ -336,8 +336,8 @@ if (!automated) {
     await click(".settings-sidebar__item[data-category='appearance']");
     const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;
     check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 6, "已保存为胶囊的页面按钮保持胶囊（含消息）");
-    await click('[aria-label="页面按钮"] button:last-child');
-    const savedStyle = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageButtonStyle;
+    await click('[aria-label="页面按钮"] button:nth-child(2)');
+    const savedStyle = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").pageButtonStyle;
     check(document.querySelectorAll(".dot-button--icon svg, .island__agent-button svg.lucide-bot").length === 7 &&
       document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "七个入口切换为图标，外观预览和保存同步");
     await click('[aria-label="页面按钮"] button:first-child');
@@ -346,7 +346,7 @@ if (!automated) {
     await act(async () => {
       document.querySelector<HTMLElement>(".reorder-list__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     });
-    const savedPriority = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
+    const savedPriority = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
     check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
     // Appearance → On the island: the music waveform moved left of the light and the text sits on
     // the collapsed island's left.
@@ -356,7 +356,7 @@ if (!automated) {
         document.querySelector<HTMLElement>(".collapsed-layout__slot--music")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       });
     }
-    const savedLayout = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
+    const savedLayout = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
     check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather" && barOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
       `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${barOrder()}）`);
     await click(".settings-sidebar__item[data-category='general']");

@@ -1,6 +1,6 @@
 import { act } from "react";
 
-const saved = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { collapsedLayout?: string[]; collapsedHidden?: string[] };
+const saved = () => JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}") as { collapsedLayout?: string[]; collapsedHidden?: string[] };
 
 export async function checkCollapsedLayout(check: (condition: unknown, message: string) => void) {
   const island = () => document.querySelector<HTMLElement>(".collapsed-layout__island")!;

@@ -21,9 +21,9 @@ export function lyricClockAt(
   offsetMs: number,
 ) {
   const playing = mediaState.playbackStatus === "playing";
-  // A positive offset moves the lyrics on: the words run ahead of the music, so the island
-  // shows the next line sooner. It is the sign the buttons and the calibration use.
-  const position = playbackPosition(mediaState, now) + offsetMs;
+  // A positive offset moves the lyrics back: the words run behind the music, so the island keeps
+  // the previous line. It is the sign the buttons and the calibration use.
+  const position = playbackPosition(mediaState, now) - offsetMs;
   const linePosition = position + LYRIC_LEAD_MS;
   return {
     index: lines ? lineIndexAt(lines, linePosition) : -1,

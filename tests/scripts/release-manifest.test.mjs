@@ -8,7 +8,7 @@ import test from "node:test";
 
 const script = fileURLToPath(new URL("../../scripts/release/make-latest-json.mjs", import.meta.url));
 function fixture({ msiSignature = true, targetDirectory = "src-tauri/target" } = {}) {
-  const root = mkdtempSync(join(tmpdir(), "focusd-manifest-test-"));
+  const root = mkdtempSync(join(tmpdir(), "fly-island-manifest-test-"));
   const nsis = join(root, targetDirectory, "release/bundle/nsis");
   const msi = join(root, targetDirectory, "release/bundle/msi");
   mkdirSync(nsis, { recursive: true });

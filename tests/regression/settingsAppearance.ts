@@ -1,6 +1,7 @@
 import { act } from "react";
 import { checkCollapsedLayout } from "./settingsCollapsedLayout";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
+import { commands } from "./settingsMocks";
 
 const element = <T extends HTMLElement>(selector: string) => {
   const found = document.querySelector<T>(selector);
@@ -18,14 +19,14 @@ const type = async (input: HTMLInputElement, value: string) => {
   });
 };
 const storedColors = () => {
-  const { islandBackgroundColor, taskTextColor, pulseColor } = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}");
+  const { islandBackgroundColor, taskTextColor, pulseColor } = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}");
   return { islandBackgroundColor, taskTextColor, pulseColor };
 };
 
 export function prepareColorRegression() {
-  localStorage.setItem("focusd-island-color-refresh-v1", "1");
-  localStorage.removeItem("focusd-island-color-backup");
-  localStorage.removeItem("focusd-island-color-presets");
+  localStorage.setItem("fly-island-color-refresh-v1", "1");
+  localStorage.removeItem("fly-island-color-backup");
+  localStorage.removeItem("fly-island-color-presets");
 }
 
 async function checkColorInputs(check: (condition: unknown, message: string) => void) {
@@ -38,7 +39,7 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
   const swatch = element<HTMLButtonElement>(".settings-color__swatch");
   // At 150% Windows scaling Chromium quantizes a 1px border to 0.666667 CSS px.
   check(swatch.getBoundingClientRect().width === 36 && parseFloat(getComputedStyle(swatch).borderTopWidth) > 0, "The round 36px swatch has a visible border");
-  const saved = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").islandBackgroundColor;
+  const saved = () => JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").islandBackgroundColor;
   const edit = async (value: string, key: string) => {
     await click(".appearance-hex");
     const input = element<HTMLInputElement>("input.appearance-hex");
@@ -84,22 +85,22 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
   await act(async () => { swatches[1].click(); });
   const area = element<HTMLElement>(".settings-color__area");
   const box = area.getBoundingClientRect();
-  const before = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").taskTextColor;
+  const before = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").taskTextColor;
   await act(async () => {
     area.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, clientX: box.left + box.width * 0.8, clientY: box.top + box.height * 0.2 }));
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
-  const during = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").taskTextColor;
+  const during = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").taskTextColor;
   check(during && during !== before, "The colour picker saves while the pointer is still down");
   await act(async () => { area.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 })); });
   await act(async () => { document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
   check(!document.querySelector(".settings-color__picker"), "A click outside closes the picker");
-  check(!localStorage.getItem("focusd-island-color-backup") && !document.querySelector(".appearance-color-restore"),
+  check(!localStorage.getItem("fly-island-color-backup") && !document.querySelector(".appearance-color-restore"),
     "Manual hex and picker edits do not create or overwrite a backup");
 }
 
 async function checkColorPresets(check: (condition: unknown, message: string) => void) {
-  const saved = () => JSON.parse(localStorage.getItem("focusd-island-color-presets") ?? "[]") as { id: string; islandBackgroundColor: string; pageTextColor?: string }[];
+  const saved = () => JSON.parse(localStorage.getItem("fly-island-color-presets") ?? "[]") as { id: string; islandBackgroundColor: string; pageTextColor?: string }[];
   const chips = () => [...document.querySelectorAll<HTMLButtonElement>(".appearance-preset__apply")];
   const plus = () => element<HTMLButtonElement>(".appearance-presets__add");
   const setBackground = async (value: string) => {
@@ -109,7 +110,7 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
     await act(async () => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
   };
   const expected = storedColors();
-  const retired = localStorage.getItem("focusd-island-setting-presets");
+  const retired = localStorage.getItem("fly-island-setting-presets");
   check(plus().closest(".settings-row")?.querySelector(".settings-row__title")?.textContent === "预设", "Presets are the last row of the Colors card");
   await click(".appearance-presets__add");
   check(saved().length === 1 && chips().length === 1 && chips()[0].getAttribute("aria-label")?.includes(expected.islandBackgroundColor)
@@ -117,7 +118,7 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
     "Plus saves a color chip whose accessible label reads all three colors");
   await click(".appearance-presets__add");
   check(saved().length === 1, "Saving identical colors does not duplicate the preset");
-  const pageInk = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageTextColor;
+  const pageInk = () => JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").pageTextColor;
   const setPageInk = async (value: string) => {
     const hex = document.querySelectorAll<HTMLButtonElement>(".settings-color .appearance-hex")[3];
     await act(async () => hex.click());
@@ -138,13 +139,13 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
   // Leave one chip for the existing three-color backup checks below.
   await act(async () => document.querySelectorAll<HTMLButtonElement>(".appearance-preset__delete")[1].click());
   await act(async () => document.querySelectorAll<HTMLButtonElement>(".appearance-preset__delete")[1].click());
-  const backupBeforeEdit = localStorage.getItem("focusd-island-color-backup");
+  const backupBeforeEdit = localStorage.getItem("fly-island-color-backup");
   await setBackground("556677");
-  check(localStorage.getItem("focusd-island-color-backup") === backupBeforeEdit, "A manual color edit preserves the existing backup");
+  check(localStorage.getItem("fly-island-color-backup") === backupBeforeEdit, "A manual color edit preserves the existing backup");
   const beforeApply = storedColors();
   await click(".appearance-preset__apply");
   check(JSON.stringify(storedColors()) === JSON.stringify(expected)
-    && JSON.stringify(JSON.parse(localStorage.getItem("focusd-island-color-backup")!)) === JSON.stringify(beforeApply),
+    && JSON.stringify(JSON.parse(localStorage.getItem("fly-island-color-backup")!)) === JSON.stringify(beforeApply),
     "Applying a color preset backs up the current colors before saving the preset colors");
   await click(".appearance-color-restore");
   check(JSON.stringify(storedColors()) === JSON.stringify(beforeApply), "Restore undoes applying a preset");
@@ -166,9 +167,9 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
   check(saved().length === 8 && remove.getAttribute("aria-label")?.includes("再点一次删除")
     && document.querySelector(".appearance-presets__confirmation")?.textContent === "再点一次删除",
     "First delete click arms a red confirmation with updated accessible text");
-  const beforeConfirmApply = localStorage.getItem("focusd-island-settings");
+  const beforeConfirmApply = localStorage.getItem("fly-island-settings");
   await act(async () => chips()[0].click());
-  check(localStorage.getItem("focusd-island-settings") === beforeConfirmApply && saved().length === 8,
+  check(localStorage.getItem("fly-island-settings") === beforeConfirmApply && saved().length === 8,
     "Clicking the chip while confirming neither applies nor deletes it");
   await act(async () => { remove.closest(".appearance-preset")!.dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body })); });
   check(!document.querySelector(".appearance-preset--confirming"), "Leaving the preset cancels delete confirmation");
@@ -181,11 +182,11 @@ async function checkColorPresets(check: (condition: unknown, message: string) =>
   await openPage("general");
   await openPage("appearance");
   check(chips().length === 7, "Reopening Appearance reads the saved presets");
-  check(localStorage.getItem("focusd-island-setting-presets") === retired, "Color presets leave the retired appearance preset key untouched");
+  check(localStorage.getItem("fly-island-setting-presets") === retired, "Color presets leave the retired appearance preset key untouched");
 }
 
 export async function checkAppearance(check: (condition: unknown, message: string) => void) {
-    const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as Partial<typeof DEFAULT_SETTINGS>;
+    const storedSettings = () => JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}") as Partial<typeof DEFAULT_SETTINGS>;
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
     await openPage("appearance");
     await checkCollapsedLayout(check);
@@ -195,13 +196,13 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     // and the island opens to show it.
     const sizeLabel = [...document.querySelectorAll<HTMLLabelElement>("label")].find((label) => label.textContent === "展开后的大小");
     const sizeSlider = element<HTMLInputElement>(`#${CSS.escape(sizeLabel?.htmlFor ?? "missing")}`);
-    const storedScale = () => (JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale;
+    const storedScale = () => (JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale;
     const previewIsland = element<HTMLElement>(".island-preview__island--expanded");
     const previewWidth = () => previewIsland.getBoundingClientRect().width;
     const originalPreviewWidth = previewWidth();
     check(sizeSlider.type === "range" && sizeSlider.min === "0.85" && sizeSlider.max === "1.2" && sizeSlider.step === "0.01" && sizeSlider.value === "1",
       "The expanded size is a slider from 0.85 to 1.2 in steps of 0.01, at 1 by default");
-    localStorage.removeItem("focusd-island-panel-preview");
+    localStorage.removeItem("fly-island-panel-preview");
     const setRange = (input: HTMLInputElement, value: string) => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -209,12 +210,12 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await act(async () => { setRange(sizeSlider, "1.05"); });
     await act(async () => { setRange(sizeSlider, "1.12"); });
     const sizeRow = sizeSlider.closest(".settings-row") ?? document.body;
-    check(storedScale() !== 1.12 && !localStorage.getItem("focusd-island-panel-preview") && sizeRow.querySelector(".settings-slider__value")?.textContent === "1.12x",
+    check(storedScale() !== 1.12 && !localStorage.getItem("fly-island-panel-preview") && sizeRow.querySelector(".settings-slider__value")?.textContent === "1.12x",
       "Dragging the expanded size shows the value but neither stores it nor resizes the island yet");
     check(Math.abs(previewWidth() / originalPreviewWidth - 1.12) < 0.01,
       "The drawing above the slider follows the unsaved size in real time");
     await act(async () => { window.dispatchEvent(new PointerEvent("pointerup")); });
-    const preview = JSON.parse(localStorage.getItem("focusd-island-panel-preview") ?? "{}") as { mode?: string };
+    const preview = JSON.parse(localStorage.getItem("fly-island-panel-preview") ?? "{}") as { mode?: string };
     check(storedScale() === 1.12 && preview.mode === "expanded", "Letting go stores 1.12 and opens the island to show it");
     await act(async () => { setRange(sizeSlider, "1"); });
     await act(async () => { sizeSlider.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true })); });
@@ -242,6 +243,37 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       "The uncommitted font slider updates both previews");
     await act(async () => window.dispatchEvent(new PointerEvent("pointerup")));
     check(storedSettings().islandFontPercent === 120, "Releasing the font slider saves the new size");
+    check(!commands.includes("list_installed_fonts"), "Appearance opens without enumerating local fonts");
+    const fontSelect = 'button[aria-label="岛屿字体"]';
+    const fontOption = (value: string) => `[role="listbox"][aria-label="岛屿字体"] [data-value="${value}"]`;
+    await click(fontSelect);
+    check(element(fontOption("system")).textContent === "默认字体" && element(fontOption("pixel")).textContent === "像素字体"
+      && element(fontOption("local:Microsoft YaHei")).textContent === "微软雅黑", "One font selector lists system, pixel, and localized installed families");
+    await click(fontOption("pixel"));
+    check(storedSettings().fontFamily === "pixel" && getComputedStyle(collapsedSample).fontFamily.includes("Fusion Pixel"),
+      "The pixel entry still applies the bundled font");
+    await click(fontSelect);
+    await click(fontOption("local:Consolas"));
+    check(storedSettings().fontFamily === "local" && storedSettings().localFontFamily === "Consolas"
+      && getComputedStyle(collapsedSample).fontFamily.startsWith("Consolas,")
+      && getComputedStyle(expandedSample).fontFamily.startsWith("Consolas,"),
+    "Selecting a family saves it and updates both island previews");
+    await click(fontSelect);
+    await click(fontOption("system"));
+    check(!getComputedStyle(collapsedSample).fontFamily.includes("Consolas"), "Switching to the system font updates the sample");
+    await click(fontSelect);
+    await click(fontOption("local:Consolas"));
+    check(element(fontSelect).textContent === "Consolas" && commands.filter((name) => name === "list_installed_fonts").length === 1,
+      "Reopening the selector reuses the installed font list");
+    const labeledChoice = [...document.querySelectorAll<HTMLButtonElement>('[aria-label="页面按钮"] button')]
+      .find((option) => option.textContent === "图标加文字")!;
+    await act(async () => labeledChoice.click());
+    const previewButtons = element(".agent-page-preview__dots--icon-label");
+    check(labeledChoice.getAttribute("aria-pressed") === "true" && storedSettings().pageButtonStyle === "iconLabel"
+      && previewButtons.dataset.pageLabelMode !== "icons"
+      && previewButtons.querySelector('[data-page-button="agents"] .page-button-content__text')?.textContent === "AI Agent"
+      && previewButtons.querySelector('[data-page-button="qq"] .page-button-content__text')?.textContent === "消息",
+      "The third page button style saves and draws the localized labels in the appearance preview");
     const autoWidth = inputNamed("自动宽度")!;
     check(autoWidth.checked && !inputNamed("宽度"), "The notch uses automatic width by default");
     await act(async () => autoWidth.click());
@@ -273,15 +305,16 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     check(storedSettings().opacity === DEFAULT_SETTINGS.opacity, "Confirming resets the appearance");
     check(storedSettings().islandFontPercent === 100 && storedSettings().collapsedAutoWidth && storedSettings().collapsedHeight === 38 && storedSettings().collapsedWidth === 340,
       "Appearance reset restores the font and notch defaults");
+    check(storedSettings().fontFamily === "system" && storedSettings().localFontFamily === "", "Appearance reset clears the custom font");
 
     check(storedSettings().carryOverIncompleteTodos === false, "Resetting the appearance keeps todo settings");
-    check(JSON.stringify(JSON.parse(localStorage.getItem("focusd-island-color-backup") ?? "null")) === JSON.stringify(colorsBeforeReset),
+    check(JSON.stringify(JSON.parse(localStorage.getItem("fly-island-color-backup") ?? "null")) === JSON.stringify(colorsBeforeReset),
       "Reset appearance first backs up all three colors");
     check(element(".appearance-color-restore").getAttribute("aria-label") === "恢复上一版颜色", "A backup reveals the restore icon with its accessible name");
     const colorsAfterReset = storedColors();
     await click(".appearance-color-restore");
     check(JSON.stringify(storedColors()) === JSON.stringify(colorsBeforeReset)
-      && JSON.stringify(JSON.parse(localStorage.getItem("focusd-island-color-backup")!)) === JSON.stringify(colorsAfterReset),
+      && JSON.stringify(JSON.parse(localStorage.getItem("fly-island-color-backup")!)) === JSON.stringify(colorsAfterReset),
       "Restore swaps current and backed-up colors and persists both");
     await click(".appearance-color-restore");
     check(JSON.stringify(storedColors()) === JSON.stringify(colorsAfterReset), "A second restore swaps the colors back");

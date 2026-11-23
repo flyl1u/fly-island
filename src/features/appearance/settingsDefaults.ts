@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   material: "classic",
   colorScheme: "dark",
   fontFamily: "system",
+  localFontFamily: "",
   islandFontPercent: ISLAND_FONT_PERCENT.default,
   pageButtonStyle: "icon",
   glassIntensity: 72,
@@ -142,6 +143,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   ctrlWheelPages: false,
   // Clipboard: keep the original four-row island height on first launch.
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
+  clipboardHoverPreview: false,
   todoVisibleRows: TODO_VISIBLE_ROWS.default,
   // Clipboard: a separate window is opt-in; pinning that window defaults to on.
   clipboardDetached: false,

@@ -1,0 +1,31 @@
+.todo-calendar__grid--marks {
+  --todo-calendar-off-ink: color-mix(in srgb, var(--color-danger) 58%, var(--text-1));
+}
+
+.todo-calendar__grid--marks .todo-calendar__day {
+  --todo-calendar-caption-row: 11px;
+}
+
+.todo-calendar__day--rest:not(.todo-calendar__day--outside) {
+  color: var(--text-2);
+}
+
+.todo-calendar__caption-text {
+  grid-row: 2;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: clamp(9px, calc(10px * var(--island-font-scale, 1)), 11px);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-calendar__caption-text:is([data-tone="occasion"], [data-tone="work"], [data-tone="off"]) {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.todo-calendar__caption-text[data-tone="off"] {
+  color: var(--todo-calendar-off-ink);
+}

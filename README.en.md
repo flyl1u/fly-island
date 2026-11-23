@@ -148,14 +148,13 @@ Scan the QR code with WeChat to join the user group (mostly Chinese-speaking). Y
 
 <p align="center"><img src="docs/assets/wechat-community.jpg" alt="fly-island WeChat community QR code" width="280"></p>
 
-<p align="center"><sub>The QR code is valid until November 23. If it has expired, please let us know in an <a href="https://github.com/flyl1u/fly-island/issues">Issue</a>.</sub></p>
+<p align="center"><sub>The QR code is valid until November 30. If it has expired, please let us know in an <a href="https://github.com/flyl1u/fly-island/issues">Issue</a>.</sub></p>
 
 ## Contributing
 
-<details>
-<summary>Run from source, build plugins</summary>
+### Run from source
 
-You need Windows 10/11, Node.js, pnpm, Rust, Visual Studio C++ Build Tools and the WebView2 Runtime.
+You need Windows 10/11, Git, Node.js, pnpm, Rust, Visual Studio C++ Build Tools, and the WebView2 Runtime.
 
 ```powershell
 git clone https://github.com/flyl1u/fly-island.git
@@ -164,19 +163,13 @@ pnpm install
 pnpm tauri dev
 ```
 
-Run `pnpm check` before committing. Repository rules are in [AGENTS.md](AGENTS.md), and the release process is in [docs/updater.md](docs/updater.md).
+### Submit changes
 
-To build a plugin for the island, follow the [plugin guide](docs/plugins/README.md) and open a PR (with a demo recording, author and contact info). It goes live after review.
+Run `pnpm check` before committing. See the repository rules in [AGENTS.md](AGENTS.md) and the release steps in the [release guide](docs/updater.md).
 
-Thanks to [@TixXin](https://github.com/TixXin) for the modular architecture proposed in [PR #36](https://github.com/flyl1u/fly-island/pull/36). See the [refactor notes](docs/architecture/refactor-plan.md).
+### Develop a plugin
 
-</details>
-
-## License
-
-[GPL-3.0](LICENSE): free to use, modify and share; if you distribute a modified version, it must be open source too. Versions 3.0.8 and earlier were released under MIT. Third-party assets follow their own licenses, see the [font notes](src/assets/fonts/README.md) and [NetEase Cloud Music plugin notes](src-tauri/resources/media-plugins/README.md).
-
-Copyright (C) 2026 flyl1u and contributors
+Test your plugin locally, then open a PR with a demo recording, the author's name, and contact information. Plugins ship after review. See the [plugin development guide](docs/plugins/README.md).
 
 ## Star History
 

@@ -9,7 +9,7 @@ use std::{fs, path::Path};
 use serde_json::Value;
 
 /// `<publisher>.<name>` of the extension; also the authority of the links it handles.
-const EXTENSION_ID: &str = "tixxin.focusd-island";
+const EXTENSION_ID: &str = "tixxin.fly-island";
 
 /// Editors by executable name (lowercase, no ".exe"): their link scheme and the folder under the
 /// user's home that holds their extensions.

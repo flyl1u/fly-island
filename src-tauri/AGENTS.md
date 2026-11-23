@@ -13,11 +13,13 @@ src-tauri/src/
 ├── agent_approval/          # 在岛上审批（B6 第 2 期）：127.0.0.1 上的审批端点（标准库 TcpListener，挂起时能发现 Agent 断开）、按会话排队、等待上限、agent-approval.json
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装；hooks/ 为编入二进制的 hook 脚本；sound_packs.rs 为导入的音效包（应用数据目录的 sound-packs/）
 │                            #   codex_activity.rs：增量保存 rollout 的 turn 边界，fixtures/ 为脱敏的真实记录
+│                            #   hook_migration.rs：启动时把改名前写入 Codex / Claude Code 配置的 Hook 重写到新脚本
 │                            #   reply_marker.rs：可选的回复状态标记（B9），增删 CLAUDE.md 里岛屿自己的那段说明、识别回复末行的标记
 │                            #   dsh_desktop.rs / dsh_sessions.rs / dsh_credentials.rs / dsh_usage.rs：DSH 桌面端本地会话检查点、只读凭据与官方余额查询
-│                            #   workbuddy_sessions.rs：WorkBuddy 桌面端本地会话记录；workbuddy_connection.rs / workbuddy_usage.rs：WorkBuddy 官网独立登录窗口、积分汇总与内存缓存
+│                            #   workbuddy_sessions.rs：WorkBuddy 桌面端本地会话记录；workbuddy_connection.rs / workbuddy_auth.rs / workbuddy_cookie_vault.rs / workbuddy_usage.rs：WorkBuddy 官网独立登录窗口、续期策略、凭据副本与积分缓存
+│                            #   zcode_credentials.rs / zcode_api_key.rs / zcode_usage.rs：Z Code 桌面凭据、Credential Manager 中的 Coding Plan API Key 与额度查询
 ├── app_log/                 # 问题排查日志（默认关闭）：开启后把标准错误接到管道写入 logs/，前端的报错经 append_app_log 写入；file.rs 负责一份备份的轮转
-├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出与受限同步读写（todo_sync）、不合成 Alt 键地聚焦自己的窗口（window_focus）
+├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出与受限同步读写（todo_sync）、已安装字体（fonts）、不合成 Alt 键地聚焦自己的窗口（window_focus）
 ├── clipboard_history/
 ├── config_transfer/         # 配置备份 / 迁移：原生文件对话框、受限数据与音效收集、启动恢复与撤销日志
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
@@ -31,11 +33,12 @@ src-tauri/src/
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）
 ├── settings_window/         # 设置窗口：按需创建与显示（mod.rs）；sizing.rs 按屏幕缩放窗口尺寸，剪贴板窗口共用
 ├── clipboard_window/        # 剪贴板历史独立窗口：按需创建、显示、关闭与位置记忆
+├── legacy_migration/        # 改名前安装的一次性迁移（数据目录、自启、凭据、日志名、Hook 文本），在 tauri::Builder 前运行；唯一允许出现旧产品名的 Rust 模块
 ├── messenger_activation.rs
 ├── notification_diagnostics.rs
 └── win32/                   # Win32 / COM 的安全封装，crate 中唯一允许 unsafe 的地方：window（窗口查询、枚举、前台切换）、
                              # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
-                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
+                             # com（COM / WinRT 初始化守卫）、audio、fonts（DirectWrite 字体列表）、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
                              # notification_state（前台是否有全屏程序）、shell_open（不弹系统错误框地打开协议）、
                              # task_switcher（让主窗口不进 Alt+Tab）、known_folder（下载文件夹等已知文件夹）、
                              # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、std_handle（重定向标准错误、本地时间）、uia_tabs / uia_list、caption_close、taskbar
@@ -100,9 +103,12 @@ src-tauri/src/
 ## 配置与构建
 
 - 修改 `tauri.conf.json` 中的窗口配置时，同步检查 `capabilities/default.json`、前端 `main.tsx` 的窗口分发，以及 Rust 中的 label 常量。
-- `agent_status/hooks/focusd-agent-*.{cmd,ps1}` 和 `qq_notifications/repair-qq-notification-registration.ps1` 通过 `include_str!` 编入二进制，修改后需要完整的 Rust 验证。
+- `agent_status/hooks/fly-island-agent-*.{cmd,ps1}` 和 `qq_notifications/repair-qq-notification-registration.ps1` 通过 `include_str!` 编入二进制，修改后需要完整的 Rust 验证。
+- `legacy_migration/` 只存放迁移前安装的兼容读取与一次性清理；其他生产模块不得重新引入迁移前产品名。它在 `tauri::Builder` 前运行，覆盖应用数据目录、自启、凭据、Hook 配置和回复标记。
 - clippy lint 在 `Cargo.toml` 的 `[lints.clippy]` 中声明（`undocumented_unsafe_blocks`、`unwrap_used`、`expect_used` 为 deny），测试代码的放行写在 `clippy.toml`；不要在源文件中用 `#![warn]` / `#[allow]` 重复声明这些 lint。`cargo clippy --all-targets` 保持 0 告警；个别确实无法消除的默认 lint（例如参数即 IPC 契约的命令触发 `too_many_arguments`）在该项上用带 `reason` 的 `#[expect(...)]`。
 - 验证：`cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle`。涉及窗口、托盘、注册表行为的改动，在风险需要时用 `pnpm tauri dev` 手动检查折叠态、展开态、贴边收起和托盘隐藏。
 - 成功生成 release 可执行文件后，按根目录规则同步桌面快捷方式。
+
+市场设备读取入口位于 device_battery，由插件宿主提供受管理的安装目录。护眼休息窗口位于 eye_care，Win32 层级控制位于 win32/eye_care.rs。
 
 插件 API v1：`plugin_host/` 为 manifest / protocol / packages / storage / process / service 分层，插件源码在仓库 `plugins/<id>/` 独立 crate；这些 crate 不加入主程序 workspace。新增插件不能把网络、数据库或客户端依赖引入主程序。

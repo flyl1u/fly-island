@@ -1,12 +1,14 @@
 # 插件开发规范 / Plugin development guide
 
-> **插件功能即将上线。** 现在就可以按这份规范开发插件并提交 PR，flyl1u 审核、适配后统一上线。
+> **插件市场已开放。** 可以按这份规范开发插件并提交 PR，由 flyl1u 审核、适配后上线。
 >
-> **Plugins are coming soon.** You can build one now and open a PR; flyl1u reviews, adapts and ships it. An English summary is at the end.
+> **The plugin market is open.** You can build a plugin and open a PR; flyl1u reviews, adapts and ships it. An English summary is at the end.
 
 ---
 
-内置插件使用说明：[时间与天气 / Clock & Weather](clock-weather.md)。
+使用说明 / Available: [时间与天气 / Clock & Weather](clock-weather.md)、[日历标记 / Calendar Marks](../holidays.md)。
+
+开发中 / In development: [护眼提醒 / Eye Care](eye-care.md)、[设备电量与音频 / Device Battery & Audio](../../plugins/device-battery/README.md)、[MiniMax Code](minimax.md)。
 
 ## 一、插件是什么
 
@@ -67,7 +69,7 @@ Fork 仓库 → 本地改造小岛源码 → 在真实小岛里自测、录制�
 - **做新功能时，按小岛的结构来放。** 新的领域放在 `src/features/<新功能>/`，岛上的新页面、设置里的新分组都接到现有的页面和设置结构里（参考已有功能怎么接）。无论哪种，都复用现有组件和样式，不要再造一套。
 - **需要独立窗口时，照着现有窗口做。** 参考剪贴板窗口（`?window=clipboard`）：用新的窗口名和 `?window=` 参数，按需创建，用小岛的样式；不要改动已有的四个窗口名。
 - **把改动收拢、做成能关掉的。** 尽量把新增逻辑放在独立的文件或目录里，在原功能里只留少量接入点，并且在 PR 里写清楚「哪几处是接入点」。这样 flyl1u 才能把它改成可选安装，没装时一行都不生效。
-- **不破坏没装插件的用户。** 已保存的数据（`localStorage` 里的 `focusd-island-*`、应用数据目录里的文件）、Tauri 命令名、窗口名都不能改；需要新存数据就用新的 key，并能兼容读旧数据。完整清单见 [contracts.md](../architecture/contracts.md)。
+- **不破坏没装插件的用户。** 已保存的数据（`localStorage` 里的 `fly-island-*`、应用数据目录里的文件）、Tauri 命令名、窗口名都不能改；需要新存数据就用新的 key，并能兼容读旧数据。完整清单见 [contracts.md](../architecture/contracts.md)。
 - **看起来就是小岛的一部分。** 用小岛已有的颜色变量和组件，深色 / 浅色、液态玻璃 / 磨砂玻璃都要看一遍；窄窗口下文字和按钮不能溢出。
 - **中英双语。** 所有用户能看到的字（包括按钮的悬停提示、读屏标签）都要有中文和英文。
 - **安全与隐私。** 不偷偷联网、不收集数据、不读和功能无关的文件；如果需要联网或读文件，在 PR 里写清楚连哪些域名、读写哪些路径、为什么。不提交任何账号、密钥或私人数据。

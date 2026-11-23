@@ -13,7 +13,7 @@ use super::matching::same_track;
 use super::ttml::parse_ttml;
 
 /// Where the user's media token is kept in the Windows Credential Manager.
-const KEYRING_SERVICE: &str = "com.focusd.island.apple-music-lyrics";
+const KEYRING_SERVICE: &str = "com.flyisland.app.apple-music-lyrics";
 const KEYRING_ACCOUNT: &str = "media-user-token";
 
 /// Apple's web app, where the developer token is taken from.

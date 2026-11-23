@@ -106,7 +106,7 @@ fn codex_index_and_folder_titles() {
 fn temp_dirs() -> (PathBuf, PathBuf) {
     static COUNTER: AtomicUsize = AtomicUsize::new(0);
     let base = std::env::temp_dir().join(format!(
-        "focusd-title-test-{}-{}",
+        "fly-island-title-test-{}-{}",
         std::process::id(),
         COUNTER.fetch_add(1, Ordering::Relaxed)
     ));
@@ -597,8 +597,8 @@ fn hooks_state_matches_what_the_installers_write() {
         claude_code_hooks_state, codex_hooks_state, script_outdated, HookInstallState,
     };
 
-    let running = Path::new(r"C:\a b\focusd-agent-running.cmd");
-    let status = Path::new(r"C:\a b\focusd-agent-status.ps1");
+    let running = Path::new(r"C:\a b\fly-island-agent-running.cmd");
+    let status = Path::new(r"C:\a b\fly-island-agent-status.ps1");
 
     // Codex: the block written now is current; an older block (from before, with `capture`)
     // or one pointing elsewhere is outdated.
@@ -616,7 +616,7 @@ fn hooks_state_matches_what_the_installers_write() {
         codex_hooks_state(Some(&old), running, status, None),
         HookInstallState::Outdated
     );
-    let elsewhere = Path::new(r"D:\FocuSD\scripts\focusd-agent-running.cmd");
+    let elsewhere = Path::new(r"D:\Fly Island\scripts\fly-island-agent-running.cmd");
     assert_eq!(
         codex_hooks_state(Some(&current), elsewhere, status, None),
         HookInstallState::Outdated
@@ -985,7 +985,7 @@ fn orca_terminal_records_name_their_session() {
         PathBuf::from(r"C:\Apps\orca\resources\bin\orca.exe")
     );
 
-    let app_dir = std::env::temp_dir().join(format!("focusd-orca-records-{}", std::process::id()));
+    let app_dir = std::env::temp_dir().join(format!("fly-island-orca-records-{}", std::process::id()));
     let records = app_dir.join(AGENT_TERMINALS_DIR_NAME);
     fs::create_dir_all(&records).unwrap();
     fs::write(records.join("term_aaaa.json"), r#"{"session_id":"s1"}"#).unwrap();
@@ -1305,22 +1305,22 @@ fn editor_terminals_are_asked_for_through_the_extension_link() {
     assert_eq!(editor_of_app("windowsterminal"), None);
     assert_eq!(
         focus_link("vscode", &[120, 88], Some("✳ 修复 a&b")),
-        "vscode://tixxin.focusd-island/focus?pids=120,88&title=%E2%9C%B3%20%E4%BF%AE%E5%A4%8D%20a%26b"
+        "vscode://tixxin.fly-island/focus?pids=120,88&title=%E2%9C%B3%20%E4%BF%AE%E5%A4%8D%20a%26b"
     );
-    assert_eq!(focus_link("cursor", &[], None), "cursor://tixxin.focusd-island/focus?pids=");
+    assert_eq!(focus_link("cursor", &[], None), "cursor://tixxin.fly-island/focus?pids=");
 
-    let home = std::env::temp_dir().join(format!("focusd-editor-ext-{}", std::process::id()));
+    let home = std::env::temp_dir().join(format!("fly-island-editor-ext-{}", std::process::id()));
     let extensions = home.join(".vscode").join("extensions");
-    fs::create_dir_all(extensions.join("tixxin.focusd-island-tools-1.0.0")).unwrap();
+    fs::create_dir_all(extensions.join("tixxin.fly-island-tools-1.0.0")).unwrap();
     assert!(!extension_installed(&extensions));
     assert_eq!(show_session_terminal(&home, "code", &[1], None), Some(EditorTerminal::NoExtension));
     assert_eq!(show_session_terminal(&home, "windowsterminal", &[1], None), None);
-    fs::create_dir_all(extensions.join("tixxin.focusd-island-0.1.0")).unwrap();
+    fs::create_dir_all(extensions.join("tixxin.fly-island-0.1.0")).unwrap();
     assert!(extension_installed(&extensions));
     // Nothing to identify the terminal by: no link is opened.
     assert_eq!(show_session_terminal(&home, "code", &[], Some("")), Some(EditorTerminal::Failed));
     // Uninstalled but not yet removed by the editor.
-    fs::write(extensions.join(".obsolete"), r#"{"tixxin.focusd-island-0.1.0":true}"#).unwrap();
+    fs::write(extensions.join(".obsolete"), r#"{"tixxin.fly-island-0.1.0":true}"#).unwrap();
     assert!(!extension_installed(&extensions));
     assert!(!extension_installed(&home.join("missing")));
     fs::remove_dir_all(&home).unwrap();
@@ -1363,7 +1363,7 @@ fn session_records_name_a_live_process_and_its_tab() {
     assert_eq!(reused.live_pid(), None);
     assert_eq!(parse("{\"orcaHandle\":\"x & calc\"}").and_then(|record| record.orca_handle()), None);
 
-    let app_dir = std::env::temp_dir().join(format!("focusd-records-{}", std::process::id()));
+    let app_dir = std::env::temp_dir().join(format!("fly-island-records-{}", std::process::id()));
     fs::create_dir_all(app_dir.join(DIR_NAME)).unwrap();
     fs::write(app_dir.join(DIR_NAME).join("s-1.json"), "{\"source\":\"startup\"}").unwrap();
     assert_eq!(read(&app_dir, "s-1").and_then(|record| record.source).as_deref(), Some("startup"));
@@ -1413,7 +1413,7 @@ fn usage_comes_from_the_claude_hud_snapshot() {
     let (home, _) = temp_dirs();
     assert_eq!(expand_path("~/usage.json", &home), Some(home.join("usage.json")));
     assert_eq!(expand_path("relative/usage.json", &home), None);
-    assert_eq!(expand_path("${FOCUSD_NO_SUCH_VAR}/usage.json", &home), None);
+    assert_eq!(expand_path("${FLY_ISLAND_NO_SUCH_VAR}/usage.json", &home), None);
     let claude = home.join(".claude");
     assert_eq!(snapshot_path(&claude, &home), None);
     let hud = claude.join("plugins").join("claude-hud");
@@ -1590,7 +1590,7 @@ fn context_tokens_come_from_the_newest_model_call() {
 }
 #[test]
 fn a_symlinked_file_is_not_written() {
-    let dir = std::env::temp_dir().join(format!("focusd-symlink-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("fly-island-symlink-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let target = dir.join("target.md");
     let link = dir.join("link.md");
@@ -1792,14 +1792,14 @@ fn conversation_links_per_host() {
 #[test]
 fn a_terminal_tab_is_found_by_title_then_by_folder() {
     use super::title::terminal_tab_for;
-    let tabs = ["PowerShell".to_string(), "✳ 修复登录".to_string(), r"D:\FocuSD - codex".to_string(), r"D:\other".to_string()];
+    let tabs = ["PowerShell".to_string(), "✳ 修复登录".to_string(), r"D:\fly-island - codex".to_string(), r"D:\other".to_string()];
     assert_eq!(terminal_tab_for(&tabs, Some("修复登录"), Some("other")), Some(1));
-    assert_eq!(terminal_tab_for(&tabs, Some("没有这个标题"), Some("FocuSD")), Some(2));
-    assert_eq!(terminal_tab_for(&tabs, None, Some("focusd")), Some(2));
+    assert_eq!(terminal_tab_for(&tabs, Some("没有这个标题"), Some("fly-island")), Some(2));
+    assert_eq!(terminal_tab_for(&tabs, None, Some("fly-island")), Some(2));
     // A short name, or one several tabs carry, picks nothing.
     assert_eq!(terminal_tab_for(&tabs, None, Some("D:")), None);
-    let twice = ["a - FocuSD".to_string(), "b - FocuSD".to_string()];
-    assert_eq!(terminal_tab_for(&twice, None, Some("FocuSD")), None);
+    let twice = ["a - Fly Island".to_string(), "b - Fly Island".to_string()];
+    assert_eq!(terminal_tab_for(&twice, None, Some("Fly Island")), None);
     assert_eq!(terminal_tab_for(&tabs, None, None), None);
 }
 

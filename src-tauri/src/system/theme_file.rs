@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn saving_twice_keeps_both_files() {
-        let dir = std::env::temp_dir().join(format!("focusd-theme-file-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("fly-island-theme-file-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let first = write_new_file(&dir, "fly-island-theme-1.json", "a").unwrap();

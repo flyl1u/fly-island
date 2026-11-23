@@ -6,8 +6,9 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
 import "../../src/styles/fonts.css";
 import "../../src/styles/base.css";
-import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
+import { I18nProvider, LOCALE_STORAGE_KEY, type LocaleCode } from "../../src/i18n";
 import { monthOf } from "../../src/features/todos/calendar";
+import { setNativePluginEnabled, setNativePluginInstalled } from "../../src/features/plugins/native";
 import { TodoNotebook } from "../../src/features/todos/TodoNotebook";
 import { useTodos } from "../../src/features/todos/useTodos";
 import { addDays } from "../../src/features/todos/schedule";
@@ -20,9 +21,9 @@ mockIPC(() => null);
 const ISLAND_CHROME = 86;
 
 // The page writes the island's own keys; whatever the browser profile had comes back on leaving.
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 window.addEventListener("beforeunload", () => {
-  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 });
 for (const key of original.keys()) localStorage.removeItem(key);
@@ -37,15 +38,15 @@ const lastYear = addDays(today, -400);
 const later = addDays(today, 3);
 const item = (id: string, title: string, completed = false) => ({ id, title, completed, createdAt: 0 });
 localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
-localStorage.setItem("focusd-island-current-date", today);
-localStorage.setItem("focusd-island-save-directory", "");
-localStorage.setItem("focusd-island-todos", JSON.stringify([
+localStorage.setItem("fly-island-current-date", today);
+localStorage.setItem("fly-island-save-directory", "");
+localStorage.setItem("fly-island-todos", JSON.stringify([
   item("t1", "核对这周的录屏素材"),
   item("t2", "给演示稿补上封面"),
   item("t3", "约下周的评审时间"),
   item("t4", "备份项目文件", true),
 ]));
-localStorage.setItem("focusd-island-scheduled-todos", JSON.stringify([{ id: "s1", title: "三天后交材料", date: later, createdAt: 0 }]));
+localStorage.setItem("fly-island-scheduled-todos", JSON.stringify([{ id: "s1", title: "三天后交材料", date: later, createdAt: 0 }]));
 const archives = [
   { date: yesterday, todos: [item("y1", "写周报"), item("y2", "回邮件", true)], dailyNote: "", savedAt: 0, savedToDisk: false },
   { date: older, todos: [item("o1", "整理桌面", true)], dailyNote: "旧笔记", savedAt: 0, savedToDisk: true, filePath: "D:\\Notes\\x.md" },
@@ -59,14 +60,21 @@ const archives = [
   { date: oldEarlier, todos: [item("e1", "讨论拍摄提纲")], dailyNote: "", savedAt: 0, savedToDisk: false },
   { date: lastYear, todos: [item("l1", "去年的记录")], dailyNote: "", savedAt: 0, savedToDisk: false },
 ];
-localStorage.setItem("focusd-island-archives", JSON.stringify(archives));
+localStorage.setItem("fly-island-archives", JSON.stringify(archives));
 
-function Harness() {
+function Harness({ calendarDate }: { calendarDate?: string }) {
   const { notebookProps } = useTodos({ carryOverIncompleteTodos: false, onStartTodo: () => {}, onMissingSaveDirectory: () => {} });
-  const height = (notebookProps.pageMode === "calendar" ? TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT : TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT) - ISLAND_CHROME;
+  const pageMode = calendarDate ? "calendar" : notebookProps.pageMode;
+  const height = (pageMode === "calendar" ? TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT : TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT) - ISLAND_CHROME;
   return (
     <div style={{ height }}>
-      <TodoNotebook {...notebookProps} enableTodoReorder={false} scrollStartRows={6} />
+      <TodoNotebook
+        {...notebookProps}
+        currentDate={calendarDate ?? notebookProps.currentDate}
+        pageMode={pageMode}
+        enableTodoReorder={false}
+        scrollStartRows={6}
+      />
     </div>
   );
 }
@@ -83,6 +91,10 @@ const button = (label: string) => document.querySelector<HTMLButtonElement>(`but
 const segment = (view: string) => $<HTMLButtonElement>(`.todo-view-switch__segment[data-view="${view}"]`)!;
 const click = (element: HTMLElement | null) => act(async () => { element!.click(); });
 const frame = () => act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+const switchLocale = (locale: LocaleCode) => act(async () => {
+  localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  window.dispatchEvent(new StorageEvent("storage", { key: LOCALE_STORAGE_KEY }));
+});
 const type = (input: HTMLInputElement, value: string) => act(async () => {
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -94,7 +106,7 @@ const fits = () => {
 const detail = () => $(".todo-day-detail")!;
 const dayList = () => $(".todo-day-detail__body")!;
 const sideBySide = () => {
-  const sidebar = $(".todo-date-overview__sidebar")!.getBoundingClientRect();
+  const sidebar = $(".todo-calendar__month")!.getBoundingClientRect();
   const panel = detail().getBoundingClientRect();
   return sidebar.right < panel.left && Math.abs(sidebar.top - panel.top) < 1;
 };
@@ -106,8 +118,10 @@ const pillMatches = (view: string) => {
 };
 
 try {
+  const fixture = $("#fixture")!;
+  const root = createRoot(fixture);
   await act(async () => {
-    createRoot(document.getElementById("fixture")!).render(<StrictMode><I18nProvider><Harness /></I18nProvider></StrictMode>);
+    root.render(<StrictMode><I18nProvider><Harness /></I18nProvider></StrictMode>);
   });
 
   // The view switch.
@@ -136,7 +150,22 @@ try {
   check(weekdays[0] === "一" && weekdays[6] === "日", `一周从周一开始（${weekdays.join("")}）`);
   const day = (date: string) => $<HTMLButtonElement>(`.todo-calendar__day[data-date="${date}"]`);
   const todayNumber = day(today)!.querySelector(".todo-calendar__number")!;
-  check(getComputedStyle(todayNumber).backgroundColor === "rgb(116, 214, 255)" && day(today)!.getAttribute("aria-current") === "date", "今天是实心的强调色圆");
+  const normalNumberSize = getComputedStyle(todayNumber).fontSize;
+  const filled = (cell: HTMLElement) => getComputedStyle(cell).backgroundColor !== "rgba(0, 0, 0, 0)";
+  check(!day(today)!.querySelector(".todo-calendar__caption-text") && day(today)!.getAttribute("aria-current") === "date",
+    "尚未安装时仍有今天状态，月历不显示副行");
+  await act(async () => { setNativePluginInstalled("calendarMarks", true); });
+  const usesMarks = () => {
+    const cell = day(today)!;
+    const number = cell.querySelector(".todo-calendar__number")!;
+    return !!cell.querySelector(".todo-calendar__caption-text")
+      && getComputedStyle(number).fontSize === normalNumberSize
+      && getComputedStyle(number).boxShadow === "none" && filled(cell)
+      && cell.getAttribute("aria-current") === "date";
+  };
+  for (let step = 0; step < 60 && !usesMarks(); step += 1) await frame();
+  check(usesMarks(), "启用日历标记后日期字号不变，选中今天只显示一层底色");
+  check(day(today)?.querySelectorAll(".todo-calendar__dot").length === 3, "日期说明不占用待办圆点的位置");
   check(sideBySide() && detail().dataset.date === today && $(".todo-day-detail__title")?.textContent === "今天" && dayList().textContent!.includes("核对这周的录屏素材"),
     "日历在左侧，今天的待办默认显示在右侧");
   if (!day(yesterday)) await click(button("上个月"));
@@ -164,11 +193,11 @@ try {
   check(input.placeholder === "添加待办", "输入框写着\"添加待办\"");
   await type(input, "带上合同");
   await act(async () => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); });
-  const stored = JSON.parse(localStorage.getItem("focusd-island-scheduled-todos") ?? "[]") as { title: string; date: string }[];
+  const stored = JSON.parse(localStorage.getItem("fly-island-scheduled-todos") ?? "[]") as { title: string; date: string }[];
   check(stored.some((todo) => todo.title === "带上合同" && todo.date === later) && $$(".todo-day-row--scheduled").length === 2,
     "在以后的日子输入待办并回车，安排到那一天");
   await click(button("删除已安排的待办：带上合同"));
-  check($$(".todo-day-row--scheduled").length === 1 && !localStorage.getItem("focusd-island-scheduled-todos")!.includes("带上合同"),
+  check($$(".todo-day-row--scheduled").length === 1 && !localStorage.getItem("fly-island-scheduled-todos")!.includes("带上合同"),
     "可以在当天的清单删除已安排待办");
 
   for (let step = 0; step < 3 && !day(older); step += 1) await click(button("上个月"));
@@ -183,6 +212,10 @@ try {
 
   for (let step = 0; step < 5 && !day(old); step += 1) await click(button("上个月"));
   await click(day(old));
+  const selectedNumber = day(old)!.querySelector(".todo-calendar__number")!;
+  const selectedFill = () => getComputedStyle(selectedNumber).boxShadow === "none" && filled(day(old)!);
+  for (let step = 0; step < 60 && !selectedFill(); step += 1) await frame();
+  check(selectedFill(), "选中的日期有独立底色，号码不再单独画圈");
   const longList = dayList();
   longList.scrollTop = longList.scrollHeight;
   check(longList.scrollTop > 0 && fits(), "跨月归档的长清单在日历右侧独立滚动");
@@ -196,17 +229,91 @@ try {
   const grid = $(".todo-calendar__grid")!;
   check($$(".todo-calendar__day").length === 42 && grid.scrollHeight <= grid.clientHeight + 1 && sideBySide() && fits() && dayList().clientHeight >= 150,
     `六周月历可完整显示，右侧列表有 ${dayList().clientHeight}px`);
-  const fixture = $("#fixture")!;
   fixture.style.width = "360px";
-  check(sideBySide() && fits() && detail().scrollWidth <= detail().clientWidth + 1, "窄面板的日历和待办不会横向溢出");
+  fixture.style.setProperty("--island-font-scale", "1.2");
+  check(sideBySide() && fits() && grid.scrollHeight <= grid.clientHeight + 1 && detail().scrollWidth <= detail().clientWidth + 1,
+    "窄面板在最大字号下仍显示六周，日历和待办不会横向溢出");
   fixture.style.removeProperty("width");
+  fixture.style.removeProperty("--island-font-scale");
   if (!goToday.disabled) await click(goToday);
   await click(segment("today"));
   check(todayTitles().includes("写周报") && $<HTMLProgressElement>(".todo-notebook progress")?.max === 5, "回到待办页时总数包含恢复的待办");
 
-  const archived = JSON.parse(localStorage.getItem("focusd-island-archives") ?? "[]") as typeof archives;
+  const archived = JSON.parse(localStorage.getItem("fly-island-archives") ?? "[]") as typeof archives;
   check(archived.length === archives.length && archived.every((entry, index) => entry.date === archives[index].date &&
     JSON.stringify(entry.todos) === JSON.stringify(archives[index].todos) && entry.dailyNote === archives[index].dailyNote), "归档数据原样保留");
+
+  // Use a known workday as today so this test never depends on the machine's year or weekday.
+  const fixtureToday = "2027-01-06";
+  await act(async () => {
+    root.render(<StrictMode><I18nProvider><Harness key="holiday-cases" calendarDate={fixtureToday} /></I18nProvider></StrictMode>);
+  });
+
+  const captionOf = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__caption-text")?.textContent ?? "";
+
+  const newYear = day("2027-01-01");
+  const newYearSpoken = newYear?.getAttribute("aria-label") ?? "";
+  check(captionOf(newYear) === "元旦" && captionOf(day("2027-01-02")) === "休" && newYearSpoken.includes("休息日"),
+    "官方假期首日显示假期名，续假日显示「休」，读屏可以读到休息日");
+
+  const plainSaturday = day("2027-01-09");
+  check(plainSaturday?.classList.contains("todo-calendar__day--rest") && !filled(plainSaturday)
+    && /^(初|十|廿|三)/.test(captionOf(plainSaturday)) && plainSaturday.getAttribute("aria-label")?.includes("休息日"),
+    "普通周六不铺底色，仍显示农历并播报休息日");
+
+  const plainWeekday = day(fixtureToday);
+  const todaySpoken = plainWeekday?.getAttribute("aria-label") ?? "";
+  check(plainWeekday?.getAttribute("aria-current") === "date"
+    && todaySpoken.startsWith("今天，") && !/休息日|调休上班/.test(todaySpoken) && /^(初|十|廿|三)/.test(captionOf(plainWeekday)),
+    "普通工作日恰好是今天时，读屏不会误报休息或调休");
+
+  const makeUpDay = day("2027-01-31");
+  check(captionOf(makeUpDay) === "班" && makeUpDay
+    && !makeUpDay.classList.contains("todo-calendar__day--rest") && makeUpDay.getAttribute("aria-label")?.includes("调休上班"),
+    "调休上班的周日显示「班」并播报调休上班，不按休息日标红");
+
+  fixture.style.width = "360px";
+  fixture.style.setProperty("--island-font-scale", "1.2");
+  const cellBox = makeUpDay!.getBoundingClientRect();
+  const numberBox = makeUpDay!.querySelector(".todo-calendar__number")!.getBoundingClientRect();
+  const captionBox = makeUpDay!.querySelector(".todo-calendar__caption-text")!.getBoundingClientRect();
+  check(numberBox.bottom <= captionBox.top && captionBox.bottom <= cellBox.bottom
+    && Math.abs(numberBox.left + numberBox.width / 2 - (captionBox.left + captionBox.width / 2)) < 1,
+    "窄面板的两位数日期和调休标记上下对齐");
+  fixture.style.removeProperty("width");
+  fixture.style.removeProperty("--island-font-scale");
+
+  check(captionOf(day("2026-12-31")) === "" && day("2026-12-31")?.title,
+    "相邻月只显示日期数字，保留悬停提示");
+  await click(makeUpDay);
+  const note = $(".todo-day-detail__calendar-note")?.textContent ?? "";
+  check(/^(初|十|廿|三)/.test(note) && note.includes("调休上班"), "右侧在调休日显示农历和上班信息");
+  check(getComputedStyle(plainWeekday!.querySelector(".todo-calendar__number")!).boxShadow !== "none",
+    "选择其他日期后仍能辨认今天");
+
+  check(captionOf(day("2027-01-20")) === "大寒", "节气当天显示节气名");
+  await switchLocale("en");
+  check(document.documentElement.lang === "en" && !$(".todo-calendar__grid--marks")
+    && !$(".todo-calendar__caption-text, .todo-day-detail__calendar-note")
+    && day(fixtureToday)?.getAttribute("aria-current") === "date",
+    "切到英文时保留普通日历，不显示中国大陆节假日、农历和休班标记");
+  await switchLocale("zh-CN");
+  check(captionOf(newYear) === "元旦" && captionOf(makeUpDay) === "班", "切回中文后恢复已启用的日历标记");
+  await act(async () => { setNativePluginEnabled("calendarMarks", false); });
+  check(!$(".todo-calendar__grid--marks") && captionOf(newYear) === "" && !$(".todo-day-detail__calendar-note"),
+    "停用后隐藏日期说明，保留月历");
+  await act(async () => { setNativePluginEnabled("calendarMarks", true); });
+  await click(button("回到今天"));
+
+  await click(button("上个月"));
+  fixture.style.width = "360px";
+  fixture.style.setProperty("--island-font-scale", "1.2");
+  const longMonthTitle = $(".todo-calendar__title")!;
+  check(longMonthTitle.textContent?.includes("12月") && longMonthTitle.scrollWidth <= longMonthTitle.clientWidth,
+    "窄面板在最大字号下可完整读到两位数月份");
+  fixture.style.removeProperty("width");
+  fixture.style.removeProperty("--island-font-scale");
+  await click(button("回到今天"));
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

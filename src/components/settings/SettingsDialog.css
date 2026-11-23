@@ -1,0 +1,75 @@
+.settings-dialog {
+  box-sizing: border-box;
+  width: min(420px, calc(100% - 2 * var(--space-2xl)));
+  max-width: none;
+  max-height: calc(100% - 2 * var(--space-2xl));
+  padding: 0;
+  overflow: auto;
+  color: var(--color-text);
+  background: var(--color-popover);
+  border: 1px solid var(--color-white-a12);
+  border-radius: var(--corner-2xl);
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 32%);
+}
+
+.settings-dialog::backdrop {
+  background: rgb(0 0 0 / 48%);
+}
+
+.settings-dialog__surface {
+  display: grid;
+  gap: var(--space-lg);
+  min-width: 0;
+  padding: var(--space-2xl);
+}
+
+.settings-dialog__title {
+  margin: 0;
+  font-size: calc(16px * var(--island-font-scale, 1));
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.settings-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.settings-dialog__actions > .settings-link-button--danger {
+  margin-inline-end: auto;
+}
+
+.settings-dialog__primary {
+  min-height: 32px;
+  max-width: 100%;
+  padding: var(--space-xs) var(--space-xl);
+  color: var(--color-inverse-ink);
+  background: var(--color-inverse);
+  border: 0;
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
+  font: inherit;
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.settings-dialog__primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-inverse) 88%, var(--color-accent));
+}
+
+.settings-dialog__primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.settings-dialog__primary:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
