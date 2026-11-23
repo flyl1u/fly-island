@@ -138,9 +138,9 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
   await render(track("晴天", 500));
   check(lines().join("|") === "|♪|故事的小黄花", "前奏时中间显示音符，第一句在下面等着");
 
-  // 负的歌词偏移让歌词慢下来，所以这一句还在唱。
-  await render(track("晴天", 6000), { ...ONLINE, lyricsOffsetMs: -2000 });
-  check(lines()[1] === "故事的小黄花", "歌词慢 2 秒时仍显示上一句");
+  // 正的歌词偏移让歌词推后，所以这一句还在唱。
+  await render(track("晴天", 6000), { ...ONLINE, lyricsOffsetMs: 2000 });
+  check(lines()[1] === "故事的小黄花", "歌词推后 2 秒时仍显示上一句");
   await render(track("晴天", 4500, true));
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 900)); });
   check(lines()[1] === "从出生那年就飘着", "播放时在两次读取之间按时间往下走");
