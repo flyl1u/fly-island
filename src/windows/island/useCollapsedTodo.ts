@@ -1,5 +1,9 @@
 import { isUpdateTodo } from "../../features/todos/updateTodo";
 import { useMemo } from "react";
+import { useClockWeather, useCurrentWeather } from "../../features/weather";
+import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
+import { clockWeatherWidth } from "../../features/weather";
+import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
@@ -36,6 +40,12 @@ export function useCollapsedTodo(
   { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers, lyricText = "" }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[]; lyricText?: string } = {},
 ) {
   const t = useTranslation();
+  const clockWeather = useClockWeather();
+  // Dragged off the island in Settings → Appearance, they take no room and fetch nothing.
+  const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
+  const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
+    clockWeather.settings.location);
+  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null, settings.islandFontPercent / 100);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -78,7 +88,7 @@ export function useCollapsedTodo(
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
   }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
-  const collapsedIslandWidth = useMemo(() => {
+  const baseIslandWidth = useMemo(() => {
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;
     // A fixed width for the whole round; ticking digits never resize the native window.
@@ -93,17 +103,21 @@ export function useCollapsedTodo(
       ? AGENT_ICON_TEXT + agentTitle
       : collapsedItem === "lyrics" ? lyricText : collapsedItem === "todo" ? todoText : null;
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
+    // The automatic widths were set with 18px each side: more side space adds to the width, less
+    // keeps it and gives the text the room.
+    const sides = 2 * (settings.collapsedPadding - COLLAPSED_PADDING.default);
     // A lyric may use the whole width the settings allow, so a long line is not cut short.
     // A todo title or an agent session keeps the ordinary auto width.
     const maxWidth = collapsedItem === "lyrics" ? MAX_COLLAPSED_ISLAND_WIDTH : MAX_AUTO_COLLAPSED_ISLAND_WIDTH;
     return alignCollapsedIslandWidth(
-      getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
-        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0, fontScale, maxWidth),
+      getCollapsedIslandWidth(text, sides + (coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
+        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0), fontScale, maxWidth),
       window.innerWidth,
       window.devicePixelRatio,
     );
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, lyricText, settings.collapsedAutoWidth,
-    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, timers, rotating, rotationTodos]);
+    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, timers, rotating, rotationTodos]);
 
+  const collapsedIslandWidth = clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum);
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
 }

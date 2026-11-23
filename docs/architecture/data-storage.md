@@ -1,15 +1,27 @@
 # 数据存放位置
 
+## 配置迁移 / Configuration transfer（2026-11-19）
+
+`features/config-transfer/storage.ts` 仅为配置迁移枚举应用 localStorage；Rust `config_transfer/` 收集明确允许的文件数据。备份包含待办 / 归档 / 笔记、外观与所有预设、语言、快捷键、功能开关等前缀键；另包含剪贴板设置、文件中转路径列表、日志开关、网易云自动安装退出偏好、Agent hooks / 回复标记开关、远程主机 JSON（当前基线只有文档记录、无活跃模块）、插件 id / 版本 / 启用状态 / 非秘密设置、导入的音效包。插件自己的登录 / 数据库不作通用目录备份；目前宿主唯一插件设置存储为 plugins-state.json，没有通用插件 KV 数据目录。
+
+历史与图片仅在勾选后包含；剪贴板位置指针保留本机，图片在恢复时重写为本机目录下的路径。文件中转只迁移引用，不复制对应文件。网易云安装文件和安装目录不迁移，在新机器重新探测。窗口坐标、设置窗口大小、剪贴板窗口位置 / 自选存储目录、agent-approval.json 令牌、agent-status.json / 会话 / running 标记、日志正文、歌词缓存、WorkBuddy 浏览器登录配置、Windows 凭据及第三方 Agent 配置原文均排除。
+
+应用数据目录新增：`config-transfer-pending.json` 为导入后等待重启的 v1 数据；`config-transfer-rollback.json` 为恢复过程的文件与自启撤销日志（启动时若残留，先回滚再重试）；`config-transfer-result.json` 为待用户关闭的完成 / 异常报告；`plugins-restore.json` 为缺少插件包时保留的版本、启用状态与非秘密设置。前两项恢复成功即删除；全部都不进入下一份备份。没有新的 localStorage key。
+
+English: backups cover app storage and explicitly selected user-data files, imported sound packs, integration switches, and plugin preferences. Clipboard history is opt-in. Device paths/coordinates, credentials, tokens, login profiles, caches and runtime snapshots are excluded. The pending backup and undo journal live in app data only during restore; results remain until dismissed. Missing plugin preferences remain in plugins-restore.json until their recorded version is installed or uninstalled. See [config-transfer.md](../config-transfer.md).
+
 | 数据 | 位置 | 负责方 |
 |---|---|---|
 | 待办行为设置 | 现有 `focusd-island-settings`：`todoTimerEnabled` 默认 false；`enableTodoReorder` 默认 true，`todoReorderVersion: 1` 表示已迁移；无标记的旧数据开启拖拽，有标记才读取保存的布尔值。关闭番茄钟清除本轮计时，保留进行中 ID | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；沿用跨窗口 storage 同步 |
 | 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
+| 音乐全局快捷键 | 同一 localStorage：`focusd-island-music-shortcuts` 保存 `{ playPause, previous, next }`，默认均为空；主窗口启动和修改后同步到 Rust，注册结果仅在原生内存保存 | `features/media/storage.ts`、`useMusicShortcuts.ts`；原生 `media_control/hotkeys.rs` |
+| 托盘图标可见性 | 同一 localStorage：`focusd-island-tray-visible`，默认显示；主窗口启动时同步到 Rust，托盘菜单隐藏时由事件回写 | `windows/settings/storage.ts`、`windows/island/useTrayIntegration.ts`；原生 `tray.rs` |
 | 岛屿字号、刘海基准尺寸、额度环筛选 | `focusd-island-settings`，字段见 [对外契约](contracts.md) | `features/appearance/` |
 | WorkBuddy 官网登录与余额 | `%LOCALAPPDATA%/com.focusd.island/workbuddy-web/WebView2` 保存独立浏览器配置。同级 `connected` 文件记录已成功连接。积分汇总缓存在内存，选中额度环时刷新，有效结果缓存 5 分钟。每次读到积分后，发往积分接口的 workbuddy.cn cookie 另存一份到 Windows 凭据管理器（`com.focusd.island.workbuddy-web`，`cookies-0`…`cookies-7` 分段），重启后浏览器配置里缺 cookie 时放回去。断开时清除该配置的浏览数据、凭据管理器副本和连接标记 | `agent_status/workbuddy_connection.rs`、`agent_status/workbuddy_cookie_vault.rs`、`agent_status/workbuddy_usage.rs` |
 | 贴边收起样式 | 原有 `focusd-island-settings` 对象的 `tuckStyle` 字段：`edge` / `line` / `hidden`，缺失或非法值按 `edge`；沿用跨窗口 storage 同步，不新增文件或 key | `features/appearance/storage.ts`、`settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；通过 `windows/island/useIslandWindow.ts` 同步至原生内存状态 |
 | 三色刷新和上一版颜色 | 同一 `localStorage`：`focusd-island-color-refresh-v1` 为 `"1"` 时不再刷新；`focusd-island-color-backup` 保存 `{ islandBackgroundColor, taskTextColor, pulseColor }`（大写 `#RRGGBB`），批量改色先备份，回退交换当前 / 备份；新用户或三色已匹配新默认值时只写标记、不新建备份，损坏备份视为空 | `features/appearance/storage.ts`；迁移流程 `colorRefresh.ts`、格式校验 `colorPalette.ts` |
 | 会话排序默认值迁移（已撤） | 2026-11-19 起不再读写 `focusd-island-session-sort-recent-v1`：已存的 `agentSessionSort` 原样保留，不再把 `"status"` 改成 `"recent"` | `features/appearance/storage.ts` |
-| 颜色预设 | 同一 `localStorage`：新 key `focusd-island-color-presets`，数组项 `{ id, islandBackgroundColor, taskTextColor, pulseColor }`，三色为大写 `#RRGGBB`；去重、最多 8 项，应用前写三色备份；与退役的外观预设 key 无关 | `features/appearance/storage.ts`、`colorPresets.ts`、`ColorPresetRow.tsx` |
+| 颜色预设 | 同一 `localStorage`，沿用 `focusd-island-color-presets`：数组项 `{ id, islandBackgroundColor, taskTextColor, pulseColor, pageTextColor? }`。2026-11-19 起新项保存四色，展开文字为大写 `#RRGGBB` 或 `""`（跟随背景）；旧项缺字段时不覆盖当前展开文字。四色组合去重、最多 8 项，应用前仍写原三色备份；删除确认只在组件内存中保持约 3 秒，不持久化 | `features/appearance/storage.ts`、`colorPresets.ts`、`ColorPresetRow.tsx` |
 | 自动更新开关 | 同一 `localStorage`：`focusd-island-auto-update`，只有 `"false"` 表示关闭，缺失算开启。由打开「关于」的窗口写入；独立设置窗口再通过 `focusd-update-request` 告诉主窗口，主窗口负责定时检查和安装 | `features/updater/storage.ts`、`updaterController.ts` |
 | 交流群红点 | 同一 `localStorage`：`focusd-island-community-invite-seen`，点开「关于」里的用户交流群后写 `"true"`，各窗口靠 storage 事件同步。群二维码不存本地，每次点开从官网 `island.flyliu.org/community/wechat-group.jpg` 加载（微信每周换码，换官网上的图即可） | `features/updater/storage.ts`、`useCommunityInvite.ts` |
 | 锁定小岛位置、独立设置窗口 | 同一 WebView2 `localStorage`：`focusd-island-settings.positionLocked`（默认 false）、`focusd-island-detached-settings`（缺失时默认 `"true"`，保留已保存的选择） | `features/appearance/storage.ts`、`windows/settings/storage.ts` |
@@ -27,6 +39,9 @@
 | Codex / Claude Code hook 配置 | `~/.codex/config.toml`、`~/.claude/settings.json` 中带标记的受管区块 | `agent_status` |
 | QQ 邮箱授权码、翻译 API 密钥 | Windows 凭据管理器（`com.focusd.island.qq-mail`、`com.focusd.island.translation`；翻译密钥按服务分条目，用户名为服务 id，DeepSeek 沿用 `deepseek`） | `qq_mail`、`translation` |
 | 待办 Markdown 导出 | 用户选择的目录（经过校验） | `system` |
+| 每日 Markdown 反向同步偏好 | 同一 WebView2 `localStorage`：`focusd-island-todo-file-sync`，仅字符串 `"true"` 开启，默认关闭 | `features/todos/storage.ts`、`useTodoFileSyncSetting.ts` |
+| 反向同步共同基线、文件版本、待稳定采样、串行保存队列 | 仅在主窗口内存，每日期和目录一个协调器；重启用既有 `focusd-island-last-saved-signature` 重建共同内容，不增加待办副本 key。每 1.5 秒读取一次，稳定变化才修改列表和笔记；导入继续写既有待办/笔记/归档 key。跨天归档前先处理文件，临时不稳定/编辑中延后，损坏文件保留后将本地数据归档并进入新一天 | `features/todos/todoMarkdownSync.ts`、`useTodoFileSync.ts`、`useTodoSaving.ts`、`useTodoRollover.ts` |
+| 同步冲突恢复副本 | 用户保存目录：`YYYY-MM-DD.conflict-<Unix 纳秒>-island.md` 与 `-file.md`，分别保留冲突前的岛屿与文件内容；只在有冲突时创建，不自动清理。写失败时尽力保存 `-write-error.md` 原文件副本 | `system/todo_sync.rs`；读取/写入 IPC 类型收口在 `features/todos/api.ts` |
 | 开机自启 | `HKCU\...\Run` 下的值 `FocuSD Island` | `system` |
 | 剪贴板历史（条目、收藏、备注与剪贴板设置）；图片原图和 128px 缩略图 | 应用数据目录（`clipboard-history.json`；图片在 `clipboard-images/`），可在设置里移到自选文件夹，位置记在应用数据目录的 `clipboard-location.json` | `clipboard_history/store.rs`、`clipboard_history/location.rs` |
 | 剪贴板独立窗口上次关闭时的位置 | 应用数据目录（`clipboard-window.json`） | `clipboard_window/bounds.rs` |
@@ -61,3 +76,9 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 仓库内 `artifacts/plugins/` 为忽略的 zip 与 plugins-index.json 构建产物；本地测试数据在 node_modules/.cache/plugin-tests/。插件 crate 的 target 不入库。
 
 索引下载/解析诊断写入同样约 1 MiB 上限的 `plugin-logs/catalog.log`；不记录 URL 认证信息。索引失败统一返回 `plugin_index_unavailable`，设置页按当前语言显示简短状态和重试，不回显底层错误。
+
+## 时间与天气（2026-11-19）
+
+前端 `features/weather/storage.ts` 通过安全读写保存 WebView2 localStorage：`focusd-island-clock-weather` 存两个显示开关和用户选择的城市名/经纬度，`focusd-island-weather-cache` 存一条城市坐标、摄氏温度、WMO code、观测时间与获取时间（Unix 毫秒）。安装记录沿用 `focusd-island-native-plugins` 的 `clockWeather` id；卸载仅移除安装态，保留偏好和缓存。缓存超过三小时不显示。
+
+Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo，不写应用数据文件、凭据或用户位置记录，不使用 IP 自动定位。前端订阅在关闭天气或卸载后停止刷新；同窗口共享请求和缓存。说明见 [时间与天气](../plugins/clock-weather.md)。

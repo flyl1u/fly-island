@@ -8,14 +8,15 @@ const CLEAR_CONFIRM_MS = 3_000;
 const STROKE = { strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
 
 /**
- * The line under the files: search once there are many, how to use them (or a short notice),
+ * The line under the files: search once there are many, a short notice now and then,
  * and Clear. The page has no title row: the dot in the island's header already says which page
  * this is. With two or more files chosen the line becomes the bar acting on them, so the page
- * keeps its height.
+ * keeps its height. Under one row of tiles there is no line of its own (用户要求 2026-11-19：
+ * 底部不要空出来): Clear floats in the panel's corner, beside the tiles' quiet bottom edge.
  */
 export function FileShelfBar({
+  floating,
   showSearch,
-  hint,
   noticeKey,
   query,
   selectedCount,
@@ -25,8 +26,9 @@ export function FileShelfBar({
   onRemoveSelected,
   onClearSelection,
 }: {
+  /** One row of tiles: no line under them, the bar floats over the panel's bottom edge. */
+  floating: boolean;
   showSearch: boolean;
-  hint: string;
   /** Changes each time a drop added only files already on the shelf; null hides the notice. */
   noticeKey: number | null;
   query: string;
@@ -48,7 +50,7 @@ export function FileShelfBar({
 
   if (selectedCount > 1) {
     return (
-      <div className="shelf-selection-bar" role="toolbar" aria-label={t.fileShelf.selectedCount(selectedCount)}>
+      <div className={`shelf-selection-bar${floating ? " shelf-selection-bar--floating" : ""}`} role="toolbar" aria-label={t.fileShelf.selectedCount(selectedCount)}>
         <span>{t.fileShelf.selectedCount(selectedCount)}</span>
         <button type="button" aria-label={t.fileShelf.copySelected} onClick={onCopySelected}>
           <Copy size={14} {...STROKE} />
@@ -64,7 +66,7 @@ export function FileShelfBar({
   }
 
   return (
-    <div className="shelf-bar">
+    <div className={`shelf-bar${floating ? " shelf-bar--floating" : ""}`}>
       {showSearch && (
         <label className="shelf-search">
           <Search size={14} {...STROKE} aria-hidden="true" />
@@ -88,9 +90,8 @@ export function FileShelfBar({
           )}
         </label>
       )}
-      {/* A notice takes the hint's place for a moment, then the hint comes back. */}
+      {/* Holds the place between search and Clear; a notice shows here for a moment. */}
       <span className="shelf-bar__message">
-        <p key={noticeKey ?? "hint"} className={`shelf-bar__hint${noticeKey !== null ? " shelf-bar__hint--yielding" : ""}`} title={hint}>{hint}</p>
         {noticeKey !== null && (
           <em key={noticeKey} className="shelf-bar__notice" role="status">
             {t.fileShelf.alreadyOnShelf}

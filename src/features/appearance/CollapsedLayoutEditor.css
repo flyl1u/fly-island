@@ -1,40 +1,40 @@
 /* Appearance → On the island: a collapsed island drawn at its real size to arrange by hand. */
 .collapsed-layout {
+  position: relative;
   display: grid;
-  place-items: center;
+  place-items: start center;
+  row-gap: 16px;
+  container-type: inline-size;
+  min-width: 0;
+  min-height: calc(56px + var(--preview-collapsed-height) * 1px * var(--preview-collapsed-scale));
   padding: 22px 12px 18px;
 }
 
 .collapsed-layout__island {
-  width: min(340px, 100%);
-  height: 38px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  color: var(--color-fg-strong);
-  background: color-mix(in srgb, #f4f4f7 calc(var(--is-light) * 100%), #050505);
-  border-radius: 0 0 22px 22px;
-  corner-shape: superellipse(1.6);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, calc(0.35 - var(--is-light) * 0.25)), inset 0 0 0 1px var(--color-white-a08);
+  position: relative;
+  flex: none;
+  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
+  gap: calc(6 * var(--c));
+  /* The side space set under Collapsed island, less the slots' own padding (CollapsedLayoutEditor). */
+  padding: 0 calc(var(--preview-side-space, 12) * var(--c));
 }
 
 .collapsed-layout__slot {
-  height: 28px;
-  min-width: 28px;
+  height: min(28px, 100%);
+  min-width: calc(28 * var(--c));
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 0 6px;
+  gap: calc(4 * var(--c));
+  padding: 0 calc(6 * var(--c));
   color: inherit;
   background: transparent;
   border: 0;
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
   font: inherit;
-  font-size: calc(11px * var(--island-font-scale, 1));
+  font-size: calc(11 * var(--c) * var(--preview-font-scale));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   cursor: grab;
@@ -52,11 +52,86 @@
   outline-offset: 1px;
 }
 
-.collapsed-layout__slot--dragging {
-  z-index: 1;
+/* While a slot is held its place stays as a faint gap, and a copy follows the pointer. */
+.collapsed-layout--dragging,
+.collapsed-layout--dragging .collapsed-layout__slot {
   cursor: grabbing;
-  background: rgba(var(--overlay-rgb), 0.16);
-  transform: scale(1.08);
+}
+
+.collapsed-layout--dragging .collapsed-layout__slot:hover {
+  background: transparent;
+}
+
+.collapsed-layout .collapsed-layout__slot--placeholder {
+  opacity: 0.18;
+}
+
+.collapsed-layout__ghost {
+  position: absolute;
+  z-index: 3;
+  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
+  color: rgb(var(--preview-ink));
+  background: var(--preview-fill);
+  border-radius: var(--corner-md);
+  box-shadow: 0 0 0 1px rgba(var(--overlay-rgb), 0.12), 0 10px 24px rgba(0, 0, 0, 0.32);
+  pointer-events: none;
+}
+
+/* The box under the island: what is dropped here is not on the island. Its slots sit on the
+   island's own colour so they read as they would on it. */
+.collapsed-layout__hidden {
+  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
+  justify-self: stretch;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px dashed var(--color-white-a18);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.collapsed-layout__hidden--over {
+  border-style: solid;
+  border-color: var(--color-text-muted);
+  background: var(--color-white-a04);
+}
+
+.collapsed-layout__hidden-label {
+  flex: none;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+/* Empty, the hint is the box's only content and sits in its middle. */
+.collapsed-layout__hidden:has(.collapsed-layout__hidden-slots:empty) .collapsed-layout__hidden-label {
+  flex: 1;
+  text-align: center;
+}
+
+.collapsed-layout__hidden-slots {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.collapsed-layout__hidden-slots:empty {
+  display: none;
+}
+
+.collapsed-layout__hidden-slots .collapsed-layout__slot {
+  height: 28px;
+  color: rgb(var(--preview-ink));
+  background: var(--preview-fill);
+}
+
+.collapsed-layout__hidden-slots .collapsed-layout__slot:hover {
+  box-shadow: inset 0 0 0 1px rgba(var(--overlay-rgb), 0.24);
 }
 
 /* A switched-off feature keeps its place, greyed. */
@@ -69,20 +144,27 @@
   min-width: 0;
   flex: 1;
   justify-content: flex-start;
-  gap: 10px;
+  gap: calc(10 * var(--c));
   overflow: hidden;
-  color: rgba(var(--overlay-rgb), 0.72);
-  font-size: calc(13px * var(--island-font-scale, 1));
+  color: var(--preview-text);
+  font-size: calc(13 * var(--c) * var(--preview-font-scale));
   white-space: nowrap;
 }
 
+/* The light on its own: a narrow slot, close to the text as on the island. */
+.collapsed-layout__slot--pulse {
+  min-width: calc(21 * var(--c));
+  padding: 0;
+}
+
 .collapsed-layout__pulse {
-  width: 9px;
-  height: 9px;
+  width: calc(9 * var(--c));
+  height: calc(9 * var(--c));
   flex: none;
   border-radius: var(--radius-pill);
-  background: var(--color-agent-idle);
-  box-shadow: 0 0 10px rgba(53, 233, 133, 0.6);
+  background: var(--preview-pulse);
+  box-shadow: 0 0 10px var(--preview-pulse-glow);
+  filter: brightness(var(--preview-pulse-brightness));
 }
 
 .collapsed-layout__slot--shelf {
@@ -95,9 +177,9 @@
 
 /* The running-session count: a blue pill, as on the island. */
 .collapsed-layout__slot--agents:not(.collapsed-layout__slot--tuck) {
-  min-width: 20px;
-  height: 20px;
-  margin: 0 4px;
+  min-width: calc(20 * var(--c));
+  height: calc(20 * var(--c));
+  margin: 0 calc(4 * var(--c));
   padding: 0 6px;
   border-radius: var(--radius-pill);
   background: rgba(61, 139, 255, 0.32);
@@ -107,9 +189,18 @@
 /* With the AI Agent switch off it is the tuck dot. */
 .collapsed-layout__slot--tuck::after {
   content: "";
-  width: 12px;
-  height: 12px;
+  width: calc(12 * var(--c));
+  height: calc(12 * var(--c));
   border-radius: var(--radius-pill);
   background: rgba(186, 186, 186, 0.38);
   border: 1px solid rgba(var(--overlay-rgb), 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsed-layout__slot { transition: none; }
+}
+
+.collapsed-layout__slot svg {
+  width: calc(15 * var(--c));
+  height: calc(15 * var(--c));
 }

@@ -4,6 +4,7 @@ mod process;
 mod protocol;
 mod service;
 mod storage;
+pub(crate) mod transfer;
 #[cfg(test)] mod tests;
 
 use std::sync::Arc;
@@ -76,8 +77,14 @@ pub async fn load_development_plugin(directory: String, host: tauri::State<'_, P
     let directory = std::path::PathBuf::from(directory).canonicalize().map_err(|e| e.to_string())?;
     let manifest = manifest::Manifest::read(&directory.join("fly-island-plugin.json"))?;
     if registry.installed.contains_key(&manifest.id) { return Err("Uninstall the existing plugin first".into()); }
-    registry.installed.insert(manifest.id.clone(), storage::Installed { manifest, enabled: false, directory, development: true, settings: Default::default() });
-    host.persist(registry)
+    let id = manifest.id.clone();
+    let mut installed = storage::Installed { manifest, enabled: false, directory, development: true, settings: Default::default() };
+    transfer::restore_install(&host.root, &mut installed);
+    let enabled = installed.enabled;
+    registry.installed.insert(id.clone(), installed);
+    host.persist(registry)?;
+    if enabled { host.start(&id)?; }
+    Ok(())
 }
 
 macro_rules! tauri_commands {

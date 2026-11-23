@@ -6,6 +6,7 @@ import {
 } from "../settings/api";
 import { loadDetachedSettings, saveDetachedSettings } from "../settings/storage";
 import type { IslandPage } from "./types";
+import { useTrayIntegration } from "./useTrayIntegration";
 
 function reportFailure(error: unknown) {
   console.error("Failed to open settings", error);
@@ -17,6 +18,7 @@ function reportFailure(error: unknown) {
  * links (OPEN_SETTINGS_PAGE_EVENT), and the tray and translation window (a Tauri event).
  */
 export function useSettingsNavigation(openIslandPage: (page: IslandPage) => void, setPage: (page: IslandPage) => void) {
+  useTrayIntegration();
   const openSettings = useCallback(() => {
     if (loadDetachedSettings()) void openStandaloneSettingsWindow().catch(reportFailure);
     else openIslandPage("settings");

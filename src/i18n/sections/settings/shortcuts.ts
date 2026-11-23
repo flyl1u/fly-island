@@ -8,9 +8,17 @@ export type SettingsShortcutsText = {
   reset: (shortcut: string) => string;
   /** Another program's global hotkey took the keys while recording. */
   takenElsewhere: string;
+  music: { playPause: string; previous: string; next: string };
+  approval: string;
+  clear: string;
+  unassigned: string;
 };
 
 export const zhCN: SettingsShortcutsText = {
+  music: { playPause: "播放 / 暂停", previous: "上一首", next: "下一首" },
+  approval: "Agent 审批",
+  clear: "清除快捷键",
+  unassigned: "未设置",
   globalHint: "在任何程序里都能按。点击按钮后按下新的组合键，按 Esc 取消。",
   openTranslation: "打开快捷翻译",
   translationShortcutEnabled: "启用翻译快捷键",
@@ -22,6 +30,10 @@ export const zhCN: SettingsShortcutsText = {
 };
 
 export const en: SettingsShortcutsText = {
+  music: { playPause: "Play / pause", previous: "Previous track", next: "Next track" },
+  approval: "Agent approval",
+  clear: "Clear shortcut",
+  unassigned: "Not set",
   globalHint: "These work in any program. Click a button, then press a new key combination; Esc cancels.",
   openTranslation: "Open quick translation",
   translationShortcutEnabled: "Enable translation shortcut",

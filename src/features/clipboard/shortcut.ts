@@ -104,11 +104,11 @@ export function buildShortcutFromEvent(event: ShortcutKeyboardEvent) {
   return parts.join("+");
 }
 
-export function normalizeClipboardShortcut(shortcut: string | undefined) {
+export function normalizeClipboardShortcut(shortcut: string | undefined, fallback = DEFAULT_CLIPBOARD_SHORTCUT) {
   const text = shortcut?.trim();
 
   if (!text) {
-    return DEFAULT_CLIPBOARD_SHORTCUT;
+    return fallback;
   }
 
   const parts = text
@@ -141,7 +141,7 @@ export function normalizeClipboardShortcut(shortcut: string | undefined) {
   }
 
   if (!keyLabel || modifiers.size === 0) {
-    return DEFAULT_CLIPBOARD_SHORTCUT;
+    return fallback;
   }
 
   return ["Ctrl", "Alt", "Shift", "Win"]

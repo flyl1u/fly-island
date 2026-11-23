@@ -20,6 +20,7 @@ import type { MailController } from "../../features/messages/mail/MailPanel";
 import { MailOtpCode } from "../../features/messages/mail/MailOtpCode";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import { CollapsedClock, CollapsedWeather, useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
@@ -111,6 +112,9 @@ export function IslandCollapsedBar({
   onTuck,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
+  const clockWeather = useClockWeather();
+  const weatherOn = clockWeather.installed && clockWeather.settings.showWeather && collapsedLayout.includes("weather");
+  const weather = useCurrentWeather(weatherOn, clockWeather.settings.location);
   // A pending update shows a red dot even collapsed, so it is not missed.
   const updatePending = useUpdatePending();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
@@ -152,6 +156,28 @@ export function IslandCollapsedBar({
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
+    // The agent light opens the Agent page (or the message being previewed); the text reopens the last page.
+    pulse: (
+      <button
+        className="island__agent-light"
+        type="button"
+        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source]) : t.island.agentPage}
+        onPointerDown={prepareWindowDrag}
+        onPointerMove={handleWindowDragMove}
+        onPointerUp={cancelWindowDrag}
+        onPointerCancel={cancelWindowDrag}
+        onClick={(event) => {
+          if (event.detail !== 0 && didDragRef.current) return;
+          event.stopPropagation();
+          if (preview) openPreview(preview); else onOpenPage("agents");
+        }}
+      >
+        <span className={pulseClassName} />
+      </button>
+    ),
+    clock: clockWeather.installed && clockWeather.settings.showClock && <CollapsedClock active={!isExpanded && !isTucked} />,
+    weather: weatherOn && weather && clockWeather.settings.location
+      ? <CollapsedWeather location={clockWeather.settings.location} reading={weather} /> : null,
     text: (
       <div className="island__text-slot">
         <button
@@ -176,17 +202,6 @@ export function IslandCollapsedBar({
             }
           }}
         >
-          {/* The agent light opens the Agent page; the text beside it reopens the last page. */}
-          <span
-            className="island__agent-light"
-            onClick={(event) => {
-              if (preview || (event.detail !== 0 && didDragRef.current)) return;
-              event.stopPropagation();
-              onOpenPage("agents");
-            }}
-          >
-            <span className={pulseClassName} />
-          </span>
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>

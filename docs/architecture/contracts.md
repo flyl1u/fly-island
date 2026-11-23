@@ -1,5 +1,17 @@
 # 对外契约清单
 
+## 配置备份 / Configuration backup（2026-11-19，issue #87）
+
+备份文件默认名 `fly-island-config-YYYY-MM-DD.json`，UTF-8 JSON：`{ app: "fly-island", formatVersion: 1, exportedAt: "<ISO 8601>", appVersion: "<版本>", localStorage: { "<key>": "<原始字符串>" }, files: { launchAtStartup, agents, plugins, clipboard, data, assets } }`。不同 app、未知版本、缺字段 / 错类型或未知文件均拒绝，不将旧外观主题当备份。总文件上限 256 MiB。
+
+`localStorage` 按 `focusd-island-` 前缀枚举（当前所有契约键，包括语言，都在此命名空间），不逐项写死。设备白名单 `focusd-island-position` 不导出、不覆盖、不清除；运行态 `focusd-island-settings-focus`、`focusd-island-position-reset`、`focusd-island-panel-preview` 同样排除。恢复清除未出现在备份里的其他本应用键，原样写入字符串；其他来源键不动。无新增 localStorage key。
+
+`files.agents` 为 `{ codex, claudeCode, replyMarker }` 布尔集；`plugins` 为 `{ developerMode, indexUrl, installed: [{ id, version, enabled, settings }] }`（settings 仅 manifest 声明的非秘密值，不携带 manifest / 可执行包 / 目录）。缺包或版本不同写 `plugins-restore.json`，提示重装；以后装入相同版本时恢复非秘密设置与启用状态，卸载删除待恢复记录。`clipboard` 为 `{ settings, history: null | { items, images: { "<受限 PNG 文件名>": "<base64>" } } }`；图片路径在备份里改成文件名，恢复时定位到本机原有剪贴板目录；history=null 保留本机历史。`data` 仅允许 `file-shelf.json`、`agent-remote-hosts.json`、`app-log.json`、`media-plugins-auto.json` 的 JSON 对象；后者只保留 optedOut，attempted 为空。`assets` 为受限 `sound-packs/<id>/pack.json` 与其声明音频的 base64 映射。凭据、登录 Cookie、令牌和运行快照不在格式中。
+
+命令（前端类型化封装 `features/config-transfer/api.ts`）：`export_config({ localStorage, includeClipboardHistory, exportedAt, title })` 返回是否保存；`read_config_import({ title })` 返回已校验备份或取消的 null；`stage_config_import({ backup })` 暂存校验后的数据；`restart_after_config_import()` 重启；`config_transfer_startup()` 返回 `{ ready, localStorage }`（只有 main 收到待恢复键）；`finish_config_import({ success })` 完成或回滚；`get_config_import_report()` / `dismiss_config_import_report()` 读取 / 关闭迁移报告。文件对话框在独立 STA 线程使用调用窗口为父窗口。
+
+English: v1 backups use the envelope above and raw app-owned storage strings. Device coordinates and transient requests are excluded; missing app keys are removed on restore. Clipboard preferences always transfer, history/images require explicit opt-in. Secrets, login profiles, executables, caches and runtime state never transfer. Native files are restored before services start, storage before React mounts; all windows wait for completion. Missing plugin packages require reinstalling the recorded version. New versions must preserve this contract or provide explicit migration.
+
 文件夹选择（2026-11-18）：新增命令 `pick_folder({ initialDirectory?, title? })`，两个参数都可缺省。以调用窗口为父窗口打开 Windows 原生文件夹选择框，返回所选目录字符串，取消返回 `null`，失败返回错误。命令本身不写任何设置；待办保存路径在选中后沿用原 `focusd-island-save-directory` 键与格式保存。
 
 Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCompletedAt`（最近显式 `task_complete` 的 Unix 毫秒时间；未知时省略）。前端兼容字段缺失，原有字段、命令名、参数、事件及持久化格式不变。用于识别两次轮询之间完成的一轮，首次看到的完成仅在 15 秒内提醒；不以文件修改时间代替完成时间。
@@ -9,6 +21,12 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 纯重构中下列标识不得改变，规则见根目录 [AGENTS.md](../../AGENTS.md#对外契约不得随意变更)。新增契约时同步更新本节。
 
 ## localStorage key
+
+音乐全局快捷键（2026-11-19）：新增 `focusd-island-music-shortcuts`，JSON 对象 `{ playPause: string, previous: string, next: string }`，三项缺失、非法或空值按空字符串读取（不注册），不进外观预设。主窗口启动及跨窗口修改后调用 `set_media_shortcuts({ enabled, shortcuts, target? })`，可选 target 与音乐面板当前会话一致；音乐关闭时释放全部，保存的键保留。`get_media_shortcut_errors()` 返回各动作最近的错误字符串对象（成功项省略），`media-shortcut-status` 广播同一对象。复用现有组合键格式与 Windows 注册冲突判定，另预留审批键 `Ctrl+Alt+Y` / `N` / `T`；设置页互查音乐、翻译和剪贴板快捷键。热键只控制已有 SMTC 会话，没有会话时静默跳过。
+
+时间与天气（2026-11-19）：`focusd-island-settings.collapsedLayout` 的 slot 新增 `clock` / `weather`，完整默认顺序为 `text,mail,shelf,music,agents,clock,weather`。读取旧数组时保留原有合法顺序，将缺少的位追加到末尾；未知和重复项丢弃。插件未安装时隐藏这两个位，重排其余位不丢失隐藏位置。
+
+岛上的排列（2026-11-19 第二版）：`collapsedLayout` 再增 slot `pulse`（状态灯，原先是文字的一部分），默认顺序 `pulse,text,mail,shelf,music,agents,clock,weather`；读取没有 `pulse` 的旧数组时把它插在 `text` 前面（与旧版显示位置相同），有就保留原位置。新增 `collapsedHidden`（slot 数组，默认 `[]`）：拖进编辑器下方盒子、不在岛上显示的位；只认已知 slot，去重，`text` 不能隐藏。新增 `collapsedPadding`（整数 px，4–32，默认 18）：收起岛左右两侧的留白，属于外观字段，随外观预设保存。`collapsedHeight` 的下限从 32 改为 26（前端和 Rust `MIN_COLLAPSED_ISLAND_HEIGHT` 同步）。旧版本读到 `pulse` 会当未知项丢掉，显示不受影响。
 
 `focusd-island-settings.messagePreviewSeconds` 为岛上通知停留时长，3–30 的整数秒，默认 5；旧记录缺失或非法值回退到 5。
 
@@ -27,7 +45,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |
 | `focusd-island-session-sort-recent-v1`（旧版写的 `"1"`：会话排序 `status` → `recent` 的一次性迁移完成。2026-11-19 起不再读写，迁移已撤掉，理由同上；已有的值留在原处不删） | 无（曾在 `features/appearance/storage.ts`） |
 | `focusd-island-color-backup`（`{ islandBackgroundColor, taskTextColor, pulseColor }`，均为大写 `#RRGGBB`；迁移、恢复默认外观和批量改色前保存；回退时与当前三色互换，手动改一个颜色不写） | `features/appearance/storage.ts`、`colorPalette.ts` |
-| `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor }[]`；id 为字符串，三色均为大写 `#RRGGBB`，最多 8 项、三色组合去重；损坏记录跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
+| `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor, pageTextColor? }[]`；id 为字符串，前三色为大写 `#RRGGBB`。2026-11-19 起新预设包含 `pageTextColor`：大写 `#RRGGBB` 或 `""`（跟随背景）；旧项缺失或此可选字段损坏时保留缺失，应用不改变当前展开文字。最多 8 项，包含展开文字 / 跟随背景状态去重，缺失与显式 `""` 不合并；损坏必需字段跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo`（主任务 ID 字符串，兼容原单任务格式） | `features/todos/storage.ts` |
@@ -45,6 +63,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `windows/island/storage.ts` |
 | `focusd-island-music-sources`（`{ id, label, archived? }[]`，按顺序；`archived: true` 表示已归档，不出现在顺序里、再次出现时不追加；旧数据无该字段即未归档。2026-11-14 起） | `features/media/storage.ts` |
+| `focusd-island-music-shortcuts`（`{ playPause, previous, next }`，均为空字符串或组合键） | `features/media/storage.ts` |
+| `focusd-island-tray-visible`（`"true"` / `"false"`；只有 `"false"` 隐藏托盘图标，缺失或其他值按显示） | `windows/settings/storage.ts` |
 | `focusd-island-last-page`（`todo` / `music` / `shelf` / `qq` / `agents` / `translation` 之一，岛上最后打开的页面；收起的岛点文字时回到它。`clipboard` 与 `settings` 不记录；缺失或非法回退 `todo`。2026-11-14 起） | `windows/island/lastPage.ts` |
 | `focusd-island-media-diagnostics-dismissed`（字符串数组，每项为小写 sourceAppId + `\u001f` + 非 ok 的 status；损坏或旧格式回退空数组） | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
@@ -58,7 +78,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
 | `focusd-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
-| `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `focusd-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个开关、保留城市） | `features/weather/storage.ts` |
+| `focusd-island-weather-cache`（`{ latitude, longitude, temperature, code, observedAt, fetchedAt }`；temperature 为摄氏数值，code 为 WMO 整数，时间均为 Unix 毫秒；只显示坐标匹配且观测/获取均未超过三小时的数据） | `features/weather/storage.ts` |
 | `focusd-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-wechat-hide-minimized-taskbar`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
@@ -108,6 +130,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `office-im-changed`（载荷 `OfficeImSnapshot`：`revision` 与 `dingtalk` / `feishu` / `wecom` 各自的 `enabled`、`status`、`pending`、`lastAttentionAt`、`error`） | `office_im/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
+| `tray-visibility-changed`（载荷布尔值：从托盘菜单「隐藏托盘图标」或设置开关改变后的可见性；启动超时兜底显示不发） / `tray-check-updates`（无载荷：托盘「检查更新」，主窗口打开设置的更新部分并检查） | `tray.rs`、前端 `windows/settings/api.ts` | 广播 / `main` |
 | `settings-open-requested`（无载荷：托盘、翻译窗口或独立设置窗口要打开设置，主窗口按 `focusd-island-detached-settings` 决定打开岛上的设置页还是独立窗口） | `settings_window/mod.rs`、前端 `windows/settings/api.ts` | `main` |
 | `focusd-update-state` / `focusd-update-request`（更新状态由主窗口广播；独立设置窗口用后者请求 `snapshot` / `check` / `install` / `dismiss`，以及 `{ action: "auto", enabled }` 切换自动更新（2026-11-13 起）；3.0.2 及更早还有 `channel`。状态里多了 `autoUpdate` 布尔字段） | `features/updater/updaterController.ts` | 广播 / `main` |
 | `agent-approval-requested`（载荷 `{ id, agent, kind, sessionId, cwd, toolName, toolInput, permissionSuggestions, receivedAt }`：一个会话等你在岛上审批的工具调用（`kind: "permission"`），或要你回答的 AskUserQuestion（`kind: "question"`，`toolInput.questions`），同一会话同时只发一条） | `agent_approval/mod.rs` | 广播 |
@@ -115,7 +138,12 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## 其他
 
+- 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `focusd-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。
+- 新增原生命令 `read_todo_markdown({ directory, date })`，返回 `{ filePath, version, modifiedAt, content }`：缺失文件后三项为 null；时间为 Unix 毫秒，version 为内容 SHA-256 与文件修改时间组成的不透明字符串。只允许绝对目录与真实 `YYYY-MM-DD`，只读取 UTF-8 且不超过 4 MiB 的每日文件。
+- 新增 `save_todo_markdown_if_unchanged({ directory, date, content, expectedVersion, recoveryContent })`，返回 `{ saved, snapshot }`，snapshot 与读取命令同型。版本不符（包括文件不存在/被新建）时 `saved: false` 并返回新快照，不写入；在 Windows 写入/删除排他锁内比较和写入。`recoveryContent` 为 null 时普通写入，否则先在同一目录创建两侧冲突副本。恢复副本是 `YYYY-MM-DD.conflict-<Unix 纳秒>-island.md` / `-file.md`，不被当作每日文件读取。既有 `save_todo_markdown` 契约和关闭开关时的行为不变；本应用命令不需要额外插件权限。
+
 - 测试版通道（2026-11-18）：`updater_check` 新增可选参数 `allowDowngrade`（缺省 false，与旧版相同）；为 true 时清单里任何不同的版本都算更新，用于从测试版还原到正式版。`channel` 仍为 `"stable"` / `"beta"`。主窗口与设置窗口之间的 `focusd-update-request` 新增 action `beta`、`restore`，`focusd-update-state` 新增字段 `target`。无新增 localStorage key。
+- 托盘（2026-11-19）：新增命令 `set_tray_language({ language })`（`"en"` 为英文，其余为中文）与 `set_tray_visible({ visible })`。托盘图标启动时先隐藏，主窗口同步 `focusd-island-tray-visible` 后决定显示与否；3 秒内没有同步时兜底显示。托盘隐藏时再次启动 Fly Island 会额外打开设置。无新增应用数据文件。
 - 问题排查日志（2026-11-18）：新增命令 `get_app_log_state()`、`set_app_log_enabled({ enabled })`（都返回 `{ enabled, path, bytes }`）、`append_app_log({ entries: [{ level: "error" | "warn", message }] })`、`open_app_log_folder()`、`clear_app_log()`，事件 `app-log-changed`（payload 为是否开启）。应用数据目录新增 `app-log.json` 与 `logs/focusd-island.log`、`logs/focusd-island.1.log`。无新增 localStorage key。
 - `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。
 - `focusd-island-settings` 新增 `topEdgeShoulders`（boolean，默认 false）和 `topEdgeShoulderSize`（整数 4–20px，默认 10）；无效或缺失回退默认，大小超界夹取，只影响贴顶的装饰外形，不增加原生点击区域。属于外观字段，恢复默认外观会一并复位。
@@ -145,7 +173,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 岛屿设置 `focusd-island-settings` 的 `pageOrder` 2026-11-11 起多一个可选项 `"translation"`（翻译的页面胶囊），默认顺序 `["todo","music","clipboard","shelf","translation"]`；旧数据缺它时按上面的规则补在末尾，旧版本读到它会当未知项丢掉。
 - 岛屿设置 `focusd-island-settings` 2026-11-11 新增 `autoCollapseSeconds`（整数秒 0–600，0 表示从不；鼠标离开展开的岛多少秒后收起）和 `tuckDelaySeconds`（整数秒 3–600，默认 30；收起的岛闲置多少秒后贴边成细线）。`autoCollapseSeconds` 最初只存 3 / 5 / 10 / 30 / 0，这些值照旧有效；非数字或旧数据没有这个字段时：`autoTuck` 为 true 读成 30，否则读成 0；超出范围按边界读。旧版本存过的 `autoTuckSeconds` 不再读取，`tuckDelaySeconds` 缺失时读成 30。
 - 岛屿设置 `focusd-island-settings` 的 `expandedScale`（展开后的大小）2026-11-10 重新可以设置；2026-11-11 起是 0.85–1.2 之间的任意值（滑块，步长 0.01）。3.0.0 存的 0.9 / 1 / 1.1（小 / 中 / 大）原样保留；更早版本存的任意数（原范围 0.75–1.4）读取时限制到 0.85–1.2 并取到百分位，非数字按 1。字段名和类型不变。
-- `focusd-island-settings` 新增 `islandFontPercent`（90–120，默认 100，步长 5）、`collapsedAutoWidth`（默认 true）、`collapsedWidth`（240–480，默认 340）和 `collapsedHeight`（32–60，默认 38）。宽高以缩放前的逻辑像素存储。`set_island_interaction` 接收实际使用的 `collapsedWidth` 及可选的 `collapsedHeight`，缺少高度时使用当前状态的高度，初始值为 38。
+- `focusd-island-settings` 新增 `islandFontPercent`（90–120，默认 100，步长 5）、`collapsedAutoWidth`（默认 true）、`collapsedWidth`（240–480，默认 340）和 `collapsedHeight`（32–60，默认 38；2026-11-19 起下限 26）。宽高以缩放前的逻辑像素存储。`set_island_interaction` 接收实际使用的 `collapsedWidth` 及可选的 `collapsedHeight`，缺少高度时使用当前状态的高度，初始值为 38。
 - `focusd-island-settings.agentQuotaSources` 保存可见额度环，候选值依次为 `claudeCode`、`codex`、`dsh`、`workbuddy`。旧数据缺少该字段时用原有会话来源开关迁移三种来源，并选中 WorkBuddy。保存空数组表示隐藏额度行。
 - 胶囊外形（2026-11-18）：`focusd-island-settings` 兼容新增 `islandShape`（`"notch"` / `"capsule"`，缺失或其他值时为 `"notch"`，与旧版外形相同；胶囊暂未开放期间 `"capsule"` 也读成 `"notch"`），属于外观字段，随外观预设保存和应用。胶囊只改变前端发给 `set_island_interaction` / `set_island_layout` 的 `marginY`（至少 8）与 `collapsedCornerRadius`（条高的一半），命令和参数不变，不新增事件或 localStorage key。
 - 插件市场 Agent（2026-11-18）：`list_agent_sessions` 新增可选参数 `native: string[]`（`"cursor"`、`"kimiCode"`、`"hermes"`），缺省时与旧版一样不读这几个来源；返回的 `provider` 新增 `cursor`、`kimiCode`、`hermes`。`focus_agent_window`、`agent_sessions_in_front` 接受 `cursor`（另两个走通用的终端匹配）。新增只读命令 `get_kimi_usage()`、`get_zcode_usage()`，返回 `null` 或与 `get_agent_usage` 相同的 `AgentUsage`，`source` 新增 `"kimi"` / `"zcode"`。`focusd-island-settings` 兼容新增 `agentShowCursor`、`agentShowKimiCode`、`agentShowHermes`、`agentShowZcode`（缺失时为 true，仅在 `focusd-island-native-plugins` 装了对应插件时生效）；`agentQuotaSources` 的取值不变。无新增事件或 localStorage key。
@@ -198,3 +226,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 事件：`plugins-changed`（无敏感数据；前端重新 get_plugins）。stdio RPC：`initialize`、`action`、`publish`，停止时可发送无 id 的可选 `shutdown` 通知；旧 v1 插件仍由宿主限时结束，完整 schema 见 `docs/plugins/api.md`。
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
 - v3.2.6（2026-11-18，第三轮手测后）：`focusd-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `focusd-island-todos`。
+
+## 时间与天气命令（2026-11-19）
+
+- `search_weather_cities({ name, language }) → { name, latitude, longitude }[]`：name 为去空白后 2–100 字符的城市名，language 为 `zh` 或 `en`（其它值按 en）；最多八项，显示名合并城市、行政区、国家并去重。
+- `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。命令异步请求 Open-Meteo，不新增事件、权限或原生持久化文件。

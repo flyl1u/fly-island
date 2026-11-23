@@ -122,8 +122,8 @@ export function FileShelfPanel({
       )}
       {layout !== "empty" && (
         <FileShelfBar
+          floating={layout === "tiles" && query === ""}
           showSearch={layout === "rows" || query !== ""}
-          hint={t.fileShelf.footerHint(revealOnDoubleClick)}
           noticeKey={recentDrop?.allExisting ? recentDrop.key : null}
           query={query}
           selectedCount={selection.ids.length}

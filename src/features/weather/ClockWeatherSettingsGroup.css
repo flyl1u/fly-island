@@ -1,0 +1,24 @@
+.clock-weather-settings__status {
+  margin: 6px 0 0;
+  color: var(--text-3);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.clock-weather-settings__status:empty { display: none; }
+.clock-weather-settings__cities { display: grid; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.clock-weather-settings__cities button {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
+  color: var(--text-1);
+  background: var(--color-white-a06);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.clock-weather-settings__cities button:hover { background: var(--color-white-a12); }
+.clock-weather-settings__cities button:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }

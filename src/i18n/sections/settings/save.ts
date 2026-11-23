@@ -8,6 +8,9 @@ export type SettingsSaveText = {
   browse: string;
   browseTitle: string;
   browseFailed: string;
+  fileSync: string;
+  fileSyncDescription: string;
+  fileSyncNeedsPath: string;
 };
 
 export const zhCN: SettingsSaveText = {
@@ -20,6 +23,9 @@ export const zhCN: SettingsSaveText = {
   browse: "选择文件夹",
   browseTitle: "选择待办清单保存文件夹",
   browseFailed: "无法打开文件夹选择窗口",
+  fileSync: "从文件同步回岛上",
+  fileSyncDescription: "打开后，在外部编辑当天的 Markdown 文件，岛上的待办和笔记会跟着更新。",
+  fileSyncNeedsPath: "请先保存一个文件夹路径，再开启反向同步。",
 };
 
 export const en: SettingsSaveText = {
@@ -32,4 +38,7 @@ export const en: SettingsSaveText = {
   browse: "Choose folder",
   browseTitle: "Choose a folder for the task list",
   browseFailed: "Couldn't open the folder picker",
+  fileSync: "Sync file edits back to the island",
+  fileSyncDescription: "When on, editing today's Markdown file updates the island's todos and daily note.",
+  fileSyncNeedsPath: "Save a folder path first to enable file sync.",
 };

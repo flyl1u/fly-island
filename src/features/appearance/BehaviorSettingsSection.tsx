@@ -3,6 +3,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
+import type { ReactNode } from "react";
 
 const LOCALE_OPTIONS = LOCALE_CODES.map((code) => ({ value: code, label: TRANSLATIONS[code].localeLabel }));
 
@@ -14,6 +15,7 @@ export function BehaviorSettingsSection({
   onLaunchAtStartupChange,
   onLocaleChange,
   onDetachedSettingsChange,
+  children,
 }: {
   launchAtStartup: boolean;
   /** Whether settings open in their own window instead of as a page of the island. */
@@ -22,6 +24,7 @@ export function BehaviorSettingsSection({
   locale: LocaleCode;
   onLaunchAtStartupChange: (enabled: boolean) => void;
   onLocaleChange: (locale: LocaleCode) => void;
+  children?: ReactNode;
 }) {
   const t = useTranslation();
 
@@ -51,6 +54,7 @@ export function BehaviorSettingsSection({
         checked={detachedSettings}
         onChange={onDetachedSettingsChange}
       />
+      {children}
     </SettingsGroup>
   );
 }

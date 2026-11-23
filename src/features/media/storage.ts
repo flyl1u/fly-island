@@ -1,4 +1,17 @@
 import { readJson, writeJson } from "../../lib/storage.ts";
+import { normalizeMusicShortcuts, type MusicShortcuts } from "./shortcuts.ts";
+
+export const MUSIC_SHORTCUTS_STORAGE_KEY = "focusd-island-music-shortcuts";
+export const MUSIC_SHORTCUTS_SAVED_EVENT = "focusd-island-music-shortcuts-saved";
+
+export function loadMusicShortcuts(): MusicShortcuts {
+  return normalizeMusicShortcuts(readJson(MUSIC_SHORTCUTS_STORAGE_KEY));
+}
+
+export function saveMusicShortcuts(value: MusicShortcuts) {
+  writeJson(MUSIC_SHORTCUTS_STORAGE_KEY, normalizeMusicShortcuts(value));
+  window.dispatchEvent(new Event(MUSIC_SHORTCUTS_SAVED_EVENT));
+}
 
 export const MEDIA_DIAGNOSTICS_DISMISSED_KEY = "focusd-island-media-diagnostics-dismissed";
 

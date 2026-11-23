@@ -3,6 +3,7 @@
 mod audio;
 mod cover;
 mod diagnostics;
+pub(crate) mod hotkeys;
 mod service;
 mod session;
 mod timeline;
@@ -92,6 +93,8 @@ macro_rules! tauri_commands {
         $next!([$($done)*
             crate::media_control::get_media_state,
             crate::media_control::get_media_diagnostics,
+            crate::media_control::hotkeys::set_media_shortcuts,
+            crate::media_control::hotkeys::get_media_shortcut_errors,
             crate::media_control::get_audio_level,
             crate::media_control::media_play_pause,
             crate::media_control::media_next,
