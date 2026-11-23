@@ -209,12 +209,20 @@ export async function runBatteryTour(
       const time = () => detail()?.querySelector("time")?.dateTime;
       await act(async () => chart.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: chart.getBoundingClientRect().right - 1 })));
       const latestTime = time();
+      const tip = detail()!.getBoundingClientRect(), plotBox = chart.getBoundingClientRect();
+      check(tip.right > plotBox.right - 12 && tip.right <= plotBox.right + 1
+        && detail()!.children.length === 3 && getComputedStyle(detail()!).whiteSpace === "nowrap",
+      "The sample's details sit over the sample, inside the plot, in three rows that never wrap");
       check(latestTime === times[1].dateTime && detail()?.textContent?.includes(charging ? t.state.charging : t.historyDischarging)
         && detail()?.textContent?.includes(percentValue) && chart.querySelector(".battery-history__selected"),
       "Hover highlights the nearest sample with its time, charge and direction");
       await act(async () => chart.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })));
       check(time() && time() !== latestTime && chart.querySelector("[aria-live]")?.textContent?.includes(percentValue),
         "Arrow keys step through the samples and announce the reading");
+      await act(async () => chart.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: plotBox.left + 1 })));
+      const leftTip = detail()!.getBoundingClientRect();
+      check(leftTip.left >= plotBox.left - 1 && leftTip.right <= plotBox.right + 1,
+        "At the left edge the box slides right instead of leaving the plot");
       await act(async () => chart.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
       check(!detail(), "Escape closes the sample details");
     }

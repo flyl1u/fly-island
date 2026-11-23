@@ -74,8 +74,36 @@
   to { opacity: 1; }
 }
 
+/* The newest reading breathes: the chart is live. */
+.battery-history__pulse {
+  fill: var(--battery-history-series-color);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: battery-history-pulse 2.6s ease-out infinite;
+}
+
+@keyframes battery-history-pulse {
+  from { opacity: 0.45; scale: 1; }
+  70%, to { opacity: 0; scale: 3.2; }
+}
+
+.battery-history__empty {
+  animation: battery-history-waiting 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes battery-history-waiting {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .battery-history__point {
+  .battery-history__point,
+  .battery-history__empty {
+    animation: none;
+  }
+
+  .battery-history__pulse {
+    display: none;
     animation: none;
   }
 }
@@ -93,15 +121,11 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* Three rows, one reading each: the day, the time, then the charge and its direction. */
 .battery-history__detail {
   position: absolute;
   inset-block-start: var(--space-xs);
-  inset-inline-end: var(--space-xs);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-xs);
-  max-inline-size: calc(100% - 2 * var(--space-xs));
+  display: grid;
   padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-white-a18);
   border-radius: var(--corner-sm);
@@ -109,11 +133,22 @@
   background: var(--color-surface-dark);
   color: var(--text-2);
   font-size: calc(11px * var(--island-font-scale, 1));
+  line-height: 1.35;
+  /* The box is as wide as its longest row; it moves to stay inside, it never wraps to fit. */
+  white-space: nowrap;
   pointer-events: none;
 }
 
-.battery-history__detail[data-left] {
-  inset-inline: var(--space-xs) auto;
+/* The charge and the direction share the last row. */
+.battery-history__detail-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+/* A sample in the upper half would sit under it. */
+.battery-history__detail[data-below] {
+  inset-block: auto var(--space-xs);
 }
 
 .battery-history__detail strong {

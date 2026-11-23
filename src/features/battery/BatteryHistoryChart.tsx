@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useLocale, useTranslation } from "../../i18n";
 import type { BatteryFlow } from "./display";
 import { BATTERY_HISTORY_HOURS, batteryHistoryInRange, nearestBatterySample, type BatteryHistory } from "./history";
@@ -7,6 +7,42 @@ import "./BatteryHistoryChart.css";
 const WIDTH = 480;
 const HEIGHT = 84;
 const INSET = 4;
+// Room kept between the reading's box and the plot's edges, so the box never touches the frame.
+const EDGE = 4;
+
+/**
+ * The reading under the cursor: the day, the time, then the charge and its direction, one row each.
+ * It is as wide as its rows need and slides along the plot to stay inside, so the text is never
+ * squeezed into more or fewer rows than these three.
+ */
+function BatteryHistoryTip({ sample, day, time, percent, status }: {
+  sample: { at: number; x: number; y: number };
+  day: string;
+  time: string;
+  percent: string;
+  status: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [left, setLeft] = useState<number | null>(null);
+
+  // Its own width decides where it can stand: centred on the sample, then pulled back inside.
+  useLayoutEffect(() => {
+    const tip = ref.current;
+    const plot = tip?.offsetParent;
+    if (!tip || !(plot instanceof HTMLElement)) return;
+    const room = plot.clientWidth;
+    const width = tip.offsetWidth;
+    setLeft(Math.min(Math.max(sample.x / WIDTH * room - width / 2, EDGE), Math.max(EDGE, room - width - EDGE)));
+  }, [sample.x, day, time, percent, status]);
+
+  const iso = new Date(sample.at).toISOString();
+  return <div ref={ref} className="battery-history__detail" data-below={sample.y < HEIGHT / 2 || undefined} aria-hidden="true"
+    style={{ insetInlineStart: left ?? EDGE, visibility: left === null ? "hidden" : undefined }}>
+    <time dateTime={iso}>{day}</time>
+    <time dateTime={iso}>{time}</time>
+    <span className="battery-history__detail-row"><strong>{percent}</strong><span>{status}</span></span>
+  </div>;
+}
 
 export function BatteryHistoryChart({ history }: { history: BatteryHistory }) {
   const [selection, setSelection] = useState<{ at: number; keyboard: boolean } | null>(null);
@@ -45,12 +81,14 @@ export function BatteryHistoryChart({ history }: { history: BatteryHistory }) {
   const end = coordinates[coordinates.length - 1];
   const selectedIndex = selection ? points.findIndex(({ at }) => at === selection.at) : -1;
   const selected = coordinates[selectedIndex];
-  const pointDate = selected && new Intl.DateTimeFormat(locale, {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit",
-  }).format(selected.at);
+  const pointDay = selected ? new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(selected.at) : "";
+  const pointTime = selected ? new Intl.DateTimeFormat(locale, {
+    hour: "numeric", minute: "2-digit", second: "2-digit",
+  }).format(selected.at) : "";
   const flowLabels: Record<BatteryFlow, string> = { charging: t.state.charging, discharging: t.historyDischarging };
   const pointStatus = selected?.flow ? flowLabels[selected.flow] : t.historyNotCharging;
-  const pointText = selected && `${pointDate} · ${percent.format(selected.percent / 100)} · ${pointStatus}`;
+  const pointPercent = selected ? percent.format(selected.percent / 100) : "";
+  const pointText = selected && `${pointDay} ${pointTime} · ${pointPercent} · ${pointStatus}`;
 
   const inspectPointer = (event: PointerEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -97,17 +135,14 @@ export function BatteryHistoryChart({ history }: { history: BatteryHistory }) {
             <polyline points={line} className="battery-history__line" vectorEffect="non-scaling-stroke" />
           </g>;
         })}
+        <circle cx={end.x} cy={end.y} r="3" className="battery-history__pulse" data-charging={end.flow === "charging" || undefined} />
         <circle key={end.at} cx={end.x} cy={end.y} r="3" className="battery-history__point" data-charging={end.flow === "charging" || undefined} />
         {selected && <g data-charging={selected.flow === "charging" || undefined} aria-hidden="true">
           <line x1={selected.x} x2={selected.x} y1={INSET} y2={HEIGHT - INSET} className="battery-history__cursor" />
           <circle cx={selected.x} cy={selected.y} r="4" className="battery-history__selected" />
         </g>}
       </svg>
-      {selected && <div className="battery-history__detail" data-left={selected.x >= WIDTH / 2 || undefined} aria-hidden="true">
-        <time dateTime={new Date(selected.at).toISOString()}>{pointDate}</time>
-        <strong>{percent.format(selected.percent / 100)}</strong>
-        <span>{pointStatus}</span>
-      </div>}
+      {selected && <BatteryHistoryTip sample={selected} day={pointDay} time={pointTime} percent={pointPercent} status={pointStatus} />}
       <span className="battery-history__announcement" aria-live="polite">{selection?.keyboard ? pointText : null}</span>
     </div>
     <div className="battery-history__times">
