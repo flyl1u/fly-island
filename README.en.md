@@ -148,7 +148,7 @@ Scan the QR code with WeChat to join the user group (mostly Chinese-speaking). Y
 
 <p align="center"><img src="docs/assets/wechat-community.jpg" alt="fly-island WeChat community QR code" width="280"></p>
 
-<p align="center"><sub>The QR code is valid until November 23. If it has expired, please let us know in an <a href="https://github.com/flyl1u/fly-island/issues">Issue</a>.</sub></p>
+<p align="center"><sub>The QR code is valid until November 30. If it has expired, please let us know in an <a href="https://github.com/flyl1u/fly-island/issues">Issue</a>.</sub></p>
 
 ## Contributing
 
