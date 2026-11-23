@@ -143,7 +143,7 @@ AI 要执行命令、改文件时，直接在岛上点「允许」或「拒绝�
 
 <p align="center"><img src="docs/assets/wechat-community.jpg" alt="fly-island 微信交流群二维码" width="280"></p>
 
-<p align="center"><sub>二维码 11 月 23 日前有效，失效了请在 <a href="https://github.com/flyl1u/fly-island/issues">Issue</a> 里说一声。</sub></p>
+<p align="center"><sub>二维码 11 月 30 日前有效，失效了请在 <a href="https://github.com/flyl1u/fly-island/issues">Issue</a> 里说一声。</sub></p>
 
 ## 参与开发
 
