@@ -9,6 +9,7 @@ import { TranslationWindow } from "./windows/translation/TranslationWindow";
 import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { EyeCareWindow } from "./windows/eye-care/EyeCareWindow";
 import { ClipboardWindow } from "./windows/clipboard/ClipboardWindow";
+import { ScreenshotWindow } from "./windows/screenshot/ScreenshotWindow";
 import { I18nProvider, loadLocale, TRANSLATIONS } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
 import { installSameWindowStorageEvents } from "./lib/sameWindowStorageEvents";
@@ -22,6 +23,26 @@ import { restoreConfigBeforeMount } from "./features/config-transfer/bootstrap";
 const windowKind = new URLSearchParams(window.location.search).get("window");
 // First, so errors while the window starts are in the diagnostic log when it is on.
 installAppLogCapture();
+
+/** 兜底：截图窗口渲染出错时显示错误信息，而不是整页白屏。 */
+class ScreenshotErrorBoundary extends React.Component<{ children: React.ReactNode }, { message: string | null }> {
+  state = { message: null as string | null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { message: String(error) };
+  }
+
+  render() {
+    if (this.state.message) {
+      return (
+        <div style={{ padding: 16, color: "#b42318", font: "13px system-ui, sans-serif", background: "#fff1f0" }}>
+          ScreenshotWindow failed: {this.state.message}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 async function mountApp() {
   await restoreConfigBeforeMount();
@@ -71,6 +92,10 @@ async function mountApp() {
           <SettingsWindow />
         ) : windowKind === "clipboard" ? (
           <ClipboardWindow />
+        ) : windowKind === "screenshot" ? (
+          <ScreenshotErrorBoundary>
+            <ScreenshotWindow />
+          </ScreenshotErrorBoundary>
         ) : (
           <IslandApp />
         )}

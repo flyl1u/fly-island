@@ -23,6 +23,7 @@ mod system;
 mod translation;
 mod tray;
 mod office_im;
+mod screenshot;
 mod weather;
 mod wechat_reminders;
 mod win32;
@@ -90,6 +91,7 @@ pub fn run() {
                 eprintln!("failed to initialize clipboard history: {error}");
             }
             translation::init(app.handle());
+            screenshot::init(app.handle());
             if let Err(error) = file_shelf::init(app.handle()) {
                 eprintln!("failed to initialize the file shelf: {error}");
             }
@@ -165,6 +167,7 @@ pub fn run() {
             ; app_log
             ; config_transfer
             ; weather
+            ; screenshot
         ))
         .build(context)
         .map(|app| {
