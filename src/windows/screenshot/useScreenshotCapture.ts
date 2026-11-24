@@ -62,9 +62,13 @@ export function useScreenshotCapture({
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const busy = useRef(false);
+  const arming = useRef(false);
 
   /** 抓一张干净底图（窗口此时仍隐藏），然后把窗口显示并抢到前台。 */
   const arm = useCallback(async () => {
+    // 一次按键只抓一次：事件重复触发时不要叠着抓屏，叠起来会卡住整个覆盖层。
+    if (arming.current) return;
+    arming.current = true;
     try {
       const region = await screenshotWindowRect();
       const frame = await captureScreenRaw(region);
@@ -93,17 +97,27 @@ export function useScreenshotCapture({
       setFailure(String(error));
       // 抓屏失败时也要把窗口露出来，否则用户只看到一片空白。
       await getCurrentWindow().show().catch(() => {});
+    } finally {
+      arming.current = false;
     }
   }, [onArm, windowRects]);
 
   useEffect(() => {
+    let cancelled = false;
     let dispose: (() => void) | undefined;
     void onScreenshotArm(() => void arm())
       .then((off) => {
-        dispose = off;
+        // StrictMode 会挂载→卸载→再挂载，而退订函数要等 promise 才拿到。
+        // 卸载时若还没拿到，就必须记下来立刻退订；否则这次订阅永久留在事件总线上，
+        // 一次快捷键会触发两次抓屏。
+        if (cancelled) off();
+        else dispose = off;
       })
       .catch(() => {});
-    return () => dispose?.();
+    return () => {
+      cancelled = true;
+      dispose?.();
+    };
   }, [arm]);
 
   // 底图先落到背面画布：标注层重绘和真马赛克都从这块画布取像素。
