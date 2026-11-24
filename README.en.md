@@ -150,7 +150,8 @@ Scan the QR code with WeChat to join the user group (mostly Chinese-speaking). Y
 
 <p align="center"><sub>The QR code is valid until November 30. If it has expired, please let us know in an <a href="https://github.com/flyl1u/fly-island/issues">Issue</a>.</sub></p>
 
-## Contributing
+<details>
+<summary><b>Contributing</b></summary>
 
 ### Run from source
 
@@ -171,9 +172,11 @@ Run `pnpm check` before committing. See the repository rules in [AGENTS.md](AGEN
 
 Test your plugin locally, then open a PR with a demo recording, the author's name, and contact information. Plugins ship after review. See the [plugin development guide](docs/plugins/README.md).
 
+</details>
+
 ## Acknowledgments
 
-Thanks to these past contributors: [Codex](https://github.com/codex), [TixXin](https://github.com/TixXin), and [ShengLin1001](https://github.com/ShengLin1001).
+Thanks to these past contributors: [TixXin](https://github.com/TixXin) and [ShengLin1001](https://github.com/ShengLin1001).
 
 ## Star History
 

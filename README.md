@@ -145,7 +145,8 @@ AI 要执行命令、改文件时，直接在岛上点「允许」或「拒绝�
 
 <p align="center"><sub>二维码 11 月 30 日前有效，失效了请在 <a href="https://github.com/flyl1u/fly-island/issues">Issue</a> 里说一声。</sub></p>
 
-## 参与开发
+<details>
+<summary><b>参与开发</b></summary>
 
 ### 从源码运行
 
@@ -166,9 +167,11 @@ pnpm tauri dev
 
 在本地测试插件后提交 PR，附上演示录屏、作者和联系方式。插件经审核后上线，具体流程见[插件开发规范](docs/plugins/README.md)。
 
+</details>
+
 ## 致谢
 
-感谢这些历史贡献者：[Codex](https://github.com/codex)、[TixXin](https://github.com/TixXin)、[ShengLin1001](https://github.com/ShengLin1001)。
+感谢这些历史贡献者：[TixXin](https://github.com/TixXin)、[ShengLin1001](https://github.com/ShengLin1001)。
 
 ## Star History
 
