@@ -171,6 +171,10 @@ Run `pnpm check` before committing. See the repository rules in [AGENTS.md](AGEN
 
 Test your plugin locally, then open a PR with a demo recording, the author's name, and contact information. Plugins ship after review. See the [plugin development guide](docs/plugins/README.md).
 
+## Acknowledgments
+
+Thanks to these past contributors: [Codex](https://github.com/codex), [TixXin](https://github.com/TixXin), and [ShengLin1001](https://github.com/ShengLin1001).
+
 ## Star History
 
 <a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">

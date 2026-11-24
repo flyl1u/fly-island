@@ -166,6 +166,10 @@ pnpm tauri dev
 
 在本地测试插件后提交 PR，附上演示录屏、作者和联系方式。插件经审核后上线，具体流程见[插件开发规范](docs/plugins/README.md)。
 
+## 致谢
+
+感谢这些历史贡献者：[Codex](https://github.com/codex)、[TixXin](https://github.com/TixXin)、[ShengLin1001](https://github.com/ShengLin1001)。
+
 ## Star History
 
 <a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">
