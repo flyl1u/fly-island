@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import {
   ArrowUpRight,
   Check,
@@ -20,10 +18,13 @@ import {
   X,
 } from "lucide-react";
 import {
+  activateScreenshot,
   captureScreenRaw,
   copyScreenshotPng,
+  dismissScreenshot,
   ocrScreenshotLines,
   ocrScreenshotPng,
+  onScreenshotArm,
   saveScreenshotPng,
   screenshotFonts,
   screenshotWindowRect,
@@ -47,8 +48,6 @@ import { translateText } from "../../features/translation/api";
 import { loadSettings } from "../../features/translation/storage";
 import "./ScreenshotWindow.css";
 
-/** 窗口被叫醒时由 Rust 发出的事件名（与 screenshot/window.rs 的 ARM_EVENT 一致）。 */
-const ARM_EVENT = "screenshot-arm";
 const MIN_SIZE = 4;
 const FALLBACK_FONTS = ["Microsoft YaHei", "SimSun", "SimHei", "KaiTi", "Segoe UI", "Consolas"];
 
@@ -223,7 +222,7 @@ export function ScreenshotWindow() {
       } catch {
         setFonts(FALLBACK_FONTS);
       }
-      await invoke("screenshot_activate");
+      await activateScreenshot();
     } catch (error) {
       setFailure(String(error));
       await appWindow.show().catch(() => {});
@@ -232,7 +231,7 @@ export function ScreenshotWindow() {
 
   useEffect(() => {
     let dispose: (() => void) | undefined;
-    void listen(ARM_EVENT, () => void arm())
+    void onScreenshotArm(() => void arm())
       .then((off) => {
         dispose = off;
       })
@@ -303,7 +302,7 @@ export function ScreenshotWindow() {
   }, [editing]);
 
   const dismiss = useCallback(() => {
-    void invoke("screenshot_dismiss").catch(() => {});
+    void dismissScreenshot().catch(() => {});
     setRect(null);
     setItems([]);
     setDraft(null);
@@ -673,7 +672,7 @@ export function ScreenshotWindow() {
       // 先看是不是点在文字上：是就拖动它。
       const textHit = hitText(items, at);
       const textTarget = textHit === null ? null : items[textHit];
-      if (textTarget && textTarget.kind === "text") {
+      if (textHit !== null && textTarget && textTarget.kind === "text") {
         drag.current = { mode: "text", index: textHit, from: at, origin: { ...textTarget.at } };
         event.currentTarget.setPointerCapture(event.pointerId);
         return;
@@ -1335,11 +1334,8 @@ export function ScreenshotWindow() {
                 className="screenshot-tool"
                 title="划词翻译：把译文画在原文下面"
                 aria-label="翻译"
-                onClick={() => {
-                  if (!ocrText) return;
-                  void navigator.clipboard.writeText(ocrText).then(() => invoke("toggle_translation_window")).catch(() => {});
-                }}
-                disabled={!ocrText}
+                onClick={() => void translateInline()}
+                disabled={ocrBusy}
               >
                 <Languages size={19} aria-hidden />
               </button>

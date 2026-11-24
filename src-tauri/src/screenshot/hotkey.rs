@@ -29,7 +29,7 @@ pub(crate) const DEFAULT_SHORTCUT: &str = "Alt+A";
 
 const HOTKEY_ID: i32 = 0x5301;
 const REBIND_MESSAGE: u32 = WM_APP + 40;
-const WINDOW_CLASS: &str = "FocuSD Screenshot Hotkey";
+const WINDOW_CLASS: &str = "Fly Island Screenshot Hotkey";
 
 type Pending = (Option<ShortcutBinding>, mpsc::Sender<Result<String, String>>);
 
@@ -93,7 +93,7 @@ fn run_loop() -> Result<(), String> {
     let instance = message_window::module_instance().map_err(|error| error.to_string())?;
     message_window::register_class::<ScreenshotHotkeyWindow>(instance, WINDOW_CLASS)
         .map_err(|_| "无法注册截图快捷键窗口。".to_string())?;
-    let hwnd = message_window::create_message_only_window(instance, WINDOW_CLASS, "FocuSD Screenshot Hotkey")
+    let hwnd = message_window::create_message_only_window(instance, WINDOW_CLASS, "Fly Island Screenshot Hotkey")
         .map_err(|error| error.to_string())?;
     if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT) {
         match hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code) {

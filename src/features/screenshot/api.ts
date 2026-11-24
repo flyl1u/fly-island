@@ -1,5 +1,9 @@
 // 截图插件的 IPC 收口：命令名与参数名对应 src-tauri/src/screenshot/mod.rs。
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+
+/** 覆盖层被叫醒时 Rust 发出的事件名（与 screenshot/window.rs 的 ARM_EVENT 一致）。 */
+const ARM_EVENT = "screenshot-arm";
 
 /** 屏幕像素矩形，和 Rust 侧的 `(x, y, x + width, y + height)` 对应。 */
 export type ScreenRect = {
@@ -93,4 +97,19 @@ export async function screenshotFonts(): Promise<string[]> {
 export async function ocrScreenshotLines(pngBase64: string): Promise<{ text: string; x: number; y: number; width: number; height: number }[]> {
   const rows = await invoke<[string, number, number, number, number][]>("screenshot_ocr_lines", { pngBase64 });
   return rows.map(([text, x, y, width, height]) => ({ text, x, y, width, height }));
+}
+
+/** 订阅「覆盖层被叫醒」事件，返回取消订阅函数。 */
+export async function onScreenshotArm(handler: () => void): Promise<() => void> {
+  return listen(ARM_EVENT, () => handler());
+}
+
+/** 底图抓完之后把覆盖层显示出来并抢到前台。 */
+export async function activateScreenshot(): Promise<void> {
+  await invoke("screenshot_activate");
+}
+
+/** 关闭覆盖层，并清掉 Rust 侧记住的选区与快捷键状态。 */
+export async function dismissScreenshot(): Promise<void> {
+  await invoke("screenshot_dismiss");
 }
