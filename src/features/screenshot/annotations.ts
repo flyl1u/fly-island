@@ -313,3 +313,63 @@ function distanceToSegment(point: Point, from: Point, to: Point): number {
   const t = Math.max(0, Math.min(1, ((point.x - from.x) * dx + (point.y - from.y) * dy) / lengthSquared));
   return Math.hypot(point.x - (from.x + t * dx), point.y - (from.y + t * dy));
 }
+
+// --- 编辑用的几何与测量 ---------------------------------------------------
+
+/** 以自身中心为原点缩放标注（滚轮调整框/椭圆/箭头大小用）。 */
+export function scaleItem(item: Annotation, factor: number): Annotation {
+  if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "arrow") {
+    const cx = (item.from.x + item.to.x) / 2;
+    const cy = (item.from.y + item.to.y) / 2;
+    const scale = (point: Point): Point => ({ x: cx + (point.x - cx) * factor, y: cy + (point.y - cy) * factor });
+    return { ...item, from: scale(item.from), to: scale(item.to) };
+  }
+  if (item.kind === "pen") {
+    const count = Math.max(1, item.points.length);
+    const cx = item.points.reduce((sum, point) => sum + point.x, 0) / count;
+    const cy = item.points.reduce((sum, point) => sum + point.y, 0) / count;
+    return {
+      ...item,
+      points: item.points.map((point) => ({ x: cx + (point.x - cx) * factor, y: cy + (point.y - cy) * factor })),
+    };
+  }
+  return item;
+}
+
+/** 量一段文字渲染后的宽度：用 canvas 量，和绘制、命中判断用的是同一套字体。 */
+export function measureText(value: string, size: number, font: string, bold?: boolean, italic?: boolean): number {
+  const canvas = document.createElement("canvas").getContext("2d");
+  const lines = (value || "文").split("\n");
+  if (!canvas) return Math.max(20, Math.max(...lines.map((line) => line.length)) * size * 0.6);
+  canvas.font = `${italic ? "italic " : ""}${bold ? "bold " : ""}${size}px ${font}`;
+  return Math.max(20, Math.max(...lines.map((line) => canvas.measureText(line || " ").width)));
+}
+
+/** 文字块高度：按行数算。 */
+export function measureHeight(value: string, size: number): number {
+  const lines = (value || "文").split("\n").length;
+  return lines * size * 1.4;
+}
+
+/** 选中标注的节点位置（相对选区左上角）：箭头是两头，框和椭圆是四个角。 */
+export function nodePoints(item: Annotation): { key: string; point: Point }[] {
+  if (item.kind === "arrow") {
+    return [
+      { key: "from", point: item.from },
+      { key: "to", point: item.to },
+    ];
+  }
+  if (item.kind === "rect" || item.kind === "ellipse") {
+    const left = Math.min(item.from.x, item.to.x);
+    const right = Math.max(item.from.x, item.to.x);
+    const top = Math.min(item.from.y, item.to.y);
+    const bottom = Math.max(item.from.y, item.to.y);
+    return [
+      { key: "nw", point: { x: left, y: top } },
+      { key: "ne", point: { x: right, y: top } },
+      { key: "sw", point: { x: left, y: bottom } },
+      { key: "se", point: { x: right, y: bottom } },
+    ];
+  }
+  return [];
+}
