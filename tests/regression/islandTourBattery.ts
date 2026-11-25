@@ -8,7 +8,7 @@ export function prepareBatteryTour(query: URLSearchParams) {
   if (!query.has("battery")) return {};
   const installed: unknown = JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]");
   localStorage.setItem(NATIVE_PLUGINS_KEY, JSON.stringify([...(Array.isArray(installed) ? installed : []), "battery"]));
-  return { batteryDisplayMode: query.get("batteryDisplay") };
+  return { batteryDisplayMode: query.get("batteryDisplay"), batteryReadoutStyle: query.get("batteryStyle") };
 }
 
 const FULL_MWH = 50_400;
@@ -88,6 +88,7 @@ export async function runBatteryTour(
     const draining = fixture === "drainingOnAc";
     const sampled = charging || draining || query.has("batterySamples");
     const wantsTime = query.get("batteryDisplay") === "remaining";
+    const badge = query.get("batteryStyle") === "badge";
     const percentValue = full ? t.fullCharge : low ? "12%" : "71%";
     const systemTime = fixture === "normal" ? "2:10" : low ? "0:23" : null;
     const isTime = (value: string) => /^\d+:\d\d$/.test(value);
@@ -98,15 +99,23 @@ export async function runBatteryTour(
     "The collapsed slot shows the chosen reading: Windows' estimate on battery, the driver's rate while charging, else the charge");
     const fill = readout().querySelector<HTMLElement>(".battery-readout__fill")!;
     const percent = full ? 100 : low ? 12 : 71;
-    const clip = getComputedStyle(layers()[1]).clipPath;
-    check(getComputedStyle(body()).borderTopLeftRadius !== "0px" && layers().length === 2 && layers()[1].textContent === shown()
+    check(getComputedStyle(body()).borderTopLeftRadius !== "0px"
       && layers().every((layer) => layer.scrollWidth <= body().clientWidth)
-      && Math.abs(fill.getBoundingClientRect().width / body().clientWidth - percent / 100) < 0.03
-      && (clip.includes(`${100 - percent}%`) || clip.includes(`${percent}%`))
-      && getComputedStyle(layers()[1]).color !== getComputedStyle(layers()[0]).color,
-    "The reading sits inside a rounded battery and is inverted exactly where the charge covers it (" + clip + ")");
+      && Math.abs(fill.getBoundingClientRect().width / body().clientWidth - percent / 100) < 0.03,
+    "The reading fits inside the rounded battery and the fill matches the charge");
+    if (badge) {
+      check(layers().length === 1 && readout().dataset.style === "badge" && getComputedStyle(layers()[0]).color === "rgb(255, 255, 255)",
+        "The saved badge style uses one white reading over the entire battery");
+    } else {
+      const clipped = layers()[1];
+      const clip = clipped ? getComputedStyle(clipped).clipPath : "";
+      check(layers().length === 2 && clipped.textContent === shown()
+        && (clip.includes(`${100 - percent}%`) || clip.includes(`${percent}%`))
+        && getComputedStyle(clipped).color !== getComputedStyle(layers()[0]).color,
+      "The default style is inverted exactly where the charge covers it (" + clip + ")");
+    }
     check(Boolean(readout().dataset.low) === low
-      && (getComputedStyle(readout()).color !== getComputedStyle(button).color) === low
+      && (badge || (getComputedStyle(readout()).color !== getComputedStyle(button).color) === low)
       && !readout().hasAttribute("data-runtime-flow"),
     "Only a low battery changes colour; an ordinary discharge keeps the island's text colour");
 
@@ -123,7 +132,7 @@ export async function runBatteryTour(
 
     if (charging || draining) {
       check(readout().hasAttribute("data-charging") && layers().every((layer) => layer.querySelector("svg")),
-        "Until samples arrive the slot follows the driver's charging flag, with a bolt in both text layers");
+        "Until samples arrive the slot follows the driver's charging flag, with a bolt in the reading");
     }
     if (sampled) await sample(draining || !charging ? -20 : 20);
     const title = slot()!.title;
@@ -231,20 +240,27 @@ export async function runBatteryTour(
     await click(".settings-sidebar__item[data-category='battery']");
     const group = () => [...document.querySelectorAll<HTMLElement>(".settings-group")]
       .find((item) => item.querySelector(".settings-group__title")?.textContent === t.name);
-    check(group() && group()!.querySelectorAll(".settings-row").length === 2 && !group()!.querySelector(".settings-row--indent, [role='spinbutton'], [role='combobox']"),
-      "Installed, the plugin has a settings page of its own: one titled group of two rows");
-    const choose = async (mode: "percent" | "remaining") => {
-      const option = [...group()!.querySelectorAll<HTMLButtonElement>(".settings-choice__option")].find((item) => item.textContent === t.displayOptions[mode])!;
+    check(group() && group()!.querySelectorAll(".settings-row").length === 3 && !group()!.querySelector(".settings-row--indent, [role='spinbutton'], [role='combobox']"),
+      "Installed, the plugin has a settings page of its own for reading, style and history");
+    const choose = async (label: string) => {
+      const option = [...group()!.querySelectorAll<HTMLButtonElement>(".settings-choice__option")].find((item) => item.textContent === label)!;
       await act(async () => option.click());
+      check(option.getAttribute("aria-pressed") === "true", `The setting marks ${label} as selected`);
     };
     // Power is only sampled while the collapsed island or the Battery page shows; behind the settings
     // page the slot falls back to the system's estimate, which exists on battery power only.
     const canShowTime = systemTime !== null;
-    await choose("remaining");
+    await choose(t.displayOptions.remaining);
     const slotWidth = slot()!.getBoundingClientRect().width;
     check((canShowTime ? isTime(shown()) : shown() === percentValue) && saved().batteryDisplayMode === "remaining",
       "Choosing the time left updates the island at once and is saved");
-    await choose("percent");
+    await choose(t.readoutStyleOptions.badge);
+    check(layers().length === 1 && readout().dataset.style === "badge" && saved().batteryReadoutStyle === "badge"
+      && saved().batteryDisplayMode === "remaining" && slot()!.getBoundingClientRect().width === slotWidth,
+    "The badge style is saved without changing the reading or the slot width");
+    await choose(t.readoutStyleOptions.inverted);
+    check(layers().length === 2 && saved().batteryReadoutStyle === "inverted", "The original style can be restored from settings");
+    await choose(t.displayOptions.percent);
     check(shown() === percentValue && saved().batteryDisplayMode === "percent" && slot()!.getBoundingClientRect().width === slotWidth,
       "Back on charge, the slot is exactly as wide as before");
     if (query.has("batterySamples")) {

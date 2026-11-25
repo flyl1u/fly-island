@@ -3,10 +3,21 @@ import test from "node:test";
 import { batteryHealth, summarizeBattery } from "../../src/features/battery/display.ts";
 import { formatBatteryReadout } from "../../src/features/battery/readout.ts";
 import { formatBatteryDetails } from "../../src/features/battery/details.ts";
+import { normalizeSettings } from "../../src/features/appearance/settings.ts";
 import { batteryIslandWidth } from "../../src/features/battery/slotWidth.ts";
 import { en, zhCN } from "../../src/i18n/sections/battery.ts";
 
 const snapshot = { percent: 71, pluggedIn: false, charging: false, secondsRemaining: 7801, details: null };
+
+test("old settings keep the classic style and the badge round-trips independently of the reading", () => {
+  const saved = { batteryDisplayMode: "remaining", batteryHistoryEnabled: false };
+  assert.equal(normalizeSettings(saved).batteryReadoutStyle, "inverted");
+  assert.equal(normalizeSettings({ ...saved, batteryReadoutStyle: "unknown" }).batteryReadoutStyle, "inverted");
+  const restored = normalizeSettings(JSON.parse(JSON.stringify(normalizeSettings({ ...saved, batteryReadoutStyle: "badge" }))));
+  assert.equal(restored.batteryReadoutStyle, "badge");
+  assert.equal(restored.batteryDisplayMode, "remaining");
+  assert.equal(restored.batteryHistoryEnabled, false);
+});
 
 test("charging and plug status stay distinct", () => {
   assert.equal(summarizeBattery({ ...snapshot, pluggedIn: true, charging: true }).state, "charging");

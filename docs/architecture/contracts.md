@@ -101,6 +101,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 电池是插件市场里的内置插件：`fly-island-native-plugins` 的 id 列表接受 `battery`；启用状态沿用市场卡片的开关（`fly-island-native-plugins-disabled`），没有自己的开关字段。
 - `fly-island-settings` 的 `collapsedLayout` 和 `pageOrder` 接受 `battery`，旧布局的相对顺序保留；未安装时这一位不显示、位置保留。
 - `batteryDisplayMode` 保存收起态的读数，取值 `percent`（缺省）或 `remaining`；其他值按缺省读取。
+- `batteryReadoutStyle` 保存收起态的读数样式，取值 `inverted`（缺省）或 `badge`；其他值按缺省读取。
 - `batteryHistoryEnabled` 保存电量曲线开关，缺省为 `true`。采样只驻留内存，关闭曲线或卸载插件时清除；电池页显示最近 24 小时。
 - `get_notebook_battery(includeDetails)` 返回 `{ percent, pluggedIn, charging, secondsRemaining, details }`。已确定无内置电池时返回 `null`。未知字段为 `null`，`details` 包含 `remainingMwh`、`fullMwh`、`designMwh` 和有符号 `rateMw`。电池遥测仅在内存中使用。
 

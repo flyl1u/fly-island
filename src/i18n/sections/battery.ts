@@ -1,10 +1,13 @@
 import type { BatteryState } from "../../features/battery/display";
-import type { BatteryDisplayMode } from "../../features/battery/preferences";
+import type { BatteryDisplayMode, BatteryReadoutStyle } from "../../features/battery/preferences";
 
 export type BatteryText = {
   name: string;
   displayMode: string;
   displayOptions: Record<BatteryDisplayMode, string>;
+  readoutStyle: string;
+  readoutStyleDescription: string;
+  readoutStyleOptions: Record<BatteryReadoutStyle, string>;
   historyTitle: string;
   historyDescription: string;
   noBattery: string;
@@ -39,6 +42,9 @@ export const zhCN: BatteryText = {
   name: "电池",
   displayMode: "岛上显示",
   displayOptions: { percent: "电量", remaining: "剩余时间" },
+  readoutStyle: "读数样式",
+  readoutStyleDescription: "半透明底使用固定白字，不在填充边缘反色。",
+  readoutStyleOptions: { inverted: "经典反色", badge: "半透明底" },
   historyTitle: "电量曲线",
   historyDescription: "在电池页画出最近 24 小时的电量，只存在内存里，关闭即清除。",
   noBattery: "没有检测到内置电池，岛上不会出现电池。",
@@ -73,6 +79,9 @@ export const en: BatteryText = {
   name: "Battery",
   displayMode: "On the island",
   displayOptions: { percent: "Charge", remaining: "Time left" },
+  readoutStyle: "Readout style",
+  readoutStyleDescription: "The translucent badge keeps the text white across the battery fill.",
+  readoutStyleOptions: { inverted: "Classic", badge: "Badge" },
   historyTitle: "Charge history",
   historyDescription: "Chart the last 24 hours on the Battery page; kept in memory only.",
   noBattery: "No built-in battery detected, so nothing shows on the island.",

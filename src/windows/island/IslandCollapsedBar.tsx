@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
 import type { BatteryPowerEstimate } from "../../features/battery/powerEstimate";
 import type { BatterySnapshot } from "../../features/battery/snapshot";
-import type { BatteryDisplayMode } from "../../features/battery/preferences";
+import type { BatteryDisplayMode, BatteryReadoutStyle } from "../../features/battery/preferences";
 import { BatteryStatusButton } from "../../features/battery/BatteryStatusButton";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import { BatteryAlertPopup } from "../../features/device-battery/BatteryAlertPopup";
@@ -61,6 +61,7 @@ type IslandCollapsedBarProps = {
   battery?: BatterySnapshot | null;
   batteryEstimate?: BatteryPowerEstimate | null;
   batteryDisplay: BatteryDisplayMode;
+  batteryReadoutStyle: BatteryReadoutStyle;
   /** The playing song's cover, or null when it is not shown. */
   collapsedCover: string | null;
   lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
@@ -110,6 +111,7 @@ export function IslandCollapsedBar({
   battery,
   batteryEstimate,
   batteryDisplay,
+  batteryReadoutStyle,
   collapsedCover,
   lyricsSettings,
   agentSession,
@@ -289,6 +291,7 @@ export function IslandCollapsedBar({
         snapshot={battery}
         estimate={batteryEstimate}
         displayMode={batteryDisplay}
+        readoutStyle={batteryReadoutStyle}
         onOpen={() => onOpenPage("battery")}
       />
     ),

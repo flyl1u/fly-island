@@ -17,7 +17,7 @@ import { isPluginPage } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import type { BatteryPowerEstimate } from "../../features/battery/powerEstimate";
 import type { BatterySnapshot } from "../../features/battery/snapshot";
-import type { BatteryDisplayMode } from "../../features/battery/preferences";
+import type { BatteryDisplayMode, BatteryReadoutStyle } from "../../features/battery/preferences";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
@@ -71,6 +71,7 @@ type IslandShellProps = {
   battery?: BatterySnapshot | null;
   batteryEstimate?: BatteryPowerEstimate | null;
   batteryDisplay: BatteryDisplayMode;
+  batteryReadoutStyle: BatteryReadoutStyle;
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
   /** Where the collapsed island's lyric line comes from. */
@@ -150,6 +151,7 @@ export function IslandShell({
   battery,
   batteryEstimate,
   batteryDisplay,
+  batteryReadoutStyle,
   collapsedCover,
   lyricsSettings,
   pageOrder,
@@ -280,6 +282,7 @@ export function IslandShell({
             battery={battery}
             batteryEstimate={batteryEstimate}
             batteryDisplay={batteryDisplay}
+            batteryReadoutStyle={batteryReadoutStyle}
             collapsedCover={collapsedCover}
             lyricsSettings={lyricsSettings}
             agentSession={agentSession}

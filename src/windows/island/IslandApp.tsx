@@ -250,6 +250,7 @@ export function IslandApp() {
         battery={battery.snapshot}
         batteryEstimate={battery.estimate}
         batteryDisplay={settings.batteryDisplayMode}
+        batteryReadoutStyle={settings.batteryReadoutStyle}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}

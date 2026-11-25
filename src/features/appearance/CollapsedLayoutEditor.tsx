@@ -112,7 +112,7 @@ export function CollapsedLayoutEditor({
     agents: settings.agentStatusEnabled ? "1" : null,
     clock: "12:34",
     weather: <><WeatherIcon code={2} />23°</>,
-    battery: <BatteryReadout level={BATTERY_SAMPLE} value="72%" />,
+    battery: <BatteryReadout level={BATTERY_SAMPLE} value="72%" readoutStyle={settings.batteryReadoutStyle} />,
   };
   const slotClass = (slot: CollapsedSlot) => [
     "collapsed-layout__slot",

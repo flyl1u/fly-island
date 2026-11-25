@@ -5,9 +5,8 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import { getNotebookBattery } from "./api";
-import { BATTERY_DISPLAY_MODES, type BatteryPreferences } from "./preferences";
+import { BATTERY_DISPLAY_MODES, BATTERY_READOUT_STYLES, type BatteryPreferences } from "./preferences";
 
-/** Settings → Plugins, once the Battery plugin is installed: what the island shows, and the chart. */
 export function BatterySettings({ preferences, onChange }: {
   preferences: BatteryPreferences;
   onChange: (patch: Partial<BatteryPreferences>) => void;
@@ -27,6 +26,11 @@ export function BatterySettings({ preferences, onChange }: {
         <SettingsChoice ariaLabel={t.displayMode} value={preferences.batteryDisplayMode}
           options={BATTERY_DISPLAY_MODES.map((value) => ({ value, label: t.displayOptions[value] }))}
           onChange={(batteryDisplayMode) => onChange({ batteryDisplayMode })} />
+      } />
+      <SettingsRow title={t.readoutStyle} description={t.readoutStyleDescription} control={
+        <SettingsChoice ariaLabel={t.readoutStyle} value={preferences.batteryReadoutStyle}
+          options={BATTERY_READOUT_STYLES.map((value) => ({ value, label: t.readoutStyleOptions[value] }))}
+          onChange={(batteryReadoutStyle) => onChange({ batteryReadoutStyle })} />
       } />
       <SettingsToggleRow title={t.historyTitle} description={t.historyDescription} checked={preferences.batteryHistoryEnabled}
         onChange={(batteryHistoryEnabled) => onChange({ batteryHistoryEnabled })} />

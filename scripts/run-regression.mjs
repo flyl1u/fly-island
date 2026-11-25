@@ -1,19 +1,8 @@
-// Runs the browser regression pages (tests/regression/*.html) in headless Chrome or
-// Edge and reports each page's own pass/fail result. Starts its own Vite server.
-//
-//   pnpm test:regression                 every page
-//   pnpm test:regression mail-reader     pages whose name contains the word
-//   pnpm test:regression shoulderSweep   screenshot the contour at four device scale factors
-//   pnpm test:regression shapePerf       compare frame intervals with the 3.2.8 shoulder renderer
-// REGRESSION_SHOULDER_FAULT=1 adds a known 1px notch to the shoulderSweep contours.
-//   REGRESSION_REDUCED_MOTION=reduce pnpm test:regression  emulate Windows animations off
-//
-// Pages are driven over the DevTools protocol in a normal tab, not with --dump-dom:
-// that mode stops running page scripts after load, so pages that wait on timers
-// (the collapsed message animation waits for a five-second auto-restore) never finish.
-// CHROME_PATH picks the browser; REGRESSION_PORT the Vite port (default: a free one).
-// Both ports are free ones picked per run: lanes run this at the same time, and with fixed
-// ports one run would test another lane's Vite and read another lane's browser.
+// pnpm test:regression [filter] runs matching pages in headless Chrome/Edge with its own Vite.
+// Filters shoulderSweep and shapePerf capture contours at multiple scales and compare frame intervals against 3.2.8.
+// REGRESSION_SHOULDER_FAULT=1 adds a 1px test notch; REGRESSION_REDUCED_MOTION=reduce emulates animations off.
+// CHROME_PATH picks the browser; REGRESSION_PORT overrides the normally free Vite port.
+// DevTools uses a regular tab so timers keep running after load, unlike --dump-dom.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
@@ -46,11 +35,13 @@ export const PAGES = [
   "island-tour.html?test=1&battery=normal&batterySamples=1",
   "island-tour.html?test=1&battery=normal&batteryDisplay=remaining&notch=1&font=120&lang=en&theme=light",
   "island-tour.html?test=1&battery=limited&batteryDisplay=remaining&notch=1&font=120&lang=en&theme=light&material=frostedGlass",
-  "island-tour.html?test=1&battery=charging&batteryDisplay=remaining&theme=light",
-  "island-tour.html?test=1&battery=low&batteryDisplay=remaining&material=liquidGlass",
+  "island-tour.html?test=1&battery=charging&batteryDisplay=remaining&batteryStyle=badge&theme=light&material=frostedGlass&lang=en",
+  "island-tour.html?test=1&battery=low&batteryDisplay=remaining&batteryStyle=badge&material=liquidGlass",
   "island-tour.html?test=1&battery=full&batteryDisplay=remaining",
   "island-tour.html?test=1&battery=drainingOnAc&batteryDisplay=remaining",
   "island-tour.html?test=1&battery=absent",
+  "battery-readout.html",
+  "battery-readout.html?forcedColors=1",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
   // cover the line and hidden tucked looks.
   "island-tour.html?test=1&scale=0.85&tuck=line&shoulders=1",
@@ -235,11 +226,16 @@ async function connect(port) {
   // prefers-reduced-motion: reduce and the island then swaps messages without a
   // transition. Pages that test reduced motion stub matchMedia themselves, so the
   // run uses an ordinary desktop's setting unless REGRESSION_REDUCED_MOTION says otherwise.
-  await send("Emulation.setEmulatedMedia", {
-    features: [{ name: "prefers-reduced-motion", value: process.env.REGRESSION_REDUCED_MOTION ?? "no-preference" }],
-  });
+  await setRegressionMedia(send);
   const on = (method, listener) => listeners.set(method, [...(listeners.get(method) ?? []), listener]);
   return { send, on, errors, close: () => socket.close() };
+}
+
+function setRegressionMedia(send, forcedColors = "none") {
+  return send("Emulation.setEmulatedMedia", { features: [
+    { name: "prefers-reduced-motion", value: process.env.REGRESSION_REDUCED_MOTION ?? "no-preference" },
+    { name: "forced-colors", value: forcedColors },
+  ] });
 }
 
 const READ_STATE = `(() => {
@@ -280,11 +276,13 @@ export async function runPage(session, url) {
   session.errors.length = 0;
   const query = new URL(url).searchParams;
   const dpr = Number(query.get("dpr"));
+  const forcedColors = query.has("forcedColors");
   if (dpr) await session.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 800, deviceScaleFactor: dpr, mobile: false });
   const deadline = Date.now() + PAGE_TIMEOUT_MS;
   let state = {};
   let reloaded = false;
   try {
+    if (forcedColors) await setRegressionMedia(session.send, "active");
     await session.send("Page.navigate", { url });
     while (Date.now() < deadline) {
       await sleep(query.has("shoulderSweep") ? 75 : 500);
@@ -313,6 +311,7 @@ export async function runPage(session, url) {
     state.text = `${state.text ?? ""}\nFAIL ${String(error)}`;
     return { outcome: "failed", state, errors: [...session.errors] };
   } finally {
+    if (forcedColors) await setRegressionMedia(session.send);
     if (dpr) await session.send("Emulation.clearDeviceMetricsOverride");
   }
 }

@@ -1,0 +1,109 @@
+import { act, type CSSProperties } from "react";
+import { createRoot } from "react-dom/client";
+import { ISLAND_FONT_PERCENT } from "../../src/features/appearance/settingsLimits";
+import { BatteryReadout } from "../../src/features/battery/BatteryReadout";
+import { relativeLuminance } from "../../src/utils/color";
+import "../../src/styles/tokens.css";
+import "../../src/styles/base.css";
+
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+const readings = [
+  ["—", null, "unknown"], ["0%", 0, "onBattery"], ["1%", 1, "onBattery"], ["15%", 15, "onBattery"],
+  ["16%", 16, "onBattery"], ["50%", 50, "onBattery"], ["99%", 99, "onBattery"],
+  ["99%", 99, "charging"], ["0:05", 1, "charging"], ["99:59", 50, "charging"],
+  ["2:10", 71, "pluggedDischarging"], ["71%", 71, "plugged"], ["71%", 71, "idle"],
+  ["满电", 100, "full"], ["Full", 100, "full"],
+] as const;
+const backdrops = ["#000", "#fff", "linear-gradient(90deg, #000, #fff)"];
+const { min, max, default: normal } = ISLAND_FONT_PERCENT;
+const results = document.getElementById("results")!;
+
+function check(condition: unknown, label: string) {
+  if (!condition) throw new Error(label);
+}
+
+function colorLuminance(color: string, backdrop: number) {
+  const parts = color.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  check((parts.length === 3 || parts.length === 4) && /^rgba?\(/.test(color), `Unexpected computed color: ${color}`);
+  const alpha = parts[3] ?? 1;
+  const hex = parts.slice(0, 3).map((channel) => Math.round(channel * alpha + backdrop * (1 - alpha)).toString(16).padStart(2, "0"));
+  return relativeLuminance(`#${hex.join("")}`);
+}
+
+function contrast(first: number, second: number) {
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+async function run() {
+  const forced = matchMedia("(forced-colors: active)").matches;
+  check(forced === new URLSearchParams(location.search).has("forcedColors"), "Expected forced-colors setting is active");
+  const root = document.getElementById("root")!;
+  await act(async () => createRoot(root).render(backdrops.map((background) =>
+    <section key={background} style={{ background, color: "#cfb124", padding: 8 }}>
+      {[min, normal, max].map((fontPercent) =>
+        <div key={fontPercent} style={{ "--island-font-scale": fontPercent / 100, display: "flex", gap: 8, padding: 4 } as CSSProperties}>
+          {readings.map(([value, percent, state]) =>
+            <BatteryReadout key={`${value}-${state}`} readoutStyle="badge" value={value}
+              level={{ percent, state, low: state === "onBattery" && percent <= 15 }} />,
+          )}
+        </div>,
+      )}
+    </section>,
+  )));
+  await document.fonts.ready;
+
+  let worstText = Infinity;
+  let worstFill = Infinity;
+  const colors = new Set<string>();
+  const samples = [...root.querySelectorAll<HTMLElement>(".battery-readout")];
+  for (const sample of samples) {
+    const body = sample.querySelector<HTMLElement>(".battery-readout__body")!;
+    const fill = sample.querySelector<HTMLElement>(".battery-readout__fill")!;
+    const values = sample.querySelectorAll<HTMLElement>(".battery-readout__value");
+    const value = values[0];
+    const label = `${value.textContent}, ${getComputedStyle(value).fontSize}`;
+    check(values.length === 1 && getComputedStyle(value).clipPath === "none", `${label}: reading must not be split`);
+    const range = document.createRange();
+    range.selectNodeContents(value);
+    const ink = range.getBoundingClientRect();
+    const box = body.getBoundingClientRect();
+    check(ink.left >= box.left + 1.5 && ink.right <= box.right - 1.5 && ink.top >= box.top - 0.5 && ink.bottom <= box.bottom + 0.5,
+      `${label}: text or bolt is clipped (${ink.width} × ${ink.height} in ${box.width} × ${box.height})`);
+    const percent = parseFloat(sample.style.getPropertyValue("--battery-fill"));
+    check(Math.abs(fill.getBoundingClientRect().width - (box.width - 2) * percent / 100) < 0.1, `${label}: incorrect fill width`);
+
+    const foreground = getComputedStyle(value).color;
+    const surface = getComputedStyle(body).backgroundColor;
+    const charge = getComputedStyle(fill).backgroundColor;
+    colors.add(charge);
+    for (const extreme of [0, 255]) {
+      const text = colorLuminance(foreground, extreme);
+      const empty = colorLuminance(surface, extreme);
+      const filled = colorLuminance(charge, extreme);
+      worstText = Math.min(worstText, contrast(text, empty), ...(forced ? [] : [contrast(text, filled)]));
+      worstFill = Math.min(worstFill, contrast(filled, empty));
+    }
+    if (forced) {
+      const stripe = fill.getBoundingClientRect();
+      check(charge === foreground && stripe.height === 2 && ink.bottom <= stripe.top + 1, `${label}: system-color fill must sit below the reading`);
+    } else {
+      check(foreground === "rgb(255, 255, 255)" && /^rgba\(/.test(surface), `${label}: white text must sit on the translucent surface`);
+      if (percent === 0 && sample.hasAttribute("data-low")) {
+        check(getComputedStyle(body).borderTopColor === charge, "At 0%, the red outline still indicates low charge");
+      }
+    }
+  }
+
+  check(samples.length === readings.length * backdrops.length * 3, "Every backdrop and font size must cover all readings");
+  check(colors.size === (forced ? 1 : 3), "Normal, low and charging fills differ only outside forced colors");
+  check(worstText >= 4.5 && worstFill >= 3, `Insufficient contrast: text ${worstText.toFixed(2)}:1, fill ${worstFill.toFixed(2)}:1`);
+  results.textContent = `PASS ${samples.length} readings fit without clipping (${forced ? "forced colors" : "fixed white"})\n`
+    + `PASS Minimum text contrast ${worstText.toFixed(2)}:1 and fill contrast ${worstFill.toFixed(2)}:1`;
+  results.dataset.result = "passed";
+}
+
+void run().catch((error: unknown) => {
+  results.textContent = `FAIL ${String(error)}`;
+  results.dataset.result = "failed";
+});
