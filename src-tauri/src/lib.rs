@@ -4,6 +4,7 @@ mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
 mod config_transfer;
+mod file_icons;
 mod file_shelf;
 mod island;
 mod lyrics;
