@@ -4,6 +4,7 @@
 pub(crate) mod folder_dialog;
 pub(crate) mod fonts;
 pub(crate) mod fullscreen;
+mod fullscreen_hold;
 pub(crate) mod theme_file;
 pub(crate) mod startup;
 pub(crate) mod todo_export;

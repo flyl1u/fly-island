@@ -294,6 +294,8 @@ pub(crate) fn main_window(app: &AppHandle) -> Result<WebviewWindow, String> {
 }
 
 pub(crate) fn show_island(app: &AppHandle) -> Result<(), String> {
+    // A summon ends game mode's hold on the island; the full-screen check restores it if needed.
+    crate::system::fullscreen::end_for_summon(app);
     show_island_window(app, true)
 }
 

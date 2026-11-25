@@ -2,10 +2,11 @@
 //! game mode: it stops opening and taking the focus on hover, and can tuck away.
 
 use serde::Serialize;
-use std::{sync::Mutex, thread, time::Duration};
+use std::{sync::Mutex, thread, time::{Duration, Instant}};
 use tauri::{AppHandle, Emitter};
 use windows::Win32::Foundation::{HWND, RECT};
 
+use super::fullscreen_hold::{covers_monitor, decide_own_foreground, HeldWindowFacts, HoldDecision};
 use crate::{island, win32};
 
 // Mirrored by FOREGROUND_FULLSCREEN_CHANGED_EVENT in src/windows/island/api.ts. The
@@ -63,10 +64,6 @@ fn is_fullscreen_foreground(
     }
 }
 
-fn covers_monitor(window: Option<RECT>, monitor: Option<RECT>) -> bool {
-    matches!((window, monitor), (Some(window), Some(monitor)) if window.left <= monitor.left && window.top <= monitor.top
-        && window.right >= monitor.right && window.bottom >= monitor.bottom)
-}
 
 struct Observation {
     foreground: HWND,
@@ -74,6 +71,8 @@ struct Observation {
     process_id: u32,
     signal: Option<&'static str>,
     covered: Option<bool>,
+    /// Why this answer: a normal read, or why an own-window foreground held or cleared it.
+    reason: &'static str,
 }
 
 impl Observation {
@@ -85,7 +84,7 @@ impl Observation {
         let class = if self.foreground.is_invalid() { String::new() } else { win32::window::class_name(self.foreground) };
         let signal = self.signal.unwrap_or("not_read");
         event(Category::Fullscreen, "foreground", &[
-            ("reason", if self.signal.is_none() { "own_process_held" } else { "foreground_changed" }),
+            ("reason", self.reason),
             ("active", &self.state.active.to_string()), ("on_island_monitor", &self.state.on_island_monitor.to_string()),
             ("class", &class), ("process", process.as_deref().unwrap_or("unknown")),
             ("covers_monitor", self.covered.map_or("not_read", |covered| if covered { "true" } else { "false" })),
@@ -94,38 +93,85 @@ impl Observation {
     }
 }
 
-fn read(app: &AppHandle) -> Observation {
+/// The window last judged full screen, and since when our own windows have been in front.
+#[derive(Default)]
+struct Tracker {
+    /// The raw handle (the type is not `Send`); only compared and queried, never acted on.
+    held: Option<isize>,
+    own_since: Option<Instant>,
+}
+
+fn held_window(held: isize) -> HWND {
+    HWND(held as *mut std::ffi::c_void)
+}
+
+fn held_facts(held: isize) -> HeldWindowFacts {
+    let window = held_window(held);
+    let visible = win32::window::is_visible(window);
+    HeldWindowFacts {
+        visible,
+        minimized: visible && win32::window::is_minimized(window),
+        covers_monitor: visible && covers_monitor(win32::window::window_rect(window), win32::window::monitor_rect(window)),
+    }
+}
+
+fn shares_island_monitor(app: &AppHandle, window: HWND) -> bool {
+    island::main_window(app)
+        .and_then(|island| island.hwnd().map_err(|error| error.to_string()))
+        // When the island cannot be found, assume it shares the screen.
+        .map_or(true, |island| win32::window::share_monitor(window, island))
+}
+
+fn read(app: &AppHandle, tracker: &mut Tracker) -> Observation {
     let foreground = win32::window::foreground_window();
     let process_id = if foreground.is_invalid() { 0 } else { win32::process::window_process_id(foreground) };
     // One of our own windows in front (the island took the focus, a click on it, the settings
     // window) says nothing about the game behind it. Reading it as "no full screen" ended game
     // mode at the very moment the island got in the game's way, which let hover open the
-    // island and take the focus for good (#73). Keep the last answer until another app is in front.
+    // island and take the focus for good (#73). So the last answer is kept while the window
+    // judged full screen is still there and covering its monitor; otherwise (it closed, was
+    // minimized or shrank, or nothing is remembered for too long) the hold ends, since
+    // Windows hands the foreground to the island after a game exits (fullscreen_hold.rs).
     if process_id == std::process::id() {
-        return Observation { foreground, state: get_foreground_fullscreen(), process_id, signal: None, covered: None };
+        let own_for = tracker.own_since.get_or_insert_with(Instant::now).elapsed();
+        let previous = get_foreground_fullscreen();
+        let facts = tracker.held.map(held_facts);
+        let (state, reason) = match decide_own_foreground(previous.active, facts, own_for) {
+            HoldDecision::Keep => {
+                // The held window may sit on another monitor than the island by now.
+                let on_island = tracker.held.map_or(previous.on_island_monitor, |held| {
+                    previous.active && shares_island_monitor(app, held_window(held))
+                });
+                (ForegroundFullscreen { active: previous.active, on_island_monitor: on_island }, "own_process_held")
+            }
+            HoldDecision::Clear(reason) => {
+                tracker.held = None;
+                (ForegroundFullscreen::default(), reason)
+            }
+        };
+        return Observation { foreground, state, process_id, signal: None, covered: facts.map(|facts| facts.covers_monitor), reason };
     }
+    tracker.own_since = None;
     let (signal, signal_name) = win32::notification_state::fullscreen_signal();
     let rect = (!foreground.is_invalid() && win32::window::is_visible(foreground))
         .then(|| win32::window::window_rect(foreground)).flatten();
     let monitor = win32::window::monitor_rect(foreground);
     let active = is_fullscreen_foreground(signal, rect, monitor, &win32::window::class_name(foreground));
-    let on_island_monitor = active
-        && island::main_window(app)
-            .and_then(|window| window.hwnd().map_err(|error| error.to_string()))
-            // When the island cannot be found, assume it shares the screen.
-            .map_or(true, |island| {
-                win32::window::share_monitor(win32::window::foreground_window(), island)
-            });
+    let on_island_monitor = active && shares_island_monitor(app, foreground);
+    // Only a window the shell's guess is confirmed by is remembered for later.
+    tracker.held = (active && matches!(signal, win32::notification_state::FullscreenSignal::FullscreenApp))
+        .then_some(foreground.0 as isize);
     Observation { foreground, state: ForegroundFullscreen { active, on_island_monitor }, process_id,
-        signal: Some(signal_name), covered: Some(covers_monitor(rect, monitor)) }
+        signal: Some(signal_name), covered: Some(covers_monitor(rect, monitor)), reason: "foreground_changed" }
 }
 
 pub(crate) fn start(app: &AppHandle) {
     let app = app.clone();
     thread::spawn(move || {
         let mut previous = None;
+        let mut tracker = Tracker::default();
         loop {
-            let observation = read(&app);
+            let observation = read(&app, &mut tracker);
             let next = observation.state;
             let changed = {
                 let mut state = STATE.lock().unwrap_or_else(|poison| poison.into_inner());
@@ -134,12 +180,26 @@ pub(crate) fn start(app: &AppHandle) {
             if changed {
                 let _ = app.emit(FOREGROUND_FULLSCREEN_CHANGED_EVENT, next);
             }
-            let evidence = (observation.signal, observation.covered, next.active.then_some(observation.process_id));
+            let evidence = (observation.signal, observation.covered, observation.reason, next.active.then_some(observation.process_id));
             if changed || previous != Some(evidence) { observation.record(); }
             previous = Some(evidence);
             thread::sleep(POLL_INTERVAL);
         }
     });
+}
+
+/// The user asked for the island (tray, settings, shortcut): game mode lets go of it at once,
+/// whatever the last check said. It comes back by itself when a full-screen app is found in
+/// front again at a later check, so returning to the game still quiets the island.
+pub(crate) fn end_for_summon(app: &AppHandle) {
+    let changed = {
+        let mut state = STATE.lock().unwrap_or_else(|poison| poison.into_inner());
+        std::mem::take(&mut *state) != ForegroundFullscreen::default()
+    };
+    if changed {
+        crate::app_log::event(crate::app_log::Category::Fullscreen, "foreground", &[("reason", "summoned"), ("active", "false")]);
+        let _ = app.emit(FOREGROUND_FULLSCREEN_CHANGED_EVENT, ForegroundFullscreen::default());
+    }
 }
 
 /// The state at the last check.
