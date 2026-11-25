@@ -24,10 +24,11 @@ export function WorkbuddySignInRow({ polling }: { polling: boolean }) {
   const [label, action] = state.status === "unavailable"
     ? [text.retry, retry]
     : signedIn ? [text.signOut, disconnectWorkbuddy] : [text.signIn, openWorkbuddyLogin];
+  const status = state.status === "unavailable" && state.reason === "curlUnavailable" ? text.curlUnavailable : text[state.status];
   return (
     <SettingsRow
       indent
-      title={<span className="workbuddy-sign-in__status" role="status">{busy ? text.busy : failed ? text.actionFailed : text[state.status]}</span>}
+      title={<span className="workbuddy-sign-in__status" role="status">{busy ? text.busy : failed ? text.actionFailed : status}</span>}
       control={<SettingsLinkButton disabled={busy} onClick={() => run(action)}>{label}</SettingsLinkButton>}
     />
   );

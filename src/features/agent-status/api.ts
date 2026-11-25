@@ -281,7 +281,8 @@ export function getDshUsage() {
 /** Mirrors WorkbuddyUsage / WorkbuddyState in the native agent-status modules. */
 export type WorkbuddyUsage = { remaining: number; total: number; updatedAt: number };
 export type WorkbuddyState =
-  | { status: "signedOut" | "loginRequired" | "ready" | "unavailable" }
+  | { status: "signedOut" | "loginRequired" | "ready" }
+  | { status: "unavailable"; reason?: "curlUnavailable" }
   | { status: "connected"; usage: WorkbuddyUsage };
 
 export function getWorkbuddyUsage(refreshNow = false, cachedOnly = false) {

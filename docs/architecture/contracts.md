@@ -155,6 +155,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - DSH（issue #51）：新增只读命令 `get_dsh_usage()`，返回 `null` 或 `{ updatedAt, available, wallets: [{ currency, total, granted, toppedUp }], source: "dshApi" | "dshAccount" }`，金额为十进制字符串。`list_agent_sessions` 的 `provider` 新增 `dsh`；`focus_agent_window`、`agent_sessions_in_front` 接受 `dsh`，既有参数和返回结构不变。无新增事件，无新增 localStorage key；`fly-island-settings` 兼容新增 `agentShowDsh`（缺失时为 true）。`agent-status.json`、钩子安装状态仍只含 Claude/Codex。该命令是自有 Rust 命令，不增加 Tauri 插件/核心权限；现有 capabilities 足够。
 - WorkBuddy 使用 `open_workbuddy_login()`、`get_workbuddy_usage({ refreshNow?, cachedOnly? })` 和 `disconnect_workbuddy()`。读命令及 `workbuddy-usage-changed` 事件的状态为 `signedOut`、`loginRequired`、`ready`、`unavailable` 或 `connected`。只有 `connected` 带 `usage: { remaining, total, updatedAt }`，金额为数值，时间为 Unix 毫秒。事件发到 `main` 和 `settings`。远程 `workbuddy-sign-in` 窗口在本地 capability 之外。
+- WorkBuddy 官方登录凭据另存在 Windows 凭据管理器 `com.flyisland.app.workbuddy-web` 的 `oauth-login`，与原 Cookie 条目并存；主动断开清理两套凭据。`unavailable` 可带 `reason: "curlUnavailable"`，原有状态、参数和存储不变。
 
 - 展开岛屿的按钮样式保存在 `fly-island-settings.pageButtonStyle`，支持 `capsule`（胶囊）、`icon`（图标）和 `iconLabel`（图标加文字）。缺失或未知值使用默认值 `icon`。旧版本读取 `iconLabel` 时也使用默认图标样式。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。

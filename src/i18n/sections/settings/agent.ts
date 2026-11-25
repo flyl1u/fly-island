@@ -29,7 +29,7 @@ export type SettingsAgentText = {
     };
   };
   workbuddy: {
-    signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string;
+    signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string; curlUnavailable: string;
     signIn: string; retry: string; signOut: string; busy: string; actionFailed: string;
   };
   alerts: {
@@ -123,6 +123,7 @@ export const zhCN: SettingsAgentText = {
     ready: "已登录 WorkBuddy",
     connected: "已登录 WorkBuddy",
     unavailable: "暂时读不到 WorkBuddy 积分",
+    curlUnavailable: "缺少 Windows 自带的 curl.exe，暂时无法读取积分；本地会话仍可用。",
     signIn: "去登录",
     retry: "重试",
     signOut: "退出登录",
@@ -217,6 +218,7 @@ export const en: SettingsAgentText = {
     ready: "Signed in to WorkBuddy",
     connected: "Signed in to WorkBuddy",
     unavailable: "WorkBuddy credits unavailable",
+    curlUnavailable: "Windows curl.exe is missing. Credits are unavailable; local sessions still work.",
     signIn: "Sign in",
     retry: "Retry",
     signOut: "Sign out",
