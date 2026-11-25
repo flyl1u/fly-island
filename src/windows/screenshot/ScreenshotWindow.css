@@ -145,8 +145,6 @@
   max-width: 520px;
 }
 
-
-
 .screenshot-colors {
   display: flex;
   gap: 3px;
@@ -191,7 +189,9 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   pointer-events: none;
+  z-index: 1;
 }
+.screenshot-node.screenshot-node-arrow { border-radius: 50%; }
 .screenshot-text-input {
   position: fixed;
   min-width: 20px;
@@ -351,7 +351,7 @@
 .screenshot-hover {
   position: fixed;
   border: 2px solid #4d96ff;
-  /* 只高亮窗口边框，不压暗屏幕：未框选时保持清晰原画面。 */
+  /* 候选窗口只描边；整屏变灰由独立遮罩负责。 */
   pointer-events: none;
   z-index: 4;
 }

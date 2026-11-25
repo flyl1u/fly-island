@@ -1,3 +1,4 @@
+import { arrowGeometry, type ArrowHeads } from "./arrowGeometry.ts";
 // 标注的数据结构、绘制与编辑操作。纯逻辑，不含 React，便于单测。
 // 所有坐标都是「选区内的 CSS 像素」，绘制时统一乘 scale（物理像素 / CSS 像素）。
 
@@ -45,9 +46,9 @@ export function applyDash(context: CanvasRenderingContext2D, dash: Dash | undefi
 }
 
 export type Annotation =
-  | { kind: "rect"; color: string; width: number; dash?: Dash; from: Point; to: Point }
-  | { kind: "ellipse"; color: string; width: number; dash?: Dash; from: Point; to: Point }
-  | { kind: "arrow"; color: string; width: number; dash?: Dash; from: Point; to: Point }
+  | { kind: "rect"; color: string; width: number; dash?: Dash; filled?: boolean; from: Point; to: Point }
+  | { kind: "ellipse"; color: string; width: number; dash?: Dash; filled?: boolean; from: Point; to: Point }
+  | { kind: "arrow"; color: string; width: number; dash?: Dash; heads?: ArrowHeads; from: Point; to: Point }
   | { kind: "pen"; color: string; width: number; dash?: Dash; points: Point[] }
   | { kind: "text"; color: string; size: number; font: string; at: Point; text: string; bold?: boolean; italic?: boolean; underline?: boolean; strike?: boolean; w?: number; h?: number; angle?: number }
   | { kind: "number"; color: string; size: number; at: Point; value: number; style: NumberStyle }
@@ -92,6 +93,7 @@ export function drawAnnotation(
   scale: number,
   source?: HTMLCanvasElement,
   sourceOffset?: Point,
+  sourceScaleY = scale,
 ) {
   const s = scale;
   context.save();
@@ -106,6 +108,7 @@ export function drawAnnotation(
       const box = bound(item.from, item.to);
       context.lineWidth = item.width * s;
       applyDash(context, item.dash, item.width * s);
+      if (item.filled) context.fillRect(box.x * s, box.y * s, box.width * s, box.height * s);
       context.strokeRect(box.x * s, box.y * s, box.width * s, box.height * s);
       break;
     }
@@ -123,6 +126,7 @@ export function drawAnnotation(
         0,
         Math.PI * 2,
       );
+      if (item.filled) context.fill();
       context.stroke();
       break;
     }
@@ -130,25 +134,20 @@ export function drawAnnotation(
       const width = item.width * s;
       context.lineWidth = width;
       applyDash(context, item.dash, width);
-      const dx = item.to.x * s - item.from.x * s;
-      const dy = item.to.y * s - item.from.y * s;
-      const length = Math.hypot(dx, dy);
-      // 头部跟线宽走，但限制在合理范围，短箭头也不会顶出一个大三角。
-      const head = Math.min(Math.max(width * 3.5, 9), length * 0.6);
-      const angle = Math.atan2(dy, dx);
-      const tipX = item.to.x * s;
-      const tipY = item.to.y * s;
-      // 线画到箭头根部，避免线尖顶着三角形看起来分叉。
+      const geometry = arrowGeometry(item);
       context.beginPath();
-      context.moveTo(item.from.x * s, item.from.y * s);
-      context.lineTo(tipX - Math.cos(angle) * head * 0.85, tipY - Math.sin(angle) * head * 0.85);
+      context.moveTo(geometry.from.x * s, geometry.from.y * s);
+      context.lineTo(geometry.to.x * s, geometry.to.y * s);
       context.stroke();
-      context.beginPath();
-      context.moveTo(tipX, tipY);
-      context.lineTo(tipX - head * Math.cos(angle - 0.38), tipY - head * Math.sin(angle - 0.38));
-      context.lineTo(tipX - head * Math.cos(angle + 0.38), tipY - head * Math.sin(angle + 0.38));
-      context.closePath();
-      context.fill();
+      context.setLineDash([]);
+      for (const head of geometry.heads) {
+        context.beginPath();
+        context.moveTo(head[0].x * s, head[0].y * s);
+        context.lineTo(head[1].x * s, head[1].y * s);
+        context.lineTo(head[2].x * s, head[2].y * s);
+        context.closePath();
+        context.fill();
+      }
       break;
     }
     case "pen": {
@@ -202,7 +201,7 @@ export function drawAnnotation(
           context.stroke();
         }
       });
-      if (angle !== 0) context.restore();
+      context.restore();
       break;
     }
     case "number": {
@@ -215,27 +214,28 @@ export function drawAnnotation(
       context.font = `bold ${Math.round(radius)}px system-ui, sans-serif`;
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.fillText(String(item.value), center.x, center.y);
+      context.fillText(formatNumber(item.value, item.style), center.x, center.y);
       break;
     }
     case "mosaic": {
       // 真马赛克：从底图取这块区域，缩小再放大，像素块化。
       const box = bound(item.from, item.to);
       const block = Math.max(2, Math.round(item.size * s));
+      const blockY = Math.max(2, Math.round(item.size * sourceScaleY));
       const origin = sourceOffset ?? { x: 0, y: 0 };
       const sourceCanvas = source ?? context.canvas;
       const sourceX = Math.round((origin.x + box.x) * s);
-      const sourceY = Math.round((origin.y + box.y) * s);
+      const sourceY = Math.round((origin.y + box.y) * sourceScaleY);
       const sourceWidth = Math.max(1, Math.round(box.width * s));
-      const sourceHeight = Math.max(1, Math.round(box.height * s));
+      const sourceHeight = Math.max(1, Math.round(box.height * sourceScaleY));
       const small = document.createElement("canvas");
       small.width = Math.max(1, Math.round(sourceWidth / block));
-      small.height = Math.max(1, Math.round(sourceHeight / block));
+      small.height = Math.max(1, Math.round(sourceHeight / blockY));
       const smallContext = small.getContext("2d");
       if (smallContext) {
         smallContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, small.width, small.height);
         context.imageSmoothingEnabled = false;
-        context.drawImage(small, 0, 0, small.width, small.height, Math.round(box.x * s), Math.round(box.y * s), sourceWidth, sourceHeight);
+        context.drawImage(small, 0, 0, small.width, small.height, Math.round(box.x * s), Math.round(box.y * s), sourceWidth, Math.max(1, Math.round(box.height * s)));
         context.imageSmoothingEnabled = true;
       }
       break;
@@ -251,8 +251,9 @@ export function redraw(
   scale: number,
   source?: HTMLCanvasElement,
   sourceOffset?: Point,
+  sourceScaleY = scale,
 ) {
-  for (const item of items) drawAnnotation(context, item, scale, source, sourceOffset);
+  for (const item of items) drawAnnotation(context, item, scale, source, sourceOffset, sourceScaleY);
 }
 
 /** 文本框的近似边界（用于点击进入编辑）。 */
@@ -351,7 +352,7 @@ export function measureHeight(value: string, size: number): number {
   return lines * size * 1.4;
 }
 
-/** 选中标注的节点位置（相对选区左上角）：箭头是两头，框和椭圆是四个角。 */
+/** 选中标注的节点位置（相对选区左上角）：箭头两端，封闭图形四角及四边中点。 */
 export function nodePoints(item: Annotation): { key: string; point: Point }[] {
   if (item.kind === "arrow") {
     return [
@@ -359,16 +360,20 @@ export function nodePoints(item: Annotation): { key: string; point: Point }[] {
       { key: "to", point: item.to },
     ];
   }
-  if (item.kind === "rect" || item.kind === "ellipse") {
+  if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "mosaic") {
     const left = Math.min(item.from.x, item.to.x);
     const right = Math.max(item.from.x, item.to.x);
     const top = Math.min(item.from.y, item.to.y);
     const bottom = Math.max(item.from.y, item.to.y);
     return [
       { key: "nw", point: { x: left, y: top } },
+      { key: "n", point: { x: (left + right) / 2, y: top } },
       { key: "ne", point: { x: right, y: top } },
+      { key: "e", point: { x: right, y: (top + bottom) / 2 } },
       { key: "sw", point: { x: left, y: bottom } },
+      { key: "s", point: { x: (left + right) / 2, y: bottom } },
       { key: "se", point: { x: right, y: bottom } },
+      { key: "w", point: { x: left, y: (top + bottom) / 2 } },
     ];
   }
   return [];

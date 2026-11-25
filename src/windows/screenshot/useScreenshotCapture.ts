@@ -1,6 +1,7 @@
 // 截图覆盖层的抓屏与导出：抓底图、裁图、复制/保存、OCR 与划词翻译。
 // 只负责「这一层数据」，选区与标注状态在 useScreenshotEditor 里。
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { flushSync } from "react-dom";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   activateScreenshot,
@@ -18,6 +19,9 @@ import {
 } from "../../features/screenshot/api";
 import { useTranslation } from "../../i18n";
 import { overlayWindows } from "../../features/screenshot/geometry";
+import { waitForScreenshotViewport } from "../../features/screenshot/displayMetrics";
+import { drawAnnotation, measureHeight, measureText } from "../../features/screenshot/annotations";
+import type { Editing } from "./useScreenshotEditor";
 
 /** 系统字体列表取不到时的兜底。 */
 export const FALLBACK_FONTS = ["Microsoft YaHei", "SimSun", "SimHei", "KaiTi", "Segoe UI", "Consolas"];
@@ -27,6 +31,7 @@ export type CaptureState = ReturnType<typeof useScreenshotCapture>;
 type CaptureOptions = {
   /** 当前选区：坐标是覆盖层里的 CSS 像素，标注层也用它。 */
   rect: ScreenRect | null;
+  editing: Editing | null;
   /** 标注层画布，导出时叠在底图上。 */
   canvasRef: RefObject<HTMLCanvasElement | null>;
   /** 底图画布：OCR 与导出都从这里裁。 */
@@ -45,6 +50,7 @@ type CaptureOptions = {
 
 export function useScreenshotCapture({
   rect,
+  editing,
   canvasRef,
   backdropRef,
   windowRects,
@@ -56,6 +62,7 @@ export function useScreenshotCapture({
   const t = useTranslation();
   const [base, setBase] = useState<ImageData | null>(null);
   const [scale, setScale] = useState(1);
+  const [scaleY, setScaleY] = useState(1);
   const [fonts, setFonts] = useState<string[]>(FALLBACK_FONTS);
   const [failure, setFailure] = useState<string | null>(null);
   const [ocrText, setOcrText] = useState<string | null>(null);
@@ -70,18 +77,30 @@ export function useScreenshotCapture({
     arming.current = true;
     try {
       const region = await screenshotWindowRect();
+      const nativeDpi = await getCurrentWindow().scaleFactor().catch(() => window.devicePixelRatio);
+      const dpi = typeof nativeDpi === "number" && nativeDpi > 0 ? nativeDpi : window.devicePixelRatio;
+      const viewport = await waitForScreenshotViewport(region, dpi, () => ({
+        width: window.innerWidth, height: window.innerHeight, dpr: window.devicePixelRatio,
+      }));
+      if (!viewport) throw new Error(t.screenshot.displayNotReady);
       const frame = await captureScreenRaw(region);
-      const ratio = frame.width / Math.max(1, window.innerWidth);
-      setBase(new ImageData(frame.data, frame.width, frame.height));
-      setScale(ratio);
-      setOcrText(null);
-      setFailure(null);
-      onArm();
+      const ratio = frame.width / viewport.width;
+      // Hidden WebViews may suspend animation frames. Commit the raw canvas synchronously
+      // instead of waiting for requestAnimationFrame before showing the native window.
+      flushSync(() => {
+        setBase(new ImageData(frame.data, frame.width, frame.height));
+        setScale(ratio);
+        setScaleY(frame.height / viewport.height);
+        setOcrText(null);
+        setFailure(null);
+        onArm();
+      });
       try {
         const physical = await screenshotWindows();
-        windowRects.current = overlayWindows(physical, region, ratio);
+        windowRects.current = [...overlayWindows(physical, region, ratio, frame.height / viewport.height),
+          { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }];
       } catch {
-        windowRects.current = [];
+        windowRects.current = [{ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }];
       }
       try {
         const installed = await screenshotFonts();
@@ -97,7 +116,7 @@ export function useScreenshotCapture({
     } finally {
       arming.current = false;
     }
-  }, [onArm, windowRects]);
+  }, [onArm, windowRects, t]);
 
   useEffect(() => {
     let dispose: (() => void) | undefined;
@@ -114,7 +133,7 @@ export function useScreenshotCapture({
   }, [arm]);
 
   // 底图先落到背面画布：标注层重绘和真马赛克都从这块画布取像素。
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = backdropRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context || !base) return;
@@ -130,15 +149,15 @@ export function useScreenshotCapture({
     const backdrop = backdropRef.current;
     if (!rect || !backdrop) return null;
     const width = Math.max(1, Math.round(rect.width * scale));
-    const height = Math.max(1, Math.round(rect.height * scale));
+    const height = Math.max(1, Math.round(rect.height * scaleY));
     const output = document.createElement("canvas");
     output.width = width;
     output.height = height;
     const context = output.getContext("2d");
     if (!context) return null;
-    context.drawImage(backdrop, Math.round(rect.x * scale), Math.round(rect.y * scale), width, height, 0, 0, width, height);
+    context.drawImage(backdrop, Math.round(rect.x * scale), Math.round(rect.y * scaleY), width, height, 0, 0, width, height);
     return output.toDataURL("image/png").split(",")[1] ?? null;
-  }, [backdropRef, rect, scale]);
+  }, [backdropRef, rect, scale, scaleY]);
 
   /** 裁底图 + 标注，复制/保存用。 */
   const compose = useCallback((): string | null => {
@@ -146,16 +165,25 @@ export function useScreenshotCapture({
     const backdrop = backdropRef.current;
     if (!rect || !annotation || !backdrop) return null;
     const width = Math.max(1, Math.round(rect.width * scale));
-    const height = Math.max(1, Math.round(rect.height * scale));
+    const height = Math.max(1, Math.round(rect.height * scaleY));
     const output = document.createElement("canvas");
     output.width = width;
     output.height = height;
     const context = output.getContext("2d");
     if (!context) return null;
-    context.drawImage(backdrop, Math.round(rect.x * scale), Math.round(rect.y * scale), width, height, 0, 0, width, height);
+    context.drawImage(backdrop, Math.round(rect.x * scale), Math.round(rect.y * scaleY), width, height, 0, 0, width, height);
     context.drawImage(annotation, 0, 0);
+    if (editing?.value.trim()) {
+      const text = editing.value.trim();
+      context.save();
+      context.scale(1, scaleY / scale);
+      drawAnnotation(context, { ...editing, kind: "text", text,
+        w: measureText(text, editing.size, editing.font, editing.bold, editing.italic),
+        h: measureHeight(text, editing.size) }, scale);
+      context.restore();
+    }
     return output.toDataURL("image/png").split(",")[1] ?? null;
-  }, [backdropRef, canvasRef, rect, scale]);
+  }, [backdropRef, canvasRef, rect, editing, scale, scaleY]);
 
   const copy = useCallback(async () => {
     const png = compose();
@@ -241,5 +269,5 @@ export function useScreenshotCapture({
     }
   }, [cropRaw, onClose, t]);
 
-  return { scale, fonts, failure, setFailure, ocrText, setOcrText, ocrBusy, copy, save, pin, recognize, translateInline, recognizeAndCopy, close: onClose };
+  return { scale, scaleY, fonts, failure, setFailure, ocrText, setOcrText, ocrBusy, copy, save, pin, recognize, translateInline, recognizeAndCopy, close: onClose };
 }

@@ -2,6 +2,8 @@
 // 状态在 useScreenshotEditor，指针交互在 useScreenshotGestures，抓屏与导出在 useScreenshotCapture。
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { dismissScreenshot, type ScreenRect } from "../../features/screenshot/api";
+import { hitAnnotation } from "../../features/screenshot/annotationEditing";
+import { arrowEndpointCursor } from "../../features/screenshot/arrowGeometry";
 import { drawAnnotation, hitText, nodePoints, redraw, type Tool } from "../../features/screenshot/annotations";
 import { useTranslation } from "../../i18n";
 import { ScreenshotSaveDialog } from "./ScreenshotSaveDialog";
@@ -84,6 +86,7 @@ export function ScreenshotWindow() {
 
   const capture = useScreenshotCapture({
     rect: editor.rect,
+    editing: editor.editing,
     canvasRef,
     backdropRef,
     windowRects,
@@ -100,8 +103,13 @@ export function ScreenshotWindow() {
   useLayoutEffect(() => {
     if (!rect || editor.dragging) return;
     const bar = toolbarRef.current;
-    if (bar && bar.offsetHeight > 0) setBarHeight(bar.offsetHeight);
-  }, [rect, editor.dragging, editor.tool, editor.color, editor.strokeWidth]);
+    if (!bar) return;
+    const measure = () => { if (bar.offsetHeight > 0) setBarHeight(bar.offsetHeight); };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [rect, editor.dragging, editor.tool, editor.selected]);
 
   // 标注层：每次改动整块重画（撤销也就是少画最后一条）。
   useEffect(() => {
@@ -109,20 +117,21 @@ export function ScreenshotWindow() {
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
     const width = rect ? Math.max(1, Math.round(rect.width * capture.scale)) : 1;
-    const height = rect ? Math.max(1, Math.round(rect.height * capture.scale)) : 1;
+    const height = rect ? Math.max(1, Math.round(rect.height * capture.scaleY)) : 1;
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
     }
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.setTransform(1, 0, 0, capture.scaleY / capture.scale, 0, 0);
     const source = backdropRef.current ?? undefined;
     const offset = rect ? { x: rect.x, y: rect.y } : undefined;
     // 正在编辑的那条不画：文本框已经显示它，否则会出现两行一样的字。
     const visibleItems = editing && editing.index !== null ? items.filter((_, index) => index !== editing.index) : items;
-    redraw(context, visibleItems, capture.scale, source, offset);
-    if (draft) drawAnnotation(context, draft, capture.scale, source, offset);
-  }, [rect, items, draft, capture.scale, editing]);
+    redraw(context, visibleItems, capture.scale, source, offset, capture.scaleY);
+    if (draft) drawAnnotation(context, draft, capture.scale, source, offset, capture.scaleY);
+  }, [rect, items, draft, capture.scale, capture.scaleY, editing]);
 
   // 放大镜：从底图取一小块放大，标出光标位置。
   useEffect(() => {
@@ -136,9 +145,9 @@ export function ScreenshotWindow() {
     const sw = canvas.width / zoom;
     const sh = canvas.height / zoom;
     const sx = Math.max(0, Math.min(backdrop.width - sw * capture.scale, (magnifier.x - sw / 2) * capture.scale));
-    const sy = Math.max(0, Math.min(backdrop.height - sh * capture.scale, (magnifier.y - sh / 2) * capture.scale));
+    const sy = Math.max(0, Math.min(backdrop.height - sh * capture.scaleY, (magnifier.y - sh / 2) * capture.scaleY));
     context.imageSmoothingEnabled = false;
-    context.drawImage(backdrop, sx, sy, sw * capture.scale, sh * capture.scale, 0, 0, canvas.width, canvas.height);
+    context.drawImage(backdrop, sx, sy, sw * capture.scale, sh * capture.scaleY, 0, 0, canvas.width, canvas.height);
     context.strokeStyle = "#ff3ea5";
     context.lineWidth = 1;
     context.beginPath();
@@ -147,7 +156,7 @@ export function ScreenshotWindow() {
     context.moveTo(0, canvas.height / 2);
     context.lineTo(canvas.width, canvas.height / 2);
     context.stroke();
-  }, [magnifier, capture.scale]);
+  }, [magnifier, capture.scale, capture.scaleY]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -156,13 +165,27 @@ export function ScreenshotWindow() {
         if (event.key === "Escape") { event.preventDefault(); setSavePng(null); }
         return;
       }
-      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable=true]")) return;
+      if (target instanceof HTMLElement && target.closest('textarea, input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), [contenteditable=true]')) return;
+      if ((event.key === "Delete" || event.key === "Backspace") && editor.selected !== null && !editor.editing) {
+        event.preventDefault();
+        const index = editor.selected;
+        editor.setItems((list) => list.filter((_, position) => position !== index));
+        editor.setSelected(null);
+
+        return;
+      }
+      if (target instanceof HTMLElement && target.closest("select")) return;
       const key = event.key.toLowerCase();
+      if ((event.ctrlKey || event.metaKey) && key === "a" && !editor.editing) {
+        event.preventDefault(); editor.setItems([]); editor.setSelected(null);
+        editor.setRect({ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }); return;
+      }
       if ((event.ctrlKey || event.metaKey) && key === "q") {
         event.preventDefault(); void capture.translateInline(); return;
       }
       if (!editor.editing && !event.ctrlKey && !event.metaKey && SHORTCUTS[key]) {
         event.preventDefault();
+        editor.setSelected(null);
         editor.setTool(SHORTCUTS[key]);
         return;
       }
@@ -174,11 +197,6 @@ export function ScreenshotWindow() {
           return;
         }
         close();
-      } else if ((event.key === "Delete" || event.key === "Backspace") && editor.selected !== null && !editor.editing) {
-        event.preventDefault();
-        const index = editor.selected;
-        editor.setItems((list) => list.filter((_, position) => position !== index));
-        editor.setSelected(null);
       } else if (event.key === "Enter" && !editor.editing) {
         event.preventDefault();
         if (editor.tool === "text" && editor.rect) {
@@ -191,6 +209,7 @@ export function ScreenshotWindow() {
         void capture.recognizeAndCopy();
       } else if ((event.ctrlKey || event.metaKey) && key === "z" && !editor.editing) {
         event.preventDefault();
+        editor.setSelected(null);
         editor.setItems((value) => value.slice(0, -1));
       }
     };
@@ -222,6 +241,7 @@ export function ScreenshotWindow() {
       }}
     >
       <canvas ref={backdropRef} className="screenshot-backdrop" />
+      {!rect ? <div className="screenshot-dim" aria-hidden="true" /> : null}
 
       {capture.failure ? <p className="screenshot-failure">{capture.failure}</p> : null}
 
@@ -240,7 +260,7 @@ export function ScreenshotWindow() {
           }}
         >
           <span className="screenshot-size">
-            {Math.round(windowRects.current[hoverIndex].width)} × {Math.round(windowRects.current[hoverIndex].height)}
+            {Math.round(windowRects.current[hoverIndex].width * capture.scale)} × {Math.round(windowRects.current[hoverIndex].height * capture.scaleY)}
           </span>
         </div>
       ) : null}
@@ -268,7 +288,7 @@ export function ScreenshotWindow() {
             onPointerUp={gestures.onOverlayUp}
           >
             <span className="screenshot-size">
-              {Math.round(rect.width)} × {Math.round(rect.height)}
+              {Math.round(rect.width * capture.scale)} × {Math.round(rect.height * capture.scaleY)}
             </span>
             {HANDLES.map((handle) => (
               <span
@@ -288,7 +308,7 @@ export function ScreenshotWindow() {
           <canvas
             ref={canvasRef}
             className="screenshot-canvas"
-            style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+            style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height, cursor: gestures.canvasCursor }}
             onPointerDown={gestures.onCanvasDown}
             onPointerMove={gestures.onCanvasMove}
             onPointerUp={gestures.onCanvasUp}
@@ -300,6 +320,7 @@ export function ScreenshotWindow() {
                 const target = editor.items[hit];
                 if (target.kind === "text") { editor.editExistingText(hit, target); return; }
               }
+              if (hitAnnotation(editor.items, at) !== null) return;
               void capture.copy();
             }}
           />
@@ -308,26 +329,13 @@ export function ScreenshotWindow() {
             ? nodePoints(items[editor.selected]).map((node) => (
                 <span
                   key={node.key}
-                  className="screenshot-node"
-                  data-node="1"
-                  style={{ left: rect.x + node.point.x - 5, top: rect.y + node.point.y - 5 }}
-                  onPointerDown={(event) => {
-                    event.stopPropagation();
-                    const target = items[editor.selected as number];
-                    if (!target) return;
-                    editor.drag.current = {
-                      mode: "node",
-                      index: editor.selected as number,
-                      key: node.key,
-                      from: { x: event.clientX, y: event.clientY },
-                      origin:
-                        target.kind === "arrow" || target.kind === "rect" || target.kind === "ellipse"
-                          ? { from: { ...target.from }, to: { ...target.to } }
-                          : { from: { x: 0, y: 0 }, to: { x: 0, y: 0 } },
-                    };
-                    editor.setDragging(true);
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                  }}
+                  className={`screenshot-node${editor.selectedItem?.kind === "arrow" ? " screenshot-node-arrow" : ""}`}
+                  data-node={node.key}
+                  title={editor.selectedItem?.kind === "arrow" ? t.arrowEndpointHint : t.resizeShapeHint}
+                  style={{ left: rect.x + node.point.x - 5, top: rect.y + node.point.y - 5,
+                    cursor: editor.selectedItem?.kind === "arrow"
+                      ? arrowEndpointCursor(editor.selectedItem.from, editor.selectedItem.to) : `${node.key}-resize` }}
+                  onPointerDown={gestures.startNode(node.key)}
                   onPointerMove={gestures.onNodeMove}
                   onPointerUp={() => {
                     editor.drag.current = null;
@@ -341,13 +349,19 @@ export function ScreenshotWindow() {
 
           {/* 拖拽选区/控制点时隐藏工具栏，松手后再显示，避免挡住拖拽。 */}
           {!editor.dragging ? (
-            <div ref={toolbarRef} className="screenshot-rows" style={toolbarStyle(rect, barHeight)}>
+            <div ref={toolbarRef} className="screenshot-rows" style={toolbarStyle(rect, barHeight)}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                editor.rememberTextSelection();
+                // Buttons can act without taking focus; native selects and numeric inputs must still receive it.
+                if (editor.editing && (event.target as HTMLElement).closest("button")) event.preventDefault();
+              }}>
               <ScreenshotToolbar editor={editor} capture={capture} />
             </div>
           ) : null}
         </>
       ) : (
-        // 未框选时不加遮罩：第一眼看到的就是清晰的原画面，框选后才压暗选区外。
+        // 快捷键唤醒时立即显示遮罩；选区内仍使用未变暗的原图导出。
         <p className="screenshot-hint">{t.hint}</p>
       )}
 

@@ -1,7 +1,7 @@
 //! 截图覆盖层窗口：按下快捷键时铺满光标所在显示器。
 //!
 //! 窗口启动时就建好（隐藏），按快捷键只是定位 + 通知前端，避免首次创建窗口的延迟。
-//! 显示由前端负责：先 show 出遮罩，再把刚抓到的画面贴上去，所以"按下即有反馈"。
+//! 前端抓到干净底图并画好遮罩之后才显示，避免下一轮把自己抓进底图。
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
@@ -28,11 +28,36 @@ fn build(app: &AppHandle) -> Result<WebviewWindow, String> {
         .skip_taskbar(true)
         .resizable(false)
         .shadow(false)
-        .focused(true)
+        .focused(false)
         .visible(false)
         .build()
         .map_err(|error| format!("无法创建截图窗口：{error}"))?;
+    exclude_overlay(&window);
     Ok(window)
+}
+
+fn exclude_overlay(window: &WebviewWindow) {
+    if let Ok(handle) = window.hwnd() {
+        // Hidden capture remains the fallback on systems without this DWM attribute.
+        crate::win32::desktop_duplication::exclude_from_capture(handle, true);
+    }
+}
+
+/// Fullscreen transitions can restore a saved visible placement. Hide on the UI thread,
+/// then wait for DWM before opening a new duplication session or releasing the hotkey guard.
+pub(crate) async fn hide_and_settle(window: WebviewWindow) -> Result<(), String> {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let overlay = window.clone();
+    window.run_on_main_thread(move || {
+        exclude_overlay(&overlay);
+        let _ = sender.send(overlay.hide().map_err(|error| error.to_string()));
+    }).map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        receiver.recv_timeout(std::time::Duration::from_secs(2))
+            .map_err(|error| format!("等待截图窗口隐藏失败：{error}"))??;
+        crate::win32::desktop_duplication::wait_for_compositor();
+        Ok(())
+    }).await.map_err(|error| error.to_string())?
 }
 
 /// 启动时先把窗口建好并藏起来，第一次按快捷键就不用再建了。
@@ -62,12 +87,10 @@ fn show_overlay_inner(app: &AppHandle) -> Result<(), String> {
         Some(window) => window,
         None => build(app)?,
     };
+    window.hide().map_err(|error| error.to_string())?;
     position_on_cursor_monitor(app, &window)?;
+    window.hide().map_err(|error| error.to_string())?;
     window.emit(ARM_EVENT, ()).map_err(|error| format!("无法通知截图窗口：{error}"))?;
-    // 前端 show 之后仍可能抢不到前台，这里再强推一次，避免"要点击一下才出画面"。
-    if let Ok(handle) = window.hwnd() {
-        crate::win32::foreground::bring_to_front(handle);
-    }
     Ok(())
 }
 
@@ -95,12 +118,16 @@ fn position_on_cursor_monitor(app: &AppHandle, window: &WebviewWindow) -> Result
 
     let position = monitor.position();
     let size = monitor.size();
+    // Leave the previous monitor's fullscreen geometry before moving the hidden overlay.
+    window.set_fullscreen(false).map_err(|error| error.to_string())?;
     window
         .set_position(tauri::PhysicalPosition::new(position.x, position.y))
         .map_err(|error| error.to_string())?;
     window
         .set_size(tauri::PhysicalSize::new(size.width, size.height))
         .map_err(|error| error.to_string())?;
+    // Borderless fullscreen removes Windows' non-client top inset and includes the taskbar area.
+    window.set_fullscreen(true).map_err(|error| error.to_string())?;
     Ok(())
 }
 
@@ -123,9 +150,7 @@ pub async fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
     let mut foreground = false;
     for _ in 0..8 {
         let _ = window.set_focus();
-    if let Ok(handle) = window.hwnd() {
         crate::win32::foreground::focus_webview(handle);
-    }
         crate::win32::foreground::bring_to_front(handle);
         std::thread::sleep(std::time::Duration::from_millis(20));
         if crate::win32::foreground::is_foreground(handle) {
@@ -140,11 +165,15 @@ pub async fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
 /// 收起覆盖层并恢复小岛本体。
 #[tauri::command]
 pub async fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
-    // 截图会话结束：允许下一次热键重新触发。
-    CAPTURING.store(false, Ordering::Release);
-    let _ = window.hide();
+    hide_and_settle(window).await?;
     if RESTORE_MAIN.swap(false, Ordering::AcqRel) {
         if let Some(main) = app.get_webview_window("main") { let _ = main.show(); }
     }
+    // Only rearm after the previous overlay has actually left the desktop.
+    CAPTURING.store(false, Ordering::Release);
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "native_tests.rs"]
+mod native_tests;

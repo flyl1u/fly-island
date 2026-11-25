@@ -21,10 +21,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { capturePixelProbe } from "./regression-pixels.mjs";
-
-/** Each page with the query that starts its automated checks. */
+import { SCREENSHOT_SCALING_PAGES } from "./screenshot-scaling-cases.mjs";
 export const PAGES = [
+  ...SCREENSHOT_SCALING_PAGES,
+  "screenshot-polish.html",
+  "screenshot-polish.html?lang=en&theme=light&scale=1.5&dpr=1.5",
+  "screenshot-shapes.html",
+  "screenshot-shapes.html?lang=en",
   "screenshot-session.html",
+  ...["screenshot-text.html", "screenshot-text.html?lang=en"],
   "screenshot-translation.html",
   "screenshot-translation.html?theme=light&lang=en",
   "config-transfer.html",
@@ -123,7 +128,6 @@ export const PAGES = [
   "translation-window.html?test=1&theme=dark",
   "translation-window.html?test=1&theme=light",
 ];
-
 const SHAPE_PERF_PAGES = ["classic", "liquidGlass", "frostedGlass"].flatMap((material) => {
   const url = `island-tour.html?shapePerf=1&dpr=1.5&material=${material}${material === "classic" ? "&opacity=80" : "&glassBackdrop=1"}`;
   return [url, `${url}&perfRenderer=328`];
@@ -275,7 +279,8 @@ export async function runPage(session, url) {
   session.errors.length = 0;
   const query = new URL(url).searchParams;
   const dpr = Number(query.get("dpr"));
-  if (dpr) await session.send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 800, deviceScaleFactor: dpr, mobile: false });
+  if (dpr) await session.send("Emulation.setDeviceMetricsOverride", { width: Number(query.get("viewportWidth") ?? 1200),
+    height: Number(query.get("viewportHeight") ?? 800), deviceScaleFactor: dpr, mobile: false });
   const deadline = Date.now() + PAGE_TIMEOUT_MS;
   let state = {};
   let reloaded = false;

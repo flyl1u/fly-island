@@ -18,10 +18,10 @@ pub(crate) struct WindowRect {
 }
 
 /// 按 z 序（最上层在前）返回可见窗口的矩形；太小或不可见的会被丢掉。
-pub(crate) fn visible_window_rects() -> Vec<WindowRect> {
+pub(crate) fn visible_window_rects(exclude: Option<HWND>) -> Vec<WindowRect> {
     let mut found = Vec::new();
     let _ = crate::win32::window::for_each_top_level_window(|window| {
-        if !crate::win32::window::is_visible(window) || crate::win32::window::is_minimized(window) {
+        if Some(window) == exclude || !crate::win32::window::is_visible(window) || crate::win32::window::is_minimized(window) {
             return;
         }
         // 工具窗口（托盘弹出菜单等）不参与吸附。

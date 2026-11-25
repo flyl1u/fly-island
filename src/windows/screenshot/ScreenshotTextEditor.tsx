@@ -40,13 +40,12 @@ export function ScreenshotTextEditor({ editor, rect }: TextEditorProps) {
     editor.setDragging(false);
   };
 
+  const isEditing = editing !== null;
+  const editingIndex = editing?.index;
   useEffect(() => {
-    if (!editing) return;
+    if (!isEditing) return;
     textInputRef.current?.focus();
-    // 刚挂上的 textarea 偶尔抢不到焦点，隔一帧再补一次。
-    const timer = window.setTimeout(() => textInputRef.current?.focus(), 30);
-    return () => window.clearTimeout(timer);
-  }, [editing, textInputRef]);
+  }, [isEditing, editingIndex, textInputRef]);
 
   if (!textBox) return null;
 
@@ -137,6 +136,8 @@ export function ScreenshotTextEditor({ editor, rect }: TextEditorProps) {
           className="screenshot-text-input"
           ref={textInputRef}
           value={editing.value}
+          onSelect={editor.rememberTextSelection}
+          onBlur={editor.rememberTextSelection}
           style={{
             left: rect.x + editing.at.x,
             top: rect.y + editing.at.y,

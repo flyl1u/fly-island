@@ -8,6 +8,8 @@ import { I18nProvider, TRANSLATIONS } from "../../src/i18n";
 import { ScreenshotWindow } from "../../src/windows/screenshot/ScreenshotWindow";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+// This fixture uses one source pixel per CSS pixel; the scaling matrix emulates native DPR separately.
+Object.defineProperty(window, "devicePixelRatio", { value: 1, configurable: true });
 localStorage.setItem("fly-island-locale", "zh-CN");
 const t = TRANSLATIONS["zh-CN"].screenshot;
 mockWindows("screenshot");

@@ -1,4 +1,11 @@
 export type ScreenshotText = {
+  arrowStyle: string;
+  arrowSingle: string;
+  arrowDouble: string;
+  arrowNone: string;
+  arrowEndpointHint: string;
+  resizeShapeHint: string;
+
   pinFailed: string;
   translationTitle: string;
   resultView: string;
@@ -23,6 +30,8 @@ export type ScreenshotText = {
   toolNumber: string;
   toolText: string;
   toolMosaic: string;
+  displayNotReady: string;
+  fillShape: string;
   shapeRect: string;
   shapeEllipse: string;
   dashSolid: string;
@@ -36,6 +45,7 @@ export type ScreenshotText = {
   grain: string;
   grainLabel: string;
   fontSizeLabel: string;
+  fontFamilyLabel: string;
   formatBold: string;
   formatItalic: string;
   formatUnderline: string;
@@ -86,6 +96,13 @@ export type ScreenshotText = {
 };
 
 export const zhCN: ScreenshotText = {
+  arrowStyle: "箭头",
+  arrowSingle: "单箭头 →",
+  arrowDouble: "双箭头 ↔",
+  arrowNone: "无箭头 —",
+  arrowEndpointHint: "拖动端点：调整长度和方向",
+  resizeShapeHint: "拖动控制点调整大小",
+
   pinFailed: "贴图失败",
   translationTitle: "截图翻译",
   resultView: "结果显示方式",
@@ -101,7 +118,7 @@ export const zhCN: ScreenshotText = {
   invalidFileName: "请输入有效的文件名",
   overwriteHint: "确认保存位置并选择是否覆盖现有文件",
 
-  hint: "拖拽选择区域，Esc 取消",
+  hint: "拖拽选择区域 · Ctrl+A 全屏 · Esc 取消",
   toolMove: "移动选区",
   toolShape: "框选形状",
   toolArrow: "箭头",
@@ -109,6 +126,8 @@ export const zhCN: ScreenshotText = {
   toolNumber: "序号",
   toolText: "文字",
   toolMosaic: "马赛克",
+  displayNotReady: "显示器缩放布局尚未就绪，请按 Esc 后重试截图",
+  fillShape: "填充",
   shapeRect: "方框",
   shapeEllipse: "椭圆框",
   dashSolid: "实线",
@@ -120,6 +139,7 @@ export const zhCN: ScreenshotText = {
   grain: "颗粒",
   grainLabel: "马赛克颗粒",
   fontSizeLabel: "字号",
+  fontFamilyLabel: "字体",
   formatBold: "加粗",
   formatItalic: "斜体",
   formatUnderline: "下划线",
@@ -169,6 +189,13 @@ export const zhCN: ScreenshotText = {
 };
 
 export const en: ScreenshotText = {
+  arrowStyle: "Arrow",
+  arrowSingle: "Single →",
+  arrowDouble: "Double ↔",
+  arrowNone: "No heads —",
+  arrowEndpointHint: "Drag endpoint to adjust length and direction",
+  resizeShapeHint: "Drag handle to resize",
+
   pinFailed: "Unable to pin image",
   translationTitle: "Screenshot translation",
   resultView: "Result view",
@@ -184,7 +211,7 @@ export const en: ScreenshotText = {
   invalidFileName: "Enter a valid file name",
   overwriteHint: "Confirm location and choose whether to overwrite",
 
-  hint: "Drag to select an area, Esc to cancel",
+  hint: "Drag to select · Ctrl+A full screen · Esc cancel",
   toolMove: "Move selection",
   toolShape: "Shapes",
   toolArrow: "Arrow",
@@ -192,6 +219,8 @@ export const en: ScreenshotText = {
   toolNumber: "Number",
   toolText: "Text",
   toolMosaic: "Mosaic",
+  displayNotReady: "Display scaling is not ready. Press Esc and try capturing again.",
+  fillShape: "Fill",
   shapeRect: "Rectangle",
   shapeEllipse: "Ellipse",
   dashSolid: "Solid",
@@ -203,6 +232,7 @@ export const en: ScreenshotText = {
   grain: "Grain",
   grainLabel: "Mosaic grain",
   fontSizeLabel: "Font size",
+  fontFamilyLabel: "Font family",
   formatBold: "Bold",
   formatItalic: "Italic",
   formatUnderline: "Underline",

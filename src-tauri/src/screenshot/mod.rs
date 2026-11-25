@@ -121,12 +121,13 @@ pub async fn screenshot_save_png_to(png_base64: String, path: String) -> Result<
 ///
 /// 前端拿 `ImageData` 直接贴图，省掉 PNG 解码（4K 图能省 100ms 以上）。
 #[tauri::command]
-pub async fn screenshot_raw(x: i32, y: i32, width: i32, height: i32) -> Result<Response, String> {
+pub async fn screenshot_raw(window: tauri::WebviewWindow, x: i32, y: i32, width: i32, height: i32) -> Result<Response, String> {
     if width <= 0 || height <= 0 {
         return Err("选区宽高必须大于 0".into());
     }
     let region = (x, y, x + width, y + height);
-    let (pixels_wide, pixels_high, rgba) = tauri::async_runtime::spawn_blocking(move || capture::capture_rgba(region))
+    window::hide_and_settle(window).await?;
+    let (pixels_wide, pixels_high, rgba) = tauri::async_runtime::spawn_blocking(move || capture::capture_rgba_fresh(region))
         .await
         .map_err(|error| format!("抓屏任务失败：{error}"))??;
     let mut payload = Vec::with_capacity(8 + rgba.len());
@@ -155,8 +156,8 @@ pub async fn screenshot_ocr(app: tauri::AppHandle, png_base64: String) -> Result
 
 /// 当前可见窗口的矩形（屏幕物理像素，最上层在前），供前端做鼠标吸附。
 #[tauri::command]
-pub fn screenshot_windows() -> Vec<[i32; 4]> {
-    crate::win32::window_rects::visible_window_rects()
+pub async fn screenshot_windows(window: tauri::WebviewWindow) -> Vec<[i32; 4]> {
+    crate::win32::window_rects::visible_window_rects(window.hwnd().ok())
         .into_iter()
         .map(|rect| [rect.left, rect.top, rect.right, rect.bottom])
         .collect()

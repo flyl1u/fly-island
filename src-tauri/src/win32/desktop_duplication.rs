@@ -394,6 +394,12 @@ struct CompositionData {
 
 type SetCompositionFn = unsafe extern "system" fn(HWND, *mut CompositionData) -> BOOL;
 
+/// Wait until preceding window visibility changes have reached desktop composition.
+pub(crate) fn wait_for_compositor() {
+    // SAFETY: DwmFlush has no pointer arguments and is called off the UI thread.
+    let _ = unsafe { windows::Win32::Graphics::Dwm::DwmFlush() };
+}
+
 /// WCA_EXCLUDED_FROM_DDA (Windows 10 1709+): the window is left out of Desktop Duplication only.
 const WCA_EXCLUDED_FROM_DDA: u32 = 24;
 

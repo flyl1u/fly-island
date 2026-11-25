@@ -1,3 +1,4 @@
+import type { ArrowHeads } from "../../features/screenshot/arrowGeometry";
 // 截图覆盖层的状态：工具样式、选区、标注列表、文字编辑态，以及由此派生的尺寸。
 // 指针交互在 useScreenshotGestures 里，抓屏与导出在 useScreenshotCapture 里。
 import { useCallback, useRef, useState } from "react";
@@ -14,6 +15,7 @@ import {
 } from "../../features/screenshot/annotations";
 import type { ScreenRect } from "../../features/screenshot/api";
 import { FALLBACK_FONTS } from "./useScreenshotCapture";
+import { patchAnnotation, type AnnotationStylePatch } from "../../features/screenshot/annotationEditing";
 
 export type TextFormat = { bold: boolean; italic: boolean; underline: boolean; strike: boolean };
 
@@ -35,7 +37,8 @@ export type Drag =
   | { mode: "resize"; handle: Handle; from: Point; origin: ScreenRect }
   | { mode: "draw" }
   | { mode: "text"; index: number; from: Point; origin: Point }
-  | { mode: "node"; index: number; key: string; from: Point; origin: { from: Point; to: Point } };
+  | { mode: "annotation"; index: number; from: Point; origin: Annotation }
+  | { mode: "node"; index: number; key: string; from: Point; origin: Annotation };
 
 export type EditorState = ReturnType<typeof useScreenshotEditor>;
 
@@ -46,6 +49,8 @@ export function useScreenshotEditor() {
   const [tool, setTool] = useState<Tool>("move");
   const [shape, setShape] = useState<Shape>("rect");
   const [dash, setDash] = useState<Dash>("solid");
+  const [filled, setFilled] = useState(false);
+  const [arrowHeads, setArrowHeads] = useState<ArrowHeads>("single");
   const [strokeWidth, setStrokeWidth] = useState(3);
   const [textSize, setTextSize] = useState(20);
   const [textFont, setTextFont] = useState(FALLBACK_FONTS[0]);
@@ -65,6 +70,22 @@ export function useScreenshotEditor() {
   const [dragging, setDragging] = useState(false);
 
   const textInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const textSelection = useRef<{ start: number; end: number; direction: "forward" | "backward" | "none" } | null>(null);
+  const rememberTextSelection = () => {
+    const input = textInputRef.current;
+    if (input && document.activeElement === input) {
+      textSelection.current = { start: input.selectionStart, end: input.selectionEnd, direction: input.selectionDirection };
+    }
+  };
+  const restoreTextSelection = () => {
+    const input = textInputRef.current;
+    const range = textSelection.current;
+    requestAnimationFrame(() => {
+      if (!input || textInputRef.current !== input) return;
+      input.focus({ preventScroll: true });
+      if (range) input.setSelectionRange(range.start, range.end, range.direction);
+    });
+  };
   const drag = useRef<Drag | null>(null);
   const pendingSnap = useRef<ScreenRect | null>(null);
   const lastMove = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -80,12 +101,14 @@ export function useScreenshotEditor() {
     setDraft(null);
     setEditing(null);
     setSelected(null);
+    setHoverIndex(-1);
     setMagnifier(null);
     setDragging(false);
     counters.current = { arabic: 1, alpha: 1, roman: 1 };
     drag.current = null;
     pendingSnap.current = null;
     lastMove.current = null;
+    textSelection.current = null;
   }, []);
 
   const addItems = useCallback((extra: Annotation[]) => setItems((list) => [...list, ...extra]), []);
@@ -158,6 +181,7 @@ export function useScreenshotEditor() {
 
   /** 点已有的文字：带着它当前的样式进入编辑。 */
   const editExistingText = (index: number, target: Extract<Annotation, { kind: "text" }>) => {
+    textSelection.current = null;
     setEditing({
       index,
       at: target.at,
@@ -175,10 +199,15 @@ export function useScreenshotEditor() {
 
   /** 点空白：在这一点上新建一条文字。 */
   const startNewText = (at: Point) => {
+    textSelection.current = null;
     setEditing({ index: null, at, value: "", size: textSize, font: textFont, angle: 0, color, ...textFormat });
   };
 
   const selectedItem = selected === null ? null : items[selected];
+  const patchSelected = (patch: AnnotationStylePatch) => {
+    if (selected === null) return;
+    setItems((list) => list.map((item, index) => index === selected ? patchAnnotation(item, patch) : item));
+  };
   const selectedText = selectedItem && selectedItem.kind === "text" ? selectedItem : null;
   const editWidth = editing ? measureText(editing.value, editing.size, editing.font, editing.bold, editing.italic) : 0;
   const editHeight = measureHeight(editing?.value ?? "", editing?.size ?? 20);
@@ -201,6 +230,12 @@ export function useScreenshotEditor() {
     setShape,
     dash,
     setDash,
+    arrowHeads,
+    setArrowHeads,
+    filled,
+    setFilled,
+    selectedItem,
+    patchSelected,
     strokeWidth,
     setStrokeWidth,
     textSize,
@@ -238,6 +273,8 @@ export function useScreenshotEditor() {
     editWidth,
     editHeight,
     textInputRef,
+    rememberTextSelection,
+    restoreTextSelection,
     textResize,
     rotateCenter,
     drag,

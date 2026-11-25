@@ -1,6 +1,9 @@
+import { useState } from "react";
+import { fitScreenSelection } from "../../features/screenshot/geometry";
 // 截图覆盖层的指针交互：拉选区、拖控制点、在标注层上画/选/拖/缩放。
 // 状态全部来自 useScreenshotEditor，这里只有「指针进来之后做什么」。
-import { hitStroke, hitText, scaleItem, type Annotation, type Point, type Tool } from "../../features/screenshot/annotations";
+import { type Point, type Tool } from "../../features/screenshot/annotations";
+import { hitAnnotation, moveAnnotation, resizeAnnotation, wheelAnnotation } from "../../features/screenshot/annotationEditing";
 import type { ScreenRect } from "../../features/screenshot/api";
 import { MIN_SELECTION, type EditorState, type Handle } from "./useScreenshotEditor";
 
@@ -36,20 +39,8 @@ function local(event: React.PointerEvent): Point {
   return { x: event.clientX - box.left, y: event.clientY - box.top };
 }
 
-/** 拖边框控制点：按 nw/ne/sw/se 的方位各自挪对应的边。 */
-function resizeNodes(item: Extract<Annotation, { kind: "rect" | "ellipse" }>, key: string, dx: number, dy: number): Annotation {
-  const left = Math.min(item.from.x, item.to.x);
-  const right = Math.max(item.from.x, item.to.x);
-  const top = Math.min(item.from.y, item.to.y);
-  const bottom = Math.max(item.from.y, item.to.y);
-  const nextLeft = key.includes("w") ? left + dx : left;
-  const nextRight = key.includes("e") ? right + dx : right;
-  const nextTop = key.includes("n") ? top + dy : top;
-  const nextBottom = key.includes("s") ? bottom + dy : bottom;
-  return { ...item, from: { x: nextLeft, y: nextTop }, to: { x: nextRight, y: nextBottom } };
-}
-
 export function useScreenshotGestures(editor: EditorState) {
+  const [canvasCursor, setCanvasCursor] = useState("crosshair");
   /** 慢速拖动才出放大镜：速度快时认为是「扫」，不打扰。 */
   const updateMagnifier = (x: number, y: number) => {
     const now = performance.now();
@@ -65,13 +56,16 @@ export function useScreenshotGestures(editor: EditorState) {
     const target = event.target as HTMLElement;
     // 点旋转手柄、框体控制点、或文本框内部都不应该提交
     if (target.dataset.rotate || target.dataset.handle || target.dataset.textbox) return;
-    if (target.closest(".screenshot-text-input")) return;
+    if (target.closest(".screenshot-text-input, .screenshot-rows, .screenshot-save-mask")) return;
     if (editor.editing) {
       editor.commitText(editor.editing);
       return;
     }
     if (event.button !== 0 || editor.rect) return;
-    editor.pendingSnap.current = editor.hoverIndex >= 0 ? (windowRects[editor.hoverIndex] ?? null) : null;
+    const containsPointer = (rect: ScreenRect) => event.clientX >= rect.x && event.clientX <= rect.x + rect.width
+      && event.clientY >= rect.y && event.clientY <= rect.y + rect.height;
+    const hovered = windowRects[editor.hoverIndex];
+    editor.pendingSnap.current = hovered && containsPointer(hovered) ? hovered : windowRects.find(containsPointer) ?? null;
     editor.drag.current = { mode: "create", from: { x: event.clientX, y: event.clientY } };
     editor.setDragging(true);
     editor.setRect({ x: event.clientX, y: event.clientY, width: 0, height: 0 });
@@ -92,7 +86,7 @@ export function useScreenshotGestures(editor: EditorState) {
       }
       return;
     }
-    if (current.mode === "draw" || current.mode === "text") return;
+    if (current.mode === "draw" || current.mode === "text" || current.mode === "annotation" || current.mode === "node") return;
     updateMagnifier(event.clientX, event.clientY);
     if (current.mode === "create") {
       editor.setRect(fromPoints(current.from, { x: event.clientX, y: event.clientY }));
@@ -114,55 +108,41 @@ export function useScreenshotGestures(editor: EditorState) {
     editor.setDragging(false);
     editor.lastMove.current = null;
     editor.setMagnifier(null);
+    editor.setHoverIndex(-1);
     if (!current) return;
     if (current.mode === "create") {
       const snap = editor.pendingSnap.current;
       editor.pendingSnap.current = null;
       editor.setRect((value) => {
-        if (value && value.width >= MIN_SELECTION && value.height >= MIN_SELECTION) return value;
+        if (value && value.width >= MIN_SELECTION && value.height >= MIN_SELECTION) return fitScreenSelection(value, window.innerWidth, window.innerHeight);
         if (snap) return snap;
         return null;
       });
     } else {
       editor.pendingSnap.current = null;
-      editor.setRect((value) => (value && value.width >= MIN_SELECTION && value.height >= MIN_SELECTION ? value : null));
+      editor.setRect((value) => (value && value.width >= MIN_SELECTION && value.height >= MIN_SELECTION
+        ? fitScreenSelection(value, window.innerWidth, window.innerHeight) : null));
     }
   };
 
   const onCanvasDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (event.button !== 0) return;
     const at = local(event);
-    if (editor.tool === "text") {
-      const hit = hitText(editor.items, at);
-      const target = hit === null ? null : editor.items[hit];
-      if (hit !== null && target && target.kind === "text") {
-        // 点已有文字：先当拖动候选，移动就拖走，没动（单击）才进编辑。
-        // 同时选中它，八向控制点/旋转手柄才显示，方便改字号和颜色。
-        editor.setSelected(hit);
-        editor.drag.current = { mode: "text", index: hit, from: at, origin: { ...target.at } };
-        editor.setDragging(true);
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } else { editor.setSelected(null); editor.startNewText(at); }
+    event.stopPropagation();
+    if (editor.editing) { editor.commitText(editor.editing); return; }
+    const hit = hitAnnotation(editor.items, at);
+    if (hit !== null) {
+      setCanvasCursor("grabbing");
+      editor.setSelected(hit);
+      editor.drag.current = { mode: "annotation", index: hit, from: at, origin: editor.items[hit] };
+      editor.setDragging(true);
+      event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
+    setCanvasCursor(editor.tool === "move" ? "move" : "crosshair");
+    editor.setSelected(null);
+    if (editor.tool === "text") { editor.startNewText(at); return; }
     if (editor.tool === "move") {
-      // 先看是不是点在文字上：是就拖动它。
-      const textHit = hitText(editor.items, at);
-      const textTarget = textHit === null ? null : editor.items[textHit];
-      if (textHit !== null && textTarget && textTarget.kind === "text") {
-        editor.setSelected(textHit);
-        editor.drag.current = { mode: "text", index: textHit, from: at, origin: { ...textTarget.at } };
-        editor.setDragging(true);
-        event.currentTarget.setPointerCapture(event.pointerId);
-        return;
-      }
-      // 再看是不是点在框/椭圆/箭头上：选中它（滚轮改粗细、色板改色）。
-      const strokeHit = hitStroke(editor.items, at);
-      if (strokeHit !== null) {
-        editor.setSelected(strokeHit);
-        return;
-      }
-      editor.setSelected(null);
       if (!editor.rect) return;
       editor.drag.current = { mode: "move", from: { x: event.clientX, y: event.clientY }, origin: editor.rect };
       editor.setDragging(true);
@@ -182,14 +162,23 @@ export function useScreenshotGestures(editor: EditorState) {
       editor.drag.current = null;
       editor.setDragging(false);
     } else if (editor.tool === "mosaic") editor.setDraft({ kind: "mosaic", size: editor.mosaicSize, from: at, to: at });
-    else if (editor.tool === "arrow") editor.setDraft({ kind: "arrow", ...style, from: at, to: at });
-    else editor.setDraft({ kind: editor.shape, ...style, from: at, to: at });
+    else if (editor.tool === "arrow") editor.setDraft({ kind: "arrow", ...style, heads: editor.arrowHeads, from: at, to: at });
+    else editor.setDraft({ kind: editor.shape, ...style, filled: editor.filled, from: at, to: at });
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const onCanvasMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const current = editor.drag.current;
-    if (!current) return;
+    if (!current) {
+      setCanvasCursor(hitAnnotation(editor.items, local(event)) !== null || editor.tool === "move" ? "move" : "crosshair");
+      return;
+    }
+    if (current.mode === "annotation") {
+      const at = local(event);
+      editor.setItems((list) => list.map((item, index) => index === current.index
+        ? moveAnnotation(current.origin, at.x - current.from.x, at.y - current.from.y) : item));
+      return;
+    }
     if (current.mode === "text") {
       const at = local(event);
       editor.setItems((list) =>
@@ -216,6 +205,7 @@ export function useScreenshotGestures(editor: EditorState) {
   };
 
   const onCanvasUp = () => {
+    setCanvasCursor(editor.selected !== null ? "move" : "crosshair");
     const current = editor.drag.current;
     editor.drag.current = null;
     editor.setDragging(false);
@@ -225,10 +215,9 @@ export function useScreenshotGestures(editor: EditorState) {
       return;
     }
     if (current.mode !== "draw") return;
-    editor.setDraft((value) => {
-      if (value) editor.setItems((list) => [...list, value]);
-      return null;
-    });
+    const committed = editor.draft;
+    if (committed) editor.setItems((list) => [...list, committed]);
+    editor.setDraft(null);
   };
 
   const startMove = (event: React.PointerEvent<HTMLElement>) => {
@@ -256,26 +245,18 @@ export function useScreenshotGestures(editor: EditorState) {
   };
 
   const onWheel = (event: React.WheelEvent<HTMLElement>, windowRects: ScreenRect[]) => {
+    if (event.target instanceof HTMLElement && event.target.closest(".screenshot-rows, .screenshot-save-mask, .screenshot-text-input")) return;
+    if (editor.editing || !event.deltaY) return;
     event.preventDefault();
     const step = event.deltaY < 0 ? 1 : -1;
     if (editor.selected !== null) {
-      editor.setItems((list) =>
-        list.map((item, index) => {
-          if (index !== editor.selected) return item;
-          if (item.kind === "text" || item.kind === "number") {
-            return { ...item, size: Math.max(8, Math.min(160, item.size + step * 2)) };
-          }
-          if (item.kind === "mosaic") return { ...item, size: Math.max(4, Math.min(40, item.size + step * 2)) };
-          // Shift+滚轮：改线宽；普通滚轮：缩放大小。
-          if (event.shiftKey) {
-            return { ...item, width: Math.max(1, Math.min(24, item.width + step)) };
-          }
-          return scaleItem(item, event.deltaY < 0 ? 1.04 : 0.96);
-        }),
-      );
+      if (editor.selectedItem?.kind === "text") {
+        editor.patchText({ size: Math.max(8, Math.min(160, editor.selectedItem.size + step * 2)) });
+        return;
+      }
+      editor.setItems((list) => list.map((item, index) => index === editor.selected ? wheelAnnotation(item, event.deltaY) : item));
       return;
     }
-    if (editor.editing) return;
     if (!editor.rect) {
       const total = windowRects.length;
       if (total === 0) return;
@@ -293,6 +274,15 @@ export function useScreenshotGestures(editor: EditorState) {
     }
   };
 
+  const startNode = (key: string) => (event: React.PointerEvent<HTMLSpanElement>) => {
+    if (event.button !== 0 || editor.selected === null || !editor.selectedItem) return;
+    event.stopPropagation();
+    editor.drag.current = { mode: "node", index: editor.selected, key,
+      from: { x: event.clientX, y: event.clientY }, origin: editor.selectedItem };
+    editor.setDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
   const onNodeMove = (event: React.PointerEvent<HTMLSpanElement>) => {
     const current = editor.drag.current;
     if (!current || current.mode !== "node") return;
@@ -301,14 +291,7 @@ export function useScreenshotGestures(editor: EditorState) {
     editor.setItems((list) =>
       list.map((item, index) => {
         if (index !== current.index) return item;
-        const { from, to } = current.origin;
-        if (item.kind === "arrow") {
-          return current.key === "from"
-            ? { ...item, from: { x: from.x + dx, y: from.y + dy } }
-            : { ...item, to: { x: to.x + dx, y: to.y + dy } };
-        }
-        if (item.kind === "rect" || item.kind === "ellipse") return resizeNodes(item, current.key, dx, dy);
-        return item;
+        return resizeAnnotation(current.origin, current.key, dx, dy);
       }),
     );
   };
@@ -324,6 +307,8 @@ export function useScreenshotGestures(editor: EditorState) {
     startResize,
     startStrip,
     onWheel,
+    canvasCursor,
     onNodeMove,
+    startNode,
   };
 }

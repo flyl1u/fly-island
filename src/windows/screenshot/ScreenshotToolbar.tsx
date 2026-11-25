@@ -1,3 +1,5 @@
+import type { ArrowHeads } from "../../features/screenshot/arrowGeometry";
+import "./ScreenshotToolbar.css";
 // 截图覆盖层的工具条：属性行（形状/线型/线宽/序号/马赛克/文字/颜色）、工具行、操作行和 OCR 结果。
 import {
   ArrowUpRight,
@@ -59,7 +61,19 @@ type ToolbarProps = { editor: EditorState; capture: CaptureState };
 
 export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
   const { screenshot: t } = useTranslation();
-  const strokeable = editor.tool === "shape" || editor.tool === "arrow" || editor.tool === "pen";
+  const selected = editor.selectedItem;
+  const optionTool = editor.editing ? "text" : selected
+    ? (selected.kind === "rect" || selected.kind === "ellipse" ? "shape" : selected.kind) : editor.tool;
+  const shape = selected?.kind === "rect" || selected?.kind === "ellipse" ? selected.kind : editor.shape;
+  const dash = selected && "dash" in selected ? selected.dash ?? "solid" : editor.dash;
+  const width = selected && "width" in selected ? selected.width : editor.strokeWidth;
+  const filled = selected?.kind === "rect" || selected?.kind === "ellipse" ? !!selected.filled : editor.filled;
+  const color = editor.editing?.color ?? (selected && "color" in selected ? selected.color : editor.color);
+  const numberSize = selected?.kind === "number" ? selected.size : editor.numberSize;
+  const numberStyle = selected?.kind === "number" ? selected.style : editor.numberStyle;
+  const mosaicSize = selected?.kind === "mosaic" ? selected.size : editor.mosaicSize;
+  const arrowHeads = selected?.kind === "arrow" ? selected.heads ?? "single" : editor.arrowHeads;
+  const strokeable = optionTool === "shape" || optionTool === "arrow" || optionTool === "pen";
 
   /** 文字属性：编辑中改编辑态，选中改选中的文字，否则改下一段的默认样式。 */
   const patchFormat = (key: keyof EditorState["textFormat"]) => {
@@ -86,41 +100,54 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
 
   return (
     <>
-      {editor.tool !== "move" || editor.selectedText ? (
+      {optionTool !== "move" ? (
         <div className="screenshot-row screenshot-row-options">
-          {editor.tool === "shape" ? (
+          {optionTool === "shape" ? (
             <>
               <button
                 type="button"
-                className={`screenshot-chip ${editor.shape === "rect" ? "screenshot-chip-active" : ""}`}
+                className={`screenshot-chip ${shape === "rect" ? "screenshot-chip-active" : ""}`}
                 title={t.shapeRect}
                 aria-label={t.shapeRect}
-                onClick={() => editor.setShape("rect")}
+                onClick={() => { editor.setShape("rect"); editor.patchSelected({ shape: "rect" }); }}
               >
                 <Square size={18} aria-hidden />
               </button>
               <button
                 type="button"
-                className={`screenshot-chip ${editor.shape === "ellipse" ? "screenshot-chip-active" : ""}`}
+                className={`screenshot-chip ${shape === "ellipse" ? "screenshot-chip-active" : ""}`}
                 title={t.shapeEllipse}
                 aria-label={t.shapeEllipse}
-                onClick={() => editor.setShape("ellipse")}
+                onClick={() => { editor.setShape("ellipse"); editor.patchSelected({ shape: "ellipse" }); }}
               >
                 <Circle size={18} aria-hidden />
               </button>
+              <label className="screenshot-option-label">
+                <input type="checkbox" checked={filled} aria-label={t.fillShape}
+                  onChange={(event) => { editor.setFilled(event.target.checked); editor.patchSelected({ filled: event.target.checked }); }} />
+                {t.fillShape}
+              </label>
             </>
           ) : null}
 
+          {optionTool === "arrow" ? (
+            <label className="screenshot-option-label">{t.arrowStyle}
+              <select className="screenshot-select screenshot-select-arrow" value={arrowHeads} aria-label={t.arrowStyle}
+                onChange={(event) => { const next = event.target.value as ArrowHeads; editor.setArrowHeads(next); editor.patchSelected({ arrowHeads: next }); }}>
+                <option value="single">{t.arrowSingle}</option><option value="double">{t.arrowDouble}</option><option value="none">{t.arrowNone}</option>
+              </select>
+            </label>
+          ) : null}
           {strokeable ? (
             <>
               {DASHES.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className={`screenshot-chip screenshot-chip-dash ${editor.dash === item.id ? "screenshot-chip-active" : ""}`}
+                  className={`screenshot-chip screenshot-chip-dash ${dash === item.id ? "screenshot-chip-active" : ""}`}
                   title={t[item.label]}
                   aria-label={t[item.label]}
-                  onClick={() => editor.setDash(item.id)}
+                  onClick={() => { editor.setDash(item.id); editor.patchSelected({ dash: item.id }); }}
                 >
                   <span className={`screenshot-dash-line screenshot-dash-${item.id}`} />
                 </button>
@@ -130,26 +157,27 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
                 type="range"
                 min={1}
                 max={24}
-                value={editor.strokeWidth}
-                title={t.lineWidth(editor.strokeWidth)}
+                value={width}
+                title={t.lineWidth(width)}
                 aria-label={t.lineWidthLabel}
-                onChange={(event) => editor.setStrokeWidth(Number(event.target.value))}
+                onChange={(event) => { editor.setStrokeWidth(Number(event.target.value)); editor.patchSelected({ width: Number(event.target.value) }); }}
               />
             </>
           ) : null}
 
-          {editor.tool === "number" ? (
+          {optionTool === "number" ? (
             <>
               {NUMBER_STYLES.map((style) => (
                 <button
                   key={style.id}
                   type="button"
-                  className={`screenshot-chip ${editor.numberStyle === style.id ? "screenshot-chip-active" : ""}`}
+                  className={`screenshot-chip ${numberStyle === style.id ? "screenshot-chip-active" : ""}`}
                   title={style.title}
                   aria-label={style.title}
                   onClick={() => {
                     editor.counters.current[style.id] = 1;
                     editor.setNumberStyle(style.id);
+                    editor.patchSelected({ numberStyle: style.id });
                   }}
                 >
                   {style.sample}
@@ -159,15 +187,15 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
                 className="screenshot-range"
                 type="range"
                 min={12}
-                max={72}
-                value={editor.numberSize}
+                max={120}
+                value={numberSize}
                 aria-label={t.numberSizeLabel}
-                onChange={(event) => editor.setNumberSize(Number(event.target.value))}
+                onChange={(event) => { editor.setNumberSize(Number(event.target.value)); editor.patchSelected({ size: Number(event.target.value) }); }}
               />
             </>
           ) : null}
 
-          {editor.tool === "mosaic" ? (
+          {optionTool === "mosaic" ? (
             <label className="screenshot-option-label">
               {t.grain}
               <input
@@ -175,22 +203,24 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
                 type="range"
                 min={4}
                 max={40}
-                value={editor.mosaicSize}
+                value={mosaicSize}
                 aria-label={t.grainLabel}
-                onChange={(event) => editor.setMosaicSize(Number(event.target.value))}
+                onChange={(event) => { editor.setMosaicSize(Number(event.target.value)); editor.patchSelected({ size: Number(event.target.value) }); }}
               />
             </label>
           ) : null}
 
-          {editor.tool === "text" ? (
+          {optionTool === "text" ? (
             <>
               <select
                 className="screenshot-select"
+                aria-label={t.fontFamilyLabel}
                 value={editor.editing?.font ?? editor.selectedText?.font ?? editor.textFont}
                 onChange={(event) => {
                   if (editor.editing) editor.setEditing({ ...editor.editing, font: event.target.value });
                   else if (editor.selectedText) editor.patchText({ font: event.target.value });
                   else editor.setTextFont(event.target.value);
+                  if (editor.editing) editor.restoreTextSelection();
                 }}
               >
                 {(() => {
@@ -210,6 +240,12 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
                 max={160}
                 value={editor.editing?.size ?? editor.selectedText?.size ?? editor.textSize}
                 aria-label={t.fontSizeLabel}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && editor.editing) {
+                    event.preventDefault();
+                    editor.restoreTextSelection();
+                  }
+                }}
                 onChange={(event) => {
                   const next = Math.max(8, Math.min(160, Number(event.target.value)));
                   if (editor.editing) editor.setEditing({ ...editor.editing, size: next });
@@ -251,7 +287,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
                 type="button"
                 aria-label={value}
                 title={value}
-                className={`screenshot-color ${editor.color === value ? "screenshot-color-active" : ""}`}
+                className={`screenshot-color ${color === value ? "screenshot-color-active" : ""}`}
                 style={{ background: value }}
                 onClick={() => pickColor(value)}
               />
@@ -265,10 +301,13 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
           <button
             key={item.id}
             type="button"
-            className={`screenshot-tool ${editor.tool === item.id ? "screenshot-tool-active" : ""}`}
+            className={`screenshot-tool ${optionTool === item.id ? "screenshot-tool-active" : ""}`}
             title={t[item.label]}
             aria-label={t[item.label]}
-            onClick={() => editor.setTool(item.id)}
+            onClick={() => {
+              if (editor.editing) editor.commitText(editor.editing);
+              editor.setSelected(null); editor.setTool(item.id);
+            }}
           >
             <item.Icon size={19} aria-hidden />
           </button>
@@ -291,7 +330,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
           className="screenshot-tool"
           title={t.undoHint}
           aria-label={t.undo}
-          onClick={() => editor.setItems((value) => value.slice(0, -1))}
+          onClick={() => { editor.setSelected(null); editor.setItems((value) => value.slice(0, -1)); }}
         >
           <Undo2 size={19} aria-hidden />
         </button>
