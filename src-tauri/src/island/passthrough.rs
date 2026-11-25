@@ -5,6 +5,7 @@ use tauri::{Emitter, WebviewWindow};
 use windows::Win32::Foundation::HWND;
 
 use super::{
+    corridor::PeekCorridor,
     geometry::{is_position_animating, tucked_top_offset, STAGE_WINDOW_WIDTH},
     state::{game_quiet, read_window_state, CornerShape, IslandMode, IslandWindowState},
 };
@@ -22,6 +23,7 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
     thread::spawn(move || {
         let mut ignoring_cursor = false;
         let mut was_inside = false;
+        let mut corridor = PeekCorridor::default();
         // Asked once: every `window.hwnd()` is a round trip to the main event loop, which at
         // this loop's 83 Hz kept the main thread busy even with the cursor nowhere near. The
         // handle stays the same for the window's life.
@@ -52,9 +54,13 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             // A press that started on the island (selecting text, dragging a slider or a
             // scrollbar) keeps the window taking the mouse until it is released: passing clicks
             // through mid-drag ended the gesture and dropped the selection being made.
-            let is_inside = hwnd.is_none_or(cursor_is_inside_island)
+            let in_shape = hwnd.is_none_or(cursor_is_inside_island)
                 || (!ignoring_cursor && win32::input::is_left_button_down());
-            let should_ignore = !is_inside;
+            // Between the tucked line and the island that slid out from it the cursor still
+            // counts as hovering, but clicks keep falling through (corridor.rs).
+            let in_corridor = hwnd.is_some_and(|hwnd| corridor_hit(&mut corridor, hwnd, in_shape));
+            let is_inside = in_shape || in_corridor;
+            let should_ignore = !in_shape;
 
             if should_ignore != ignoring_cursor
                 && window.set_ignore_cursor_events(should_ignore).is_ok()
@@ -76,6 +82,25 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             thread::sleep(Duration::from_millis(12));
         }
     });
+}
+
+/// Feeds the corridor tracker the window and cursor now; whether the corridor holds the cursor.
+fn corridor_hit(corridor: &mut PeekCorridor, hwnd: HWND, in_shape: bool) -> bool {
+    let (Some(window_rect), Some(cursor)) = (win32::window::window_rect(hwnd), win32::window::cursor_position()) else {
+        return false;
+    };
+    let window_width = f64::from(window_rect.right - window_rect.left).max(1.0);
+    let (hit, change) = corridor.observe(
+        read_window_state(),
+        (f64::from(window_rect.left), f64::from(window_rect.top)),
+        window_width / STAGE_WINDOW_WIDTH,
+        (f64::from(cursor.x), f64::from(cursor.y)),
+        in_shape,
+    );
+    if let Some(reason) = change.reason() {
+        crate::app_log::event(crate::app_log::Category::Island, "hover_corridor", &[("reason", reason)]);
+    }
+    hit
 }
 
 pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {

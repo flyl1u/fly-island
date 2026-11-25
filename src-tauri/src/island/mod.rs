@@ -3,6 +3,7 @@
 
 pub(crate) mod glass_capture;
 pub(crate) mod focus;
+mod corridor;
 mod diagnostics;
 mod follow;
 mod geometry;
