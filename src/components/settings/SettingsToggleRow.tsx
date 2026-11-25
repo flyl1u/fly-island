@@ -9,7 +9,6 @@ export function SettingsToggleRow({
   checked,
   disabled = false,
   indent,
-  dimmed,
   onChange,
 }: {
   title: ReactNode;
@@ -17,7 +16,6 @@ export function SettingsToggleRow({
   checked: boolean;
   disabled?: boolean;
   indent?: boolean;
-  dimmed?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   const id = useId();
@@ -26,7 +24,7 @@ export function SettingsToggleRow({
       title={title}
       description={description}
       indent={indent}
-      dimmed={dimmed}
+      disabled={disabled}
       labelFor={id}
       control={<SettingsSwitch id={id} checked={checked} disabled={disabled} onChange={onChange} />}
     />

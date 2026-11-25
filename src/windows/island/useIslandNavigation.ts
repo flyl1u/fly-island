@@ -53,6 +53,12 @@ export function useIslandNavigation() {
     setIsTucked(true);
   }, [setIslandMode]);
 
+  /** Tucks because a browser came to the front (browser auto-tuck): not an idle tuck, so keep-visible does not undo it. */
+  const tuckForBrowser = useCallback(() => {
+    setIslandMode("collapsed", "browser");
+    setIsTucked(true);
+  }, [setIslandMode]);
+
   const minimizeToEdge = useCallback(() => {
     setIslandMode("collapsed", "minimize_button");
     setIsTucked(true);
@@ -154,6 +160,7 @@ export function useIslandNavigation() {
     setPage,
     collapseIsland,
     tuckIsland,
+    tuckForBrowser,
     revealIsland,
     revealForMessage,
     minimizeToEdge,

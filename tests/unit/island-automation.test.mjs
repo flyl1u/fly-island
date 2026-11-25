@@ -44,6 +44,11 @@ function mount(name, initialArgs) {
         if (!Object.is(updated, slots[index])) { slots[index] = updated; dirty = true; }
       }];
     },
+    useRef(initial) {
+      const index = cursor++;
+      if (!(index in slots)) slots[index] = { current: initial };
+      return slots[index];
+    },
     useEffect(effect, deps) {
       const index = cursor++;
       const previous = slots[index];
@@ -210,5 +215,95 @@ test("ending a keep-visible activity restarts the full idle wait and never revea
   assert.equal(app.timerCount, 0);
   app.tick(60_000);
   assert.equal(tucks, 1);
+  app.unmount();
+});
+
+test("browser auto-tuck is immediate and restores its own tuck immediately", () => {
+  let tucked = false;
+  let tucks = 0;
+  let reveals = 0;
+  const tuck = () => { tucks++; tucked = true; };
+  const reveal = () => { reveals++; tucked = false; };
+  const args = (browser, hovering = false) => [browser, true, tucked, hovering, false, tuck, reveal];
+  const app = mount("useBrowserAutoTuck", args(false));
+  app.render(args(true));
+  assert.equal(tucks, 1);
+  assert.equal(tucked, true);
+  app.render(args(true));
+  app.render(args(false));
+  assert.equal(reveals, 1);
+  assert.equal(tucked, false);
+  app.unmount();
+});
+
+test("browser auto-tuck waits while the pointer is on the expanded island, then tucks on leave", () => {
+  let tucked = false;
+  let tucks = 0;
+  const tuck = () => { tucks++; tucked = true; };
+  const reveal = () => { tucked = false; };
+  const args = (browser, hovering = false) => [browser, true, tucked, hovering, false, tuck, reveal];
+  const app = mount("useBrowserAutoTuck", args(false));
+  app.render(args(true));
+  assert.equal(tucks, 1);
+  tucked = false;
+  app.render(args(true, true));
+  assert.equal(tucks, 1);
+  app.render(args(true, false));
+  assert.equal(tucks, 2);
+  assert.equal(tucked, true);
+  app.unmount();
+});
+
+test("browser re-entry tucks immediately and leaves pre-existing user tucks alone", () => {
+  let tucked = false;
+  let tucks = 0;
+  let reveals = 0;
+  const tuck = () => { tucks++; tucked = true; };
+  const reveal = () => { reveals++; tucked = false; };
+  const args = (browser, hovering = false) => [browser, true, tucked, hovering, false, tuck, reveal];
+  const app = mount("useBrowserAutoTuck", args(false));
+  app.render(args(true));
+  assert.equal(tucks, 1);
+  app.render(args(true));
+  app.render(args(false));
+  assert.equal(reveals, 1);
+  assert.equal(tucked, false);
+  app.render(args(true));
+  assert.equal(tucks, 2);
+  app.render(args(true));
+  app.render(args(false));
+  assert.equal(reveals, 2);
+  assert.equal(tucks, 2);
+  app.unmount();
+
+  tucked = true;
+  const alreadyTucked = mount("useBrowserAutoTuck", args(false));
+  alreadyTucked.render(args(true));
+  alreadyTucked.render(args(false));
+  assert.equal(reveals, 2);
+  alreadyTucked.unmount();
+});
+
+test("browser tuck waits for game mode and disabling browser tuck restores immediately", () => {
+  let tucked = false;
+  let reveals = 0;
+  const tuck = () => { tucked = true; };
+  const reveal = () => { tucked = false; reveals++; };
+  const args = (browser, enabled, holds, hovering = false) => [browser, enabled, tucked, hovering, holds, tuck, reveal];
+  const app = mount("useBrowserAutoTuck", args(false, true, true));
+  app.render(args(true, true, true));
+  app.tick(5_000);
+  assert.equal(tucked, false);
+  app.render(args(true, true, false));
+  assert.equal(tucked, true);
+  app.render(args(false, true, true));
+  assert.equal(reveals, 0);
+  app.render(args(false, true, false));
+  assert.equal(reveals, 1);
+  app.render(args(true, true, false));
+  assert.equal(tucked, true);
+  app.render(args(false, false, false));
+  assert.equal(reveals, 2);
+  assert.equal(tucked, false);
   app.unmount();
 });

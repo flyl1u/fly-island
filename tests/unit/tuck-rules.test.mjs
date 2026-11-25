@@ -70,7 +70,9 @@ test("the idle plan and game mode honour neverAutoTuck", async () => {
   const settings = { autoTuck: true, neverAutoTuck: true, gameAutoTuck: true, tuckDelaySeconds: 30, autoCollapseSeconds: 30 };
   assert.equal(idlePlan("collapsed", settings, false), null);
   assert.deepEqual(idlePlan("expanded", settings, false), { seconds: 30, action: "collapse" });
-  const fullscreen = { active: true, onIslandMonitor: true };
-  const effects = gameModeEffects(fullscreen, { gameDoNotDisturb: true, gameAutoTuck: true, neverAutoTuck: true });
-  assert.deepEqual(effects, { quiet: true, tuck: false });
+  const fullscreen = { active: true, onIslandMonitor: true, browserOnIslandMonitor: true };
+  const on = { gameDoNotDisturb: true, gameAutoTuck: true, browserAutoTuck: true };
+  assert.deepEqual(gameModeEffects(fullscreen, { ...on, neverAutoTuck: true }), { quiet: true, tuck: false, browserOnIslandMonitor: false });
+  assert.deepEqual(gameModeEffects(fullscreen, on), { quiet: true, tuck: true, browserOnIslandMonitor: true });
+  assert.equal(gameModeEffects(fullscreen, { ...on, browserAutoTuck: false }).browserOnIslandMonitor, false);
 });

@@ -1,6 +1,7 @@
 //! Windows integration: launch at startup, updater proxy and config, todo Markdown
 //! export, folder picker, full-screen app detection, settings backups.
 
+mod browser_apps;
 pub(crate) mod folder_dialog;
 pub(crate) mod fonts;
 pub(crate) mod fullscreen;

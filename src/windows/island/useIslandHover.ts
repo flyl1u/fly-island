@@ -15,14 +15,16 @@ type IslandHoverOptions = {
   navigation: ReturnType<typeof useIslandNavigation>;
   /** Game mode keeps the island quiet. */
   quiet: boolean;
+  /** A browser on this monitor tucks the island and requires a deliberate hover to reveal it. */
+  browserOnIslandMonitor: boolean;
   hasMessagePreview: boolean;
   /** The island names a running agent, so opening it shows the Agent page. */
   namesAgent: boolean;
   openEnabledPage: (page: IslandPage, reason?: IslandModeReason) => void;
 };
 
-/** Opening the island by hovering it, tucked or not, and the panel preview; returns the tucked island's hover handler. */
-export function useIslandHover({ settings, navigation, quiet, hasMessagePreview, namesAgent, openEnabledPage }: IslandHoverOptions) {
+/** Opening the island by hovering it, tucked or not, and the panel preview. */
+export function useIslandHover({ settings, navigation, quiet, browserOnIslandMonitor, hasMessagePreview, namesAgent, openEnabledPage }: IslandHoverOptions) {
   const pickerOpen = useIslandPickerOpen();
   const { mode, page, isTucked, isPeeking, collapseIsland, peekIsland, retractsAfterPeek, resumePeek } = navigation;
   // While the island names a running agent, opening it shows the Agent page.
@@ -46,9 +48,11 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     onExpand: openCurrentPage,
     onCollapse: collapseOnHoverLeave,
   });
-  const hoverTucked = useTuckedHoverOpen({
+  const tuckedHandlers = useTuckedHoverOpen({
     opensPanel: tuckedHoverOpensPanel(settings.expandTrigger, quiet),
     delayMs: settings.hoverExpandDelayMs,
+    hoverDwellDelayMs: browserOnIslandMonitor ? settings.browserAutoTuckDelaySeconds * 1_000 : 0,
+    clickToOpen: browserOnIslandMonitor && settings.browserAutoTuckClickToOpen,
     isPeeking: isPeeking && mode === "collapsed",
     onPeek: peekIsland,
     onOpen: openCurrentPage,
@@ -58,5 +62,5 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
   });
   useHoverFocus(mode, quiet, pickerOpen, settings.hoverCollapseDelayMs);
   usePanelPreview({ navigation, quiet, hasMessagePreview });
-  return hoverTucked;
+  return { hoverTucked: tuckedHandlers.handleHover, clickTucked: tuckedHandlers.handleClick };
 }

@@ -102,6 +102,8 @@ type IslandShellProps = {
   /** Right click on the collapsed island: tucks it to the edge like the minus button (tuckRules.ts). */
   onContextTuck: () => void;
   onReveal: () => void;
+  clickTuckedToOpen?: boolean;
+  onClickTucked?: () => void;
   onPageChange: (page: IslandPage) => void;
   /** Buttons of the open page, first among the window actions. */
   pageActions?: ReactNode;
@@ -169,6 +171,8 @@ export function IslandShell({
   onTuck,
   onContextTuck,
   onReveal,
+  clickTuckedToOpen = false,
+  onClickTucked,
   onPageChange,
   pageActions,
   children,
@@ -219,6 +223,10 @@ export function IslandShell({
       className={className}
       aria-label={collapsedLabel}
       onClick={(event) => {
+        if (isTucked && clickTuckedToOpen) {
+          onClickTucked?.();
+          return;
+        }
         if (!isExpanded && event.target === event.currentTarget) {
           onOpenPage(page);
         }

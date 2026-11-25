@@ -11,6 +11,10 @@
   padding-left: 32px;
 }
 
+.settings-row--disabled {
+  opacity: 0.48;
+}
+
 .settings-row__main {
   min-width: 0;
   display: flex;
@@ -71,8 +75,4 @@ label.settings-row__title {
   .settings-row--found {
     animation-timing-function: steps(1, end);
   }
-}
-
-.settings-row--dimmed {
-  opacity: 0.45;
 }

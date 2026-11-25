@@ -102,6 +102,7 @@ export function IslandApp() {
     hasMessagePreview,
     activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
+    browserOnIslandMonitor: game.browserOnIslandMonitor,
   });
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
@@ -184,10 +185,11 @@ export function IslandApp() {
     onCollapse: collapseIsland,
   });
 
-  const hoverTucked = useIslandHover({
+  const tuckedHover = useIslandHover({
     settings,
     navigation,
     quiet: game.quiet,
+    browserOnIslandMonitor: game.browserOnIslandMonitor,
     hasMessagePreview,
     namesAgent: Boolean(agentSession),
     openEnabledPage,
@@ -270,7 +272,9 @@ export function IslandApp() {
         onOpenSettings={openSettings}
         onTuck={tuckIsland}
         onContextTuck={minimizeToEdge}
-        onReveal={hoverTucked}
+        onReveal={tuckedHover.hoverTucked}
+        clickTuckedToOpen={game.browserOnIslandMonitor && settings.browserAutoTuckClickToOpen}
+        onClickTucked={tuckedHover.clickTucked}
         onPageChange={setPage}
         pageActions={page === "agents" && (
           <AgentArrangeButton sort={settings.agentSessionSort} group={settings.agentSessionGroup} onChange={(patch) => setSettings({ ...settings, ...patch })} />

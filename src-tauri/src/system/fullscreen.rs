@@ -6,7 +6,10 @@ use std::{sync::Mutex, thread, time::{Duration, Instant}};
 use tauri::{AppHandle, Emitter};
 use windows::Win32::Foundation::{HWND, RECT};
 
-use super::fullscreen_hold::{covers_monitor, decide_own_foreground, HeldWindowFacts, HoldDecision};
+use super::{
+    browser_apps,
+    fullscreen_hold::{covers_monitor, decide_own_foreground, HeldWindowFacts, HoldDecision},
+};
 use crate::{island, win32};
 
 // Mirrored by FOREGROUND_FULLSCREEN_CHANGED_EVENT in src/windows/island/api.ts. The
@@ -25,6 +28,8 @@ pub struct ForegroundFullscreen {
     active: bool,
     /// It fills the monitor the island is on, so the island sits over it.
     on_island_monitor: bool,
+    /// A browser is in the foreground on the island's monitor.
+    browser_on_island_monitor: bool,
 }
 
 impl ForegroundFullscreen {
@@ -37,6 +42,7 @@ impl ForegroundFullscreen {
 static STATE: Mutex<ForegroundFullscreen> = Mutex::new(ForegroundFullscreen {
     active: false,
     on_island_monitor: false,
+    browser_on_island_monitor: false,
 });
 
 /// Shell windows that can sit in front covering a whole monitor without being an app in
@@ -142,7 +148,7 @@ fn read(app: &AppHandle, tracker: &mut Tracker) -> Observation {
                 let on_island = tracker.held.map_or(previous.on_island_monitor, |held| {
                     previous.active && shares_island_monitor(app, held_window(held))
                 });
-                (ForegroundFullscreen { active: previous.active, on_island_monitor: on_island }, "own_process_held")
+                (ForegroundFullscreen { active: previous.active, on_island_monitor: on_island, browser_on_island_monitor: previous.browser_on_island_monitor }, "own_process_held")
             }
             HoldDecision::Clear(reason) => {
                 tracker.held = None;
@@ -161,7 +167,9 @@ fn read(app: &AppHandle, tracker: &mut Tracker) -> Observation {
     // Only a window the shell's guess is confirmed by is remembered for later.
     tracker.held = (active && matches!(signal, win32::notification_state::FullscreenSignal::FullscreenApp))
         .then_some(foreground.0 as isize);
-    Observation { foreground, state: ForegroundFullscreen { active, on_island_monitor }, process_id,
+    let browser = browser_apps::is_browser_image_path(win32::process::image_path(process_id).as_deref());
+    let browser_on_island_monitor = browser && shares_island_monitor(app, foreground);
+    Observation { foreground, state: ForegroundFullscreen { active, on_island_monitor, browser_on_island_monitor }, process_id,
         signal: Some(signal_name), covered: Some(covers_monitor(rect, monitor)), reason: "foreground_changed" }
 }
 

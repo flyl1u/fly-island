@@ -12,7 +12,7 @@ export function SettingsRow({
   control,
   labelFor,
   indent = false,
-  dimmed = false,
+  disabled = false,
   children,
 }: {
   title: ReactNode;
@@ -22,11 +22,11 @@ export function SettingsRow({
   labelFor?: string;
   indent?: boolean;
   /** Greyed out and not operable, because something else in the settings overrides it. */
-  dimmed?: boolean;
+  disabled?: boolean;
   children?: ReactNode;
 }) {
   return (
-    <div className={["settings-row", indent ? "settings-row--indent" : "", dimmed ? "settings-row--dimmed" : ""].filter(Boolean).join(" ")} inert={dimmed || undefined}>
+    <div className={`settings-row${indent ? " settings-row--indent" : ""}${disabled ? " settings-row--disabled" : ""}`} aria-disabled={disabled || undefined} inert={disabled || undefined}>
       <div className="settings-row__main">
         <div className="settings-row__text">
           {labelFor ? (

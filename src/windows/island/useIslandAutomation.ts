@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { nextTodoRotationIndex } from "../../features/todos/todoRotation";
 
 export function useTodoRotation(
@@ -80,4 +80,49 @@ export function useRevealOnMessage(hasPreview: boolean, isTucked: boolean, onRev
   useEffect(() => {
     if (hasPreview && isTucked) onReveal();
   }, [hasPreview, isTucked, onReveal]);
+}
+
+/** Tucks as soon as a browser reaches the island's monitor, then restores when it leaves. */
+export function useBrowserAutoTuck(
+  browserOnIslandMonitor: boolean,
+  enabled: boolean,
+  isTucked: boolean,
+  isHovering: boolean,
+  gameHolds: boolean,
+  tuck: () => void,
+  reveal: () => void,
+  /** A message preview, a settings preview or a "stay visible" activity holds the island out. */
+  blocked = false,
+) {
+  const browserTucked = useRef(false);
+  const current = useRef({ isTucked, isHovering, gameHolds });
+
+  useEffect(() => {
+    current.current = { isTucked, isHovering, gameHolds };
+    if (!enabled) {
+      if (browserTucked.current && !gameHolds) {
+        if (current.current.isTucked) reveal();
+        browserTucked.current = false;
+      }
+      return;
+    }
+    if (browserOnIslandMonitor) {
+      if (gameHolds || blocked) return;
+      if (!browserTucked.current) {
+        if (current.current.isTucked) return;
+        browserTucked.current = true;
+        tuck();
+        return;
+      }
+      if (!isTucked && !isHovering) {
+        tuck();
+      }
+      return;
+    }
+    if (!browserTucked.current || gameHolds) return;
+    if (browserTucked.current && current.current.isTucked && !current.current.gameHolds) {
+      reveal();
+    }
+    browserTucked.current = false;
+  }, [blocked, browserOnIslandMonitor, enabled, gameHolds, isHovering, isTucked, reveal, tuck]);
 }
