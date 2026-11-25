@@ -10,7 +10,7 @@ const usage = (fields) => ({ updatedAt: 1, fiveHour: null, sevenDay: null, model
 
 test("plugin-market agents default on and keep a switch of their own", () => {
   const settings = normalizeSettings(null);
-  assert.deepEqual([settings.agentShowCursor, settings.agentShowKimiCode, settings.agentShowHermes, settings.agentShowZcode], [true, true, true, true]);
+  assert.deepEqual([settings.agentShowCursor, settings.agentShowKimiCode, settings.agentShowCodeBuddy, settings.agentShowHermes, settings.agentShowZcode], [true, true, true, true, true]);
   assert.equal(normalizeSettings({ agentShowCursor: false }).agentShowCursor, false);
   assert.equal(normalizeSettings({ agentShowHermes: "broken" }).agentShowHermes, true);
   assert.deepEqual(normalizeSettings({}).agentQuotaSources, ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode"],

@@ -17,6 +17,7 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentShowWorkbuddy,
     agentShowCursor: settings?.agentShowCursor !== false,
     agentShowKimiCode: settings?.agentShowKimiCode !== false,
+    agentShowCodeBuddy: settings?.agentShowCodeBuddy !== false,
     agentShowHermes: settings?.agentShowHermes !== false,
     agentShowZcode: settings?.agentShowZcode !== false,
     agentQuotaSources: Array.isArray(quotaSources)

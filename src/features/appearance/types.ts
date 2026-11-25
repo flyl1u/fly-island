@@ -108,6 +108,7 @@ export type IslandSettings = {
   /** Agents from the plugin market: shown only once installed there, and while switched on here. */
   agentShowCursor: boolean;
   agentShowKimiCode: boolean;
+  agentShowCodeBuddy: boolean;
   agentShowHermes: boolean;
   agentShowZcode: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
