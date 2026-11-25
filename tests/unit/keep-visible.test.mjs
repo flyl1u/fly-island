@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULT_SETTINGS, normalizeSettings } from "../../src/features/appearance/settings.ts";
 import { keepIslandVisible, keepVisibleReason } from "../../src/windows/island/keepVisible.ts";
+import { MUSIC_GRACE_MS, musicHolds } from "../../src/windows/island/musicGrace.ts";
 import { idlePlan } from "../../src/windows/island/idleCollapse.ts";
 
 const activity = { agentVisualState: "idle", collapsedItem: "todo", songPlaying: false, activeTodoId: null, timer: null };
@@ -23,13 +24,22 @@ test("only running agents hold the island, independently of which text is displa
   }
 });
 
-test("lyrics hold the island only while visible and playing", () => {
+test("playing music holds the island whatever the collapsed text shows", () => {
   const settings = { keepVisibleWhileLyrics: true };
   const playing = { collapsedItem: "lyrics", songPlaying: true };
   assert.equal(stays(settings, playing), true);
-  assert.equal(stays({ ...settings, showCollapsedText: false }, playing), false);
-  assert.equal(stays(settings, { ...playing, collapsedItem: "agent" }), false);
+  assert.equal(stays({ ...settings, showCollapsedText: false }, playing), true);
+  assert.equal(stays(settings, { ...playing, collapsedItem: "agent" }), true);
+  assert.equal(stays(settings, { ...playing, collapsedItem: null }), true);
   assert.equal(stays(settings, { ...playing, songPlaying: false }), false);
+  assert.equal(stays({}, playing), false);
+});
+
+test("a pause or track change shorter than the grace still holds, a longer one does not", () => {
+  assert.equal(musicHolds(true, null, 0), true);
+  assert.equal(musicHolds(false, null, 10_000), false);
+  assert.equal(musicHolds(false, 1000, 1000 + MUSIC_GRACE_MS - 1), true);
+  assert.equal(musicHolds(false, 1000, 1000 + MUSIC_GRACE_MS), false);
 });
 
 test("unstarted todos do not hold; Start and a running countdown do", () => {
@@ -52,6 +62,6 @@ test("diagnostic reasons use stable priority without exposing content", () => {
   const settings = { ...DEFAULT_SETTINGS, keepVisibleWhileAgentRunning: true, keepVisibleWhileLyrics: true, keepVisibleWhileTodoRunning: true };
   const lyric = { ...activity, collapsedItem: "lyrics", songPlaying: true, activeTodoId: "private-id" };
   assert.equal(keepVisibleReason(settings, { ...lyric, agentVisualState: "running" }, 1000), "keep_visible_agent");
-  assert.equal(keepVisibleReason(settings, lyric, 1000), "keep_visible_lyrics");
+  assert.equal(keepVisibleReason(settings, lyric, 1000), "keep_visible_music");
   assert.equal(keepVisibleReason(settings, { ...lyric, songPlaying: false }, 1000), "keep_visible_todo");
 });

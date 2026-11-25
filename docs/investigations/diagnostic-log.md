@@ -49,7 +49,7 @@ ZIP 内包含：
 2026-11-25 09:00:23.315 [island] mode reason=idle_timer from=collapsed to=tucked
 2026-11-25 09:00:27.459 [island] mode reason=hover from=tucked to=peek
 2026-11-25 09:00:31.214 [media] session reason=playback_changed aumid=MusicApp.exe playback=playing
-2026-11-25 09:00:32.817 [island] tuck_blocked reason=keep_visible_lyrics
+2026-11-25 09:00:32.817 [island] tuck_blocked reason=keep_visible_music
 2026-11-25 09:00:40.482 [weather] forecast reason=success latitude=37.8 longitude=-122.4 elapsed_ms=258
 2026-11-25 09:00:52.008 [fullscreen] foreground reason=foreground_changed active=true on_island_monitor=true class=GameWindow process=Game.exe covers_monitor=true notification_signal=d3d_full_screen retained=false
 2026-11-25 09:00:52.050 [island] mode reason=game_mode from=collapsed to=tucked

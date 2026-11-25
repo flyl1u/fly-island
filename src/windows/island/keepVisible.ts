@@ -5,6 +5,7 @@ import type { TodoTimer } from "../../features/todos/timer";
 type Activity = {
   agentVisualState: AgentVisualState;
   collapsedItem: CollapsedItem | null;
+  /** A media session is playing, or stopped within the grace period (musicGrace.ts). */
   songPlaying: boolean;
   activeTodoId: string | null;
   timer: TodoTimer | null;
@@ -19,7 +20,9 @@ export function keepIslandVisible(settings: KeepVisibleSettings, activity: Activ
 
 export function keepVisibleReason(settings: KeepVisibleSettings, activity: Activity, now: number) {
   if (settings.keepVisibleWhileAgentRunning && activity.agentVisualState === "running") return "keep_visible_agent";
-  if (settings.keepVisibleWhileLyrics && settings.showCollapsedText && activity.collapsedItem === "lyrics" && activity.songPlaying) return "keep_visible_lyrics";
+  // Any playing media session holds it, with or without lyrics and whatever the collapsed text
+  // shows (issue #117). `songPlaying` already includes the short grace after a pause or track change.
+  if (settings.keepVisibleWhileLyrics && activity.songPlaying) return "keep_visible_music";
   if (settings.keepVisibleWhileTodoRunning && settings.todoEnabled && (activity.activeTodoId || (activity.timer && activity.timer.endsAt > now))) {
     return "keep_visible_todo";
   }

@@ -23,6 +23,7 @@ import { shapedSettings } from "../../features/appearance/islandShape";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useMessageNotice } from "./useMessageNotice";
 import { useGameMode } from "./useGameMode";
+import { useMusicGrace } from "./useMusicGrace";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useCtrlWheelPages, wheelPageOrder } from "./useCtrlWheelPages";
 import { useIslandFeatures } from "./useIslandFeatures";
@@ -78,6 +79,8 @@ export function IslandApp() {
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
+  // "Stay out while music plays" follows the media session itself, not the lyric line.
+  const musicHoldsIsland = useMusicGrace(settings.musicEnabled && media.mediaState.playbackStatus === "playing");
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
   const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer } =
     useCollapsedTodo(
@@ -97,7 +100,7 @@ export function IslandApp() {
     settings,
     navigation,
     hasMessagePreview,
-    activity: { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer },
+    activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
   });
 
