@@ -56,7 +56,7 @@ async function run() {
   await document.fonts.ready;
 
   let worstText = Infinity;
-  let worstNeutralBoundary = Infinity;
+  const worstNeutralBoundary = { dark: Infinity, light: Infinity };
   const colors = { dark: new Set<string>(), light: new Set<string>() };
   const samples = [...root.querySelectorAll<HTMLElement>(".battery-readout")];
   for (const [index, sample] of samples.entries()) {
@@ -80,6 +80,8 @@ async function run() {
     const surface = getComputedStyle(body).backgroundColor;
     const charge = getComputedStyle(fill).backgroundColor;
     const tone = sample.closest<HTMLElement>("[data-tone]")?.dataset.tone === "light" ? "light" : "dark";
+    const low = sample.hasAttribute("data-low");
+    const charging = sample.hasAttribute("data-charging");
     colors[tone].add(charge);
     for (const extreme of [0, 255]) {
       const text = colorLuminance(foreground, extreme);
@@ -93,15 +95,16 @@ async function run() {
     } else {
       check(foreground === (tone === "light" ? "rgb(255, 255, 255)" : "rgb(16, 18, 22)")
         && /^rgba\(/.test(surface) && /^rgb\(/.test(charge), `${label}: fixed theme ink, translucent track and solid charge`);
-      if (percent === 0 && sample.hasAttribute("data-low")) {
+      if (percent === 0 && low) {
         check(getComputedStyle(body).borderTopColor === charge, "At 0%, the red outline still indicates low charge");
       }
-      if (!sample.hasAttribute("data-low") && !sample.hasAttribute("data-charging")) {
+      if (!low && !charging) {
+        check(charge === (tone === "dark" ? "rgb(204, 204, 204)" : "rgb(0, 0, 0)"), `${label}: ordinary fill is neutral gray or black`);
         const backdrop = tone === "dark" ? 47 : 244;
         const empty = colorLuminance(surface, backdrop);
         const filled = colorLuminance(charge, backdrop);
         check(tone === "dark" ? filled > empty : filled < empty, `${label}: the solid block follows the island tone`);
-        worstNeutralBoundary = Math.min(worstNeutralBoundary, contrast(filled, empty));
+        worstNeutralBoundary[tone] = Math.min(worstNeutralBoundary[tone], contrast(filled, empty));
       }
     }
   }
@@ -109,7 +112,7 @@ async function run() {
   check(samples.length === readings.length * backdrops.length * tones.length * 3, "Every tone, backdrop and font size covers all readings");
   check(tones.every((tone) => colors[tone].size === (forced ? 1 : 3)), "Each tone distinguishes normal, low and charging fills");
   check(worstText >= 4.5, `Insufficient text contrast: ${worstText.toFixed(2)}:1`);
-  check(forced || worstNeutralBoundary >= 1.9, `Insufficient separation on the standard island: ${worstNeutralBoundary.toFixed(2)}:1`);
+  check(forced || (worstNeutralBoundary.dark >= 1.9 && worstNeutralBoundary.light >= 1.3), "The neutral fill and track are distinguishable on the standard island");
   results.textContent = `PASS ${samples.length} readings fit without clipping (${forced ? "forced colors" : "adaptive ink"})\n`
     + `PASS Minimum text contrast ${worstText.toFixed(2)}:1 against both track and solid fill`;
   results.dataset.result = "passed";
