@@ -61,6 +61,8 @@ export function useScreenshotEditor() {
   const [selected, setSelected] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState(-1);
   const [magnifier, setMagnifier] = useState<Point | null>(null);
+  /** 正在拖选区/拖控制点：工具栏要藏起来，松手再显示，避免挡住拖拽。 */
+  const [dragging, setDragging] = useState(false);
 
   const textInputRef = useRef<HTMLTextAreaElement | null>(null);
   const drag = useRef<Drag | null>(null);
@@ -70,14 +72,16 @@ export function useScreenshotEditor() {
   const textResize = useRef<{ from: Point; center: Point; size: number } | null>(null);
   const counters = useRef<Record<NumberStyle, number>>({ arabic: 1, alpha: 1, roman: 1 });
 
-  /** 抓新底图、取消、导出之后都把标注层清干净。 */
+  /** 抓新底图、取消、导出之后都把标注层清干净；工具也回到移动，不记忆上一次选的工具。 */
   const reset = useCallback(() => {
+    setTool("move");
     setRect(null);
     setItems([]);
     setDraft(null);
     setEditing(null);
     setSelected(null);
     setMagnifier(null);
+    setDragging(false);
     counters.current = { arabic: 1, alpha: 1, roman: 1 };
     drag.current = null;
     pendingSnap.current = null;
@@ -227,6 +231,8 @@ export function useScreenshotEditor() {
     setHoverIndex,
     magnifier,
     setMagnifier,
+    dragging,
+    setDragging,
     selectedText,
     textBox,
     editWidth,

@@ -6,19 +6,18 @@ import {
   activateScreenshot,
   captureScreenRaw,
   copyScreenshotPng,
-  ocrScreenshotLines,
+  copyScreenshotText,
   ocrScreenshotPng,
   onScreenshotArm,
-  saveScreenshotPng,
+  pinScreenshotPng,
   screenshotFonts,
   screenshotWindowRect,
   screenshotWindows,
+  traceScreenshot,
   type ScreenRect,
 } from "../../features/screenshot/api";
-import { measureHeight, measureText, type Annotation } from "../../features/screenshot/annotations";
-import { translateText } from "../../features/translation/api";
-import { loadSettings } from "../../features/translation/storage";
 import { useTranslation } from "../../i18n";
+import { overlayWindows } from "../../features/screenshot/geometry";
 
 /** 系统字体列表取不到时的兜底。 */
 export const FALLBACK_FONTS = ["Microsoft YaHei", "SimSun", "SimHei", "KaiTi", "Segoe UI", "Consolas"];
@@ -28,8 +27,6 @@ export type CaptureState = ReturnType<typeof useScreenshotCapture>;
 type CaptureOptions = {
   /** 当前选区：坐标是覆盖层里的 CSS 像素，标注层也用它。 */
   rect: ScreenRect | null;
-  /** 正文字体：划词翻译按它画译文。 */
-  textFont: string;
   /** 标注层画布，导出时叠在底图上。 */
   canvasRef: RefObject<HTMLCanvasElement | null>;
   /** 底图画布：OCR 与导出都从这里裁。 */
@@ -40,19 +37,21 @@ type CaptureOptions = {
   onArm: () => void;
   /** 导出完成或取消后收起覆盖层。 */
   onClose: () => void;
-  /** 划词翻译算出来的译文标注，交给标注层。 */
-  onTranslated: (items: Annotation[]) => void;
+  /** 点保存时把合成后的 PNG 交给弹窗（base64）。 */
+  onSaveRequest: (png: string) => void;
+  /** 贴图失败时给用户的提示。 */
+  onPinError: (message: string) => void;
 };
 
 export function useScreenshotCapture({
   rect,
-  textFont,
   canvasRef,
   backdropRef,
   windowRects,
   onArm,
   onClose,
-  onTranslated,
+  onSaveRequest,
+  onPinError,
 }: CaptureOptions) {
   const t = useTranslation();
   const [base, setBase] = useState<ImageData | null>(null);
@@ -66,7 +65,7 @@ export function useScreenshotCapture({
 
   /** 抓一张干净底图（窗口此时仍隐藏），然后把窗口显示并抢到前台。 */
   const arm = useCallback(async () => {
-    // 一次按键只抓一次：事件重复触发时不要叠着抓屏，叠起来会卡住整个覆盖层。
+    // 防重入：抓屏未完成时再来事件（残留监听器/重复热键）直接忽略。
     if (arming.current) return;
     arming.current = true;
     try {
@@ -80,9 +79,7 @@ export function useScreenshotCapture({
       onArm();
       try {
         const physical = await screenshotWindows();
-        windowRects.current = physical
-          .filter((item) => item.width > 24 && item.height > 24)
-          .map((item) => ({ x: item.x / ratio, y: item.y / ratio, width: item.width / ratio, height: item.height / ratio }));
+        windowRects.current = overlayWindows(physical, region, ratio);
       } catch {
         windowRects.current = [];
       }
@@ -103,21 +100,17 @@ export function useScreenshotCapture({
   }, [onArm, windowRects]);
 
   useEffect(() => {
-    let cancelled = false;
     let dispose: (() => void) | undefined;
+    let cancelled = false;
     void onScreenshotArm(() => void arm())
       .then((off) => {
-        // StrictMode 会挂载→卸载→再挂载，而退订函数要等 promise 才拿到。
-        // 卸载时若还没拿到，就必须记下来立刻退订；否则这次订阅永久留在事件总线上，
-        // 一次快捷键会触发两次抓屏。
-        if (cancelled) off();
-        else dispose = off;
+        // listen() 是异步的：若在 resolve 前 effect 已清理，必须立刻退订，
+        // 否则每次重渲染都残留一个监听器，反复抓屏导致卡顿与闪烁。
+        if (cancelled) { off(); return; }
+        dispose = off;
       })
       .catch(() => {});
-    return () => {
-      cancelled = true;
-      dispose?.();
-    };
+    return () => { cancelled = true; dispose?.(); };
   }, [arm]);
 
   // 底图先落到背面画布：标注层重绘和真马赛克都从这块画布取像素。
@@ -171,22 +164,41 @@ export function useScreenshotCapture({
     try {
       await copyScreenshotPng(png);
       onClose();
+    } catch (error) {
+      setFailure(`${t.screenshot.copyFailed}: ${String(error)}`);
     } finally {
       busy.current = false;
     }
-  }, [compose, onClose]);
+  }, [compose, onClose, t]);
 
-  const save = useCallback(async () => {
+  /** 贴图：把合成后的 PNG 钉到桌面，成功就收起截图覆盖层；失败把错误亮在覆盖层上，别只进控制台。 */
+  const pin = useCallback(() => {
+    void traceScreenshot(`fe: pin clicked rect=${rect ? `${Math.round(rect.width)}x${Math.round(rect.height)}` : "null"}`);
     const png = compose();
-    if (!png || busy.current) return;
-    busy.current = true;
-    try {
-      await saveScreenshotPng(png);
-      onClose();
-    } finally {
-      busy.current = false;
+    if (!png) {
+      setFailure(t.screenshot.pinFailed);
+      return;
     }
-  }, [compose, onClose]);
+    if (busy.current) {
+      void traceScreenshot("fe: pin skipped (busy)");
+      return;
+    }
+    busy.current = true;
+    setFailure(null);
+    void pinScreenshotPng(png, rect ?? undefined)
+      .then(() => onClose())
+      .catch((error) => {
+        setFailure(`${t.screenshot.pinFailed}: ${String(error)}`);
+        onPinError(String(error));
+      })
+      .finally(() => { busy.current = false; });
+  }, [compose, onClose, onPinError, rect, t]);
+
+  /** 保存改为交给弹窗：先合成 PNG，让用户选路径/尺寸/格式。 */
+  const save = useCallback(() => {
+    const png = compose();
+    if (png) onSaveRequest(png);
+  }, [compose, onSaveRequest]);
 
   const recognize = useCallback(async () => {
     const png = cropRaw();
@@ -201,62 +213,20 @@ export function useScreenshotCapture({
     }
   }, [cropRaw, ocrBusy, t]);
 
-  /** 划词翻译：识别每行文字，翻译后把译文画在原文下一行。 */
+  /** 翻译结果在独立图文窗口显示，复用 Fly Island 的服务设置。 */
   const translateInline = useCallback(async () => {
     const png = cropRaw();
-    if (!png || ocrBusy) return;
-    setOcrBusy(true);
+    if (!png || busy.current) return;
+    busy.current = true;
     try {
-      const lines = await ocrScreenshotLines(png);
-      if (lines.length === 0) {
-        setOcrText(t.screenshot.nothingFound);
-        return;
-      }
-      const settings = loadSettings();
-      const service = {
-        provider: settings.provider,
-        baseUrl: settings.provider === "custom" ? settings.customBaseUrl : null,
-        model: settings.models[settings.provider] ?? null,
-      };
-      const created: Annotation[] = [];
-      for (const line of lines) {
-        let translated = "";
-        try {
-          translated = await translateText(line.text, settings.direction, service);
-        } catch {
-          translated = "";
-        }
-        if (!translated.trim()) continue;
-        const size = Math.max(12, Math.round((line.height / Math.max(0.1, scale)) * 0.9));
-        const at = { x: line.x / Math.max(0.1, scale), y: (line.y + line.height) / Math.max(0.1, scale) + 2 };
-        created.push({
-          kind: "text",
-          color: "#e0403f",
-          size,
-          font: textFont,
-          at,
-          text: translated.trim(),
-          bold: false,
-          italic: false,
-          underline: false,
-          strike: false,
-          angle: 0,
-          w: measureText(translated.trim(), size, textFont, false, false),
-          h: measureHeight(translated.trim(), size),
-        });
-      }
-      if (created.length === 0) {
-        setOcrText(t.screenshot.translationEmpty);
-        return;
-      }
-      onTranslated(created);
-      setOcrText(null);
+      await pinScreenshotPng(png, rect ?? undefined, true);
+      onClose();
     } catch (error) {
-      setOcrText(t.screenshot.translateFailed(String(error)));
+      setFailure(t.screenshot.translateFailed(String(error)));
     } finally {
-      setOcrBusy(false);
+      busy.current = false;
     }
-  }, [cropRaw, ocrBusy, onTranslated, scale, t, textFont]);
+  }, [cropRaw, onClose, rect, t]);
 
   const recognizeAndCopy = useCallback(async () => {
     const png = cropRaw();
@@ -264,12 +234,12 @@ export function useScreenshotCapture({
     try {
       const text = await ocrScreenshotPng(png);
       if (!text.trim()) return;
-      await navigator.clipboard.writeText(text);
+      await copyScreenshotText(text);
       onClose();
-    } catch {
-      // 复制失败时保持覆盖层，用户还能手动复制
+    } catch (error) {
+      setFailure(t.screenshot.ocrFailed(String(error)));
     }
-  }, [cropRaw, onClose]);
+  }, [cropRaw, onClose, t]);
 
-  return { scale, fonts, failure, ocrText, setOcrText, ocrBusy, copy, save, recognize, translateInline, recognizeAndCopy, close: onClose };
+  return { scale, fonts, failure, setFailure, ocrText, setOcrText, ocrBusy, copy, save, pin, recognize, translateInline, recognizeAndCopy, close: onClose };
 }

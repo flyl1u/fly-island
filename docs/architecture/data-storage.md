@@ -100,3 +100,6 @@ Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；�
 ## 日历标记、MiniMax Code 与设备电量
 
 日历标记沿用内置插件的安装/停用记录。设备的音频绑定写入 WebView localStorage 的 fly-island-device-battery，设备读数及低电量状态仅在内存。MiniMax 可选密钥走宿主凭据管理器，额度和会话只读 MiniMax 本机数据。审批接入由用户在插件设置中显式启用，仅修改 ~/.minimax/hooks.json 内本插件登记的处理器，临时审批保存在 %LOCALAPPDATA%/fly-island-minimax/approvals.json。
+## 截图插件临时图片
+
+`screenshot/` 在应用数据目录下的 `pinned-images/pin-<时间戳>.png` 保存当前贴图与截图翻译的本地原图。窗口路径和初始物理坐标只在原生内存中保存，显式关闭、系统销毁或下次启动时删除临时图片。不新增 localStorage。翻译设置与凭据继续沿用现有翻译模块。图片导出仅写入用户选择的 PNG/JPG 文件路径。

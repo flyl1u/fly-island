@@ -70,8 +70,11 @@ fn grab(slot: &mut Option<((i32, i32), Duplication)>, region: ScreenRect) -> Sho
             }
             match duplication.read_region_full(region) {
                 Ok(Some(read)) => {
+                    if read.rect != region {
+                        return Err("选区超出当前显示器，请在同一显示器内截图".into());
+                    }
                     let mut rgba = read.bgra;
-                    for pixel in rgba.chunks_exact_mut(4) {
+                    for pixel in rgba.as_chunks_mut::<4>().0 {
                         pixel.swap(0, 2);
                     }
                     return Ok((read.width, read.height, rgba));
@@ -100,10 +103,9 @@ pub(crate) fn capture_rgba(region: ScreenRect) -> Result<(u32, u32, Vec<u8>), St
     receiver.recv().map_err(|_| "抓屏线程没有响应".to_string())?
 }
 
-/// 把 PNG 存到「图片\fly-island」，返回保存路径。
+/// 把 PNG 存到用户「下载」目录，返回保存路径。
 pub(crate) fn save_png(png: &[u8]) -> Result<std::path::PathBuf, String> {
-    let profile = std::env::var("USERPROFILE").map_err(|_| "找不到用户目录".to_string())?;
-    let dir = std::path::Path::new(&profile).join("Pictures").join("fly-island");
+    let dir = crate::win32::known_folder::downloads().ok_or_else(|| "找不到下载目录".to_string())?;
     std::fs::create_dir_all(&dir).map_err(|error| format!("无法创建保存目录：{error}"))?;
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -186,5 +188,46 @@ mod tests {
     fn rejects_empty_region() {
         assert!(capture_png((10, 10, 10, 50)).is_err());
         assert!(capture_png((10, 10, 50, 10)).is_err());
+    }
+}
+
+/// Encode according to the chosen suffix, rejecting accidental arbitrary-file writes.
+pub(crate) fn save_image_to(bytes: &[u8], target: &std::path::Path) -> Result<(), String> {
+    if !target.is_absolute() { return Err("请选择完整的保存路径".into()); }
+    let suffix = target.extension().and_then(|value| value.to_str()).unwrap_or("").to_ascii_lowercase();
+    let format = match suffix.as_str() {
+        "png" => image::ImageFormat::Png,
+        "jpg" | "jpeg" => image::ImageFormat::Jpeg,
+        _ => return Err("只支持 PNG 或 JPG 格式".into()),
+    };
+    let image = image::load_from_memory(bytes).map_err(|error| format!("无法解析图片：{error}"))?;
+    let image = if format == image::ImageFormat::Jpeg { image::DynamicImage::ImageRgb8(image.to_rgb8()) } else { image };
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| format!("无法创建保存目录：{error}"))?;
+    }
+    image.save_with_format(target, format).map_err(|error| format!("无法保存图片：{error}"))
+}
+
+#[cfg(test)]
+mod save_tests {
+    use super::save_image_to;
+    #[test]
+    fn saved_image_uses_requested_encoding_and_keeps_dimensions() {
+        let image = image::RgbaImage::from_pixel(13, 7, image::Rgba([100, 150, 200, 255]));
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
+        let root = std::env::temp_dir().join(format!("fly-island-save-test-{}", std::process::id()));
+        for (suffix, format) in [("png", image::ImageFormat::Png), ("jpg", image::ImageFormat::Jpeg)] {
+            let target = root.join(format!("shot.{suffix}"));
+            save_image_to(bytes.get_ref(), &target).unwrap();
+            let saved = std::fs::read(&target).unwrap();
+            assert_eq!(image::guess_format(&saved).unwrap(), format);
+            let decoded = image::load_from_memory(&saved).unwrap();
+            assert_eq!((decoded.width(), decoded.height()), (13, 7));
+        }
+        assert!(save_image_to(bytes.get_ref(), &root.join("invalid.exe")).is_err());
+        assert!(!root.join("invalid.exe").exists());
+        assert!(save_image_to(bytes.get_ref(), std::path::Path::new("relative.png")).is_err());
+        let _ = std::fs::remove_dir_all(root);
     }
 }

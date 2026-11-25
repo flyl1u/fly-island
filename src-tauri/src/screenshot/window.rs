@@ -3,6 +3,7 @@
 //! 窗口启动时就建好（隐藏），按快捷键只是定位 + 通知前端，避免首次创建窗口的延迟。
 //! 显示由前端负责：先 show 出遮罩，再把刚抓到的画面贴上去，所以"按下即有反馈"。
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 /// 窗口 label，同时也是 `?window=` 参数值（对外契约，不要改）。
@@ -10,6 +11,11 @@ pub(crate) const WINDOW_LABEL: &str = "screenshot";
 
 /// 通知前端"该抓底图了"的事件名。
 pub const ARM_EVENT: &str = "screenshot-arm";
+
+/// 一次截图会话是否正在进行（含"按了热键、还在抓底图、窗口尚未显示"的窗口期）。
+/// 重复按热键时忽略，否则会重新抓屏、把用户已经框好的区域和标注清空。
+static CAPTURING: AtomicBool = AtomicBool::new(false);
+static RESTORE_MAIN: AtomicBool = AtomicBool::new(false);
 
 fn build(app: &AppHandle) -> Result<WebviewWindow, String> {
     // 注意：URL 里只能有 window=screenshot 这一个查询参数。
@@ -37,8 +43,21 @@ pub(crate) fn precreate(app: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// 打开（或重新定位）覆盖层。
+/// 打开（或重新定位）覆盖层。已经在截图时重复按键直接忽略。
 pub(crate) fn show_overlay(app: &AppHandle) -> Result<(), String> {
+    // swap 原子地「读取并置位」：第一次拿到 false 继续，重复按键拿到 true 直接返回。
+    if CAPTURING.swap(true, Ordering::AcqRel) {
+        return Ok(());
+    }
+    // 任一步失败都要复位，否则用户卡在「再也按不出截图」的状态。
+    if let Err(error) = show_overlay_inner(app) {
+        CAPTURING.store(false, Ordering::Release);
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn show_overlay_inner(app: &AppHandle) -> Result<(), String> {
     let window = match app.get_webview_window(WINDOW_LABEL) {
         Some(window) => window,
         None => build(app)?,
@@ -62,8 +81,8 @@ pub fn screenshot_window_rect(window: WebviewWindow) -> Result<(i32, i32, u32, u
 
 /// 抓完 / 取消后收起覆盖层。
 #[tauri::command]
-pub fn screenshot_close() -> Result<(), String> {
-    Ok(())
+pub async fn screenshot_close(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
+    screenshot_dismiss(app, window).await
 }
 
 /// 把窗口铺到光标所在的显示器上（多屏时不要铺到主屏）。
@@ -87,10 +106,11 @@ fn position_on_cursor_monitor(app: &AppHandle, window: &WebviewWindow) -> Result
 
 /// 显示覆盖层并强制抢到前台。必须"先 show 再抢"，否则对隐藏窗口无效。
 #[tauri::command]
-pub fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
+pub async fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
     window.show().map_err(|error| error.to_string())?;
     // 小岛本体也是置顶窗口，会压住覆盖层吃掉鼠标：截图期间先藏起来，关闭时恢复。
     if let Some(main) = window.app_handle().get_webview_window("main") {
+        RESTORE_MAIN.store(main.is_visible().unwrap_or(false), Ordering::Release);
         let _ = main.hide();
     }
     // 小岛主窗口也是置顶的，会压住覆盖层吃掉点击：重新置顶把自己提到它上面。
@@ -113,23 +133,18 @@ pub fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
             break;
         }
     }
-    trace(&format!("activate: foreground={foreground}"));
+    eprintln!("screenshot activate: foreground={foreground}");
     Ok(())
 }
 
-fn trace(line: &str) {
-    use std::io::Write as _;
-    let path = std::env::temp_dir().join("screenshot-trace.log");
-    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
-        let _ = writeln!(file, "{line}");
-    }
-}
 /// 收起覆盖层并恢复小岛本体。
 #[tauri::command]
-pub fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
+pub async fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
+    // 截图会话结束：允许下一次热键重新触发。
+    CAPTURING.store(false, Ordering::Release);
     let _ = window.hide();
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.show();
+    if RESTORE_MAIN.swap(false, Ordering::AcqRel) {
+        if let Some(main) = app.get_webview_window("main") { let _ = main.show(); }
     }
     Ok(())
 }

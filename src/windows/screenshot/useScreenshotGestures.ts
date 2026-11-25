@@ -1,6 +1,6 @@
 // 截图覆盖层的指针交互：拉选区、拖控制点、在标注层上画/选/拖/缩放。
 // 状态全部来自 useScreenshotEditor，这里只有「指针进来之后做什么」。
-import { hitStroke, hitText, scaleItem, type Annotation, type Point } from "../../features/screenshot/annotations";
+import { hitStroke, hitText, scaleItem, type Annotation, type Point, type Tool } from "../../features/screenshot/annotations";
 import type { ScreenRect } from "../../features/screenshot/api";
 import { MIN_SELECTION, type EditorState, type Handle } from "./useScreenshotEditor";
 
@@ -73,6 +73,7 @@ export function useScreenshotGestures(editor: EditorState) {
     if (event.button !== 0 || editor.rect) return;
     editor.pendingSnap.current = editor.hoverIndex >= 0 ? (windowRects[editor.hoverIndex] ?? null) : null;
     editor.drag.current = { mode: "create", from: { x: event.clientX, y: event.clientY } };
+    editor.setDragging(true);
     editor.setRect({ x: event.clientX, y: event.clientY, width: 0, height: 0 });
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -110,6 +111,7 @@ export function useScreenshotGestures(editor: EditorState) {
   const onOverlayUp = () => {
     const current = editor.drag.current;
     editor.drag.current = null;
+    editor.setDragging(false);
     editor.lastMove.current = null;
     editor.setMagnifier(null);
     if (!current) return;
@@ -133,8 +135,14 @@ export function useScreenshotGestures(editor: EditorState) {
     if (editor.tool === "text") {
       const hit = hitText(editor.items, at);
       const target = hit === null ? null : editor.items[hit];
-      if (hit !== null && target && target.kind === "text") editor.editExistingText(hit, target);
-      else editor.startNewText(at);
+      if (hit !== null && target && target.kind === "text") {
+        // 点已有文字：先当拖动候选，移动就拖走，没动（单击）才进编辑。
+        // 同时选中它，八向控制点/旋转手柄才显示，方便改字号和颜色。
+        editor.setSelected(hit);
+        editor.drag.current = { mode: "text", index: hit, from: at, origin: { ...target.at } };
+        editor.setDragging(true);
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } else { editor.setSelected(null); editor.startNewText(at); }
       return;
     }
     if (editor.tool === "move") {
@@ -142,7 +150,9 @@ export function useScreenshotGestures(editor: EditorState) {
       const textHit = hitText(editor.items, at);
       const textTarget = textHit === null ? null : editor.items[textHit];
       if (textHit !== null && textTarget && textTarget.kind === "text") {
+        editor.setSelected(textHit);
         editor.drag.current = { mode: "text", index: textHit, from: at, origin: { ...textTarget.at } };
+        editor.setDragging(true);
         event.currentTarget.setPointerCapture(event.pointerId);
         return;
       }
@@ -155,10 +165,12 @@ export function useScreenshotGestures(editor: EditorState) {
       editor.setSelected(null);
       if (!editor.rect) return;
       editor.drag.current = { mode: "move", from: { x: event.clientX, y: event.clientY }, origin: editor.rect };
+      editor.setDragging(true);
       event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
     editor.drag.current = { mode: "draw" };
+    editor.setDragging(true);
     const style = { color: editor.color, width: editor.strokeWidth, dash: editor.dash };
     if (editor.tool === "pen") editor.setDraft({ kind: "pen", ...style, points: [at] });
     else if (editor.tool === "number") {
@@ -168,6 +180,7 @@ export function useScreenshotGestures(editor: EditorState) {
         { kind: "number", color: editor.color, size: editor.numberSize, at, value: nextNumber, style: editor.numberStyle },
       ]);
       editor.drag.current = null;
+      editor.setDragging(false);
     } else if (editor.tool === "mosaic") editor.setDraft({ kind: "mosaic", size: editor.mosaicSize, from: at, to: at });
     else if (editor.tool === "arrow") editor.setDraft({ kind: "arrow", ...style, from: at, to: at });
     else editor.setDraft({ kind: editor.shape, ...style, from: at, to: at });
@@ -192,23 +205,23 @@ export function useScreenshotGestures(editor: EditorState) {
     const at = local(event);
     editor.setDraft((value) => {
       if (!value) return value;
-      if (value.kind === "pen") return { ...value, points: [...value.points, at] };
+      if (value.kind === "pen") {
+        // 按住 Shift：不管之前怎么画，直接拉成起点到当前点的直线。
+        if (event.shiftKey && value.points.length > 0) return { ...value, points: [value.points[0], at] };
+        return { ...value, points: [...value.points, at] };
+      }
       if (value.kind === "text" || value.kind === "number") return value;
       return { ...value, to: at };
     });
   };
 
-  const onCanvasUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onCanvasUp = () => {
     const current = editor.drag.current;
     editor.drag.current = null;
+    editor.setDragging(false);
     if (!current) return;
     if (current.mode === "text") {
-      // 没怎么动 = 单击：进入编辑，工具栏就能改字体/字号/颜色/加粗等。
-      const at = local(event);
-      if (Math.hypot(at.x - current.from.x, at.y - current.from.y) < 3) {
-        const target = editor.items[current.index];
-        if (target && target.kind === "text") editor.editExistingText(current.index, target);
-      }
+      // 单击只选中（显示框线可拖），双击才进文字编辑；保留框线拖动能力。
       return;
     }
     if (current.mode !== "draw") return;
@@ -222,12 +235,24 @@ export function useScreenshotGestures(editor: EditorState) {
     if (event.button !== 0 || !editor.rect) return;
     event.stopPropagation();
     editor.drag.current = { mode: "move", from: { x: event.clientX, y: event.clientY }, origin: editor.rect };
+    editor.setDragging(true);
+    // 控制点只有几像素：不锁指针，鼠标一移出事件就丢了，拖拽会「拖不动」。
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const startResize = (handle: Handle) => (event: React.PointerEvent<HTMLElement>) => {
     if (event.button !== 0 || !editor.rect) return;
     event.stopPropagation();
     editor.drag.current = { mode: "resize", handle, from: { x: event.clientX, y: event.clientY }, origin: editor.rect };
+    editor.setDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  /** 画图类工具：拖选区边缘 = 改选区大小（箭头/铅笔也要能拖拽框选区域）；其余工具仍是整体移动。 */
+  const DRAW_TOOLS: Tool[] = ["shape", "arrow", "pen", "mosaic"];
+  const startStrip = (edge: Handle) => (event: React.PointerEvent<HTMLElement>) => {
+    if (DRAW_TOOLS.includes(editor.tool)) return startResize(edge)(event);
+    return startMove(event);
   };
 
   const onWheel = (event: React.WheelEvent<HTMLElement>, windowRects: ScreenRect[]) => {
@@ -297,6 +322,7 @@ export function useScreenshotGestures(editor: EditorState) {
     onCanvasUp,
     startMove,
     startResize,
+    startStrip,
     onWheel,
     onNodeMove,
   };

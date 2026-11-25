@@ -8,7 +8,7 @@ use windows::{
     Globalization::Language,
     Graphics::Imaging::{BitmapAlphaMode, BitmapPixelFormat, SoftwareBitmap},
     Media::Ocr::OcrEngine,
-    Storage::Streams::{DataWriter, InMemoryRandomAccessStream},
+    Storage::Streams::DataWriter,
 };
 
 /// 超过这个尺寸就不再放大，避免无谓的耗时。
@@ -49,7 +49,7 @@ pub(crate) fn recognize(png: &[u8]) -> Result<String, String> {
         for threshold in [0u8, 170, 205] {
             let candidate = if threshold == 0 { source.clone() } else { binarize(&source, threshold) };
             let mut pixels = candidate.into_raw();
-            for pixel in pixels.chunks_exact_mut(4) {
+            for pixel in pixels.as_chunks_mut::<4>().0 {
                 pixel.swap(0, 2);
             }
             let Ok(bitmap) = bitmap_from_bgra(&pixels, scaled_width, scaled_height) else {
@@ -135,7 +135,7 @@ pub(crate) fn recognize_lines(png: &[u8]) -> Result<Vec<OcrLine>, String> {
         image::imageops::resize(&image, scaled_width, scaled_height, image::imageops::FilterType::CatmullRom)
     };
     let mut pixels = source.into_raw();
-    for pixel in pixels.chunks_exact_mut(4) {
+    for pixel in pixels.as_chunks_mut::<4>().0 {
         pixel.swap(0, 2);
     }
     let bitmap = bitmap_from_bgra(&pixels, scaled_width, scaled_height)?;
@@ -173,10 +173,10 @@ pub(crate) fn recognize_lines(png: &[u8]) -> Result<Vec<OcrLine>, String> {
             let scale_back = factor as f32;
             found.push(OcrLine {
                 text: text.trim().to_string(),
-                x: (left as f32 / scale_back) as i32,
-                y: (top as f32 / scale_back) as i32,
-                width: ((right - left) as f32 / scale_back) as i32,
-                height: ((bottom - top) as f32 / scale_back) as i32,
+                x: (left / scale_back) as i32,
+                y: (top / scale_back) as i32,
+                width: ((right - left) / scale_back) as i32,
+                height: ((bottom - top) / scale_back) as i32,
             });
         }
         let score: i32 = found.iter().map(|line| score(&line.text)).sum();
@@ -219,7 +219,6 @@ fn score(text: &str) -> i32 {
 }
 
 fn bitmap_from_bgra(pixels: &[u8], width: u32, height: u32) -> Result<SoftwareBitmap, String> {
-    let stream = InMemoryRandomAccessStream::new().map_err(|error| format!("无法创建内存流：{error}"))?;
     let writer = DataWriter::new().map_err(|error| format!("无法创建写入器：{error}"))?;
     writer.WriteBytes(pixels).map_err(|error| format!("无法写入像素：{error}"))?;
     let buffer = writer.DetachBuffer().map_err(|error| format!("无法取出缓冲区：{error}"))?;
@@ -268,7 +267,7 @@ mod tests {
             for threshold in [0u8, 170, 205] {
                 let candidate = if threshold == 0 { source.clone() } else { super::binarize(&source, threshold) };
                 let mut pixels = candidate.into_raw();
-                for pixel in pixels.chunks_exact_mut(4) {
+                for pixel in pixels.as_chunks_mut::<4>().0 {
                     pixel.swap(0, 2);
                 }
                 let Ok(bitmap) = super::bitmap_from_bgra(&pixels, width * factor, height * factor) else { continue };

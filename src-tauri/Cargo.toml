@@ -43,8 +43,9 @@ sha2 = "0.10"
 semver = "1"
 zip = { version = "7", default-features = false, features = ["deflate"] }
 tokio = { version = "1", features = ["sync", "time"] }
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
 tauri-plugin-single-instance = "2"
 # No `zip`: it only unpacks v1-style .zip updates, and releases ship the bare
 # installer (createUpdaterArtifacts: true). Leaves out its old zip 4.x crate.

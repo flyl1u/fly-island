@@ -2,7 +2,14 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Local island, translation, clipboard and settings windows",
-  "windows": ["main", "translation", "settings", "clipboard", "screenshot"],
+  "windows": [
+    "main",
+    "translation",
+    "settings",
+    "clipboard",
+    "screenshot",
+    "pinned-image-*"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-hide",
@@ -15,6 +22,11 @@
     "core:window:allow-start-dragging",
     "core:window:allow-start-resize-dragging",
     "opener:default",
-    "updater:default"
+    "updater:default",
+    "core:window:allow-set-shadow",
+    "core:window:allow-close",
+    "core:window:allow-destroy",
+    "dialog:allow-open",
+    "dialog:allow-save"
   ]
 }

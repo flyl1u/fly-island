@@ -70,6 +70,78 @@ export async function saveScreenshotPng(pngBase64: string): Promise<string> {
   return invoke<string>("screenshot_save_png", { pngBase64 });
 }
 
+/** 写到用户在保存弹窗里指定的路径。 */
+export async function saveScreenshotPngTo(pngBase64: string, path: string): Promise<string> {
+  return invoke<string>("screenshot_save_png_to", { pngBase64, path });
+}
+
+/** 把截图钉到桌面，返回贴图窗口 label。origin 是框选区在屏幕上的逻辑坐标（CSS 像素）。 */
+export async function pinScreenshotPng(pngBase64: string, origin?: { x: number; y: number }, translation = false): Promise<string> {
+  return invoke<string>("screenshot_pin_image", { pngBase64, translation, origin: origin ? { x: origin.x, y: origin.y } : null });
+}
+
+/** 关闭指定贴图窗口。 */
+export async function closePinnedImage(label: string): Promise<void> {
+  await invoke("screenshot_pin_close", { label });
+}
+
+/** 前端诊断：把关键动作写进 temp/screenshot-trace.log，和 Rust 侧的 pin: 行对着看。 */
+export async function traceScreenshot(line: string): Promise<void> {
+  try {
+    await invoke("screenshot_trace", { line });
+  } catch {
+    // 诊断日志写不进去就当没发生
+  }
+}
+
+/** 贴图窗口取自己的本地图片路径（URL 不带参数，路径存在 Rust 托管状态里）。 */
+export async function pinnedImageSrc(label: string): Promise<string> {
+  return invoke<string>("screenshot_pinned_src", { label });
+}
+
+/** 图片就绪后显示贴图：Rust 先锁定框选位置再 show，避免挪位。 */
+export async function revealPinnedImage(label: string): Promise<void> {
+  await invoke("screenshot_pin_reveal", { label });
+}
+
+/** 贴图右键菜单动作（Rust 原生菜单点击后 emit）。 */
+export function onPinMenuAction(handler: (action: string) => void): Promise<() => void> {
+  return listen<string>("pin-menu-action", (event) => handler(event.payload));
+}
+
+/** 弹出系统原生右键菜单（小窗口里 DOM 菜单会被裁掉）。坐标是屏幕物理像素。 */
+export async function openPinMenu(
+  label: string, x: number, y: number, textSelectable: boolean, shadow: boolean, topmost: boolean, english = false,
+): Promise<void> {
+  await invoke("screenshot_pin_menu", { label, x, y, textSelectable, shadow, topmost, english });
+}
+
+/** 销毁贴图：关闭窗口并删掉临时图片文件。 */
+export async function destroyPinnedImage(label: string): Promise<void> {
+  await invoke("screenshot_pin_destroy", { label });
+}
+
+/** 把一段文本写进剪贴板（走 Rust，WebView 的 navigator.clipboard 不可靠）。 */
+export async function copyScreenshotText(text: string): Promise<void> {
+  await invoke("screenshot_copy_text", { text });
+}
+
+/** 复制贴图图片到剪贴板（Rust 直读临时文件，不经过 WebView canvas）。 */
+export async function pinCopyImage(label: string): Promise<void> {
+  await invoke("screenshot_pin_copy_image", { label });
+}
+
+/** 把贴图另存为用户选择的文件（Rust 直读临时文件）。 */
+export async function pinSaveImage(label: string, target: string): Promise<void> {
+  await invoke("screenshot_pin_save_image", { label, target });
+}
+
+/** 按行识别贴图文字（Rust 直读临时文件），坐标是原图像素。 */
+export async function pinOcrLines(label: string): Promise<{ text: string; x: number; y: number; width: number; height: number }[]> {
+  const rows = await invoke<[string, number, number, number, number][]>("screenshot_pin_ocr_lines", { label });
+  return rows.map(([text, x, y, width, height]) => ({ text, x, y, width, height }));
+}
+
 /** 抓取同一区域并直接放进剪贴板（Rust 侧完成，不传图片数据）。 */
 export async function copyScreenshot(rect: ScreenRect): Promise<void> {
   await invoke("screenshot_copy", {
@@ -112,4 +184,8 @@ export async function activateScreenshot(): Promise<void> {
 /** 关闭覆盖层，并清掉 Rust 侧记住的选区与快捷键状态。 */
 export async function dismissScreenshot(): Promise<void> {
   await invoke("screenshot_dismiss");
+}
+/** Open an image/text comparison using the current pinned image. */
+export function translatePinnedImage(): Promise<string> {
+  return invoke<string>("screenshot_pin_translate");
 }

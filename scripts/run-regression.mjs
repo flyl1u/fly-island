@@ -24,6 +24,9 @@ import { capturePixelProbe } from "./regression-pixels.mjs";
 
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
+  "screenshot-session.html",
+  "screenshot-translation.html",
+  "screenshot-translation.html?theme=light&lang=en",
   "config-transfer.html",
   "config-transfer.html?lang=en",
   "agent-alert-card.html",

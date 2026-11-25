@@ -254,3 +254,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - 设备电量与音频使用固定插件 id device-battery。命令 device_battery_read(progress?)、device_battery_audio(speakerId, headsetId, target?) 仅对已启用的市场包生效，调用端不提供可执行文件路径。音频绑定存放于 fly-island-device-battery 的 speakerId / headsetId。
 - 日历标记使用现有 fly-island-native-plugins / fly-island-native-plugins-disabled 的 calendarMarks id。
+## 截图插件新增契约
+
+窗口入口：`screenshot` / `?window=screenshot`；动态 label `pinned-image-*` 对应 `?window=pinned-image` 或 `?window=screenshot-translation`。动态窗口路径按 label 在原生内存中查找。事件：`screenshot-arm`、`pin-menu-action`。
+
+IPC 在 `features/screenshot/api.ts` 类型化封装；Rust 命令清单位于 `screenshot/mod.rs`，涵盖 `screenshot_capture/raw/copy/copy_png/save_png/save_png_to`、`screenshot_ocr/ocr_lines/windows/fonts`、`screenshot_open/activate/dismiss/close/window_rect`、`set_screenshot_shortcut` 和 `screenshot_pin_*`（创建、显示、菜单、OCR、复制、保存、翻译、关闭及销毁）、`screenshot_pinned_src`、`screenshot_copy_text`、`screenshot_trace`。`screenshot_pin_image` 的可选 `translation` 参数选择图文结果窗口；`origin` 为调用截图窗口内的 CSS 坐标，原生端结合窗口物理原点和 DPI 定位。

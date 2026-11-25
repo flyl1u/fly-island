@@ -10,7 +10,35 @@ type TextEditorProps = { editor: EditorState; rect: ScreenRect };
 
 export function ScreenshotTextEditor({ editor, rect }: TextEditorProps) {
   const { screenshot: t } = useTranslation();
-  const { textBox, editing, selectedText, textSize, textInputRef, textResize, rotateCenter } = editor;
+  const { textBox, editing, selectedText, selected, textSize, textInputRef, textResize, rotateCenter } = editor;
+
+  /** 点文字框线（非控制点/旋转手柄）：拖动整条文字。 */
+  const startTextDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const index = editing?.index ?? selected;
+    const target = index === null || index === undefined ? null : editor.items[index];
+    if (index === null || index === undefined || !target || target.kind !== "text") return;
+    event.stopPropagation();
+    editor.drag.current = { mode: "text", index, from: { x: event.clientX, y: event.clientY }, origin: { ...target.at } };
+    editor.setDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  /** 框线拖动：屏幕坐标差 = 文字位移（拖画布时用的是画布内坐标，这里单独处理）。 */
+  const onTextDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const current = editor.drag.current;
+    if (!current || current.mode !== "text") return;
+    event.stopPropagation();
+    editor.setItems((list) =>
+      list.map((item, index) =>
+        index === current.index && item.kind === "text"
+          ? { ...item, at: { x: current.origin.x + event.clientX - current.from.x, y: current.origin.y + event.clientY - current.from.y } }
+          : item,
+      ),
+    );
+  };
+  const onTextDragUp = () => {
+    editor.drag.current = null;
+    editor.setDragging(false);
+  };
 
   useEffect(() => {
     if (!editing) return;
@@ -38,7 +66,17 @@ export function ScreenshotTextEditor({ editor, rect }: TextEditorProps) {
       <div
         className="screenshot-textbox"
         data-textbox="1"
-        style={{
+        onPointerDown={startTextDrag}
+        onPointerMove={onTextDragMove}
+        onPointerUp={onTextDragUp}
+        onDoubleClick={(event) => {
+          event.stopPropagation();
+          const index = selected;
+          const target = index === null ? null : editor.items[index];
+          if (index !== null && target && target.kind === "text") editor.editExistingText(index, target);
+        }}
+        style={{ pointerEvents: editing ? "none" : "auto",
+          cursor: editing ? "text" : "move",
           left: rect.x + textBox.x - 1,
           top: rect.y + textBox.y - 1,
           width: textBox.w + 10,

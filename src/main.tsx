@@ -9,6 +9,8 @@ import { TranslationWindow } from "./windows/translation/TranslationWindow";
 import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { EyeCareWindow } from "./windows/eye-care/EyeCareWindow";
 import { ClipboardWindow } from "./windows/clipboard/ClipboardWindow";
+import { ScreenshotTranslationWindow } from "./windows/screenshot-translation/ScreenshotTranslationWindow";
+import { PinnedImageWindow } from "./windows/pinned-image/PinnedImageWindow";
 import { ScreenshotWindow } from "./windows/screenshot/ScreenshotWindow";
 import { I18nProvider, loadLocale, TRANSLATIONS } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
@@ -92,6 +94,10 @@ async function mountApp() {
           <SettingsWindow />
         ) : windowKind === "clipboard" ? (
           <ClipboardWindow />
+        ) : windowKind === "screenshot-translation" ? (
+          <ScreenshotTranslationWindow />
+        ) : windowKind === "pinned-image" ? (
+          <PinnedImageWindow />
         ) : windowKind === "screenshot" ? (
           <ScreenshotErrorBoundary>
             <ScreenshotWindow />

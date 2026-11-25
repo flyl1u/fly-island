@@ -232,13 +232,19 @@
 }
 
 /* 三行式工具栏：选项行 / 工具行 / 操作行 */
+/* 工具栏贴在选区右下角：right/bottom 由 JS 按选区算好，最少留 8px 不出屏。 */
 .screenshot-rows {
   position: fixed;
+  right: var(--pin-right, 16px);
+  bottom: var(--pin-bottom, 16px);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 6px;
   z-index: 10;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
 }
 
 .screenshot-row {
@@ -344,8 +350,8 @@
 
 .screenshot-hover {
   position: fixed;
-  border: 4px solid #ff3ea5;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  border: 2px solid #4d96ff;
+  /* 只高亮窗口边框，不压暗屏幕：未框选时保持清晰原画面。 */
   pointer-events: none;
   z-index: 4;
 }
@@ -426,7 +432,9 @@
   position: fixed;
   border: 1px dashed #4d96ff;
   z-index: 24;
-  pointer-events: none;
+  /* 框线本身可点：拖框线=移动文字；四角控制点=缩放；顶部手柄=旋转。 */
+  pointer-events: auto;
+  cursor: move;
 }
 
 .screenshot-textbox-handle {
@@ -484,3 +492,8 @@
   cursor: grabbing;
   background: #e8f1ff;
 }
+/* 全屏框选：任何框线/控制点/边缘条/尺寸条都没意义，隐藏只留画面与工具栏。 */
+.screenshot-selection-fullscreen { border: none !important; outline: none !important; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45) !important; }
+.screenshot-selection-fullscreen .screenshot-handle,
+.screenshot-selection-fullscreen .screenshot-move-strip,
+.screenshot-selection-fullscreen .screenshot-size { display: none; }

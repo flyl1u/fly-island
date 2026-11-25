@@ -1,9 +1,10 @@
 // 截图覆盖层：冻结画面 + 框选 + 标注 + 复制/保存/OCR。
 // 状态在 useScreenshotEditor，指针交互在 useScreenshotGestures，抓屏与导出在 useScreenshotCapture。
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { dismissScreenshot, type ScreenRect } from "../../features/screenshot/api";
-import { drawAnnotation, nodePoints, redraw, type Tool } from "../../features/screenshot/annotations";
+import { drawAnnotation, hitText, nodePoints, redraw, type Tool } from "../../features/screenshot/annotations";
 import { useTranslation } from "../../i18n";
+import { ScreenshotSaveDialog } from "./ScreenshotSaveDialog";
 import { ScreenshotTextEditor } from "./ScreenshotTextEditor";
 import { ScreenshotToolbar } from "./ScreenshotToolbar";
 import { useScreenshotCapture } from "./useScreenshotCapture";
@@ -12,6 +13,36 @@ import { useScreenshotGestures } from "./useScreenshotGestures";
 import "./ScreenshotWindow.css";
 
 const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+
+/**
+ * 工具栏贴在选区右下角；优先选区外下方，放不下就收进选区内右下角，
+ * 全屏/选区顶到屏幕边则收进屏幕右下角。三种情况都保证在屏幕内可见。
+ * right/bottom 用 CSS 变量交给样式表做定位。
+ */
+function toolbarStyle(rect: ScreenRect, barHeight: number) {
+  const pinRight = Math.max(8, window.innerWidth - (rect.x + rect.width));
+  const selectionBottom = rect.y + rect.height;
+  const roomBelow = window.innerHeight - selectionBottom;
+  // 1) 选区外右下角：下方有足够空间。紧贴选区（4px 缝隙），不留大块空白。
+  if (roomBelow >= barHeight + 4) {
+    return {
+      "--pin-right": `${pinRight}px`,
+      "--pin-bottom": `${roomBelow - barHeight - 4}px`,
+    } as React.CSSProperties;
+  }
+  // 2) 选区内右下角：下方不够但选区自身够高，收进选区内侧。
+  if (rect.height >= barHeight + 16) {
+    return {
+      "--pin-right": `${pinRight + 8}px`,
+      "--pin-bottom": `${window.innerHeight - selectionBottom + 8}px`,
+    } as React.CSSProperties;
+  }
+  // 3) 全屏/选区顶到屏幕边：收进屏幕右下角，保证可见。
+  return {
+    "--pin-right": "8px",
+    "--pin-bottom": "8px",
+  } as React.CSSProperties;
+}
 
 /** 工具的单键快捷键。 */
 const SHORTCUTS: Record<string, Tool> = {
@@ -32,25 +63,45 @@ export function ScreenshotWindow() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const magnifierRef = useRef<HTMLCanvasElement | null>(null);
   const windowRects = useRef<ScreenRect[]>([]);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
 
+
+  const [savePng, setSavePng] = useState<string | null>(null);
   const resetEditor = editor.reset;
   const close = useCallback(() => {
     resetEditor();
+    setSavePng(null);
     void dismissScreenshot().catch(() => {});
   }, [resetEditor]);
 
+  // 必须稳定引用：capture 内部的事件订阅 useEffect 依赖 arm，arm 又依赖这些回调。
+  // 用内联箭头会在每次渲染（抓屏时 setBase/setScale 都会渲染）时反复取消/重订阅事件，
+  // 造成截图卡顿和画面闪烁。
+  const handleArm = useCallback(() => { resetEditor(); setSavePng(null); }, [resetEditor]);
+  const handlePinError = useCallback((message: string) => {
+    console.error("贴图失败", message);
+  }, []);
+
   const capture = useScreenshotCapture({
     rect: editor.rect,
-    textFont: editor.textFont,
     canvasRef,
     backdropRef,
     windowRects,
-    onArm: resetEditor,
+    onArm: handleArm,
     onClose: close,
-    onTranslated: editor.addItems,
+    onSaveRequest: setSavePng,
+    onPinError: handlePinError,
   });
 
   const { rect, items, draft, editing, magnifier, hoverIndex } = editor;
+
+  // 工具栏真实高度实测：写死估算值会让「贴选区外下方」的公式留出一大块空白。
+  const [barHeight, setBarHeight] = useState(92);
+  useLayoutEffect(() => {
+    if (!rect || editor.dragging) return;
+    const bar = toolbarRef.current;
+    if (bar && bar.offsetHeight > 0) setBarHeight(bar.offsetHeight);
+  }, [rect, editor.dragging, editor.tool, editor.color, editor.strokeWidth]);
 
   // 标注层：每次改动整块重画（撤销也就是少画最后一条）。
   useEffect(() => {
@@ -100,16 +151,29 @@ export function ScreenshotWindow() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (savePng) {
+        if (event.key === "Escape") { event.preventDefault(); setSavePng(null); }
+        return;
+      }
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable=true]")) return;
       const key = event.key.toLowerCase();
+      if ((event.ctrlKey || event.metaKey) && key === "q") {
+        event.preventDefault(); void capture.translateInline(); return;
+      }
       if (!editor.editing && !event.ctrlKey && !event.metaKey && SHORTCUTS[key]) {
         event.preventDefault();
         editor.setTool(SHORTCUTS[key]);
         return;
       }
       if (event.key === "Escape") {
+        // 编辑时先取消编辑；否则单次 Esc 结束截图。
         event.preventDefault();
-        if (editor.editing) editor.setEditing(null);
-        else close();
+        if (editor.editing) {
+          editor.setEditing(null);
+          return;
+        }
+        close();
       } else if ((event.key === "Delete" || event.key === "Backspace") && editor.selected !== null && !editor.editing) {
         event.preventDefault();
         const index = editor.selected;
@@ -132,7 +196,7 @@ export function ScreenshotWindow() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [capture, close, editor]);
+  }, [capture, close, editor, savePng]);
 
   return (
     <div
@@ -143,14 +207,29 @@ export function ScreenshotWindow() {
       onWheel={(event) => gestures.onWheel(event, windowRects.current)}
       onContextMenu={(event) => {
         event.preventDefault();
-        close();
+        if (savePng) return;
+        // 右键 = 框选鼠标所在的那个窗口（和微信截图一致）；空白处才取消。
+        const at = { x: event.clientX, y: event.clientY };
+        const hit = windowRects.current.find((item) =>
+          at.x >= item.x && at.x <= item.x + item.width && at.y >= item.y && at.y <= item.y + item.height);
+        if (hit) {
+          editor.setItems([]);
+          editor.setSelected(null);
+          editor.setRect(hit);
+        } else {
+          close();
+        }
       }}
     >
       <canvas ref={backdropRef} className="screenshot-backdrop" />
 
       {capture.failure ? <p className="screenshot-failure">{capture.failure}</p> : null}
 
-      {hoverIndex >= 0 && !rect && windowRects.current[hoverIndex] ? (
+      {hoverIndex >= 0 && !rect && windowRects.current[hoverIndex]
+        // 全屏（鼠标所在窗口铺满屏幕）不高亮：粉色 hover 框会铺满屏幕边缘，看起来像没去掉的框线。
+        && !(windowRects.current[hoverIndex].x <= 1 && windowRects.current[hoverIndex].y <= 1
+          && windowRects.current[hoverIndex].width >= window.innerWidth - 2
+          && windowRects.current[hoverIndex].height >= window.innerHeight - 2) ? (
         <div
           className="screenshot-hover"
           style={{
@@ -180,8 +259,10 @@ export function ScreenshotWindow() {
       {rect ? (
         <>
           <div
-            className="screenshot-selection"
-            style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+            className={`screenshot-selection${rect.x <= 1 && rect.y <= 1 && rect.width >= window.innerWidth - 2 && rect.height >= window.innerHeight - 2 ? " screenshot-selection-fullscreen" : ""}`}
+            style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height,
+              ...(rect.x <= 1 && rect.y <= 1 && rect.width >= window.innerWidth - 2 && rect.height >= window.innerHeight - 2
+                ? { border: "none", outline: "none" } : {}) }}
             onPointerDown={gestures.startMove}
             onPointerMove={(event) => gestures.onOverlayMove(event, windowRects.current)}
             onPointerUp={gestures.onOverlayUp}
@@ -198,10 +279,10 @@ export function ScreenshotWindow() {
                 onPointerUp={gestures.onOverlayUp}
               />
             ))}
-            <span className="screenshot-move-strip screenshot-strip-top" onPointerDown={gestures.startMove} />
-            <span className="screenshot-move-strip screenshot-strip-bottom" onPointerDown={gestures.startMove} />
-            <span className="screenshot-move-strip screenshot-strip-left" onPointerDown={gestures.startMove} />
-            <span className="screenshot-move-strip screenshot-strip-right" onPointerDown={gestures.startMove} />
+            <span className="screenshot-move-strip screenshot-strip-top" onPointerDown={gestures.startStrip("n")} />
+            <span className="screenshot-move-strip screenshot-strip-bottom" onPointerDown={gestures.startStrip("s")} />
+            <span className="screenshot-move-strip screenshot-strip-left" onPointerDown={gestures.startStrip("w")} />
+            <span className="screenshot-move-strip screenshot-strip-right" onPointerDown={gestures.startStrip("e")} />
           </div>
 
           <canvas
@@ -211,6 +292,16 @@ export function ScreenshotWindow() {
             onPointerDown={gestures.onCanvasDown}
             onPointerMove={gestures.onCanvasMove}
             onPointerUp={gestures.onCanvasUp}
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+              const at = { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY };
+              const hit = hitText(editor.items, at);
+              if (hit !== null) {
+                const target = editor.items[hit];
+                if (target.kind === "text") { editor.editExistingText(hit, target); return; }
+              }
+              void capture.copy();
+            }}
           />
 
           {editor.selected !== null && items[editor.selected] && nodePoints(items[editor.selected]).length > 0
@@ -234,11 +325,13 @@ export function ScreenshotWindow() {
                           ? { from: { ...target.from }, to: { ...target.to } }
                           : { from: { x: 0, y: 0 }, to: { x: 0, y: 0 } },
                     };
+                    editor.setDragging(true);
                     event.currentTarget.setPointerCapture(event.pointerId);
                   }}
                   onPointerMove={gestures.onNodeMove}
                   onPointerUp={() => {
                     editor.drag.current = null;
+                    editor.setDragging(false);
                   }}
                 />
               ))
@@ -246,16 +339,23 @@ export function ScreenshotWindow() {
 
           <ScreenshotTextEditor editor={editor} rect={rect} />
 
-          <div className="screenshot-rows" style={{ left: rect.x, top: rect.y + rect.height + 10 }}>
-            <ScreenshotToolbar editor={editor} capture={capture} />
-          </div>
+          {/* 拖拽选区/控制点时隐藏工具栏，松手后再显示，避免挡住拖拽。 */}
+          {!editor.dragging ? (
+            <div ref={toolbarRef} className="screenshot-rows" style={toolbarStyle(rect, barHeight)}>
+              <ScreenshotToolbar editor={editor} capture={capture} />
+            </div>
+          ) : null}
         </>
       ) : (
-        <>
-          <div className="screenshot-dim" />
-          <p className="screenshot-hint">{t.hint}</p>
-        </>
+        // 未框选时不加遮罩：第一眼看到的就是清晰的原画面，框选后才压暗选区外。
+        <p className="screenshot-hint">{t.hint}</p>
       )}
+
+      {savePng ? (
+        <ScreenshotSaveDialog png={savePng}
+          onDone={() => { setSavePng(null); close(); }}
+          onClose={() => setSavePng(null)} />
+      ) : null}
     </div>
   );
 }

@@ -306,12 +306,8 @@ pub(crate) fn resolve_dir(resource_dir: Option<PathBuf>) -> Option<PathBuf> {
         }
     }
     let base = resource_dir?;
-    for candidate in [base.join("resources/ocr"), base.join("ocr")] {
-        if candidate.join("det.onnx").exists() {
-            return Some(candidate);
-        }
-    }
-    None
+    [base.join("resources/ocr"), base.join("ocr")].into_iter()
+        .find(|candidate| candidate.join("det.onnx").exists())
 }
 #[cfg(test)]
 mod tests {

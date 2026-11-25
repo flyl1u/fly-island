@@ -1,21 +1,22 @@
 // 截图覆盖层的工具条：属性行（形状/线型/线宽/序号/马赛克/文字/颜色）、工具行、操作行和 OCR 结果。
 import {
   ArrowUpRight,
-  Check,
   Circle,
   Copy,
+  Download,
   Grid3x3,
   Hash,
   Languages,
   MousePointer2,
   Pencil,
-  Save,
+  Pin,
   ScanText,
   Square,
   Type,
   Undo2,
   X,
 } from "lucide-react";
+import { copyScreenshotText } from "../../features/screenshot/api";
 import { COLORS, type Dash, type NumberStyle, type Tool } from "../../features/screenshot/annotations";
 import { useTranslation } from "../../i18n";
 import type { ScreenshotText } from "../../i18n/sections/screenshot";
@@ -294,24 +295,24 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
         >
           <Undo2 size={19} aria-hidden />
         </button>
-        <span className="screenshot-build">v0.4.0</span>
-      </div>
-
-      <div className="screenshot-row screenshot-row-actions">
-        <button type="button" className="screenshot-tool" title={t.save} aria-label={t.save} onClick={() => void capture.save()}>
-          <Save size={19} aria-hidden />
+        {/* 贴图 / 保存图像 / 关闭 / 复制并关闭：跟在划词翻译后面同一排。 */}
+        <button type="button" className="screenshot-tool" title={t.pin} aria-label={t.pin} onClick={() => capture.pin()}>
+          <Pin size={19} aria-hidden />
+        </button>
+        <button type="button" className="screenshot-tool" title={t.save} aria-label={t.save} onClick={() => capture.save()}>
+          <Download size={19} aria-hidden />
+        </button>
+        <button type="button" className="screenshot-tool" title={t.cancelHint} aria-label={t.cancel} onClick={capture.close}>
+          <X size={19} aria-hidden />
         </button>
         <button
           type="button"
           className="screenshot-tool screenshot-tool-primary"
           title={t.copyHint}
-          aria-label={t.copy}
+          aria-label={t.copyAndClose}
           onClick={() => void capture.copy()}
         >
-          <Check size={19} aria-hidden />
-        </button>
-        <button type="button" className="screenshot-tool" title={t.cancelHint} aria-label={t.cancel} onClick={capture.close}>
-          <X size={19} aria-hidden />
+          <Copy size={19} aria-hidden />
         </button>
       </div>
 
@@ -329,7 +330,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
               className="screenshot-tool"
               title={t.copyOcr}
               aria-label={t.copyOcr}
-              onClick={() => void navigator.clipboard.writeText(capture.ocrText ?? "")}
+              onClick={() => void copyScreenshotText(capture.ocrText ?? "").catch((error) => capture.setFailure(`${t.copyFailed}: ${String(error)}`))}
             >
               <Copy size={17} aria-hidden />
             </button>
