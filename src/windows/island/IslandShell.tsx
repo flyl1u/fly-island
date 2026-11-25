@@ -58,6 +58,10 @@ type IslandShellProps = {
   islandShape?: IslandShape;
   islandCornerShape?: IslandCornerShape;
   showTitle: boolean;
+  /** The collapsed bar's title text (idleText.ts), or null for none. */
+  brandText: string | null;
+  /** Replaces the "N todos left" line, or null to show the count. */
+  pendingText: string | null;
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
@@ -139,6 +143,8 @@ export function IslandShell({
   islandShape = "notch",
   islandCornerShape = "squircle",
   showTitle,
+  brandText,
+  pendingText,
   showCollapsedText,
   collapsedTaskTitle,
   todoTimer = null,
@@ -276,6 +282,8 @@ export function IslandShell({
             isTucked={isTucked}
             positionLocked={positionLocked}
             showTitle={showTitle}
+            brandText={brandText}
+            pendingText={pendingText}
             showCollapsedText={showCollapsedText}
             collapsedLabel={collapsedLabel}
             collapsedTaskTitle={collapsedTaskTitle}

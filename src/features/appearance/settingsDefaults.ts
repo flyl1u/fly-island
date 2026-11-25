@@ -82,6 +82,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   showTitle: false,
   showCollapsedText: true,
   showIdleTodoCount: true,
+  idleText: "",
+  todoPendingDisplay: "pendingCount",
   carryOverIncompleteTodos: true,
   enableTodoReorder: true,
   todoReorderVersion: 1,

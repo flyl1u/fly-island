@@ -44,6 +44,8 @@ type IslandCollapsedBarProps = {
   isTucked: boolean;
   positionLocked: boolean;
   showTitle: boolean;
+  brandText: string | null;
+  pendingText: string | null;
   showCollapsedText: boolean;
   collapsedLabel: string;
   collapsedTaskTitle: string | null;
@@ -92,6 +94,8 @@ export function IslandCollapsedBar({
   isTucked,
   positionLocked,
   showTitle,
+  brandText,
+  pendingText,
   showCollapsedText,
   collapsedLabel,
   collapsedTaskTitle,
@@ -212,8 +216,8 @@ export function IslandCollapsedBar({
             {quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
             ) : batteryAlert ? <BatteryAlertPopup alert={batteryAlert} /> : <>
-            {showCollapsedText && showTitle && (
-              <span className="island__brand">fly-island</span>
+            {showCollapsedText && brandText !== null && (
+              <span className="island__brand">{brandText}</span>
             )}
             {showCollapsedText && shownAgent && (
               <span className="island__agent-session" key={`${shownAgent.label}:${shownAgent.title}`}>
@@ -242,8 +246,8 @@ export function IslandCollapsedBar({
             ) : <CollapsedTodoContent title={collapsedTaskTitle} prefix={showTitle ? "· " : ""} rotation={todoRotation} />)}
             {showCollapsedText && collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null && (
               <span className="island__todo-count">
-                {showTitle ? "· " : ""}
-                {t.island.pendingTodos(collapsedTodoCount)}
+                {showTitle && pendingText === null ? "· " : ""}
+                {pendingText ?? t.island.pendingTodos(collapsedTodoCount)}
               </span>
             )}
             </>}

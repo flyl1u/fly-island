@@ -32,6 +32,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 `fly-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
 
+`fly-island-settings` 的空闲文字字段（2026-11）：`idleText` 默认 `""`（去首尾空白、换行变空格、最多 40 个字符，非字符串视为空；空则沿用 `fly-island`），`todoPendingDisplay` 默认 `pendingCount`（`pendingCount` / `idleText`，其余值回退）。旧记录无这两个字段时行为不变：`showTitle` 仍控制 `fly-island` 标题，`showIdleTodoCount` 仍控制剩余数量；自定义 `idleText` 非空时，只在岛上没有别的内容时显示（不依赖 `showTitle`）；`todoPendingDisplay=idleText` 时，"有待办但没开始"一行显示空闲文字（空则 `fly-island`）而不是剩余数量。
+
+
 待办并行状态保存到 `fly-island-active-todos`（去重的字符串 ID 数组，首项为主任务）和 `fly-island-todo-timers`（独立计时对象数组 `{ todoId, endsAt, durationMinutes, notified }[]`，每项 ID 唯一）。首次读取若新键缺失、JSON 损坏或根类型错误，则从旧 `fly-island-active-todo` 字符串和 `fly-island-todo-timer` 单对象兼容读取。新键中的空数组表示已停止。非法数组项忽略，通知标记缺失按 false。
 
 旧 `fly-island-active-todo` 同步主任务 ID，旧 `fly-island-todo-timer` 同步主任务的计时对象。轮换开启时，新增活动任务按开始顺序追加，岛屿保持展开。轮换关闭时，保留主任务和其他有计时的任务。开始任务或再来一轮时，该任务成为主任务，岛屿收起。停止、完成或删除只清除对应任务的计时。关闭番茄钟清空全部计时，活动任务仍遵循轮换设置。每轮首次提示前写入 `notified: true`，同一次检查中多项到时一起标记、合响一次。跨天保留所有计时中或已到时待处理任务的 ID 与结束时间。

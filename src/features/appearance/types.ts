@@ -1,3 +1,4 @@
+import type { TodoPendingDisplay } from "./idleText.ts";
 export type TranslationTarget = "window" | "island";
 
 /**
@@ -142,6 +143,10 @@ export type IslandSettings = {
   showTitle: boolean;
   showCollapsedText: boolean;
   showIdleTodoCount: boolean;
+  /** Custom text for the idle collapsed island; empty keeps "fly-island" (idleText.ts). */
+  idleText: string;
+  /** What shows when todos are pending but none is started. */
+  todoPendingDisplay: TodoPendingDisplay;
   carryOverIncompleteTodos: boolean;
   enableTodoReorder: boolean;
   todoReorderVersion: 1;

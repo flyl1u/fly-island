@@ -72,6 +72,7 @@ export type SettingsAppearanceText = {
     moveLabel: (name: string) => string;
     showCover: string;
     showCoverHint: string;
+    idleText: { title: string; hint: string; placeholder: string; pendingTitle: string; pendingHint: string; pendingCount: string; pendingIdleText: string };
     layout: {
       title: string;
       footer: string;
@@ -150,6 +151,8 @@ export const zhCN: SettingsAppearanceText = {
     moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
     showCover: "显示歌曲封面",
     showCoverHint: "显示歌词时，在歌词前面放这首歌的封面",
+    idleText: { title: "空闲时显示的文字", hint: "没有别的内容时岛上显示这段文字（最多 40 个字），留空则按“显示标题”的设置显示 fly-island。", placeholder: "fly-island",
+      pendingTitle: "有待办但没开始时显示", pendingHint: "有待办、但还没开始做任何一项时，岛上显示什么。", pendingCount: "剩余数量", pendingIdleText: "空闲文字" },
     layout: {
       title: "岛上的排列",
       footer: "按住图标左右拖动，放在文字左边的会显示在岛的左侧；拖进下面的盒子就不在岛上显示。灰色的是还没打开的功能，位置会保留。",
@@ -227,6 +230,8 @@ export const en: SettingsAppearanceText = {
     moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
     showCover: "Show the song's cover",
     showCoverHint: "The song's cover in front of the lyric line",
+    idleText: { title: "Idle text", hint: "Shown when nothing else is (up to 40 characters). Empty keeps fly-island, as the Show title setting decides.", placeholder: "fly-island",
+      pendingTitle: "When todos are pending but none started", pendingHint: "What the island shows when there are todos but you have not started one.", pendingCount: "Count left", pendingIdleText: "Idle text" },
     layout: {
       title: "On the island",
       footer: "Hold an icon and drag it left or right; icons left of the text sit on the island's left. Drop one in the box below to take it off the island. Grey ones are switched off and keep their place.",
