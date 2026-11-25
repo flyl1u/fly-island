@@ -72,3 +72,7 @@ label.settings-row__title {
     animation-timing-function: steps(1, end);
   }
 }
+
+.settings-row--dimmed {
+  opacity: 0.45;
+}

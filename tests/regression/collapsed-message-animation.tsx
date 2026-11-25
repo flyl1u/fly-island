@@ -120,7 +120,7 @@ function Fixture() {
       shelfCount={null}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={(source) => { openedPage = source; }}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => setMode("collapsed")}
-      onResetPosition={() => {}} minimizesToTray onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
+      onResetPosition={() => {}} minimizesToTray onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onContextTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
       <span>待办清单</span>
     </IslandShell>
   </div>;

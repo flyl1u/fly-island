@@ -38,6 +38,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     enableTodoReorder: settings?.todoReorderVersion === 1
       && typeof settings.enableTodoReorder === "boolean" ? settings.enableTodoReorder : true,
     autoTuck,
+    neverAutoTuck: settings?.neverAutoTuck === true,
     tuckStyle: oneOf(["edge", "line", "hidden"] as const, settings?.tuckStyle, DEFAULT_SETTINGS.tuckStyle),
     tuckEdgeHeight: wholeSeconds(settings?.tuckEdgeHeight, TUCK_EDGE_HEIGHT, TUCK_EDGE_HEIGHT.default),
     // Saved before this was a setting: an open panel closed only when the island tucked after

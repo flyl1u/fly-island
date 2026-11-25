@@ -4,7 +4,7 @@ import { listenIslandHover } from "./api";
 import { idlePlan } from "./idleCollapse";
 import { keepVisibleReason, keepVisibleChangesAt } from "./keepVisible";
 import { logDiagnostic } from "../../features/diagnostics/api";
-import { retractsPeek, revealsForKeepVisible } from "./tuckRules";
+import { canAutoTuck, retractsPeek, revealsForKeepVisible } from "./tuckRules";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { isEditingText } from "./useHoverExpand";
 import type { useIslandNavigation } from "./useIslandNavigation";
@@ -49,7 +49,7 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
     else logDiagnostic("island", "collapse_blocked", { reason: "editing_or_picker" });
   }, [collapseIsland]);
   const plan = navigation.isPreviewing || pickerOpen ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
-  const tuckBlocked = mode === "collapsed" && !isTucked && settings.autoTuck
+  const tuckBlocked = mode === "collapsed" && !isTucked && canAutoTuck(settings, "idle_timer")
     ? navigation.isPreviewing ? "panel_preview" : pickerOpen ? "picker_open" : hasMessagePreview ? "message" : holdReason
     : null;
   useEffect(() => {

@@ -4,11 +4,11 @@ import { loadNativePluginStates } from "../plugins/native/storage";
 import { logDiagnostic } from "./api";
 
 export function diagnosticIslandSettings(settings: IslandSettings) {
-  const { autoTuck, tuckStyle, tuckDelaySeconds, tuckEdgeHeight, autoTuckRetract, autoTuckRetractDelayMs,
+  const { autoTuck, neverAutoTuck, tuckStyle, tuckDelaySeconds, tuckEdgeHeight, autoTuckRetract, autoTuckRetractDelayMs,
     keepVisibleWhileAgentRunning, keepVisibleWhileLyrics, keepVisibleWhileTodoRunning, gameAutoTuck, gameDoNotDisturb,
     collapsedAutoWidth, collapsedWidth, islandFontPercent, islandMonitor, minimizeAction, expandTrigger,
     islandShape, material, revealOnMessage } = settings;
-  return { autoTuck, tuckStyle, tuckDelaySeconds, tuckEdgeHeight, autoTuckRetract, autoTuckRetractDelayMs,
+  return { autoTuck, neverAutoTuck, tuckStyle, tuckDelaySeconds, tuckEdgeHeight, autoTuckRetract, autoTuckRetractDelayMs,
     keepVisibleWhileAgentRunning, keepVisibleWhileLyrics, keepVisibleWhileTodoRunning, gameAutoTuck, gameDoNotDisturb,
     collapsedAutoWidth, collapsedWidth, islandFontPercent, islandMonitor, minimizeAction, expandTrigger,
     islandShape, material, revealOnMessage };

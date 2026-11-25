@@ -16,6 +16,7 @@ export function SettingsNumberRow({
   unit,
   step,
   indent,
+  dimmed,
   onChange,
 }: {
   title: ReactNode;
@@ -27,6 +28,7 @@ export function SettingsNumberRow({
   unit?: string;
   step?: number;
   indent?: boolean;
+  dimmed?: boolean;
   onChange: (value: number) => void;
 }) {
   const id = useId();
@@ -36,6 +38,7 @@ export function SettingsNumberRow({
       title={<span id={`${id}-title`}>{title}</span>}
       description={description}
       indent={indent}
+      dimmed={dimmed}
       labelFor={id}
       control={
         <span className="settings-number">

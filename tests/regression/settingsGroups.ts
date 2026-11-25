@@ -44,8 +44,8 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     check(game().length === 1, "General: game-mode notifications hide while game mode is off");
     await act(async () => quiet.click());
     const tuck = rowsOf(panel, "贴边隐藏");
-    check(titles(tuck).join() === "闲置时贴边隐藏,收起后贴边,Agent 运行时不贴边,显示歌词时不贴边,待办计时时不贴边"
-      && tuck.slice(1).every((row) => row.classList.contains("settings-row--indent")), "General: auto-tuck with its delay and when not to tuck, all indented under it");
+    check(titles(tuck).join() === "永远不自动贴边,闲置时贴边隐藏,收起后贴边,Agent 运行时不贴边,播放音乐时不贴边,待办计时时不贴边"
+      && tuck.slice(2).every((row) => row.classList.contains("settings-row--indent")), "General: never-tuck switch, auto-tuck with its delay and when not to tuck, all indented under it");
     check(titles(rowsOf(panel, "位置")).join() === "回到默认位置,锁定小岛位置", "General: the position rows come last");
   } else if (category === "todos") {
     check(titles(rowsOf(panel, "任务")).join() === "自动将未完成任务写入下一天,拖动调整顺序,一次显示几条", "Todos: the list options share a group");

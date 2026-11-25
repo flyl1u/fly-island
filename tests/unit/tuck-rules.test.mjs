@@ -39,3 +39,38 @@ test("a todo timer that holds the island is re-checked when it runs out", () => 
   assert.equal(keepVisibleChangesAt(settings, { ...activity, activeTodoId: "a" }, 1000), null, "a started todo holds without end");
   assert.equal(keepVisibleChangesAt({ ...settings, keepVisibleWhileTodoRunning: false }, activity, 1000), null);
 });
+
+test("canAutoTuck: each automatic reason follows its own setting", async () => {
+  const { canAutoTuck } = await import("../../src/windows/island/tuckRules.ts");
+  const base = { neverAutoTuck: false, autoTuck: true, gameAutoTuck: false, browserAutoTuck: false };
+  assert.equal(canAutoTuck(base, "idle_timer"), true);
+  assert.equal(canAutoTuck({ ...base, autoTuck: false }, "idle_timer"), false);
+  assert.equal(canAutoTuck(base, "game_mode"), false);
+  assert.equal(canAutoTuck({ ...base, gameAutoTuck: true }, "game_mode"), true);
+  assert.equal(canAutoTuck(base, "browser"), false);
+  assert.equal(canAutoTuck({ ...base, browserAutoTuck: true }, "browser"), true);
+});
+
+test("neverAutoTuck blocks every automatic tuck whatever the other switches say", async () => {
+  const { canAutoTuck } = await import("../../src/windows/island/tuckRules.ts");
+  const all = { neverAutoTuck: true, autoTuck: true, gameAutoTuck: true, browserAutoTuck: true };
+  for (const reason of ["idle_timer", "game_mode", "browser"]) assert.equal(canAutoTuck(all, reason), false);
+});
+
+test("right click tucks only the collapsed, untucked island", async () => {
+  const { rightClickTucks } = await import("../../src/windows/island/tuckRules.ts");
+  assert.equal(rightClickTucks("collapsed", false), true);
+  assert.equal(rightClickTucks("collapsed", true), false);
+  assert.equal(rightClickTucks("expanded", false), false);
+});
+
+test("the idle plan and game mode honour neverAutoTuck", async () => {
+  const { idlePlan } = await import("../../src/windows/island/idleCollapse.ts");
+  const { gameModeEffects } = await import("../../src/windows/island/gameMode.ts");
+  const settings = { autoTuck: true, neverAutoTuck: true, gameAutoTuck: true, tuckDelaySeconds: 30, autoCollapseSeconds: 30 };
+  assert.equal(idlePlan("collapsed", settings, false), null);
+  assert.deepEqual(idlePlan("expanded", settings, false), { seconds: 30, action: "collapse" });
+  const fullscreen = { active: true, onIslandMonitor: true };
+  const effects = gameModeEffects(fullscreen, { gameDoNotDisturb: true, gameAutoTuck: true, neverAutoTuck: true });
+  assert.deepEqual(effects, { quiet: true, tuck: false });
+});

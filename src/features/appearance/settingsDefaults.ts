@@ -100,6 +100,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoTimerReminder: false,
   todoTimerReminderSound: false,
   autoTuck: true,
+  neverAutoTuck: false,
   tuckStyle: "line",
   tuckEdgeHeight: TUCK_EDGE_HEIGHT.default,
   tuckDelaySeconds: TUCK_DELAY_SECONDS.default,

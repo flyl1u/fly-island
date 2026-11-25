@@ -1,8 +1,11 @@
+import { canAutoTuck } from "./tuckRules.ts";
 export type GameModeSettings = {
   /** While a full-screen app is in front: no hover opening, no taking the focus, no message pop-ups. */
   gameDoNotDisturb: boolean;
   /** While a full-screen app fills the island's monitor: the island tucks to the top edge, and comes back after. */
   gameAutoTuck: boolean;
+  /** Never tuck by itself: game mode then only holds the island quiet, it does not tuck it. */
+  neverAutoTuck?: boolean;
 };
 
 /** Same shape as ForegroundFullscreen in api.ts, kept here so tests can import this file alone. */
@@ -23,6 +26,6 @@ export type GameModeEffects = {
 export function gameModeEffects(fullscreen: FullscreenState, settings: GameModeSettings): GameModeEffects {
   return {
     quiet: fullscreen.active && settings.gameDoNotDisturb,
-    tuck: fullscreen.active && fullscreen.onIslandMonitor && settings.gameAutoTuck,
+    tuck: fullscreen.active && fullscreen.onIslandMonitor && canAutoTuck({ neverAutoTuck: settings.neverAutoTuck === true, autoTuck: true, gameAutoTuck: settings.gameAutoTuck }, "game_mode"),
   };
 }

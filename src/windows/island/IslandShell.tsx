@@ -1,3 +1,4 @@
+import { rightClickTucks } from "./tuckRules";
 import { shoulderedShapeCss } from "../../features/appearance/cornerShape";
 import { isGlass } from "../../features/appearance/settings";
 import type { CSSProperties, ReactNode, TransitionEvent } from "react";
@@ -98,6 +99,8 @@ type IslandShellProps = {
   /** One line from the selection shortcut, shown on the collapsed island, or null. */
   onOpenSettings: () => void;
   onTuck: () => void;
+  /** Right click on the collapsed island: tucks it to the edge like the minus button (tuckRules.ts). */
+  onContextTuck: () => void;
   onReveal: () => void;
   onPageChange: (page: IslandPage) => void;
   /** Buttons of the open page, first among the window actions. */
@@ -164,6 +167,7 @@ export function IslandShell({
   onOpenTranslator,
   onOpenSettings,
   onTuck,
+  onContextTuck,
   onReveal,
   onPageChange,
   pageActions,
@@ -218,6 +222,10 @@ export function IslandShell({
         if (!isExpanded && event.target === event.currentTarget) {
           onOpenPage(page);
         }
+      }}
+      onContextMenu={() => {
+        // The native menu is already suppressed (main.tsx); here it tucks the collapsed island.
+        if (rightClickTucks(mode, isTucked)) onContextTuck();
       }}
       onPointerMove={handleGlassPointerMove}
       onPointerLeave={resetGlassPointer}

@@ -166,6 +166,8 @@ export type IslandSettings = {
   todoTimerReminder: boolean;
   todoTimerReminderSound: boolean;
   autoTuck: boolean;
+  /** Only the minus button or a right click tucks the island: no automatic tucking of any kind. */
+  neverAutoTuck: boolean;
   tuckStyle: TuckStyle;
   /** Px of the island left on screen by the "edge" tuck (TUCK_EDGE_HEIGHT). */
   tuckEdgeHeight: number;

@@ -64,13 +64,21 @@ export function TuckRows({ settings, onSettingsChange }: RowsProps) {
   return (
     <>
       <SettingsToggleRow
+        title={t.settings.layout.neverAutoTuck}
+        description={t.settings.layout.neverAutoTuckHint}
+        checked={settings.neverAutoTuck}
+        onChange={(neverAutoTuck) => update({ neverAutoTuck })}
+      />
+      <SettingsToggleRow
         title={t.settings.layout.autoTuck}
-        description={t.settings.layout.autoTuckHint}
+        description={settings.neverAutoTuck ? t.settings.layout.neverAutoTuckOverrides : t.settings.layout.autoTuckHint}
         checked={settings.autoTuck}
+        dimmed={settings.neverAutoTuck}
         onChange={(autoTuck) => update({ autoTuck })}
       />
       {settings.autoTuck ? (
         <SettingsNumberRow
+          dimmed={settings.neverAutoTuck}
           title={expand.tuckDelay}
           description={expand.tuckDelayHint}
           value={settings.tuckDelaySeconds}

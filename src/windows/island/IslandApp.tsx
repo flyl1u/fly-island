@@ -269,6 +269,7 @@ export function IslandApp() {
         onOpenTranslator={settings.translationEnabled ? openTranslator : null}
         onOpenSettings={openSettings}
         onTuck={tuckIsland}
+        onContextTuck={minimizeToEdge}
         onReveal={hoverTucked}
         onPageChange={setPage}
         pageActions={page === "agents" && (

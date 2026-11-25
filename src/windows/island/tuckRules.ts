@@ -37,3 +37,32 @@ export function retractsPeek(state: TuckState): boolean {
   if (!state.isPeeking || state.hasMessagePreview || state.isPreviewing) return false;
   return !(state.keepVisible && state.tuckedAutomatically);
 }
+
+/** Why the island would tuck by itself. Minimize button and right click are the user's own and not listed. */
+export type AutoTuckReason = "idle_timer" | "game_mode" | "browser";
+
+export type AutoTuckSettings = {
+  neverAutoTuck: boolean;
+  autoTuck: boolean;
+  gameAutoTuck: boolean;
+  browserAutoTuck?: boolean;
+};
+
+/**
+ * The one place every automatic tuck asks. "Never tuck by itself" (neverAutoTuck) beats all
+ * the reasons: only the minus button or a right click tucks then. Otherwise each reason follows
+ * its own setting.
+ */
+export function canAutoTuck(settings: AutoTuckSettings, reason: AutoTuckReason): boolean {
+  if (settings.neverAutoTuck) return false;
+  switch (reason) {
+    case "idle_timer": return settings.autoTuck;
+    case "game_mode": return settings.gameAutoTuck;
+    case "browser": return settings.browserAutoTuck === true;
+  }
+}
+
+/** A right click on the collapsed island, not yet tucked, tucks it like the minus button does. */
+export function rightClickTucks(mode: "collapsed" | "expanded", isTucked: boolean): boolean {
+  return mode === "collapsed" && !isTucked;
+}

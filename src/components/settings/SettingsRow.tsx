@@ -12,6 +12,7 @@ export function SettingsRow({
   control,
   labelFor,
   indent = false,
+  dimmed = false,
   children,
 }: {
   title: ReactNode;
@@ -20,10 +21,12 @@ export function SettingsRow({
   /** Id of the input the title names; clicking the title then focuses or toggles it. */
   labelFor?: string;
   indent?: boolean;
+  /** Greyed out and not operable, because something else in the settings overrides it. */
+  dimmed?: boolean;
   children?: ReactNode;
 }) {
   return (
-    <div className={indent ? "settings-row settings-row--indent" : "settings-row"}>
+    <div className={["settings-row", indent ? "settings-row--indent" : "", dimmed ? "settings-row--dimmed" : ""].filter(Boolean).join(" ")} inert={dimmed || undefined}>
       <div className="settings-row__main">
         <div className="settings-row__text">
           {labelFor ? (
