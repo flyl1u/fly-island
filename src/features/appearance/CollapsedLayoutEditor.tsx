@@ -121,7 +121,7 @@ export function CollapsedLayoutEditor({
   const style = {
     ...preview.style,
     "--preview-collapsed-width": settings.collapsedAutoWidth
-      ? clockWeatherWidth(340, clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100)
+      ? clockWeatherWidth(Math.round((settings.collapsedAutoWidthMin + settings.collapsedAutoWidthMax) / 2), clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100)
       : settings.collapsedWidth,
     "--preview-side-space": Math.max(0, settings.collapsedPadding - 6),
   } as CSSProperties;

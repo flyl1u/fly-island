@@ -19,6 +19,18 @@ export function CollapsedDimensionRows({ settings, onChange }: Props) {
         checked={settings.collapsedAutoWidth}
         onChange={(collapsedAutoWidth) => onChange({ ...settings, collapsedAutoWidth })}
       />
+      {settings.collapsedAutoWidth && (
+        <>
+          <SettingsNumberRow indent title={text.autoMin} unit={text.unit} value={settings.collapsedAutoWidthMin}
+            min={COLLAPSED_WIDTH.min} max={COLLAPSED_WIDTH.max}
+            onChange={(collapsedAutoWidthMin) => onChange({ ...settings, collapsedAutoWidthMin,
+              collapsedAutoWidthMax: Math.max(settings.collapsedAutoWidthMax, collapsedAutoWidthMin) })} />
+          <SettingsNumberRow indent title={text.autoMax} unit={text.unit} value={settings.collapsedAutoWidthMax}
+            min={COLLAPSED_WIDTH.min} max={COLLAPSED_WIDTH.max}
+            onChange={(collapsedAutoWidthMax) => onChange({ ...settings, collapsedAutoWidthMax,
+              collapsedAutoWidthMin: Math.min(settings.collapsedAutoWidthMin, collapsedAutoWidthMax) })} />
+        </>
+      )}
       {!settings.collapsedAutoWidth && (
         <SettingsNumberRow indent title={text.width} unit={text.unit} value={settings.collapsedWidth}
           min={COLLAPSED_WIDTH.min} max={COLLAPSED_WIDTH.max}

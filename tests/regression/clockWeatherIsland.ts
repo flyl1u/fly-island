@@ -74,7 +74,8 @@ export async function checkClockWeatherIsland(
       .filter((id: string) => id !== "clockWeather")));
     window.dispatchEvent(new StorageEvent("storage", { key: NATIVE_PLUGINS_KEY }));
   });
-  await settle(450);
+  // Narrowing waits 300 ms, then glides for 400 ms; each step renders only when act() exits.
+  for (let step = 0; step < 4; step++) await settle(450);
   check(!clock() && !weather() && (new URLSearchParams(location.search).has("notch")
     ? Math.abs(island().getBoundingClientRect().width - baseWidth) < 1 : island().getBoundingClientRect().width < clockOnlyWidth),
     `另一窗口卸载后两个位消失，收起岛恢复原宽度（${baseWidth} → ${island().getBoundingClientRect().width}）`);

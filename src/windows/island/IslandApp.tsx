@@ -21,6 +21,7 @@ import { getExpandedIslandHeight } from "./expandedHeight";
 import { getIslandStageStyle } from "./stageStyle";
 import { shapedSettings } from "../../features/appearance/islandShape";
 import { useCollapsedTodo } from "./useCollapsedTodo";
+import { useCollapsedWidthMotion } from "./useCollapsedWidthMotion";
 import { useMessageNotice } from "./useMessageNotice";
 import { useGameMode } from "./useGameMode";
 import { useMusicGrace } from "./useMusicGrace";
@@ -82,7 +83,7 @@ export function IslandApp() {
   // "Stay out while music plays" follows the media session itself, not the lyric line.
   const musicHoldsIsland = useMusicGrace(settings.musicEnabled && media.mediaState.playbackStatus === "playing");
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, statusFit, idleDisplay, todoRotation, collapsedTimer } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
@@ -94,6 +95,8 @@ export function IslandApp() {
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
+  const widthMotion = useCollapsedWidthMotion(collapsedWidthTarget, mode === "collapsed");
+  const collapsedIslandWidth = widthMotion.width;
   const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
   const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
   useIslandTucking({
@@ -180,7 +183,7 @@ export function IslandApp() {
     settings,
     setSettings,
     expandedIslandHeight,
-    collapsedIslandWidth,
+    collapsedIslandWidth: widthMotion.hitWidth,
     notice: notice.nativeNotice,
     onCollapse: collapseIsland,
   });
@@ -241,6 +244,7 @@ export function IslandApp() {
         isDetached={isPositionDetached || settings.marginY > 0}
         islandShape={settings.islandShape}
         showTitle={settings.showTitle}
+        widthMoving={widthMotion.moving}
         brandText={idleDisplay.brand}
         pendingText={idleDisplay.pending}
         showCollapsedText={settings.showCollapsedText}

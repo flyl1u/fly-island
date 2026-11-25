@@ -71,7 +71,10 @@ export type IslandSettings = {
   glassBlur: number;
   opacity: number;
   collapsedScale: number;
+  /** The switch: the width follows the shown text, between the two limits below (B3-3). */
   collapsedAutoWidth: boolean;
+  collapsedAutoWidthMin: number;
+  collapsedAutoWidthMax: number;
   collapsedWidth: number;
   collapsedHeight: number;
   /** Space (px) between the collapsed island's sides and its first and last items. */

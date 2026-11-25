@@ -274,7 +274,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       && previewButtons.querySelector('[data-page-button="agents"] .page-button-content__text')?.textContent === "AI Agent"
       && previewButtons.querySelector('[data-page-button="qq"] .page-button-content__text')?.textContent === "消息",
       "The third page button style saves and draws the localized labels in the appearance preview");
-    const autoWidth = inputNamed("自动宽度")!;
+    const autoWidth = inputNamed("根据内容自动调整长度")!;
     check(autoWidth.checked && !inputNamed("宽度"), "The notch uses automatic width by default");
     await act(async () => autoWidth.click());
     const widthInput = inputNamed("宽度")!;

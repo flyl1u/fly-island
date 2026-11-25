@@ -59,6 +59,8 @@ type IslandShellProps = {
   islandCornerShape?: IslandCornerShape;
   showTitle: boolean;
   /** The collapsed bar's title text (idleText.ts), or null for none. */
+  /** The collapsed width changed while collapsed: the shape glides to it (IslandShell.css). */
+  widthMoving?: boolean;
   brandText: string | null;
   /** Replaces the "N todos left" line, or null to show the count. */
   pendingText: string | null;
@@ -143,6 +145,7 @@ export function IslandShell({
   islandShape = "notch",
   islandCornerShape = "squircle",
   showTitle,
+  widthMoving = false,
   brandText,
   pendingText,
   showCollapsedText,
@@ -209,6 +212,7 @@ export function IslandShell({
     glass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
     notice && !isExpanded ? "island--notice" : "",
+    widthMoving && !isExpanded ? "island--width-motion" : "",
   ]
     .filter(Boolean)
     .join(" ");

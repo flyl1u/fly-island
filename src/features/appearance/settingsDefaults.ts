@@ -26,6 +26,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   opacity: 100,
   collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.
   collapsedAutoWidth: true,
+  collapsedAutoWidthMin: 280,
+  collapsedAutoWidthMax: 340,
   collapsedWidth: COLLAPSED_WIDTH.default,
   collapsedHeight: COLLAPSED_HEIGHT.default,
   collapsedPadding: COLLAPSED_PADDING.default,

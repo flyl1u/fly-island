@@ -2,7 +2,7 @@ export type SettingsAppearanceText = {
   font: string;
   fontLabel: string;
   fontSize: string;
-  collapsedDimensions: { autoWidth: string; width: string; height: string; padding: string; unit: string; hint: string };
+  collapsedDimensions: { autoWidth: string; autoMin: string; autoMax: string; width: string; height: string; padding: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
   loadingLocalFonts: string;
@@ -92,7 +92,7 @@ export const zhCN: SettingsAppearanceText = {
   font: "字体",
   fontLabel: "岛屿字体",
   fontSize: "字号",
-  collapsedDimensions: { autoWidth: "自动宽度", width: "宽度", height: "高度", padding: "两侧留白", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
+  collapsedDimensions: { autoWidth: "根据内容自动调整长度", autoMin: "最短", autoMax: "最长", width: "宽度", height: "高度", padding: "两侧留白", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
   loadingLocalFonts: "正在读取本机字体…",
@@ -171,7 +171,7 @@ export const en: SettingsAppearanceText = {
   font: "Font",
   fontLabel: "Island font",
   fontSize: "Font size",
-  collapsedDimensions: { autoWidth: "Automatic width", width: "Width", height: "Height", padding: "Side space", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
+  collapsedDimensions: { autoWidth: "Adjust length to the content", autoMin: "Shortest", autoMax: "Longest", width: "Width", height: "Height", padding: "Side space", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
   loadingLocalFonts: "Loading installed fonts…",

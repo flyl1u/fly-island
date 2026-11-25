@@ -81,6 +81,20 @@
   --island-motion-duration: 480ms;
 }
 
+/* Automatic width: the collapsed island glides to its new width (B3-3). Part of the island-shape
+   motion, which is exempt from the reduced-motion rule like the springs above; the bar inside
+   follows on the same curve so text is never clipped mid-glide. */
+.island.island--collapsed.island--width-motion {
+  --island-motion: cubic-bezier(0.32, 0.72, 0, 1);
+  --island-motion-duration: 400ms;
+}
+
+.island--width-motion .island__collapsed {
+  transition:
+    width 400ms cubic-bezier(0.32, 0.72, 0, 1),
+    margin-left 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 /* Old WebView2 must never substitute an unsupported linear() into a transition shorthand. */
 @supports (transition-timing-function: linear(0, 1)) {
   .island {

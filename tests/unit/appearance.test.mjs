@@ -297,3 +297,16 @@ test("collapsed width range is 160–720 and saved values keep their meaning", (
   const width = (value) => normalizeSettings({ collapsedAutoWidth: false, collapsedWidth: value }).collapsedWidth;
   assert.deepEqual([width(100), width(160), width(240), width(480), width(720), width(900)], [160, 160, 240, 480, 720, 720]);
 });
+
+test("automatic width limits default to 280–340, stay in range and keep min <= max", () => {
+  const limits = (min, max) => {
+    const s = normalizeSettings({ collapsedAutoWidthMin: min, collapsedAutoWidthMax: max });
+    return [s.collapsedAutoWidthMin, s.collapsedAutoWidthMax];
+  };
+  assert.deepEqual(limits(undefined, undefined), [280, 340]);
+  assert.deepEqual(limits(200, 500), [200, 500]);
+  assert.deepEqual(limits(50, 5000), [160, 720]);
+  assert.deepEqual(limits(600, 300), [600, 600]);
+  assert.deepEqual(limits("x", null), [280, 340]);
+  assert.equal(normalizeSettings({}).collapsedAutoWidth, true);
+});
