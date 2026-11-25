@@ -29,6 +29,28 @@ use windows::{
 /// Class names are at most 256 UTF-16 units including the terminator.
 const MAX_CLASS_NAME_UNITS: usize = 256;
 
+/// Windows shell, taskbar, thumbnail-preview and snap-assist windows whose UI threads must
+/// never be attached with `AttachThreadInput`: doing so while one of them is in front stalled
+/// Explorer (contributor patch).
+fn is_shell_or_taskbar_window(window: HWND) -> bool {
+    if window.is_invalid() {
+        return false;
+    }
+    matches!(
+        class_name(window).as_str(),
+        "Shell_TrayWnd"
+            | "Shell_SecondaryTrayWnd"
+            | "TaskListThumbnailWnd"
+            | "MSTaskListWClass"
+            | "ThumbnailDeviceHelperWnd"
+            | "XamlExplorerHostIslandWindow"
+            | "MultitaskingViewFrame"
+            | "Windows.UI.Core.CoreWindow"
+            | "Progman"
+            | "WorkerW"
+    )
+}
+
 /// Calls `visit` for every top-level window, in z-order. Fails only when the
 /// enumeration itself fails.
 pub(crate) fn for_each_top_level_window(mut visit: impl FnMut(HWND)) -> windows::core::Result<()> {
@@ -273,7 +295,9 @@ pub(crate) fn activate_from_background(window: HWND) -> bool {
     // SAFETY: both calls take only plain values; a null HWND yields thread id 0.
     let (foreground_thread, own_thread) =
         unsafe { (GetWindowThreadProcessId(foreground, None), GetCurrentThreadId()) };
-    let attach = foreground_thread != 0 && foreground_thread != own_thread;
+    let attach = foreground_thread != 0
+        && foreground_thread != own_thread
+        && !is_shell_or_taskbar_window(foreground);
     // SAFETY: AttachThreadInput takes two thread ids and a flag; each attach is
     // undone below before returning, whatever SetForegroundWindow did.
     unsafe {
@@ -317,7 +341,9 @@ pub(crate) fn force_foreground(window: HWND) -> bool {
         let _ = IsGUIThread(true);
         (GetWindowThreadProcessId(foreground, None), GetCurrentThreadId())
     };
-    let attach = foreground_thread != 0 && foreground_thread != own_thread;
+    let attach = foreground_thread != 0
+        && foreground_thread != own_thread
+        && !is_shell_or_taskbar_window(foreground);
     // SAFETY: AttachThreadInput takes two thread ids and a flag; the attach is undone below
     // whatever happened. BringWindowToTop and SetForegroundWindow take the HWND by value.
     unsafe {

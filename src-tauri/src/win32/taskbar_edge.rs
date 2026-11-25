@@ -9,17 +9,28 @@ use windows::{
         UI::{
             Shell::{SHAppBarMessage, ABE_BOTTOM, ABE_LEFT, ABE_RIGHT, ABE_TOP, ABM_GETSTATE, ABM_GETTASKBARPOS, ABS_AUTOHIDE, APPBARDATA},
             WindowsAndMessaging::{
-                FindWindowExW, SetWindowPos, HWND_TOPMOST, SWP_ASYNCWINDOWPOS, SWP_NOACTIVATE,
-                SWP_NOMOVE, SWP_NOSIZE,
+                FindWindowExW, FindWindowW, SetWindowPos, HWND_TOPMOST, SWP_ASYNCWINDOWPOS,
+                SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, WM_NULL,
             },
         },
     },
 };
 
-use super::window::{is_visible, window_rect};
+use super::window::{is_visible, send_message_with_timeout, window_rect};
 
 /// A taskbar's screen rectangle in physical pixels: `(left, top, right, bottom)`.
 pub(crate) type TaskbarRect = (i32, i32, i32, i32);
+
+/// Whether Explorer's primary taskbar answers a message within 100 ms. SHAppBarMessage is
+/// synchronous and can stall for seconds while Explorer is busy (display topology switches,
+/// sign-in), so it is only called after this probe passes (contributor patch).
+fn shell_taskbar_responsive() -> bool {
+    // SAFETY: static NUL-terminated class name; fails when the taskbar does not exist yet.
+    let Ok(tray) = (unsafe { FindWindowW(w!("Shell_TrayWnd"), None) }) else {
+        return false;
+    };
+    !tray.is_invalid() && send_message_with_timeout(tray, WM_NULL, 0, 0, 100)
+}
 
 /// Rectangles of the Windows taskbars that may be docked to the top of a monitor:
 /// the primary one only when the shell reports it on the top edge, and every visible
@@ -28,7 +39,7 @@ pub(crate) type TaskbarRect = (i32, i32, i32, i32);
 ///
 /// Call on a worker: SHAppBarMessage can wait for Explorer during sign-in or wake.
 pub(crate) fn top_taskbar_candidates() -> Vec<TaskbarRect> {
-    if is_auto_hidden() {
+    if !shell_taskbar_responsive() || is_auto_hidden() {
         return Vec::new();
     }
     let mut rects = Vec::new();
@@ -78,7 +89,12 @@ fn primary_top_taskbar() -> Option<TaskbarRect> {
     Some((data.rc.left, data.rc.top, data.rc.right, data.rc.bottom))
 }
 
+/// The primary taskbar's edge and auto-hide flag for the startup header; `unknown` when
+/// Explorer does not answer in time.
 pub(crate) fn diagnostic_state() -> (&'static str, bool) {
+    if !shell_taskbar_responsive() {
+        return ("unknown", false);
+    }
     let edge = match primary_taskbar().map(|data| data.uEdge) {
         Some(ABE_TOP) => "top",
         Some(ABE_BOTTOM) => "bottom",

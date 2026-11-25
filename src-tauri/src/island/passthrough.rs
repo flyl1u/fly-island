@@ -5,7 +5,7 @@ use tauri::{Emitter, WebviewWindow};
 use windows::Win32::Foundation::HWND;
 
 use super::{
-    geometry::{tucked_top_offset, STAGE_WINDOW_WIDTH},
+    geometry::{is_position_animating, tucked_top_offset, STAGE_WINDOW_WIDTH},
     state::{game_quiet, read_window_state, CornerShape, IslandMode, IslandWindowState},
 };
 use crate::win32;
@@ -28,6 +28,27 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
         let hwnd = window.hwnd().ok();
 
         loop {
+            // Hidden (tray) or mid-slide: the window is not under the cursor in any meaningful
+            // way. A slide moves it out from under a cursor that has not moved, which must not
+            // read as leaving (peek, retract, peek again). Based on a contributor patch.
+            if let Some(hwnd) = hwnd {
+                if !win32::window::is_visible(hwnd) {
+                    if !ignoring_cursor && window.set_ignore_cursor_events(true).is_ok() {
+                        ignoring_cursor = true;
+                    }
+                    if was_inside {
+                        was_inside = false;
+                        crate::app_log::event(crate::app_log::Category::Island, "hover", &[("reason", "window_hidden")]);
+                        let _ = window.emit(ISLAND_HOVER_CHANGED_EVENT, false);
+                    }
+                    thread::sleep(Duration::from_millis(40));
+                    continue;
+                }
+                if is_position_animating() {
+                    thread::sleep(Duration::from_millis(12));
+                    continue;
+                }
+            }
             // A press that started on the island (selecting text, dragging a slider or a
             // scrollbar) keeps the window taking the mouse until it is released: passing clicks
             // through mid-drag ended the gesture and dropped the selection being made.

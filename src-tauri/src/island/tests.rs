@@ -524,3 +524,12 @@ fn collapsed_bar_takes_clicks_in_its_corners_and_just_beside_it() {
         assert!(!point_in_island(island, dpi, left + width * dpi / 2.0, bottom + 1.0));
     }
 }
+
+#[test]
+fn only_the_current_generations_slide_counts_as_animating() {
+    // The cursor loop holds hover-leave while the stage slides out from under a still cursor;
+    // a superseded slide (older generation) must not hold it forever.
+    assert!(!slide_in_progress(None, 3));
+    assert!(slide_in_progress(Some((3, (10, 0))), 3));
+    assert!(!slide_in_progress(Some((2, (10, 0))), 3));
+}

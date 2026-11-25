@@ -18,15 +18,41 @@ pub(crate) const ISLAND_POSITION_CLEARED_EVENT: &str = "island-position-cleared"
 const POLL_INTERVAL: Duration = Duration::from_millis(300);
 /// Looks in a row the target must stay on another monitor before the island moves, so passing
 /// over a monitor on the way to a third one, or a window flashing up, does not move it.
-const SETTLE_POLLS: u32 = 2;
+const SETTLE_POLLS: u32 = 4;
+/// Pause after a display is connected, disconnected or rescaled, so Windows and DWM finish
+/// rebuilding the desktop before the transparent stage crosses monitors (contributor patch).
+const TOPOLOGY_COOLDOWN: Duration = Duration::from_secs(2);
+
+type MonitorTopology = Vec<(i32, i32, u32, u32, u32)>;
 
 pub(crate) fn start_monitor_follow_loop(window: WebviewWindow) {
     super::diagnostics::track_topology(window.clone());
     thread::spawn(move || {
         let mut pending: Option<((i32, i32, i32, i32), u32)> = None;
+        let mut last_topology = monitor_topology_signature(&window);
         loop {
             thread::sleep(POLL_INTERVAL);
             let state = read_window_state();
+            let current_topology = monitor_topology_signature(&window);
+            if current_topology.is_none() {
+                // Briefly empty while displays switch: do nothing until it is back.
+                pending = None;
+                continue;
+            }
+            if current_topology != last_topology {
+                let had_previous = last_topology.is_some();
+                last_topology = current_topology;
+                pending = None;
+                if had_previous {
+                    crate::app_log::event(crate::app_log::Category::Window, "follow_cooldown", &[("reason", "topology_changed")]);
+                    thread::sleep(TOPOLOGY_COOLDOWN);
+                }
+                continue;
+            }
+            if matches!(state.monitor_follow, MonitorFollow::Primary) || !window.is_visible().unwrap_or(false) {
+                pending = None;
+                continue;
+            }
             let Some(target) = followed_point(&window, state) else {
                 pending = None;
                 continue;
@@ -52,6 +78,28 @@ pub(crate) fn start_monitor_follow_loop(window: WebviewWindow) {
     });
 }
 
+/// Position, size and scale of every usable monitor, sorted; None while none is usable.
+fn monitor_topology_signature(window: &WebviewWindow) -> Option<MonitorTopology> {
+    let monitors = window.available_monitors().ok()?;
+    let mut signature: MonitorTopology = monitors
+        .into_iter()
+        .filter_map(|monitor| {
+            let size = monitor.size();
+            let scale = monitor.scale_factor();
+            if size.width == 0 || size.height == 0 || !scale.is_finite() || scale <= 0.0 {
+                return None;
+            }
+            let position = monitor.position();
+            Some((position.x, position.y, size.width, size.height, (scale * 1000.0).round() as u32))
+        })
+        .collect();
+    if signature.is_empty() {
+        return None;
+    }
+    signature.sort_unstable();
+    Some(signature)
+}
+
 /// Where the island should be, by the setting: the pointer, or the middle of the foreground
 /// window. None when it stays put: on the primary monitor, or the island itself is in front.
 fn followed_point(window: &WebviewWindow, state: IslandWindowState) -> Option<(i32, i32)> {
@@ -66,6 +114,9 @@ fn followed_point(window: &WebviewWindow, state: IslandWindowState) -> Option<(i
                 return None;
             }
             let rect = win32::window::window_rect(foreground)?;
+            if rect.right <= rect.left || rect.bottom <= rect.top {
+                return None;
+            }
             Some(((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2))
         }
     }
@@ -80,6 +131,9 @@ pub(super) fn may_move(state: IslandWindowState) -> bool {
 fn monitor_bounds(window: &WebviewWindow, point: (i32, i32)) -> Option<(i32, i32, i32, i32)> {
     let monitor = monitor_at(window, point).ok().flatten()?;
     let (position, size) = (monitor.position(), monitor.size());
+    if size.width == 0 || size.height == 0 {
+        return None;
+    }
     Some((position.x, position.y, size.width as i32, size.height as i32))
 }
 

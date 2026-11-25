@@ -89,6 +89,28 @@ pub(super) fn position_before_tuck(
 pub(super) fn continues_slide(running: Option<(u64, (i32, i32))>, current_generation: u64, target: (i32, i32), animate: bool) -> bool {
     !animate && running == Some((current_generation, target))
 }
+/// Whether the stage is sliding between tucked and untucked positions right now. The cursor
+/// loop (passthrough.rs) does not report the cursor as having left while it is true: the
+/// window moves out from under a still cursor, which looked like a leave and bounced the
+/// island (peek, retract, peek again). Based on a contributor patch.
+pub(super) fn is_position_animating() -> bool {
+    let current = POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst);
+    let running = *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
+    slide_in_progress(running, current)
+}
+
+/// A slide owned by an older generation was superseded and no longer moves the window.
+pub(super) fn slide_in_progress(running: Option<(u64, (i32, i32))>, current_generation: u64) -> bool {
+    running.is_some_and(|(owner, _)| owner == current_generation)
+}
+
+/// Monitors Windows reports with no area or a broken scale while the topology is switching.
+fn is_valid_monitor(monitor: &Monitor) -> bool {
+    let size = monitor.size();
+    let scale = monitor.scale_factor();
+    size.width > 0 && size.height > 0 && scale.is_finite() && scale > 0.0
+}
+
 // A shorter stage waits for the island's 560ms height transition (.island in
 // src/windows/island/IslandShell.css) to finish; shrinking at once would cut off the
 // bottom of the island while it is still animating down from a taller page.
@@ -104,15 +126,19 @@ pub(crate) fn apply_stage_geometry(
     let stage_height = STAGE_WINDOW_HEIGHT
         .max((state.expanded_height * state.expanded_scale).ceil() + STAGE_WINDOW_PADDING_Y);
 
-    resize_stage(window, LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height))
-        .map_err(|error| super::diagnostics::stage_failure("resize_failed", error))?;
+    let stage_size = LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height);
 
     let current_monitor = window
         .current_monitor()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| error.to_string())?
+        .filter(is_valid_monitor);
+    let current_monitor_bounds = current_monitor
+        .as_ref()
+        .map(|monitor| (*monitor.position(), *monitor.size()));
     let primary_monitor = window
         .primary_monitor()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| error.to_string())?
+        .filter(is_valid_monitor);
     let custom_monitor = state
         .custom_position
         .and_then(|position| monitor_for_island_position(window, position, state).ok().flatten());
@@ -126,14 +152,21 @@ pub(crate) fn apply_stage_geometry(
         else if followed_monitor.is_some() {
             match state.monitor_follow { MonitorFollow::Cursor => "follow_cursor", MonitorFollow::Foreground => "follow_foreground", MonitorFollow::Primary => "primary" }
         } else if primary_monitor.is_some() { "primary" } else { "current_fallback" };
-    let monitor = custom_monitor
+    let Some(monitor) = custom_monitor
         .or(followed_monitor)
         .or_else(|| primary_monitor.or(current_monitor))
-        .ok_or_else(|| super::diagnostics::stage_failure("monitor_unavailable", "No monitor is available for island positioning.".into()))?;
+    else {
+        // The topology is briefly empty while a display is plugged or unplugged: leave the
+        // window alone until Windows finishes switching, instead of reporting an error.
+        crate::app_log::event(crate::app_log::Category::Window, "stage_skipped", &[("reason", "monitor_unavailable")]);
+        return Ok(());
+    };
 
     let scale = monitor.scale_factor();
     let monitor_position = monitor.position();
     let monitor_size = monitor.size();
+    let same_monitor = current_monitor_bounds
+        .is_some_and(|(position, size)| position == *monitor_position && size == *monitor_size);
     let physical_width = (STAGE_WINDOW_WIDTH * scale).round() as i32;
     let top_inset = monitor_top_inset(&monitor);
     let centered_x = monitor_position.x + (monitor_size.width as i32 - physical_width) / 2;
@@ -148,33 +181,43 @@ pub(crate) fn apply_stage_geometry(
     // themselves into the topmost band after it; take the front again. Not over a full-screen
     // game (game mode tucking the island resizes it): reordering the topmost band there is
     // what the game must not see (#73).
-    if let Some(hwnd) = window.hwnd().ok().filter(|_| !super::state::game_quiet()) {
+    let is_visible = window.is_visible().unwrap_or(false);
+    if let Some(hwnd) = window.hwnd().ok().filter(|_| is_visible && !super::state::game_quiet()) {
         win32::taskbar_edge::raise_topmost(hwnd);
     }
 
     let running = *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
     if continues_slide(running, POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst), (x, y), animate_position) {
-        return Ok(());
+        return resize_stage(window, stage_size).map_err(|error| super::diagnostics::stage_failure("resize_failed", error));
     }
     let generation = POSITION_ANIMATION_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     let target = PhysicalPosition::new(x, y);
     let start = window.outer_position().map_err(|error| super::diagnostics::stage_failure("position_unavailable", error.to_string()))?;
     super::diagnostics::stage(&monitor, (x, y), stage_height, state.active_size(), top_inset, animate_position && start != target, reason);
     if start == target {
-        return Ok(());
+        *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner) = None;
+        return resize_stage(window, stage_size).map_err(|error| super::diagnostics::stage_failure("resize_failed", error));
     }
-    if !animate_position {
-        return window
+    // Move first, then resize, when the window does not slide within one monitor: resizing
+    // under the old monitor's DPI before the move made WebView2 reset its surface twice.
+    // A hidden window is not animated either: nothing is seen, and the loop would only spin.
+    if !animate_position || !is_visible || !same_monitor {
+        *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner) = None;
+        window
             .set_position(Position::Physical(target))
-            .map_err(|error| super::diagnostics::stage_failure("set_position_failed", error.to_string()));
+            .map_err(|error| super::diagnostics::stage_failure("set_position_failed", error.to_string()))?;
+        return resize_stage(window, stage_size).map_err(|error| super::diagnostics::stage_failure("resize_failed", error));
     }
 
+    resize_stage(window, stage_size).map_err(|error| super::diagnostics::stage_failure("resize_failed", error))?;
     *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner) = Some((generation, (x, y)));
     let window = window.clone();
     thread::spawn(move || {
         let started_at = Instant::now();
         loop {
-            if POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst) != generation {
+            if POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst) != generation
+                || !window.is_visible().unwrap_or(false)
+            {
                 break;
             }
             let progress = (started_at.elapsed().as_secs_f64()
@@ -209,7 +252,8 @@ fn resize_stage(window: &WebviewWindow, stage_size: LogicalSize<f64>) -> Result<
     if current == target {
         return Ok(());
     }
-    if target.height >= current.height {
+    // A width change (another monitor's DPI) is applied at once; only a pure height shrink waits.
+    if target.height >= current.height || target.width != current.width {
         return window
             .set_size(Size::Logical(stage_size))
             .map_err(|error| error.to_string());
@@ -261,7 +305,7 @@ pub(super) fn monitor_for_island_position(
         .available_monitors()
         .map_err(|error| error.to_string())?;
 
-    Ok(monitors.into_iter().find(|monitor| {
+    Ok(monitors.into_iter().filter(is_valid_monitor).find(|monitor| {
         let scale = monitor.scale_factor();
         let island_center_x = position.x as f64 + STAGE_WINDOW_WIDTH * scale / 2.0;
         let island_center_y = position.y as f64 + state.collapsed_height * state.collapsed_scale * scale / 2.0;
@@ -278,7 +322,7 @@ pub(super) fn monitor_for_island_position(
 /// The monitor holding the physical point `(x, y)`.
 pub(super) fn monitor_at(window: &WebviewWindow, (x, y): (i32, i32)) -> Result<Option<Monitor>, String> {
     let monitors = window.available_monitors().map_err(|error| error.to_string())?;
-    Ok(monitors.into_iter().find(|monitor| {
+    Ok(monitors.into_iter().filter(is_valid_monitor).find(|monitor| {
         let (position, size) = (monitor.position(), monitor.size());
         contains((position.x, position.y, size.width as i32, size.height as i32), (x, y))
     }))
