@@ -180,8 +180,46 @@ fn redirects_cannot_escape_the_local_http_policy() {
 fn incompatible_plugin_does_not_hide_compatible_index_entries() {
     let good = entry(b"zip", "https://example.com/a.zip".into());
     let mut future = good.clone(); future.id = "future-plugin".into(); future.min_app_version = "999.0.0".into();
-    let entries = packages::parse_index(&serde_json::to_vec(&vec![good, future]).unwrap()).unwrap();
+    let entries: Vec<_> = packages::parse_index(&serde_json::to_vec(&vec![good, future]).unwrap()).unwrap()
+        .into_iter().filter(IndexEntry::compatible).collect();
     assert_eq!(entries.len(), 1); assert_eq!(entries[0].id, "example-hello");
+}
+
+#[test]
+fn market_install_errors_report_the_failing_stage() {
+    let root = temporary("market-error-codes");
+    let host = Host::new(root.join("data"), None, true).unwrap();
+    let index = root.join("index.json");
+    let archive = root.join("bundle.zip");
+    let mut registry = host.snapshot().registry;
+    registry.developer_mode = true;
+    registry.index_url = index.to_string_lossy().into_owned();
+    host.persist(registry).unwrap();
+    let install_error = || tauri::async_runtime::block_on(host.install("example-hello")).unwrap_err();
+    assert_eq!(install_error(), "plugin_index_unavailable");
+    std::fs::write(&index, b"not JSON").unwrap();
+    assert_eq!(install_error(), "plugin_index_incompatible");
+    std::fs::write(&index, b"[]").unwrap();
+    assert_eq!(install_error(), "plugin_not_listed");
+    let mut bundle = entry(b"not ZIP", archive.to_string_lossy().into_owned());
+    let update_index = |bundle: &IndexEntry| std::fs::write(&index, serde_json::to_vec(&[bundle]).unwrap()).unwrap();
+    bundle.min_app_version = "999.0.0".into();
+    update_index(&bundle);
+    assert_eq!(install_error(), "plugin_index_incompatible");
+    bundle.min_app_version = env!("CARGO_PKG_VERSION").into();
+    update_index(&bundle);
+    assert_eq!(install_error(), "plugin_package_download_failed");
+    std::fs::write(&archive, b"wrong bytes").unwrap();
+    assert_eq!(install_error(), "plugin_package_integrity_failed");
+    std::fs::write(&archive, b"not ZIP").unwrap();
+    assert_eq!(install_error(), "plugin_package_invalid");
+    let log = std::fs::read_to_string(host.root.join("plugin-logs/catalog.log")).unwrap();
+    assert!(log.contains("plugin_package_integrity_failed: Plugin SHA-256 or size mismatch"));
+    assert!(log.contains("Requires Fly Island 999.0.0"));
+    assert!(host.snapshot().registry.installed.is_empty());
+    assert!(!host.root.join("plugins/.staging-example-hello").exists());
+    drop(host);
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]
@@ -288,17 +326,44 @@ fn local_index_install_enable_publish_disable_uninstall() {
 fn built_artifacts_index_installs_and_runs() {
     let index_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../artifacts/plugins/plugins-index.json");
     if !index_file.exists() {
+        assert!(std::env::var_os("FLY_ISLAND_REQUIRE_PLUGIN_ARTIFACTS").is_none(), "Build the market packages before running this test");
         return;
     }
+    const ISOLATED: &str = "FLY_ISLAND_PLUGIN_TEST_PROFILE";
+    if std::env::var_os(ISOLATED).is_none() {
+        let profile = temporary("built-index-profile");
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "plugin_host::tests::built_artifacts_index_installs_and_runs", "--nocapture"])
+            .env(ISOLATED, &profile).env("USERPROFILE", &profile).env("HOME", &profile)
+            .env("APPDATA", &profile).env("LOCALAPPDATA", &profile).env_remove("FLY_ISLAND_PLUGINS_INDEX")
+            .status().unwrap();
+        std::fs::remove_dir_all(profile).unwrap();
+        assert!(status.success());
+        return;
+    }
+    keyring::Entry::store_status().as_ref().unwrap();
+    keyring_core::set_default_store(keyring_core::mock::Store::new().unwrap());
     let root = temporary("built-index-test");
     let host = Host::new(root.join("data"), None, true).unwrap();
     let mut registry = host.snapshot().registry;
     registry.developer_mode = true;
-    registry.index_url = reqwest::Url::from_file_path(&index_file).unwrap().to_string();
+    let mut built = packages::parse_index(&std::fs::read(&index_file).unwrap()).unwrap();
+    for entry in &mut built {
+        let asset = format!("{}-{}-windows-x86_64.zip", entry.id, entry.version);
+        assert!(entry.url.ends_with(&format!("/{asset}")));
+        let archive = index_file.with_file_name(asset).canonicalize().unwrap();
+        entry.url = archive.to_string_lossy().into_owned();
+    }
+    let local_index = root.join("local-index.json");
+    std::fs::write(&local_index, serde_json::to_vec(&built).unwrap()).unwrap();
+    registry.index_url = local_index.to_string_lossy().into_owned();
     host.persist(registry).unwrap();
 
     let entries = tauri::async_runtime::block_on(host.catalog()).unwrap();
     if !entries.iter().any(|entry| entry.id == "example-hello") {
+        let approved: Vec<String> = serde_json::from_str(include_str!("../../../plugins/market-packages.json")).unwrap();
+        assert!(approved.iter().all(|id| entries.iter().any(|entry| &entry.id == id)));
+        assert_eq!(entries.len(), approved.len());
         assert!(!entries.is_empty());
         for entry in entries {
             let id = entry.id.as_str();
@@ -319,14 +384,27 @@ fn built_artifacts_index_installs_and_runs() {
                     assert!(host.device_battery().is_err());
                     host.enable(id, true).unwrap();
                     assert!(host.device_battery().is_ok());
+                    let bridge = host.snapshot().registry.installed[id].directory.join("device-battery-bridge.exe");
+                    let output = std::process::Command::new(bridge).arg("battery").output().unwrap();
+                    assert!(output.status.success());
+                    let snapshot: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+                    assert!(snapshot["devices"].is_array());
                     host.uninstall(id).unwrap();
                     assert!(host.device_battery().is_err());
                 }
-                // Checking the real MiniMax account and changing its hooks require an isolated user profile.
-                "minimax" => {}
+                "minimax" => {
+                    host.enable(id, true).unwrap();
+                    let until = Instant::now() + Duration::from_secs(8);
+                    while !host.snapshot().live.get(id).is_some_and(|entry| entry.status == "running") && Instant::now() < until {
+                        std::thread::sleep(Duration::from_millis(20));
+                    }
+                    assert_eq!(host.snapshot().live[id].status, "running");
+                    host.uninstall(id).unwrap();
+                }
                 _ => panic!("Unexpected package in the selected market: {id}"),
             }
         }
+        assert!(host.snapshot().registry.installed.is_empty());
         drop(host);
         std::fs::remove_dir_all(root).unwrap();
         return;
@@ -403,13 +481,13 @@ fn market_host_only_exposes_approved_non_development_packages() {
     registry.installed.insert("minimax".into(), from("minimax", mini, true));
     host.persist(registry).unwrap();
     let public = host.public_snapshot();
-    let market: Vec<String> = serde_json::from_str(include_str!("../../../plugins/market-packages.json")).unwrap();
     assert!(!public.registry.installed.contains_key("example-hello"));
     assert!(!public.registry.installed.contains_key("minimax"));
-    assert_eq!(public.registry.installed.contains_key("eye-care"), market.iter().any(|id| id == "eye-care"));
+    assert!(public.registry.installed.contains_key("eye-care"));
     assert!(!public.registry.developer_mode && public.registry.index_url.is_empty());
     assert!(!host.allows_development());
     assert!(!host.source().1);
+    assert!(host.source().0.ends_with("/releases/download/plugins-channel/plugins-index.json"));
     assert!(host.start("example-hello").is_err());
     assert_eq!(
         tauri::async_runtime::block_on(host.install("example-hello")).unwrap_err(),

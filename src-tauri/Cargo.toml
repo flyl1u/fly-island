@@ -59,4 +59,5 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [dev-dependencies]
+keyring-core = "1"
 windows = { version = "0.61", features = ["ApplicationModel", "UI_Notifications_Management", "Win32_System_WinRT", "Win32_UI_Accessibility"] }

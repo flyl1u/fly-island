@@ -1290,6 +1290,7 @@ dependencies = [
  "imap",
  "imap-proto",
  "keyring",
+ "keyring-core",
  "mailparse",
  "native-tls",
  "pollster",

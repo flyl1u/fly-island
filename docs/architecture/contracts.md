@@ -234,6 +234,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 事件：`plugins-changed`（无敏感数据；前端重新 get_plugins）。stdio RPC：`initialize`、`action`、`publish`，停止时可发送无 id 的可选 `shutdown` 通知；旧 v1 插件仍由宿主限时结束，完整 schema 见 `docs/plugins/api.md`。
 - 面板页（2026-11-16 新增，向后兼容）：manifest 可声明 `permissions/contributes` 的 `panel` 与 `panel.icon`（`battery`、`heart-pulse`、`activity`、`timer`、`gauge`、`puzzle`）；`publish` 多一个可缺省的 `panel`（`headline`、`note`、最多 16 行 `rows`、最多 4 个 manifest 已声明动作 id、`attention`），行含 `percent`（0–100）与 `countdownTo`（Unix 毫秒，宿主本地倒数）。`get_plugins()` 的 `live.<id>` 相应多 `panel`（可为 null）。没有声明的旧插件不受影响；不认识的 `panel` 字段或动作会让该次 publish 被拒。宿主只在快照确实变化时发 `plugins-changed`，重复 publish 不再触发前端重读。
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
+- 官方索引移至 `releases/download/plugins-channel/plugins-index.json`。`get_plugins_index`、`install_plugin` 和 `set_plugin_enabled` 的参数及返回类型不变；插件市场识别错误字符串 `plugin_index_unavailable`、`plugin_index_incompatible`、`plugin_not_listed`、`plugin_package_download_failed`、`plugin_package_integrity_failed`、`plugin_package_invalid`、`plugin_install_failed`、`plugin_start_failed`，不显示原始诊断。
 - v3.2.6（2026-11-18，第三轮手测后）：`fly-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `fly-island-todos`。
 
 ## 时间与天气命令（2026-11-20）

@@ -27,7 +27,7 @@ import { cargoTargetDir } from "./cargo-target.mjs";
 const CONFIG = "src-tauri/tauri.conf.json";
 const OVERLAY = "src-tauri/tauri.release.conf.json";
 const CARGO = "src-tauri/Cargo.toml";
-// Pinned for every child (tauri build, make-latest-json, build-plugins.ps1) so they agree on it.
+// Pinned for both the Tauri build and update manifest generation.
 process.env.CARGO_TARGET_DIR = cargoTargetDir();
 const RELEASE_DIR = resolve(process.env.CARGO_TARGET_DIR, "release").replaceAll("\\", "/");
 const BUNDLE_DIR = `${RELEASE_DIR}/bundle/nsis`;
@@ -35,9 +35,6 @@ const MSI_DIR = `${RELEASE_DIR}/bundle/msi`;
 const MSI_OVERLAY = `${RELEASE_DIR}/msi-version.conf.json`;
 const BETA_CHANNEL_DIR = `${RELEASE_DIR}/beta-channel`;
 const REPO = "flyl1u/fly-island";
-const releaseFeatures = JSON.parse(readFileSync("release-features.json", "utf8"));
-const marketPackages = JSON.parse(readFileSync("plugins/market-packages.json", "utf8"));
-const shipPlugins = releaseFeatures.plugins || (releaseFeatures.pluginMarket && marketPackages.length > 0);
 const LEGACY_NAME_PATTERN = /focus[\s_-]?d(?![a-z])/i;
 
 const args = process.argv.slice(2);
@@ -141,11 +138,6 @@ assertCleanArtifactNames(RELEASE_DIR);
 const latestArgs = ["scripts/release/make-latest-json.mjs", "--notes-file", notesFile];
 if (baseUrl) latestArgs.push("--base-url", baseUrl);
 run("node", latestArgs);
-// The client fetches the index from releases/latest; package URLs remain pinned to this release.
-if (shipPlugins) {
-  run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/release/build-plugins.ps1",
-    "-BaseUrl", baseUrl || `https://github.com/${REPO}/releases/download/${tag}`, ...(!releaseFeatures.plugins ? ["-MarketOnly"] : [])]);
-}
 
 const installer = readdirSync(BUNDLE_DIR).find((name) => name.endsWith(`_${version}_x64-setup.exe`));
 if (!installer) fail(`Missing installer in ${BUNDLE_DIR}.`);
@@ -162,11 +154,7 @@ if (!upload) {
   process.exit(0);
 }
 
-const pluginIndex = "artifacts/plugins/plugins-index.json";
-const pluginAssets = shipPlugins
-  ? [pluginIndex, ...JSON.parse(readFileSync(pluginIndex, "utf8")).map(({ id, version }) => `artifacts/plugins/${id}-${version}-windows-x86_64.zip`)]
-  : [];
-const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath, ...pluginAssets];
+const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath];
 const revision = run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim();
 const prerelease = isPrerelease(version);
 run("gh", [

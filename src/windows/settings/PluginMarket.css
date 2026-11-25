@@ -47,6 +47,9 @@
   transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
+.plugin-card--with-error { aspect-ratio: auto; }
+.plugin-card__error { margin: 0; }
+
 .plugin-card:hover {
   background-color: var(--color-white-a06);
   border-color: var(--color-white-a08);

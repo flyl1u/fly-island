@@ -6,9 +6,11 @@
 
 ---
 
-使用说明 / Available: [时间与天气 / Clock & Weather](clock-weather.md)、[日历标记 / Calendar Marks](../holidays.md)。
+使用说明 / Available: [时间与天气 / Clock & Weather](clock-weather.md)、[日历标记 / Calendar Marks](../holidays.md)、[护眼提醒 / Eye Care](eye-care.md)、[设备电量与音频 / Device Battery & Audio](../../plugins/device-battery/README.md)、[MiniMax Code](minimax.md)。
 
-开发中 / In development: [护眼提醒 / Eye Care](eye-care.md)、[设备电量与音频 / Device Battery & Audio](../../plugins/device-battery/README.md)、[MiniMax Code](minimax.md)。
+维护者收录外部数据插件：修改 `plugins/market-packages.json` → 运行 `pnpm release:plugins` 发布到独立 `plugins-channel` → 下一个应用版本带上新清单。已收录插件可提升插件版本单独发布；v3.3.0 及以前的正式客户端不受影响。详见 [发布流程](../updater.md#可下载功能插件)。
+
+To list a downloadable plugin, maintainers update `plugins/market-packages.json`, publish it with `pnpm release:plugins`, and ship the new list with the next app version. Updates to listed plugins are independent of app releases.
 
 ## 一、插件是什么
 

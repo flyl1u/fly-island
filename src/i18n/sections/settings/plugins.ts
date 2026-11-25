@@ -1,4 +1,5 @@
 import type { MarketPluginId } from "../../../features/plugins/native/catalog";
+import type { PluginFailure } from "../../../features/plugins/errors";
 
 import { zhCN as clockWeatherZh, en as clockWeatherEn, type ClockWeatherText } from "./clockWeather.ts";
 
@@ -18,6 +19,7 @@ export type SettingsPluginMarketText = {
   inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
   by: string; operationFailed: (name: string) => string;
+  failure: Record<PluginFailure, string>;
   items: Record<MarketPluginId, { name: string; description: string }>;
 };
 
@@ -36,6 +38,16 @@ export const zhCN: SettingsPluginsText = {
     install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
     by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
+    failure: {
+      plugin_index_unavailable: "插件目录尚未发布或暂时无法连接，请稍后重试。",
+      plugin_index_incompatible: "插件目录格式不受支持，或插件需要更新版本的 Fly Island。",
+      plugin_not_listed: "插件尚未上架，请稍后重试。",
+      plugin_package_download_failed: "安装包下载失败，请检查网络后重试。",
+      plugin_package_integrity_failed: "安装包校验失败，文件大小或校验和不匹配。",
+      plugin_package_invalid: "无法解压安装包，或插件清单不匹配。",
+      plugin_install_failed: "无法保存插件文件，请检查磁盘空间和写入权限。",
+      plugin_start_failed: "插件未能启动。请尝试重新启用或安装。",
+    },
     items: {
       minimax: { name: "MiniMax Code", description: "在 AI 会话和消息页查看额度、任务进度和待审批提醒。" },
       "eye-care": { name: "护眼提醒", description: "在岛上查看用眼倒计时，休息时在各显示器上收到提醒。" },
@@ -68,6 +80,16 @@ export const en: SettingsPluginsText = {
     install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
     by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
+    failure: {
+      plugin_index_unavailable: "The plugin catalog is not published or temporarily unreachable. Try again later.",
+      plugin_index_incompatible: "The catalog format is unsupported, or the plugin needs a newer version of Fly Island.",
+      plugin_not_listed: "This plugin is not yet listed. Try again later.",
+      plugin_package_download_failed: "Download failed. Check your connection and try again.",
+      plugin_package_integrity_failed: "The download failed its size or checksum check.",
+      plugin_package_invalid: "The package could not be unpacked, or its manifest did not match.",
+      plugin_install_failed: "Could not save plugin files. Check disk space and write permissions.",
+      plugin_start_failed: "The plugin could not start. Try enabling or installing it again.",
+    },
     items: {
       minimax: { name: "MiniMax Code", description: "See quota, session progress and pending approvals on the island." },
       "eye-care": { name: "Eye Care", description: "Track screen time on the island and get break reminders on each display." },

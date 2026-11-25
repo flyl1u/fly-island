@@ -18,10 +18,17 @@ pub struct IndexEntry {
     pub min_app_version: String,
 }
 
+impl IndexEntry {
+    pub fn compatible(&self) -> bool {
+        let app = semver::Version::parse(env!("CARGO_PKG_VERSION"));
+        let required = semver::Version::parse(&self.min_app_version);
+        matches!((app, required), (Ok(app), Ok(required)) if required <= app)
+    }
+}
+
 pub fn parse_index(bytes: &[u8]) -> Result<Vec<IndexEntry>, String> {
-    let mut entries: Vec<IndexEntry> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let entries: Vec<IndexEntry> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     let mut ids = std::collections::HashSet::new();
-    let app = semver::Version::parse(env!("CARGO_PKG_VERSION")).map_err(|e| e.to_string())?;
     if entries.len() > 200 { return Err("Plugin index too large".into()); }
     for e in &entries {
         if !valid_id(&e.id) || !ids.insert(&e.id) || e.api_version != 1
@@ -32,7 +39,6 @@ pub fn parse_index(bytes: &[u8]) -> Result<Vec<IndexEntry>, String> {
             return Err("Invalid or incompatible plugin index entry".into());
         }
     }
-    entries.retain(|entry| semver::Version::parse(&entry.min_app_version).is_ok_and(|minimum| minimum <= app));
     Ok(entries)
 }
 
@@ -87,7 +93,6 @@ pub fn verify(bytes: &[u8], entry: &IndexEntry) -> Result<(), String> {
 }
 
 pub fn extract(bytes: &[u8], destination: &Path, entry: &IndexEntry) -> Result<Manifest, String> {
-    verify(bytes, entry)?;
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
     if zip.len() > 256 { return Err("Too many plugin files".into()); }
     let mut total = 0u64;
@@ -114,7 +119,7 @@ pub fn extract(bytes: &[u8], destination: &Path, entry: &IndexEntry) -> Result<M
         return Err("Plugin archive does not match index".into());
     }
     let executable = destination.join(&manifest.runtime.command).canonicalize().map_err(|e| e.to_string())?;
-    if !executable.starts_with(destination.canonicalize().map_err(|e| e.to_string())?) { return Err("Unsafe plugin executable".into()); }
+    if !executable.is_file() || !executable.starts_with(destination.canonicalize().map_err(|e| e.to_string())?) { return Err("Unsafe plugin executable".into()); }
     Ok(manifest)
 }
 
