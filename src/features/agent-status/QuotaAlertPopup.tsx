@@ -6,8 +6,8 @@ import "./QuotaAlertPopup.css";
 /** The collapsed island's line for a usage alert: "Claude 5-hour usage at 82%", or that it reset. */
 export function QuotaAlertPopup({ alert }: { alert: QuotaAlert }) {
   const text = useTranslation().agent.quota;
-  const agent = { claude: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimi: "Kimi Code", zcode: "Z Code" }[alert.agent];
-  const span = alert.window === "fiveHour" ? text.fiveHour : text.sevenDay;
+  const agent = { claude: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimi: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" }[alert.agent];
+  const span = alert.window === "model" ? alert.model : alert.window === "fiveHour" ? text.fiveHour : text.sevenDay;
   const low = alert.kind === "low";
   const balance = alert.agent === "workbuddy" ? [text.workbuddyEmpty, text.workbuddyRestored] : [text.dshEmpty, text.dshRestored];
   const message = alert.window === "balance" ? balance[low ? 0 : 1] : low ? text.low(agent, span, Math.round(alert.used)) : text.reset(agent, span);

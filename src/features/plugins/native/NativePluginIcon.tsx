@@ -1,4 +1,4 @@
-import { CalendarDays, CloudSun, Terminal } from "lucide-react";
+import { CalendarDays, CloudSun, Orbit, Terminal } from "lucide-react";
 import dingtalkIcon from "../../../assets/brands/dingtalk.svg";
 import feishuIcon from "../../../assets/brands/feishu.svg";
 import wecomIcon from "../../../assets/brands/wecom.svg";
@@ -9,7 +9,7 @@ import hermesIcon from "../../../assets/brands/hermes.svg";
 import type { NativePluginId } from "./catalog";
 import "./NativePluginIcon.css";
 
-const NATIVE_PLUGIN_ICONS: Record<Exclude<NativePluginId, "clockWeather" | "calendarMarks" | "codebuddy">, string> = {
+const NATIVE_PLUGIN_ICONS: Record<Exclude<NativePluginId, "clockWeather" | "calendarMarks" | "codebuddy" | "antigravity">, string> = {
   dingtalk: dingtalkIcon,
   feishu: feishuIcon,
   wecom: wecomIcon,
@@ -21,6 +21,8 @@ const NATIVE_PLUGIN_ICONS: Record<Exclude<NativePluginId, "clockWeather" | "cale
 
 /** A plugin's square app tile, rounded like the WeChat and Agent icons. */
 export function NativePluginIcon({ id, size = 16, className = "" }: { id: NativePluginId; size?: number; className?: string }) {
+  if (id === "antigravity") return <span className={`native-plugin-icon native-plugin-icon--weather ${className}`.trim()}
+    style={{ width: size, height: size }} aria-hidden="true"><Orbit size={size * 0.72} strokeWidth={1.5} /></span>;
   if (id === "codebuddy") return <span className={`native-plugin-icon native-plugin-icon--weather ${className}`.trim()}
     style={{ width: size, height: size }} aria-hidden="true"><Terminal size={size * 0.72} strokeWidth={1.5} /></span>;
   if (id === "calendarMarks") return <span className={`native-plugin-icon native-plugin-icon--calendar ${className}`.trim()}

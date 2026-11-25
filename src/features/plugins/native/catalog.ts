@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "codebuddy" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -30,6 +30,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "cursor", kind: "agent", accent: "#c9c7c0", author: FLYLIU },
   { id: "kimiCode", kind: "agent", accent: "#8a8a8a", author: FLYLIU },
   { id: "codebuddy", kind: "agent", accent: "#6c4dff", author: { name: "yiumanlenong", url: "https://github.com/yiumanlenong" } },
+  { id: "antigravity", kind: "agent", accent: "#6dc487", author: { name: "lilipeng0615-cyber", url: "https://github.com/lilipeng0615-cyber" } },
   { id: "zcode", kind: "agent", accent: "#7c8592", author: FLYLIU },
   { id: "hermes", kind: "agent", accent: "#b9a6ff", author: FLYLIU },
   { id: "calendarMarks", kind: "island", accent: "#f29389", author: { name: "gyl-coding", url: "https://github.com/gyl-coding" } },

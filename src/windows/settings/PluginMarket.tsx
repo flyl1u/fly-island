@@ -57,7 +57,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     const agent = NATIVE_AGENTS.find((item) => item.id === id);
     if (agent) {
       // Its quota ring too, like the built-in agents' rings that start ticked.
-      const ring = agent.id === "kimiCode" || agent.id === "zcode" ? agent.id : null;
+      const ring = agent.id === "kimiCode" || agent.id === "zcode" || agent.id === "antigravity" ? agent.id : null;
       const quota = ring !== null && !settings.agentQuotaSources.includes(ring);
       if (!settings[agent.setting] || quota) {
         onSettingsChange({ ...settings, [agent.setting]: true, ...(quota ? { agentQuotaSources: [...settings.agentQuotaSources, ring] } : {}) });
