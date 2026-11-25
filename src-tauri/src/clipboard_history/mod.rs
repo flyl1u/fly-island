@@ -1,5 +1,6 @@
 //! Clipboard history: commands, item types and the background capture service.
 
+pub(crate) mod file_icon;
 mod hotkey;
 mod image_access;
 mod location;
@@ -333,6 +334,7 @@ macro_rules! tauri_commands {
             crate::clipboard_history::get_clipboard_storage_directory,
             crate::clipboard_history::set_clipboard_storage_directory,
             crate::clipboard_history::read_clipboard_history_thumbnail,
+            crate::clipboard_history::file_icon::read_clipboard_history_file_icon,
             crate::clipboard_history::show_clipboard_history_island,
         ] $($rest)*)
     };

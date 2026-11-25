@@ -258,3 +258,4 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 设备电量与音频使用固定插件 id device-battery。命令 device_battery_read(progress?)、device_battery_audio(speakerId, headsetId, target?) 仅对已启用的市场包生效，调用端不提供可执行文件路径。音频绑定存放于 fly-island-device-battery 的 speakerId / headsetId。
 - 日历标记使用现有 fly-island-native-plugins / fly-island-native-plugins-disabled 的 calendarMarks id。
 - CodeBuddy 会话来源（插件市场可选安装，作者 yiumanlenong）：`list_agent_sessions` 的 `native` 新增 `"codebuddy"`，返回的 `provider` 新增 `codebuddy`；`focus_agent_window` 沿用现有命令，对 `codebuddy` 通过 `~/.codebuddy/sessions` 登记的进程找终端窗口。只读 `~/.codebuddy/projects`、`~/.codebuddy/sessions`，拒绝重解析点与超大文件，最多两秒读一次，未安装或开关关闭时不读取。`fly-island-settings` 兼容新增 `agentShowCodeBuddy`（缺失时为 true，仅在装了插件时生效）。无新增命令、事件或 localStorage key。
+- 剪贴板文件图标（新增只读命令）：`read_clipboard_history_file_icon({ id: string })` 返回该记录第一个文件的 Explorer 图标（PNG data URL），文件不存在、记录没有文件或系统没有图标时返回 `null`；图标不写入 `clipboard-history.json`，缓存与文件中转共用 `file_icons.rs`。无新增事件、localStorage key 或设置字段。
