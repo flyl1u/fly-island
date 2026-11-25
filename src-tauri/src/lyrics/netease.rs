@@ -7,29 +7,31 @@
 use serde_json::Value;
 
 use super::found::{browser_client, from_lines, lrc_lines, FoundLyrics};
-use super::{matching::same_track, word_formats};
+use super::scoring::{Candidate, Playing};
+use super::{search, word_formats};
 
 const SEARCH: &str = "http://music.163.com/api/search/get/web";
 const LYRIC: &str = "https://music.163.com/api/song/lyric";
 const WORD_LYRIC: &str = "https://music.163.com/api/song/lyric/v1";
 const REFERER: &str = "https://music.163.com/";
 
-/// The id and length of the search result that is the playing track; the closest length wins,
-/// or the first result when the playing length is not known.
-pub(super) fn best_song(search: &Value, title: &str, artist: &str, duration_ms: i64) -> Option<(u64, i64)> {
-    search["result"]["songs"]
-        .as_array()?
+/// The songs a search lists: id is the NetEase song id and the length in ms.
+pub(super) fn candidates(search: &Value) -> Vec<Candidate<(u64, i64)>> {
+    let Some(songs) = search["result"]["songs"].as_array() else { return Vec::new() };
+    songs
         .iter()
         .filter_map(|song| {
-            let artists: Vec<&str> = song["artists"].as_array()?.iter().filter_map(|artist| artist["name"].as_str()).collect();
+            let singers: Vec<&str> = song["artists"].as_array()?.iter().filter_map(|artist| artist["name"].as_str()).collect();
             let length = song["duration"].as_i64().unwrap_or(0);
-            let found = (song["name"].as_str()?, artists.join(", "), length);
-            same_track((title, artist, duration_ms), (found.0, &found.1, found.2)).then(|| (song["id"].as_u64(), length))
+            Some(Candidate {
+                id: (song["id"].as_u64()?, length),
+                name: song["name"].as_str()?.to_string(),
+                singer: singers.join(", "),
+                album: song["album"]["name"].as_str().unwrap_or_default().to_string(),
+                duration_ms: length,
+            })
         })
-        .filter_map(|(id, length)| Some((id?, length)))
-        .enumerate()
-        .min_by_key(|(index, (_, length))| if duration_ms > 0 { (duration_ms - length).abs() } else { *index as i64 })
-        .map(|(_, found)| found)
+        .collect()
 }
 
 /// The song id the player gave (`NCM-<id>`), if any.
@@ -66,28 +68,40 @@ pub(super) fn lyrics_of(answer: &Value, title: &str) -> Option<FoundLyrics> {
     from_lines(&lines, has_translation.then_some(translations.as_slice()), title)
 }
 
-/// Synced lyrics, with a translation when NetEase has one. `Ok(None)` when it has none.
-pub(super) async fn fetch(title: &str, artist: &str, duration_ms: i64, player_id: Option<&str>) -> Result<Option<FoundLyrics>, String> {
-    let client = browser_client()?;
-    let (id, length) = match track_id(player_id) {
-        Some(id) => (id, 0),
-        None => {
-            let keyword = format!("{title} {artist}").trim().to_string();
-            let query = [("s", keyword), ("type", "1".into()), ("offset", "0".into()), ("limit", "20".into())];
-            let search = get_json(&client, SEARCH, &query).await?;
-            let Some(found) = best_song(&search, title, artist, duration_ms) else {
-                return Ok(None);
-            };
-            found
-        }
-    };
+async fn lyrics_of_id(client: &reqwest::Client, id: u64, length: i64, title: &str) -> Result<Option<FoundLyrics>, String> {
     let query = [("id", id.to_string()), ("lv", "-1".into()), ("kv", "-1".into()), ("tv", "-1".into()),
         ("yv", "-1".into()), ("ytv", "-1".into()), ("yrv", "-1".into()), ("cp", "false".into())];
-    if let Ok(answer) = get_json(&client, WORD_LYRIC, &query).await {
+    if let Ok(answer) = get_json(client, WORD_LYRIC, &query).await {
         if let Some(found) = lyrics_of(&answer, title) { return Ok(Some(found.with_duration(length))); }
     }
-    let answer = get_json(&client, LYRIC, &query).await?;
+    let answer = get_json(client, LYRIC, &query).await?;
     Ok(lyrics_of(&answer, title).map(|found| found.with_duration(length)))
+}
+
+/// Synced lyrics and the match score, with a translation when NetEase has one. `Ok(None)` when
+/// it has none. A song id from the player is trusted and skips the search.
+pub(super) async fn fetch(playing: &Playing<'_>, player_id: Option<&str>) -> Result<Option<(FoundLyrics, u32)>, String> {
+    let client = browser_client()?;
+    if let Some(id) = track_id(player_id) {
+        return Ok(lyrics_of_id(&client, id, 0, playing.title).await?.map(|found| (found, 100)));
+    }
+    let top = search::find(playing, |keyword| {
+        let client = client.clone();
+        async move {
+            let query = [("s", keyword), ("type", "1".into()), ("offset", "0".into()), ("limit", "20".into())];
+            Ok(candidates(&get_json(&client, SEARCH, &query).await?))
+        }
+    })
+    .await?;
+    let mut last_error = None;
+    for (score, (id, length)) in top.into_iter().take(search::TOP) {
+        match lyrics_of_id(&client, id, length, playing.title).await {
+            Ok(Some(found)) => return Ok(Some((found, score))),
+            Ok(None) => {}
+            Err(error) => last_error = Some(error),
+        }
+    }
+    last_error.map_or(Ok(None), Err)
 }
 
 #[cfg(test)]
@@ -96,15 +110,14 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn the_search_result_must_be_the_playing_song() {
+    fn songs_are_listed_with_id_length_and_names() {
         let search = json!({ "code": 200, "result": { "songs": [
-            { "id": 1, "name": "余香 (女声版)", "artists": [{ "name": "小匆匆" }], "duration": 244_000 },
-            { "id": 2, "name": "余香", "artists": [{ "name": "张小九" }, { "name": "远Z" }], "duration": 228_816 },
-            { "id": 3, "name": "余香", "artists": [{ "name": "张小九" }], "duration": 246_019 },
+            { "id": 2, "name": "余香", "artists": [{ "name": "张小九" }, { "name": "远Z" }], "album": { "name": "专辑" }, "duration": 228_816 },
+            { "name": "no id", "artists": [] },
         ] } });
-        assert_eq!(best_song(&search, "余香", "张小九", 246_000), Some((3, 246_019)));
-        assert_eq!(best_song(&search, "余香", "张小九", 0), Some((2, 228_816)));
-        assert_eq!(best_song(&search, "七里香", "周杰伦", 0), None);
+        let found = candidates(&search);
+        assert_eq!(found.len(), 1);
+        assert_eq!((found[0].id, found[0].singer.as_str(), found[0].album.as_str()), ((2, 228_816), "张小九, 远Z", "专辑"));
         assert_eq!(track_id(Some("NCM-487885426")), Some(487_885_426));
         assert_eq!(track_id(Some("QQ-123")), None);
         assert_eq!(track_id(None), None);
@@ -136,7 +149,8 @@ mod tests {
     #[test]
     #[ignore = "Requires anonymous NetEase endpoint; no installed player needed"]
     fn live_netease_yrc() {
-        let found = tauri::async_runtime::block_on(fetch("测试", "", 0, Some("NCM-1878313261"))).unwrap().unwrap();
+        let playing = Playing { title: "测试", artist: "", album: "", duration_ms: 0 };
+        let (found, _) = tauri::async_runtime::block_on(fetch(&playing, Some("NCM-1878313261"))).unwrap().unwrap();
         assert!(found.lrc.contains('<'));
         println!("NetEase YRC: {} timed lines", found.lrc.lines().count());
     }

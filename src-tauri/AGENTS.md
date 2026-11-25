@@ -26,7 +26,7 @@ src-tauri/src/
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
 ├── media_control/           # diagnostics.rs：SMTC、进程、版本与网易云插件只读诊断；hotkeys.rs：可选音乐全局快捷键、注册状态与已有媒体会话控制
 ├── media_plugins/           # 网易云插件探测、固定清单下载校验、安装记录与受限提权安装 / 卸载
-├── lyrics/                  # 本地 LRC、LRCLIB、QQ QRC、网易 YRC、酷狗 KRC 缓存、汽水只读 LMDB/msgpackr；word_formats.rs 统一逐字格式，在线结果缓存在 lyrics-cache/
+├── lyrics/                  # 本地 LRC、LRCLIB、QQ QRC、网易 YRC、酷狗 KRC 缓存、汽水只读 LMDB/msgpackr；online.rs 并发请求在线来源并选分数最高者，scoring.rs / artist_match.rs / search.rs 负责评分与多关键词搜索；word_formats.rs 统一逐字格式，在线结果缓存在 lyrics-cache/
 ├── mail/                    # 邮箱（命令名仍为 *_qq_mail）：附件（attachments.rs）、命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/        # QQ 通知监听；repair-qq-notification-registration.ps1 编入二进制，也可手动运行
 ├── wechat_reminders/        # source.rs 统一微信进程解析、窗口选择和任务栏提醒（被示例复用）；可选的 UI Automation 摘要与 Qt 标志恢复

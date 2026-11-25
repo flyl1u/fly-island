@@ -6,6 +6,7 @@
 //! `lyrics-cache/` in the app data folder, so a track is asked for once. The text is returned as
 //! LRC, with the translation as a second LRC when the source has one; the island parses both.
 
+mod artist_match;
 mod found;
 mod krc;
 mod kugou;
@@ -14,8 +15,11 @@ mod local;
 mod lrclib;
 mod matching;
 mod netease;
+mod online;
 mod qqmusic;
 mod qrc_cipher;
+mod scoring;
+mod search;
 mod soda_cache;
 mod soda_lmdb;
 mod soda_msgpack;
@@ -40,7 +44,7 @@ const MISSING_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 /// Past this many cached tracks, the oldest are removed.
 const MAX_CACHED: usize = 2000;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LyricsQuery {
     title: String,
@@ -160,7 +164,7 @@ fn write_cache(dir: &Path, key: &str, answer: Option<&Answer>, now: u64) {
         duration_ms: answer.and_then(|(_, found)| found.duration_ms),
         durations: true,
         fetched_at: now,
-        schema_version: 3,
+        schema_version: 4,
     };
     if let Ok(text) = serde_json::to_string(&entry) {
         let _ = fs::write(cache_path(dir, key), text);
@@ -197,53 +201,6 @@ fn for_display(source: &'static str, found: FoundLyrics, title: &str, artist: &s
         }
     };
     Lyrics { source, lrc: simplify(found.lrc), translation: found.translation.map(simplify), duration_ms: found.duration_ms }
-}
-
-/// The online sources to ask, in order. A song named in Chinese asks Kugou and NetEase first,
-/// as LRCLIB has few Chinese songs; a NetEase song the player named asks NetEase first.
-fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
-    if !query.chinese {
-        return vec!["lrclib"];
-    }
-    let player = query.source_app_id.as_deref().unwrap_or_default().to_ascii_lowercase();
-    if qqmusic::track_id(query.track_id.as_deref()).is_some() || player.contains("qqmusic") {
-        return vec!["qqmusic", "kugou", "netease", "lrclib"];
-    }
-    let chinese_named = format!("{}{}", query.title, query.artist).chars().any(|c| ('\u{4E00}'..='\u{9FFF}').contains(&c));
-    match (netease::track_id(query.track_id.as_deref()).is_some(), chinese_named) {
-        (true, _) => vec!["netease", "kugou", "qqmusic", "lrclib"],
-        (false, true) => vec!["kugou", "netease", "qqmusic", "lrclib"],
-        (false, false) => vec!["lrclib", "kugou", "netease", "qqmusic"],
-    }
-}
-
-/// The first source that has lyrics. `Err` only when every source asked failed to answer.
-async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
-    let (title, artist) = (query.title.as_str(), query.artist.as_str());
-    let mut errors = Vec::new();
-    let mut answered = false;
-    let mut fallback = None;
-    for source in source_order(query) {
-        let result = match source {
-            "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
-            "netease" => netease::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
-            "qqmusic" => qqmusic::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
-            _ => lrclib::fetch(title, artist, &query.album, query.duration_ms).await,
-        };
-        match result {
-            Ok(Some(found)) => {
-                if !query.word_fill || found.lrc.contains('<') { return Ok(Some((source, found))); }
-                if fallback.is_none() { fallback = Some((source, found)); }
-            },
-            Ok(None) => answered = true,
-            Err(error) => errors.push(error),
-        }
-    }
-    if fallback.is_some() { Ok(fallback) } else if answered {
-        Ok(None)
-    } else {
-        Err(errors.join("; "))
-    }
 }
 
 /// Synced lyrics for the playing track, or null when none were found. Errors only when no
@@ -292,9 +249,11 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     let fresh = fs::read_to_string(cache_path(&cache_dir, &key)).ok()
         .and_then(|text| serde_json::from_str::<CacheEntry>(&text).ok())
         .is_some_and(|entry| entry.key == key && entry.schema_version >= 3
+            // Misses from before the scored search are asked again; lyrics found then are kept.
+            && (entry.schema_version >= 4 || entry.lrc.is_some())
             && (entry.lrc.as_ref().is_some_and(|text| text.contains('<')) || now.saturating_sub(entry.fetched_at) < MISSING_TTL.as_secs()));
     let answer = if fresh && cached.is_some() { cached.flatten() } else {
-        match fetch_online(&query).await {
+        match online::fetch(&query).await {
             Ok(Some(fetched)) => { write_cache(&cache_dir, &key, Some(&fetched), now); Some(fetched) },
             Ok(None) => {
                 let fallback = cached.flatten();
@@ -358,27 +317,6 @@ mod tests {
         assert_eq!(shown.lrc, "[00:31.50] 划一根火柴 将慵倦的夜点亮");
         assert_eq!(shown.translation.as_deref(), Some("[00:31.50] 划一根火柴 将慵倦的夜点亮"));
         assert_eq!(for_display("lrclib", found(lrc, None), "餘香", "張小九").lrc, lrc);
-    }
-
-    #[test]
-    fn chinese_songs_ask_the_chinese_sources_first() {
-        let query = |title: &str, chinese: bool, track_id: Option<&str>| LyricsQuery {
-            title: title.into(),
-            artist: String::new(),
-            album: String::new(),
-            duration_ms: 0,
-            folder: String::new(),
-            online: true,
-            chinese,
-            track_id: track_id.map(Into::into),
-            source_app_id: None,
-            word_fill: false,
-        };
-        assert_eq!(source_order(&query("余香", false, None)), ["lrclib"]);
-        assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "qqmusic", "lrclib"]);
-        assert_eq!(source_order(&query("Yesterday", true, None)), ["lrclib", "kugou", "netease", "qqmusic"]);
-        assert_eq!(source_order(&query("Yesterday", true, Some("NCM-1"))), ["netease", "kugou", "qqmusic", "lrclib"]);
-        assert_eq!(source_order(&query("Yesterday", true, Some("QQ-123")))[0], "qqmusic");
     }
 
     #[test]
