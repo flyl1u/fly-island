@@ -45,3 +45,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## H0308/taskbar-lyrics-displayer (Apache License 2.0)
+
+The lyric matching in `src-tauri/src/lyrics/scoring.rs` and `src-tauri/src/lyrics/artist_match.rs` (title normalization, Jaro-Winkler similarity, artist alias parsing and one-to-one artist assignment, version tags, the score threshold and the search keyword variants) is adapted from [H0308/taskbar-lyrics-displayer](https://github.com/H0308/taskbar-lyrics-displayer), `src/lyric/lyric_matching.cpp`, which is licensed under the Apache License, Version 2.0. The code was rewritten in Rust and changed (duration is a hard constraint, only versions that change the recording count, the album only breaks ties). No source file was copied verbatim, and the original copyright notices of that project continue to apply to the adapted ideas.
+
+You may obtain a copy of the license at <https://www.apache.org/licenses/LICENSE-2.0>. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

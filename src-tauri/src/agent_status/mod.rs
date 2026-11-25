@@ -1,8 +1,13 @@
 //! AI agent status: the snapshot shown on the island and the Codex / Claude Code hooks that write it.
 
 pub(crate) mod approval_hotkeys;
+mod antigravity;
+pub(crate) mod antigravity_quota;
+mod antigravity_transcript;
 mod background_tasks;
 mod claude_hooks;
+mod codebuddy_registry;
+mod codebuddy_sessions;
 mod codex_hooks;
 mod codex_activity;
 mod codex_process;
@@ -23,6 +28,7 @@ mod cursor_sessions;
 mod hermes_sessions;
 mod kimi_sessions;
 pub(crate) mod kimi_usage;
+mod local_agent_files;
 mod magpie;
 mod markers;
 mod notifications;
@@ -55,6 +61,9 @@ mod workbuddy_auth;
 pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
 mod workbuddy_cookie_vault;
+mod workbuddy_curl;
+mod workbuddy_official;
+pub(crate) mod workbuddy_official_flow;
 mod workbuddy_usage;
 pub(crate) mod zcode_api_key;
 mod zcode_credentials;
@@ -268,8 +277,8 @@ fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallRe
 /// Claude Code, Codex, DSH and WorkBuddy sessions active in the last two hours, running and waiting ones first.
 #[tauri::command]
 /// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
-/// `native`: the agents installed from the plugin market to read as well ("cursor", "kimiCode",
-/// "hermes"); left out by older callers, which read none of them.
+/// `native`: additional agents to read ("cursor", "kimiCode", "codebuddy", "hermes", "antigravity").
+/// Older callers can omit this list.
 pub async fn list_agent_sessions(
     app: AppHandle,
     window_hours: Option<u32>,
@@ -291,6 +300,11 @@ pub async fn list_agent_sessions(
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions.extend(dsh_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
             sessions.extend(workbuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
+            if wants("codebuddy") {
+                sessions.extend(throttled(&CODEBUDDY, window_ms, || {
+                    codebuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)
+                }));
+            }
             if wants("cursor") {
                 sessions.extend(throttled(&CURSOR, window_ms, || cursor_sessions::list_sessions(current_unix_millis(), window_ms)));
             }
@@ -299,6 +313,9 @@ pub async fn list_agent_sessions(
             }
             if wants("hermes") {
                 sessions.extend(throttled(&HERMES, window_ms, || hermes_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)));
+            }
+            if wants("antigravity") {
+                sessions.extend(throttled(&ANTIGRAVITY, window_ms, || antigravity::list_sessions(&home_dir, current_unix_millis(), window_ms)));
             }
             let is_active = |phase: &str| matches!(phase, "running" | "waiting");
             sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
@@ -314,8 +331,10 @@ type NativeSessions = std::sync::Mutex<Option<(std::time::Instant, i64, Vec<sess
 static CURSOR: NativeSessions = std::sync::Mutex::new(None);
 static KIMI: NativeSessions = std::sync::Mutex::new(None);
 static HERMES: NativeSessions = std::sync::Mutex::new(None);
+static CODEBUDDY: NativeSessions = std::sync::Mutex::new(None);
+static ANTIGRAVITY: NativeSessions = std::sync::Mutex::new(None);
 
-/// The plugin-market agents are read at most every two seconds: the island asks every second,
+/// Additional agents are read at most every two seconds: the island asks every second,
 /// and Cursor's store is a database rather than a file whose change time says enough.
 fn throttled(
     slot: &NativeSessions,
@@ -535,11 +554,12 @@ macro_rules! tauri_commands {
             crate::agent_status::dsh_usage::get_dsh_usage,
             crate::agent_status::kimi_usage::get_kimi_usage,
             crate::agent_status::zcode_usage::get_zcode_usage,
+            crate::agent_status::antigravity_quota::get_antigravity_usage,
             crate::agent_status::zcode_api_key::get_zcode_api_key_settings,
             crate::agent_status::zcode_api_key::save_zcode_api_key_settings,
             crate::agent_status::zcode_api_key::clear_zcode_api_key,
             crate::agent_status::workbuddy_connection::get_workbuddy_usage,
-            crate::agent_status::workbuddy_connection::open_workbuddy_login,
+            crate::agent_status::workbuddy_official_flow::open_workbuddy_login,
             crate::agent_status::workbuddy_connection::disconnect_workbuddy,
             crate::agent_status::reply_marker::get_reply_marker_state,
             crate::agent_status::reply_marker::set_reply_marker,

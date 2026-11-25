@@ -71,7 +71,7 @@ fn render(path: &str) -> Option<String> {
 }
 
 /// `image` as a PNG data URL.
-pub(super) fn png_data_url(image: &DynamicImage) -> Option<String> {
+pub(crate) fn png_data_url(image: &DynamicImage) -> Option<String> {
     let mut bytes = Cursor::new(Vec::new());
     image.write_to(&mut bytes, ImageFormat::Png).ok()?;
     Some(format!(

@@ -1,8 +1,8 @@
 //! WorkBuddy cookies in the Windows Credential Manager. WebView2 can lose session cookies
 //! when its process exits and persistent cookies before they are written to disk.
 
-use keyring::{Entry, Error as KeyringError};
 use crate::legacy_migration;
+use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
 use tauri::webview::{
     cookie::{time::OffsetDateTime, SameSite},
@@ -203,7 +203,10 @@ fn write_secret(name: &str, bytes: &[u8]) -> Result<(), ()> {
 }
 
 fn delete_secret(name: &str) -> bool {
-    matches!(legacy_migration::delete_credential_with_fallback(SERVICE, name), Ok(()) | Err(KeyringError::NoEntry))
+    matches!(
+        legacy_migration::delete_credential_with_fallback(SERVICE, name),
+        Ok(()) | Err(KeyringError::NoEntry)
+    )
 }
 
 fn active_index() -> Result<Option<Index>, ()> {
@@ -282,6 +285,31 @@ pub(super) fn clear() -> bool {
     // be mistaken for a legacy snapshot on the next start.
     let cleared = clear_bank(Bank::Primary) & clear_bank(Bank::Alternate);
     cleared && delete_secret(ACTIVE_ENTRY)
+}
+
+// --- Official-protocol credential (coexists with the cookie bank) -------------------------
+// Stored under its own keyring entry so adding the official login never disturbs a saved
+// website session. A separate clear path is used on sign-out.
+
+const OAUTH_ENTRY: &str = "oauth-login";
+
+/// Persist the official Bearer credential + identity. Fails closed.
+pub(super) fn save_login(login: &super::workbuddy_official::SavedLogin) -> bool {
+    let Ok(bytes) = serde_json::to_vec(login) else {
+        return false;
+    };
+    write_secret(OAUTH_ENTRY, &bytes).is_ok()
+}
+
+/// Load the persisted official credential, if any and well-formed.
+pub(super) fn load_login() -> Option<super::workbuddy_official::SavedLogin> {
+    let bytes = read_secret(OAUTH_ENTRY).ok().flatten()?;
+    serde_json::from_slice(&bytes).ok()
+}
+
+/// Remove only the official credential; the website cookie bank is left intact.
+pub(super) fn clear_login() -> bool {
+    delete_secret(OAUTH_ENTRY)
 }
 
 #[cfg(test)]

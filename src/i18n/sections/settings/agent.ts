@@ -15,7 +15,7 @@ export type SettingsAgentText = {
   sources: {
     title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string;
     /** Agents installed from the plugin market; their rows appear only once installed. */
-    native: Record<"cursor" | "kimiCode" | "hermes" | "zcode", string>;
+    native: Record<"cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode", string>;
   };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
   zcodeApiKey: {
@@ -29,7 +29,7 @@ export type SettingsAgentText = {
     };
   };
   workbuddy: {
-    signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string;
+    signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string; curlUnavailable: string;
     signIn: string; retry: string; signOut: string; busy: string; actionFailed: string;
   };
   alerts: {
@@ -83,10 +83,12 @@ export const zhCN: SettingsAgentText = {
     native: {
       cursor: "只读取 Cursor 本机的 Agent 对话。点击会话可切到对应的 Cursor 窗口。",
       kimiCode: "读取 Kimi Code CLI 的会话记录，并在 Agent 页显示套餐额度环。",
+      codebuddy: "读取 CodeBuddy CLI 的会话记录。点击会话可切到运行它的终端窗口。",
+      antigravity: "读取 Antigravity 的会话和回复摘要，并按模型显示额度环。点击会话可切到 Antigravity。",
       hermes: "只读取 Hermes Agent 的会话记录。",
       zcode: "用 Z Code 客户端登录或 Coding Plan API Key，在 Agent 页显示套餐额度环。",
     } },
-  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
+  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" } },
   zcodeApiKey: {
     title: "Coding Plan API Key（可选）",
     empty: "未填写，使用 Z Code 桌面版登录",
@@ -123,6 +125,7 @@ export const zhCN: SettingsAgentText = {
     ready: "已登录 WorkBuddy",
     connected: "已登录 WorkBuddy",
     unavailable: "暂时读不到 WorkBuddy 积分",
+    curlUnavailable: "缺少 Windows 自带的 curl.exe，暂时无法读取积分；本地会话仍可用。",
     signIn: "去登录",
     retry: "重试",
     signOut: "退出登录",
@@ -177,10 +180,12 @@ export const en: SettingsAgentText = {
     native: {
       cursor: "Reads Cursor's local agent chats, read-only. Select a session to bring its Cursor window forward.",
       kimiCode: "Reads Kimi Code CLI sessions and shows its plan's quota rings on the Agent page.",
+      codebuddy: "Reads CodeBuddy CLI sessions, read-only. Select a session to bring its terminal window forward.",
+      antigravity: "Reads Antigravity sessions and reply previews and shows quota rings by model, read-only. Select a session to bring Antigravity forward.",
       hermes: "Reads Hermes Agent sessions, read-only.",
       zcode: "Shows Z Code's plan quota rings on the Agent page using its desktop sign-in or a Coding Plan API key.",
     } },
-  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
+  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" } },
   zcodeApiKey: {
     title: "Coding Plan API Key (optional)",
     empty: "No key set. Using Z Code desktop sign-in.",
@@ -217,6 +222,7 @@ export const en: SettingsAgentText = {
     ready: "Signed in to WorkBuddy",
     connected: "Signed in to WorkBuddy",
     unavailable: "WorkBuddy credits unavailable",
+    curlUnavailable: "Windows curl.exe is missing. Credits are unavailable; local sessions still work.",
     signIn: "Sign in",
     retry: "Retry",
     signOut: "Sign out",

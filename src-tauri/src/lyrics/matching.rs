@@ -63,15 +63,6 @@ pub(super) fn same_artist(a: &str, b: &str) -> bool {
     a.is_empty() || b.is_empty() || a.iter().any(|name| b.contains(name))
 }
 
-/// Whether a search result is the playing track: the same cleaned title and a shared artist,
-/// both compared in simplified Chinese, and a close length (0 when not known).
-pub(super) fn same_track(playing: (&str, &str, i64), found: (&str, &str, i64)) -> bool {
-    let simple = |text: &str| crate::win32::chinese::to_simplified(text).unwrap_or_else(|| text.to_string());
-    clean_title(&simple(found.0)) == clean_title(&simple(playing.0))
-        && same_artist(&simple(found.1), &simple(playing.1))
-        && close_duration(playing.2, found.2)
-}
-
 /// Native cache/search matches keep version labels and require the complete artist set.
 pub(super) fn same_native_track(playing: (&str, &str, i64), found: (&str, &str, i64)) -> bool {
     let artists = |s: &str| { let mut names = artist_names(s); names.sort(); names.dedup(); names };

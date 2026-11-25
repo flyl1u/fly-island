@@ -70,7 +70,7 @@ export function AgentSettingsPage({
           </Fragment>
         ))}
       </SettingsGroup>
-      <AgentQuotaSettings sources={settings.agentQuotaSources} offered={(source) => source === "kimiCode" || source === "zcode" ? native[source] : true}
+      <AgentQuotaSettings sources={settings.agentQuotaSources} offered={(source) => source === "kimiCode" || source === "zcode" || source === "antigravity" ? native[source] : true}
         onChange={(agentQuotaSources) => onSettingsChange({ ...settings, agentQuotaSources })} />
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>
         <SettingsToggleRow

@@ -35,6 +35,7 @@ const requests: { resolve: (items: PluginIndexEntry[]) => void; reject: (reason:
 let resolveRegistry: (() => void) | undefined;
 let opened = "";
 let failOpen = false;
+let installFailure = "";
 const hostCalls: string[] = [];
 mockIPC((command, payload) => {
   hostCalls.push(command);
@@ -43,6 +44,7 @@ mockIPC((command, payload) => {
     ? snapshot()
     : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
   if (command === "install_plugin") {
+    if (installFailure) throw installFailure;
     registry.installed["eye-care"] = { ...eyeCare, enabled: false };
     return null;
   }
@@ -148,6 +150,7 @@ try {
   }
   if (!PLUGINS_ENABLED) {
     if (PLUGIN_MARKET_ENABLED) {
+      check(MARKET_PACKAGES.length === PACKAGED_MARKET_PLUGINS.length, "三个正式包都已开放安装");
       for (const { id } of PACKAGED_MARKET_PLUGINS) {
         if (MARKET_PACKAGES.some((entry) => entry.id === id)) continue;
         const name = t.market.items[id].name;
@@ -163,6 +166,21 @@ try {
       const name = market.items["eye-care"].name;
       const install = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.installNamed(name)}"]`)!;
       const remove = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.uninstallNamed(name)}"]`)!;
+      const fixture = document.getElementById("fixture")!;
+      fixture.style.width = "168px";
+      installFailure = "plugin_index_unavailable";
+      await act(async () => { install().click(); });
+      await wait();
+      const alert = install().closest("li")?.querySelector("[role='alert']");
+      check(alert?.textContent === market.failure.plugin_index_unavailable && alert.scrollWidth <= alert.clientWidth
+        && alert.getBoundingClientRect().bottom <= install().getBoundingClientRect().top, "目录未发布时在窄卡片内显示本地化原因并保留重试");
+      installFailure = "https://user:secret@example.com/D:/private";
+      await act(async () => { install().click(); });
+      await wait();
+      check(install().closest("li")?.querySelector("[role='alert']")?.textContent === market.operationFailed(name)
+        && !document.body.textContent?.includes("user:secret"), "未知错误不泄露路径或凭据");
+      fixture.style.width = "";
+      installFailure = "";
       await act(async () => { install().click(); });
       await wait();
       check(hostCalls.includes("install_plugin") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
@@ -195,7 +213,7 @@ try {
     check(input.value === stored, "异步恢复后显示已保存的 Windows 索引路径");
     check(!button(t.save).disabled, "网络请求未完成时仍可设置本地索引");
     await act(async () => requests[requests.length - 1].reject("HTTP 404 https://github.com/releases/missing")); await wait();
-    check(document.body.textContent?.includes(t.unavailable) && !document.body.textContent?.includes("HTTP 404"), "索引失败只显示翻译后的简短状态");
+    check(document.body.textContent?.includes(t.market.failure.plugin_index_unavailable) && !document.body.textContent?.includes("HTTP 404"), "索引失败只显示翻译后的简短状态");
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     const next = "D:\\Fly Island\\artifacts\\plugins\\plugins-index.json";
     await act(async () => { setter.call(input, next); input.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -205,7 +223,7 @@ try {
     const newest = requests[requests.length - 1];
     await act(async () => newest.resolve([])); await wait();
     await act(async () => requests[0].reject("old request failed")); await wait();
-    check(!document.body.textContent?.includes(t.unavailable), "已失效的旧请求不能覆盖新索引结果");
+    check(!document.body.textContent?.includes(t.market.failure.plugin_index_unavailable), "已失效的旧请求不能覆盖新索引结果");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${t.develop}']`)!.click());
     check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md", "开发指引使用既有外链 opener");
     check(input.getBoundingClientRect().right <= document.getElementById("fixture")!.getBoundingClientRect().right + 1, "中英文窄布局的路径输入框不溢出");

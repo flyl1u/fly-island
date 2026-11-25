@@ -10,7 +10,8 @@ import { PluginSettingRow } from "../../features/plugins/PluginSettingRow";
 import { usePlugins, refreshPlugins } from "../../features/plugins/usePlugins";
 import { PLUGINS_ENABLED } from "../../features/plugins";
 import { PLUGIN_MARKET_ENABLED } from "../../features/releaseFlags.ts";
-import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin, PLUGIN_INDEX_UNAVAILABLE, runPluginAction, setPluginEnabled, setPluginSetting, uninstallPlugin, type PluginIndexEntry } from "../../features/plugins/api";
+import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin, runPluginAction, setPluginEnabled, setPluginSetting, uninstallPlugin, type PluginIndexEntry } from "../../features/plugins/api";
+import { pluginFailureCode, type PluginFailure } from "../../features/plugins/errors";
 import { useLocale, useTranslation } from "../../i18n";
 import { PluginDevelopmentPage } from "./PluginDevelopmentPage";
 import { PluginMarket } from "./PluginMarket";
@@ -35,7 +36,7 @@ function EnabledPluginsSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(PLUGINS_ENABLED);
   const [catalogRevision, setCatalogRevision] = useState(0);
-  const [catalogUnavailable, setCatalogUnavailable] = useState(false);
+  const [catalogFailure, setCatalogFailure] = useState<PluginFailure | null>(null);
   const [directory, setDirectory] = useState("");
   const [index, setIndex] = useState<string | null>(null);
   const disabled = busy || catalogLoading;
@@ -44,8 +45,9 @@ function EnabledPluginsSettingsPage() {
     setError("");
     try { await action(); await refreshPlugins(); }
     catch (e) {
-      if (String(e) === PLUGIN_INDEX_UNAVAILABLE) { setCatalog([]); setCatalogUnavailable(true); }
-      else setError(String(e));
+      const code = pluginFailureCode(e);
+      if (code === "plugin_index_unavailable" || code === "plugin_index_incompatible") { setCatalog([]); setCatalogFailure(code); }
+      else setError(code ? t.market.failure[code] : String(e));
     }
     finally { if (block) setBusy(false); }
   };
@@ -55,10 +57,9 @@ function EnabledPluginsSettingsPage() {
     let disposed = false;
     setCatalogLoading(true);
     void getPluginsIndex().then((entries) => {
-      if (!disposed) { setCatalog(entries); setCatalogUnavailable(false); }
+      if (!disposed) { setCatalog(entries); setCatalogFailure(null); }
     }).catch((e: unknown) => {
-      console.error("Plugin index unavailable", e);
-      if (!disposed) { setCatalog([]); setCatalogUnavailable(true); }
+      if (!disposed) { setCatalog([]); setCatalogFailure(pluginFailureCode(e) ?? "plugin_index_unavailable"); }
     }).finally(() => { if (!disposed) setCatalogLoading(false); });
     return () => { disposed = true; };
   }, [registry.developerMode, registry.indexUrl, catalogRevision]);
@@ -83,7 +84,7 @@ function EnabledPluginsSettingsPage() {
     {PLUGINS_ENABLED && catalog.some((e) => !registry.installed[e.id]) && <SettingsGroup title={t.available}>
       {catalog.filter((e) => !registry.installed[e.id]).map((entry) => <SettingsRow key={entry.id} title={entry.name[locale]} description={entry.description[locale]} control={<SettingsLinkButton disabled={disabled} onClick={() => { void perform(() => installPlugin(entry.id)); }}>{t.install}</SettingsLinkButton>} />)}
     </SettingsGroup>}
-    {catalogUnavailable && <SettingsGroup><SettingsRow title={t.unavailable} control={<SettingsLinkButton disabled={disabled} onClick={() => { void refreshCatalog(); }}>{t.retry}</SettingsLinkButton>} /></SettingsGroup>}
+    {catalogFailure && <SettingsGroup><SettingsRow title={t.market.failure[catalogFailure]} control={<SettingsLinkButton disabled={disabled} onClick={() => { void refreshCatalog(); }}>{t.retry}</SettingsLinkButton>} /></SettingsGroup>}
     {error && <p className="plugins-settings__error" role="alert">{error}</p>}
     {PLUGINS_ENABLED && <details className="plugins-settings__developer"><summary>{t.developer}</summary><SettingsGroup>
       <SettingsToggleRow title={t.developerMode} checked={registry.developerMode} disabled={busy} onChange={(enabled) => { void perform(() => configurePlugins(enabled, registry.indexUrl)); }} />

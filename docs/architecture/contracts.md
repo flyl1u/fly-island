@@ -78,7 +78,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `fly-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `fly-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
 | `fly-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
-| `fly-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `fly-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `codebuddy` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
 | `fly-island-native-plugins-disabled`（`string[]`：手动关闭的已安装内置插件 id；缺失或损坏时按空数组处理，未知和未安装 id 不生效；卸载或重装时清除对应标记） | `features/plugins/native/storage.ts` |
 | `fly-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个显示开关，设置更新从最新记录合并，选中有效城市或主动定位才更新城市） | `features/weather/storage.ts` |
 | `fly-island-weather-cache`（`{ latitude, longitude, temperature, code, observedAt, fetchedAt }`；temperature 为摄氏数值，code 为 WMO 整数，时间均为 Unix 毫秒；只显示坐标匹配且观测/获取均未超过三小时的数据） | `features/weather/storage.ts` |
@@ -155,6 +155,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - DSH（issue #51）：新增只读命令 `get_dsh_usage()`，返回 `null` 或 `{ updatedAt, available, wallets: [{ currency, total, granted, toppedUp }], source: "dshApi" | "dshAccount" }`，金额为十进制字符串。`list_agent_sessions` 的 `provider` 新增 `dsh`；`focus_agent_window`、`agent_sessions_in_front` 接受 `dsh`，既有参数和返回结构不变。无新增事件，无新增 localStorage key；`fly-island-settings` 兼容新增 `agentShowDsh`（缺失时为 true）。`agent-status.json`、钩子安装状态仍只含 Claude/Codex。该命令是自有 Rust 命令，不增加 Tauri 插件/核心权限；现有 capabilities 足够。
 - WorkBuddy 使用 `open_workbuddy_login()`、`get_workbuddy_usage({ refreshNow?, cachedOnly? })` 和 `disconnect_workbuddy()`。读命令及 `workbuddy-usage-changed` 事件的状态为 `signedOut`、`loginRequired`、`ready`、`unavailable` 或 `connected`。只有 `connected` 带 `usage: { remaining, total, updatedAt }`，金额为数值，时间为 Unix 毫秒。事件发到 `main` 和 `settings`。远程 `workbuddy-sign-in` 窗口在本地 capability 之外。
+- WorkBuddy 官方登录凭据另存在 Windows 凭据管理器 `com.flyisland.app.workbuddy-web` 的 `oauth-login`，与原 Cookie 条目并存；主动断开清理两套凭据。`unavailable` 可带 `reason: "curlUnavailable"`，原有状态、参数和存储不变。
 
 - 展开岛屿的按钮样式保存在 `fly-island-settings.pageButtonStyle`，支持 `capsule`（胶囊）、`icon`（图标）和 `iconLabel`（图标加文字）。缺失或未知值使用默认值 `icon`。旧版本读取 `iconLabel` 时也使用默认图标样式。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
@@ -195,6 +196,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - Agent 页显示方式（2026-11-07 起）：设置项 `agentSessionView`（`list` / `cards` / `compact`，默认 `list`）、`agentArchiveMotion`（`slide` / `dissolve`，默认 `slide`）、`agentCardEffects`（`off` / `sparkle` / `gradient`，默认 `off`）；`AgentSessionSummary.contextTokens`（最近一次模型调用的上下文 tokens，Claude Code 取 usage 的输入、缓存读写与输出之和，Codex 取 `token_count` 的 `last_token_usage.total_tokens`；不知道时为 null）。
 - 回复状态标记（2026-11-08 起换位置）：写在 Claude 配置目录（`CLAUDE_CONFIG_DIR`，默认 `~/.claude`）下的 `rules/fly-island-reply-marker.md`，块标记 `<!-- fly-island: reply marker v2 -->`；关掉时只删除含这个标记的文件。v1 写在 `CLAUDE.md` 里的块在打开或关掉时移除，`CLAUDE.md` 的其他内容不动；软链文件一律不写。
 - Agent 页排列（2026-11-08 起）：设置项 `agentSessionSort`（`status` / `recent` / `firstSeen`，默认 `status`；旧数据没有这个字段时按 `status`，会改变升级前的顺序）、`agentSessionGroup`（`computer` / `project` / `none`，默认 `computer`）；`agentHostDisplay` 的默认值改为 `icon`（已保存的值不变）。
+- Antigravity 会话与额度（插件市场可选安装，作者 lilipeng0615-cyber）：`list_agent_sessions` 的 `native` 接受 `"antigravity"`，返回的 `provider` 为 `antigravity`；会话摘要来自 `~/.gemini/antigravity`、`antigravity-cli`、`antigravity-ide` 的 `conversation_summaries.db`（以 `immutable=1` 只读打开，不建锁和 sidecar 文件），`brain/<id>/.system_generated/logs/transcript.jsonl` 只读末尾 256 KB。新增只读命令 `get_antigravity_usage()`：只连 `127.0.0.1`，端口须由 Antigravity 语言服务器进程监听，禁用代理和重定向，3 秒超时，失败返回 `null`；返回 `AgentUsage`，`source` 为 `"antigravity"`，额度按模型放在 `models`，`five_hour`/`seven_day` 为 `null`。`fly-island-native-plugins` 取值新增 `antigravity`；`fly-island-settings` 兼容新增 `agentShowAntigravity`（缺失时为 true，仅在装了插件时生效），`agentQuotaSources` 可选 `antigravity`。未安装或开关关闭时不读文件、不发请求。
 
 - 待办设置（2026-11-12）：现有 `fly-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `fly-island-todo-timer`，保留进行中 ID 和各项时长。
 - 待办各项时长（2026-11-12）：新增 `fly-island-todo-durations`（`{ [todoId]: 分钟 }`），取代所有待办共用的 `fly-island-todo-duration`。不迁移旧值：用户明确要求每项待办独立，新待办都从 15 分钟起；旧 key 留在原处不读取。直接点“开始”不再启动倒计时，只有怀表设置里的开始才计时。
@@ -234,6 +236,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 事件：`plugins-changed`（无敏感数据；前端重新 get_plugins）。stdio RPC：`initialize`、`action`、`publish`，停止时可发送无 id 的可选 `shutdown` 通知；旧 v1 插件仍由宿主限时结束，完整 schema 见 `docs/plugins/api.md`。
 - 面板页（2026-11-16 新增，向后兼容）：manifest 可声明 `permissions/contributes` 的 `panel` 与 `panel.icon`（`battery`、`heart-pulse`、`activity`、`timer`、`gauge`、`puzzle`）；`publish` 多一个可缺省的 `panel`（`headline`、`note`、最多 16 行 `rows`、最多 4 个 manifest 已声明动作 id、`attention`），行含 `percent`（0–100）与 `countdownTo`（Unix 毫秒，宿主本地倒数）。`get_plugins()` 的 `live.<id>` 相应多 `panel`（可为 null）。没有声明的旧插件不受影响；不认识的 `panel` 字段或动作会让该次 publish 被拒。宿主只在快照确实变化时发 `plugins-changed`，重复 publish 不再触发前端重读。
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
+- 官方索引移至 `releases/download/plugins-channel/plugins-index.json`。`get_plugins_index`、`install_plugin` 和 `set_plugin_enabled` 的参数及返回类型不变；插件市场识别错误字符串 `plugin_index_unavailable`、`plugin_index_incompatible`、`plugin_not_listed`、`plugin_package_download_failed`、`plugin_package_integrity_failed`、`plugin_package_invalid`、`plugin_install_failed`、`plugin_start_failed`，不显示原始诊断。
 - v3.2.6（2026-11-18，第三轮手测后）：`fly-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `fly-island-todos`。
 
 ## 时间与天气命令（2026-11-20）
@@ -254,3 +257,5 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - 设备电量与音频使用固定插件 id device-battery。命令 device_battery_read(progress?)、device_battery_audio(speakerId, headsetId, target?) 仅对已启用的市场包生效，调用端不提供可执行文件路径。音频绑定存放于 fly-island-device-battery 的 speakerId / headsetId。
 - 日历标记使用现有 fly-island-native-plugins / fly-island-native-plugins-disabled 的 calendarMarks id。
+- CodeBuddy 会话来源（插件市场可选安装，作者 yiumanlenong）：`list_agent_sessions` 的 `native` 新增 `"codebuddy"`，返回的 `provider` 新增 `codebuddy`；`focus_agent_window` 沿用现有命令，对 `codebuddy` 通过 `~/.codebuddy/sessions` 登记的进程找终端窗口。只读 `~/.codebuddy/projects`、`~/.codebuddy/sessions`，拒绝重解析点与超大文件，最多两秒读一次，未安装或开关关闭时不读取。`fly-island-settings` 兼容新增 `agentShowCodeBuddy`（缺失时为 true，仅在装了插件时生效）。无新增命令、事件或 localStorage key。
+- 剪贴板文件图标（新增只读命令）：`read_clipboard_history_file_icon({ id: string })` 返回该记录第一个文件的 Explorer 图标（PNG data URL），文件不存在、记录没有文件或系统没有图标时返回 `null`；图标不写入 `clipboard-history.json`，缓存与文件中转共用 `file_icons.rs`。无新增事件、localStorage key 或设置字段。

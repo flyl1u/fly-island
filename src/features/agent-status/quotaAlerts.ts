@@ -1,12 +1,13 @@
 // When an agent's usage limits or balance call for a pop-up (roadmap B6.5.2). Pure.
-import type { AgentUsage } from "./api";
+import type { AgentUsage, UsageWindow } from "./api";
 import { isStale, type AgentUsages } from "./usage.ts";
 
 export type QuotaAgent = "claude" | "codex" | "dsh" | "workbuddy" | "kimi" | "zcode";
 export type QuotaWindow = "fiveHour" | "sevenDay" | "balance";
 
 /** Usage reached the alert level (`low`), or a limit that had reached it reset (`reset`). */
-export type QuotaAlert = { kind: "low" | "reset"; agent: QuotaAgent; window: QuotaWindow; used: number; resetsAt: number | null };
+type QuotaSource = { agent: QuotaAgent; window: QuotaWindow } | { agent: "antigravity"; window: "model"; model: string };
+export type QuotaAlert = QuotaSource & { kind: "low" | "reset"; used: number; resetsAt: number | null };
 
 /** Limits read so far, and those that reached the alert level and have not reset since, by `agent:window`. */
 export type QuotaState = { seen: Set<string>; reached: Set<string> };
@@ -31,23 +32,31 @@ const WINDOWS = ["fiveHour", "sevenDay"] as const;
 export function takeQuotaAlerts(state: QuotaState, usages: AgentUsages, percent: number, now: number): QuotaAlert[] {
   if (percent <= 0) return [];
   const alerts: QuotaAlert[] = [];
+  const readLimit = (source: QuotaSource, limit: UsageWindow) => {
+    const key = source.window === "model" ? `antigravity:model:${source.model}` : `${source.agent}:${source.window}`;
+    const firstLook = !state.seen.has(key);
+    const base = { ...source, used: limit.used, resetsAt: limit.resetsAt };
+    state.seen.add(key);
+    if (!state.reached.has(key) && limit.used >= percent) {
+      state.reached.add(key);
+      if (!firstLook) alerts.push({ kind: "low", ...base });
+    } else if (state.reached.has(key) && limit.used <= Math.max(0, percent - RESET_DROP)) {
+      state.reached.delete(key);
+      alerts.push({ kind: "reset", ...base });
+    }
+  };
   const read: [QuotaAgent, AgentUsage | null][] = [["claude", usages.claude], ["codex", usages.codex], ["kimi", usages.kimi ?? null], ["zcode", usages.zcode ?? null]];
   for (const [agent, usage] of read) {
     if (!usage || isStale(usage, now)) continue;
     for (const window of WINDOWS) {
       const limit = usage[window];
-      if (!limit) continue;
-      const key = `${agent}:${window}`;
-      const base = { agent, window, used: limit.used, resetsAt: limit.resetsAt };
-      const firstLook = !state.seen.has(key);
-      state.seen.add(key);
-      if (!state.reached.has(key) && limit.used >= percent) {
-        state.reached.add(key);
-        if (!firstLook) alerts.push({ kind: "low", ...base });
-      } else if (state.reached.has(key) && limit.used <= Math.max(0, percent - RESET_DROP)) {
-        state.reached.delete(key);
-        alerts.push({ kind: "reset", ...base });
-      }
+      if (limit) readLimit({ agent, window }, limit);
+    }
+  }
+  const antigravity = usages.antigravity;
+  if (antigravity && !isStale(antigravity, now)) {
+    for (const model of antigravity.models) {
+      readLimit({ agent: "antigravity", window: "model", model: model.name }, model);
     }
   }
   // Prepaid balances have no limit to measure against; only running out and coming back alert.

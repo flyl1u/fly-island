@@ -1,5 +1,6 @@
 param([string]$OutputDirectory = 'artifacts/plugins', [string]$BaseUrl = '', [string[]]$Ids = @(), [switch]$MarketOnly)
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 $workspace = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $output = [IO.Path]::GetFullPath((Join-Path $workspace $OutputDirectory))
 if (-not $output.StartsWith($workspace + [IO.Path]::DirectorySeparatorChar)) { throw 'Output must stay inside this worktree' }
@@ -70,7 +71,11 @@ Get-ChildItem -LiteralPath (Join-Path $workspace 'plugins') -Directory | ForEach
         Remove-Item -LiteralPath $stage -Recurse -Force
     }
     $url = if ($BaseUrl) { "$($BaseUrl.TrimEnd('/'))/$name" } else { ([uri]$zip).AbsoluteUri }
-    $entries += [ordered]@{ id = $manifest.id; version = $manifest.version; name = $manifest.name; description = $manifest.description; apiVersion = 1; url = $url; sha256 = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant(); size = (Get-Item -LiteralPath $zip).Length; minAppVersion = $appVersion }
+    $minimumFile = Join-Path $_.FullName 'min-app-version.txt'
+    $minimum = if (Test-Path -LiteralPath $minimumFile -PathType Leaf) {
+        (Get-Content -Raw -Encoding UTF8 -LiteralPath $minimumFile).Trim()
+    } elseif ($MarketOnly) { '3.3.0' } else { $appVersion }
+    $entries += [ordered]@{ id = $manifest.id; version = $manifest.version; name = $manifest.name; description = $manifest.description; apiVersion = $manifest.apiVersion; url = $url; sha256 = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant(); size = (Get-Item -LiteralPath $zip).Length; minAppVersion = $minimum }
 }
 $missing = @($Ids | Where-Object { $_ -notin $entries.id })
 if ($missing.Count -gt 0) { throw "Missing selected plugins: $($missing -join ', ')" }

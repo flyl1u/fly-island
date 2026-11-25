@@ -31,4 +31,6 @@ QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人
 | `cursor.svg` | LobeHub Icons `cursor.svg`，浅色标记配深色底 |
 | `hermes.svg` | LobeHub Icons `nousresearch.svg`（Hermes Agent 由 Nous Research 出品），白色标记配黑底 |
 
+CodeBuddy 与 Antigravity 使用 `lucide-react` 的通用图标（`Terminal`、`Orbit`，随既有依赖提供，ISC），不附带第三方商标、应用图标或搜索缩略图。
+
 钉钉、飞书、企业微信、Kimi、Z Code（智谱）、Cursor（Anysphere）、Nous Research 的标识及相关权利归各自权利人所有，仅用于标识对应产品，不在运行时请求远程图片。

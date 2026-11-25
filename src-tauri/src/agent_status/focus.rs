@@ -4,8 +4,9 @@
 //! docs/agent-status-hooks.md, "Switching to a Session's Window". Every attempt is written to
 //! agent-focus.log (focus_log.rs).
 
-use std::path::Path;
+use std::{os::windows::process::CommandExt, path::Path, process::Command};
 
+use super::antigravity;
 use super::codex_process;
 use super::conversation_link;
 use super::editor_terminal::{self, EditorTerminal};
@@ -18,6 +19,7 @@ use super::wezterm::{self, WEZTERM_APP};
 use super::window_focus::{self, app_name, SessionHints};
 use crate::system::windows_home_dir;
 use crate::win32;
+use windows::Win32::System::Threading::CREATE_NEW_CONSOLE;
 
 /// Windows Terminal's executable name; its tabs are switched through UI Automation.
 const WINDOWS_TERMINAL_APP: &str = "windowsterminal";
@@ -175,6 +177,9 @@ pub(super) fn focus_session(
     if provider == "cursor" {
         return super::cursor_sessions::focus(cwd);
     }
+    if provider == antigravity::DESKTOP_APP {
+        return focus_antigravity(cwd, session_id);
+    }
     let is_codex = provider == "codex";
     let session_id = session_id.filter(|id| !id.is_empty());
     let mut log = Attempt::new(provider, session_id);
@@ -184,6 +189,15 @@ pub(super) fn focus_session(
         log.note("record=yes");
     }
     let chain = process_chain(is_codex, session_id, cwd, record.as_ref(), seen.as_ref(), &mut log);
+    // CodeBuddy's CLI registers the process of each open conversation; follow it to its terminal.
+    let chain = if chain.is_empty() && provider == "codebuddy" {
+        session_id
+            .zip(windows_home_dir().ok())
+            .map(|(id, home)| super::codebuddy_sessions::live_process_chain(&home, id))
+            .unwrap_or_default()
+    } else {
+        chain
+    };
     let lookup = Lookup { app_dir, record: record.as_ref(), is_codex, session_id, cwd, title };
     let handle = orca_handle(&lookup, &chain, seen.as_ref(), &mut log);
 
@@ -280,6 +294,21 @@ fn open_codex_fallback(is_codex: bool, session_id: Option<&str>, log: &mut Attem
     opened
 }
 
+fn focus_antigravity(cwd: Option<&str>, session_id: Option<&str>) -> bool {
+    let home = windows_home_dir().ok();
+    let cli = session_id.zip(home.as_deref()).filter(|(id, home)| antigravity::cli_session(home, id));
+    if let Some((id, home)) = cli {
+        let Some(exe) = antigravity::cli_executable(home) else { return false };
+        let mut command = Command::new(exe);
+        if let Some(cwd) = cwd.map(Path::new).filter(|path| path.is_dir()) {
+            command.current_dir(cwd);
+        }
+        return command.arg(format!("--conversation={id}")).creation_flags(CREATE_NEW_CONSOLE.0).spawn().is_ok();
+    }
+    // A closed Antigravity is not started by a click on an old row.
+    window_focus::focus_session_window(&SessionHints::default(), &[], Some(antigravity::DESKTOP_APP)).is_some()
+}
+
 /// A session asked about by `sessions_in_front`.
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -302,6 +331,8 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
     let newest_workbuddy = std::cell::OnceCell::new();
     let cursor_in_front = front_app.as_deref() == Some(super::cursor_sessions::DESKTOP_APP);
     let newest_cursor = std::cell::OnceCell::new();
+    let antigravity_in_front = front_app.as_deref() == Some(antigravity::DESKTOP_APP);
+    let newest_antigravity = std::cell::OnceCell::new();
     sessions
         .iter()
         .filter(|session| {
@@ -317,6 +348,15 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
             }
             if session.provider == "cursor" {
                 return cursor_in_front && newest_cursor.get_or_init(super::cursor_sessions::newest_session_id).as_deref() == Some(id);
+            }
+            // Antigravity shows one conversation per window and does not say which: as with WorkBuddy,
+            // the one written last counts as the one looked at.
+            if session.provider == antigravity::DESKTOP_APP {
+                return antigravity_in_front
+                    && newest_antigravity
+                        .get_or_init(|| windows_home_dir().ok().and_then(|home| antigravity::newest_session_id(&home)))
+                        .as_deref()
+                        == Some(id);
             }
             if session.provider == "dsh" {
                 let is_desktop = win32::process::image_path(front)

@@ -39,7 +39,7 @@ export function usageSourceLines(usage: AgentUsage, now: number, text: Translati
   const lines: HoverCardLine[] = [];
   if (usage.updatedAt !== null) {
     const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    const source = { magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud, claudeDesktop: text.fromClaudeDesktop, kimi: text.fromKimi, zcode: text.fromZcode }[usage.source ?? "hud"];
+    const source = { magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud, claudeDesktop: text.fromClaudeDesktop, kimi: text.fromKimi, zcode: text.fromZcode, antigravity: text.fromAntigravity }[usage.source ?? "hud"];
     lines.push({ text: text.updated(text.updatedAgo(minutes), source), muted: true });
   }
   return lines;
@@ -73,6 +73,7 @@ export type AgentUsages = {
   /** Plugin-market agents: read only while installed and switched on (nativeAgents.ts). */
   kimi?: AgentUsage | null;
   zcode?: AgentUsage | null;
+  antigravity?: AgentUsage | null;
   readAt: number;
 };
 
@@ -87,6 +88,7 @@ export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQu
     workbuddy: sources.includes("workbuddy") ? usages.workbuddy : null,
     kimi: sources.includes("kimiCode") ? usages.kimi : null,
     zcode: sources.includes("zcode") ? usages.zcode : null,
+    antigravity: sources.includes("antigravity") ? usages.antigravity : null,
     readAt: usages.readAt,
     plugins: usages.plugins,
   };
@@ -100,20 +102,22 @@ export function hasUsageNumbers(usage: AgentUsage | null): boolean {
 /**
  * The windows an agent's quota rings show: the 5-hour one outside, the 7-day one inside. A plan
  * with neither but one long window (Codex Free's 30 days, listed by its length as "30d") shows
- * that one inside. Per-model windows (Claude's) only appear in the ring's card. Null: no rings.
+ * that one inside. Per-model windows (Claude's) only appear in the ring's card; Antigravity and
+ * Z Code's trial plan have nothing but those, and their tightest stands in for the inner ring.
+ * Null: no rings.
  */
 export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | null; inner: UsageWindow | null } | null {
   if (!usage) return null;
   const outer = usage.fiveHour;
-  // Z Code's trial plan has only named balances: the first stands in for the inner ring.
-  const fallback = usage.source === "zcode" ? usage.models[0] : undefined;
+  const named = usage.source === "zcode" || usage.source === "antigravity";
+  const fallback = named ? usage.models[0] : undefined;
   const inner = usage.sevenDay ?? (outer ? null : usage.models.find((window) => /^\d+d$/.test(window.name)) ?? fallback ?? null);
   return outer || inner ? { outer, inner } : null;
 }
 
 /** The Agent page reserves one row when at least one selected source has data. */
 export function usageLineCount(usages: AgentUsages): number {
-  return quotaRings(usages.claude) || quotaRings(usages.codex) || quotaRings(usages.kimi ?? null) || quotaRings(usages.zcode ?? null) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy || usages.plugins?.length ? 1 : 0;
+  return quotaRings(usages.claude) || quotaRings(usages.codex) || quotaRings(usages.kimi ?? null) || quotaRings(usages.zcode ?? null) || quotaRings(usages.antigravity ?? null) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy || usages.plugins?.length ? 1 : 0;
 }
 
 type UsageText = Translations["agent"]["usage"];

@@ -49,6 +49,9 @@ fn supervise(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path
             let secrets: Vec<String> = manifest.settings.iter().filter(|s| s.kind == "secret")
                 .filter_map(|s| settings[&s.key].as_str().map(str::to_owned)).collect();
             log_stderr(format!("plugin worker: {error}\n").as_bytes(), log, &secrets);
+            if attempt == 0 || restart_delay(attempt).is_none() {
+                log_catalog(&log.with_file_name("catalog.log"), &manifest.id, "plugin_start_failed", &error, &secrets);
+            }
         }
         if stop.load(Ordering::Acquire) { break; }
         let Some(delay) = restart_delay(attempt) else {
@@ -184,6 +187,20 @@ fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop
     result
 }
 
+fn redact(mut line: String, secrets: &[String]) -> String {
+    for secret in secrets {
+        for part in secret.lines().filter(|part| !part.is_empty()) { line = line.replace(part, "[redacted]"); }
+    }
+    line
+}
+
+pub(super) fn log_catalog(path: &Path, scope: &str, code: &str, detail: &str, secrets: &[String]) {
+    let sanitized = redact(detail.to_owned(), secrets).replace(['\r', '\n'], " ");
+    let line = format!("plugin {scope}: {code}: {sanitized}\n");
+    eprint!("{line}");
+    log_stderr(line.as_bytes(), path, &[]);
+}
+
 pub(super) fn log_stderr(output: impl Read, path: &Path, secrets: &[String]) {
     let mut reader = BufReader::new(output);
     let mut oversized = false;
@@ -196,10 +213,7 @@ pub(super) fn log_stderr(output: impl Read, path: &Path, secrets: &[String]) {
             oversized = !complete;
             continue;
         }
-        let mut line = String::from_utf8_lossy(&bytes).into_owned();
-        for secret in secrets {
-            for part in secret.lines().filter(|part| !part.is_empty()) { line = line.replace(part, "[redacted]"); }
-        }
+        let line = redact(String::from_utf8_lossy(&bytes).into_owned(), secrets);
         if std::fs::metadata(path).is_ok_and(|m| m.len() > 1024 * 1024) { let _ = std::fs::remove_file(path); }
         if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) { let _ = file.write_all(line.as_bytes()); }
     }

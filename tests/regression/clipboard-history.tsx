@@ -35,7 +35,12 @@ let failDelete = false;
 const deleted: string[][] = [];
 let resolveImage: ((value: string) => void) | undefined;
 let thumbnailReads = 0;
-mockIPC((command) => {
+let fileIconReads = 0;
+mockIPC((command, payload) => {
+  if (command === "read_clipboard_history_file_icon") {
+    fileIconReads++;
+    return (payload as { id: string }).id === "paths" ? thumbnailDataUrl : null;
+  }
   if (command === "read_clipboard_history_image") return new Promise<string>((resolve) => { resolveImage = resolve; });
   if (command === "read_clipboard_history_thumbnail") { thumbnailReads++; return thumbnailDataUrl; }
   return null;

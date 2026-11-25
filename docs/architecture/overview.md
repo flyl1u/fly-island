@@ -38,6 +38,8 @@ Agent 的 DSH 桌面端来源由 `agent_status/dsh_sessions.rs`（只读本地�
 
 WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析（本地会话记录与打开中的会话登记，聚焦主窗口），从现有会话命令和聚焦命令接入。WorkBuddy 的 `agent_status/workbuddy_connection.rs` 管理专用 WebView2 官网登录和后台续期，`workbuddy_auth.rs` 决定续期时间与失败退避，`workbuddy_cookie_vault.rs` 保存并恢复凭据副本，`workbuddy_usage.rs` 读取积分汇总。远程登录窗口 `workbuddy-sign-in` 使用独立浏览器配置，由本地设置页启动。岛屿和设置页共享原生余额缓存，额度环按 `agentQuotaSources` 选择。
 
+WorkBuddy 官方授权与账单解析在 `workbuddy_official.rs`，登录任务、缓存与凭据轮换由 `workbuddy_official_flow.rs` 协调；`workbuddy_curl.rs` 只用系统 curl 向固定账单域请求，凭据走 stdin。旧网页登录兼容，不要求迁移现有 Cookie。
+
 Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先读取 Windows 凭据管理器中的手动 API Key 配置（`zcode_api_key.rs`），未配置时回退到 Z Code 桌面版登录凭据；设置页只拿到 Key 是否存在与掩码。额度缓存在原生内存中，Key 或平台变更时清除。
 
 微信的进程解析、窗口归属和主窗口选择统一在 `wechat_reminders/source.rs`，供打开动作、提醒监听、摘要读取和探测程序复用；需比较完整路径时使用 `win32/process.rs` 的 canonicalize 与归一化回退。微信摘要开启时，微信提醒服务通过 `win32/caption_close.rs` 将微信关闭按钮的点击转为最小化，通过 `win32/taskbar.rs` 控制最小化窗口的任务栏按钮。
