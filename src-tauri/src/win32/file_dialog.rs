@@ -1,4 +1,4 @@
-//! JSON open/save dialogs. Each call owns an STA on a fresh thread, like folder_dialog.
+//! File open/save dialogs. Each call owns an STA on a fresh thread, like folder_dialog.
 use std::marker::PhantomData;
 use windows::{
     core::{HRESULT, HSTRING, PWSTR},
@@ -27,7 +27,13 @@ impl Drop for ShellString {
     }
 }
 
-pub(crate) fn choose_json(owner: isize, save_name: Option<&str>, title: &str) -> windows::core::Result<Option<String>> {
+#[derive(Clone, Copy)]
+pub(crate) enum FileType {
+    Json,
+    Zip,
+}
+
+pub(crate) fn choose(owner: isize, save_name: Option<&str>, title: &str, file_type: FileType) -> windows::core::Result<Option<String>> {
     // SAFETY: reserved argument is null, and successful initialization is paired by the guard.
     unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) }.ok()?;
     let _apartment = Apartment(PhantomData);
@@ -41,15 +47,16 @@ pub(crate) fn choose_json(owner: isize, save_name: Option<&str>, title: &str) ->
             dialog.into()
         }
     };
-    let label = HSTRING::from("JSON (*.json)");
-    let pattern = HSTRING::from("*.json");
+    let (label, extension) = match file_type { FileType::Json => ("JSON (*.json)", "json"), FileType::Zip => ("ZIP (*.zip)", "zip") };
+    let label = HSTRING::from(label);
+    let pattern = HSTRING::from(format!("*.{extension}"));
     let filters = [COMDLG_FILTERSPEC { pszName: windows::core::PCWSTR(label.as_ptr()), pszSpec: windows::core::PCWSTR(pattern.as_ptr()) }];
     // SAFETY: all strings and filter buffers outlive these calls; owner is the calling window.
     unsafe {
         let options = dialog.GetOptions()? | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST;
         dialog.SetOptions(options | if save_name.is_some() { FOS_OVERWRITEPROMPT } else { FOS_FILEMUSTEXIST })?;
         dialog.SetFileTypes(&filters)?;
-        dialog.SetDefaultExtension(&HSTRING::from("json"))?;
+        dialog.SetDefaultExtension(&HSTRING::from(extension))?;
         dialog.SetTitle(&HSTRING::from(title))?;
         if let Some(name) = save_name { dialog.SetFileName(&HSTRING::from(name))?; }
         if let Err(error) = dialog.Show(Some(HWND(owner as *mut _))) {

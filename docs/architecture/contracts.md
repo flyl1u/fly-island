@@ -143,6 +143,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## 其他
 
+- 诊断包（2026-11-25）：`export_diagnostic_bundle({ title, settings })` 先打开 Windows 原生 ZIP 保存对话框；成功返回所选路径，取消返回 `null`。开启/关闭文件日志均可导出，不修改日志开关或应用设置。
+
 - 结构化诊断（2026-11-25）：新增 `record_diagnostic({ diagnostic: { category, name, fields } })`；仅记录允许的事件名及字段，关闭文件日志时只保留在内存。既有日志命令、事件、设置及磁盘路径不变。内置命令不需要新增插件 ACL。
 
 - 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `fly-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。

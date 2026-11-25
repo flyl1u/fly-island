@@ -28,7 +28,7 @@ pub(crate) fn record_diagnostic(window: tauri::Window, diagnostic: FrontendDiagn
     }
 }
 
-fn safe_settings(settings: &Map<String, Value>) -> Map<String, Value> {
+pub(super) fn safe_settings(settings: &Map<String, Value>) -> Map<String, Value> {
     let mut safe = Map::new();
     for key in ["autoTuck", "autoTuckRetract", "collapsedAutoWidth", "gameAutoTuck", "gameDoNotDisturb", "keepVisibleWhileAgentRunning", "keepVisibleWhileLyrics", "keepVisibleWhileTodoRunning", "revealOnMessage"] {
         if let Some(value) = settings.get(key).and_then(Value::as_bool) { safe.insert(key.into(), value.into()); }

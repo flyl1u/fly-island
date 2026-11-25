@@ -8,8 +8,8 @@ use std::{
 };
 
 pub(super) const FILE_NAME: &str = "fly-island.log";
-const BACKUP_NAME: &str = "fly-island.1.log";
-const MAX_BYTES: u64 = 5 * 1024 * 1024;
+pub(super) const BACKUP_NAME: &str = "fly-island.1.log";
+pub(super) const MAX_BYTES: u64 = 5 * 1024 * 1024;
 
 pub(super) struct LogFile {
     file: File,

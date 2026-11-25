@@ -33,6 +33,10 @@ export function clearAppLog() {
   return invoke<AppLogState>("clear_app_log");
 }
 
+export function exportDiagnosticBundle(title: string, settings: Readonly<Record<string, string | number | boolean>>) {
+  return invoke<string | null>("export_diagnostic_bundle", { title, settings });
+}
+
 export function listenAppLogChanged(handler: (enabled: boolean) => void): Promise<UnlistenFn> {
   if (!isTauri()) return Promise.resolve(() => {});
   return listen<boolean>(APP_LOG_CHANGED_EVENT, ({ payload }) => handler(payload));

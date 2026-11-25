@@ -1,3 +1,4 @@
+pub(crate) mod export;
 mod file;
 mod format;
 pub(crate) mod frontend;
@@ -144,6 +145,7 @@ macro_rules! tauri_commands {
             crate::app_log::open_app_log_folder,
             crate::app_log::clear_app_log,
             crate::app_log::frontend::record_diagnostic,
+            crate::app_log::export::export_diagnostic_bundle,
         ] $($rest)*)
     };
 }

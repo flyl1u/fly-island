@@ -16,8 +16,7 @@ const REPEAT_KEYS: usize = 512;
 static QUEUE: OnceLock<SyncSender<Request>> = OnceLock::new();
 static DROPPED: AtomicU64 = AtomicU64::new(0);
 
-#[cfg(test)]
-struct Snapshot {
+pub(super) struct Snapshot {
     pub recent: String,
     pub startup: String,
 }
@@ -26,6 +25,7 @@ enum Request {
     Event { body: String, at: Instant, startup: bool },
     SetEnabled(bool, Sender<Result<(), String>>),
     Clear(Sender<Result<(), String>>),
+    Snapshot(Sender<Snapshot>),
 }
 
 #[derive(Clone)]
@@ -67,7 +67,6 @@ impl Buffer {
         self.recent.back()
     }
 
-    #[cfg(test)]
     fn snapshot(&self) -> Snapshot {
         let mut recent: String = self.recent.iter().map(|record| record.line.as_str()).collect();
         if self.repeated != 0 {
@@ -140,6 +139,7 @@ pub(super) fn start(root: PathBuf, enabled: bool) -> std::io::Result<()> {
                     output.last_written = buffer.sequence;
                     let _ = reply.send(file::remove_all(&output.dir).map_err(|error| error.to_string()));
                 }
+                Request::Snapshot(reply) => { let _ = reply.send(buffer.snapshot()); }
             }
         }
     })?;
@@ -167,6 +167,10 @@ pub(super) fn set_enabled(enabled: bool) -> Result<(), String> {
 
 pub(super) fn clear() -> Result<(), String> {
     request(Request::Clear)?
+}
+
+pub(super) fn snapshot() -> Result<Snapshot, String> {
+    request(Request::Snapshot)
 }
 
 #[cfg(test)]

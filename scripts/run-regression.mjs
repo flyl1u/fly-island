@@ -26,6 +26,8 @@ import { capturePixelProbe } from "./regression-pixels.mjs";
 export const PAGES = [
   "config-transfer.html",
   "config-transfer.html?lang=en",
+  "diagnostic-bundle.html",
+  "diagnostic-bundle.html?lang=en",
   "agent-alert-card.html",
   "agent-alerts.html",
   "agent-sounds.html",
