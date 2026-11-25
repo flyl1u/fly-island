@@ -292,3 +292,8 @@ test("clipboard rows are saved, clamped and independent of appearance presets", 
   assert.equal(chosen.clipboardVisibleRows, 6);
   assert.equal(withAppearanceFrom(chosen, DEFAULT_SETTINGS).clipboardVisibleRows, 6);
 });
+
+test("collapsed width range is 160–720 and saved values keep their meaning", () => {
+  const width = (value) => normalizeSettings({ collapsedAutoWidth: false, collapsedWidth: value }).collapsedWidth;
+  assert.deepEqual([width(100), width(160), width(240), width(480), width(720), width(900)], [160, 160, 240, 480, 720, 720]);
+});

@@ -1,3 +1,5 @@
+import { COLLAPSED_WIDTH } from "../appearance/settingsLimits.ts";
+
 export type WeatherLocation = { name: string; latitude: number; longitude: number };
 export type ClockWeatherSettings = { showClock: boolean; showWeather: boolean; location: WeatherLocation | null };
 export type WeatherReading = { temperature: number; code: number; observedAt: number; fetchedAt: number };
@@ -96,5 +98,5 @@ export function fitClockWeather(width: number, clock: boolean, weather: boolean,
 /** Automatic width only: fixed digit room: minute ticks never change the island width. Sizes are before island scaling. */
 export function clockWeatherWidth(base: number, clock: boolean, weather: boolean, fontScale = 1, minimum = 0) {
   if (!clock && !weather) return base;
-  return Math.min(480, Math.max(minimum, Math.ceil(base + (clock ? 48 * fontScale + 8 : 0) + (weather ? 64 * fontScale + 8 : 0))));
+  return Math.min(COLLAPSED_WIDTH.max, Math.max(minimum, Math.ceil(base + (clock ? 48 * fontScale + 8 : 0) + (weather ? 64 * fontScale + 8 : 0))));
 }

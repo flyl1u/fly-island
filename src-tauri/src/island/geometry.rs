@@ -14,13 +14,17 @@ use tauri::{LogicalSize, Monitor, PhysicalPosition, Position, Size, WebviewWindo
 use super::state::{read_window_state, IslandPosition, IslandWindowState, MonitorFollow, TuckStyle};
 use crate::win32::{self, taskbar_edge::TaskbarRect};
 
-pub(super) const STAGE_WINDOW_WIDTH: f64 = 820.0;
+// 720 (widest collapsed island) × 1.4 (largest collapsed scale) + room for the shoulders and shadow.
+// Keep in step with COLLAPSED_WIDTH (settingsLimits.ts), STAGE_WIDTH (noticeLayout.ts) and the
+// main window's width in tauri.conf.json; 4 more than a multiple of 8 keeps the island's edges on
+// whole device pixels.
+pub(super) const STAGE_WINDOW_WIDTH: f64 = 1100.0;
 pub(super) const STAGE_WINDOW_HEIGHT: f64 = 460.0;
 pub(super) const DEFAULT_MARGIN_Y: f64 = 0.0;
 pub(super) const DEFAULT_COLLAPSED_SCALE: f64 = 0.89;
 pub(super) const DEFAULT_EXPANDED_SCALE: f64 = 0.91;
-pub(super) const MIN_COLLAPSED_ISLAND_WIDTH: f64 = 240.0;
-pub(super) const MAX_COLLAPSED_ISLAND_WIDTH: f64 = 480.0;
+pub(super) const MIN_COLLAPSED_ISLAND_WIDTH: f64 = 160.0;
+pub(super) const MAX_COLLAPSED_ISLAND_WIDTH: f64 = 720.0;
 pub(super) const COLLAPSED_ISLAND_WIDTH: f64 = 340.0;
 pub(super) const COLLAPSED_ISLAND_HEIGHT: f64 = 38.0;
 pub(super) const MIN_COLLAPSED_ISLAND_HEIGHT: f64 = 26.0;

@@ -50,7 +50,10 @@ export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#FFFFFF";
 
 export const ISLAND_FONT_PERCENT = { min: 90, max: 120, step: 5, default: 100 } as const;
-export const COLLAPSED_WIDTH = { min: 240, max: 480, default: 340 } as const;
+// Rust clamps to the same range (MIN/MAX_COLLAPSED_ISLAND_WIDTH in island/geometry.rs). The stage
+// window must hold max × the largest collapsed scale: STAGE_WINDOW_WIDTH there and the width in
+// tauri.conf.json (B3-2, 2026-11-25: 240–480 widened to 160–720).
+export const COLLAPSED_WIDTH = { min: 160, max: 720, default: 340 } as const;
 // The floor was 32 until 2026-11-19 (用户要求最小值 26px); Rust clamps to the same range (geometry.rs).
 export const COLLAPSED_HEIGHT = { min: 26, max: 60, default: 38 } as const;
 /** The collapsed island's side space; 18 is what it always was. */

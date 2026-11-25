@@ -67,7 +67,7 @@ test("status sizing reserves fixed clock/weather space and respects actual conte
   assert.equal(clockWeatherWidth(280, false, false, 1, 400), 280);
   assert.equal(clockWeatherWidth(280, true, false), 336);
   assert.equal(clockWeatherWidth(280, false, true), 352);
-  assert.equal(clockWeatherWidth(340, true, true, 1.2), 480);
+  assert.equal(clockWeatherWidth(340, true, true, 1.2), 491);
   assert.equal(clockWeatherWidth(240, true, true, 1, 432), 432);
 });
 
