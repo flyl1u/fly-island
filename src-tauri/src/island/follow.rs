@@ -21,6 +21,7 @@ const POLL_INTERVAL: Duration = Duration::from_millis(300);
 const SETTLE_POLLS: u32 = 2;
 
 pub(crate) fn start_monitor_follow_loop(window: WebviewWindow) {
+    super::diagnostics::track_topology(window.clone());
     thread::spawn(move || {
         let mut pending: Option<((i32, i32, i32, i32), u32)> = None;
         loop {

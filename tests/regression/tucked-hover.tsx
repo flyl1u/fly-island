@@ -14,7 +14,11 @@ import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen"
 import { tuckedHoverOpensPanel } from "../../src/windows/island/tuckedHover";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-mockIPC(() => null, { shouldMockEvents: true });
+const diagnostics: Array<{ category: string; name: string; fields: Record<string, string> }> = [];
+mockIPC((command, args) => {
+  if (command === "record_diagnostic" && args) diagnostics.push((args as { diagnostic: (typeof diagnostics)[number] }).diagnostic);
+  return null;
+}, { shouldMockEvents: true });
 
 const RETRACT_MS = 120;
 const HOVER_DELAY_MS = 0; // The user's setting; opening still waits for the 320 ms slide-out.
@@ -41,7 +45,7 @@ function Harness() {
     delayMs: HOVER_DELAY_MS,
     isPeeking: navigation.isPeeking && navigation.mode === "collapsed",
     onPeek: navigation.peekIsland,
-    onOpen: () => navigation.openIslandPage("todo"),
+    onOpen: () => navigation.openIslandPage("todo", "hover"),
     blocked: false,
     retractsAfterPeek: navigation.retractsAfterPeek,
     resumePeek: navigation.resumePeek,
@@ -149,6 +153,11 @@ async function runChecks() {
     check(document.querySelector(".island--tuck-line"), "消息、悬停和手动贴边共用细线形变状态");
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
+    const logged = (reason: string, from: string, to: string) => diagnostics.some((event) =>
+      event.category === "island" && event.name === "mode" && event.fields.reason === reason && event.fields.from === from && event.fields.to === to);
+    check(logged("minimize_button", "collapsed", "tucked") && logged("hover", "tucked", "peek"), "Diagnostics distinguish manual tuck and hover peek");
+    check(logged("hover", "peek", "expanded") && logged("message", "tucked", "peek") && logged("peek_timeout", "peek", "tucked"), "Diagnostics preserve why each peek opened or returned");
+    results.textContent = messages.join("\n");
     results.dataset.result = "passed";
   } catch (error) {
     results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`;

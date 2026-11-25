@@ -4,7 +4,7 @@
 use serde::Serialize;
 use std::{sync::Mutex, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
-use windows::Win32::Foundation::RECT;
+use windows::Win32::Foundation::{HWND, RECT};
 
 use crate::{island, win32};
 
@@ -58,31 +58,57 @@ fn is_fullscreen_foreground(
         FullscreenSignal::None => false,
         FullscreenSignal::Presentation => true,
         FullscreenSignal::FullscreenApp => {
-            !SHELL_CLASSES.contains(&class)
-                && matches!((window, monitor), (Some(window), Some(monitor))
-                    if window.left <= monitor.left && window.top <= monitor.top
-                        && window.right >= monitor.right && window.bottom >= monitor.bottom)
+            !SHELL_CLASSES.contains(&class) && covers_monitor(window, monitor)
         }
     }
 }
 
-fn read(app: &AppHandle) -> ForegroundFullscreen {
+fn covers_monitor(window: Option<RECT>, monitor: Option<RECT>) -> bool {
+    matches!((window, monitor), (Some(window), Some(monitor)) if window.left <= monitor.left && window.top <= monitor.top
+        && window.right >= monitor.right && window.bottom >= monitor.bottom)
+}
+
+struct Observation {
+    foreground: HWND,
+    state: ForegroundFullscreen,
+    process_id: u32,
+    signal: Option<&'static str>,
+    covered: Option<bool>,
+}
+
+impl Observation {
+    fn record(&self) {
+        use crate::app_log::{event, Category};
+        let process = win32::process::image_path(self.process_id).and_then(|path| {
+            std::path::Path::new(&path).file_name().map(|name| name.to_string_lossy().into_owned())
+        });
+        let class = if self.foreground.is_invalid() { String::new() } else { win32::window::class_name(self.foreground) };
+        let signal = self.signal.unwrap_or("not_read");
+        event(Category::Fullscreen, "foreground", &[
+            ("reason", if self.signal.is_none() { "own_process_held" } else { "foreground_changed" }),
+            ("active", &self.state.active.to_string()), ("on_island_monitor", &self.state.on_island_monitor.to_string()),
+            ("class", &class), ("process", process.as_deref().unwrap_or("unknown")),
+            ("covers_monitor", self.covered.map_or("not_read", |covered| if covered { "true" } else { "false" })),
+            ("notification_signal", signal), ("retained", &self.signal.is_none().to_string()),
+        ]);
+    }
+}
+
+fn read(app: &AppHandle) -> Observation {
     let foreground = win32::window::foreground_window();
+    let process_id = if foreground.is_invalid() { 0 } else { win32::process::window_process_id(foreground) };
     // One of our own windows in front (the island took the focus, a click on it, the settings
     // window) says nothing about the game behind it. Reading it as "no full screen" ended game
     // mode at the very moment the island got in the game's way, which let hover open the
     // island and take the focus for good (#73). Keep the last answer until another app is in front.
-    if !foreground.is_invalid() && win32::process::window_process_id(foreground) == std::process::id() {
-        return get_foreground_fullscreen();
+    if process_id == std::process::id() {
+        return Observation { foreground, state: get_foreground_fullscreen(), process_id, signal: None, covered: None };
     }
-    let active = is_fullscreen_foreground(
-        win32::notification_state::fullscreen_signal(),
-        (!foreground.is_invalid() && win32::window::is_visible(foreground))
-            .then(|| win32::window::window_rect(foreground))
-            .flatten(),
-        win32::window::monitor_rect(foreground),
-        &win32::window::class_name(foreground),
-    );
+    let (signal, signal_name) = win32::notification_state::fullscreen_signal();
+    let rect = (!foreground.is_invalid() && win32::window::is_visible(foreground))
+        .then(|| win32::window::window_rect(foreground)).flatten();
+    let monitor = win32::window::monitor_rect(foreground);
+    let active = is_fullscreen_foreground(signal, rect, monitor, &win32::window::class_name(foreground));
     let on_island_monitor = active
         && island::main_window(app)
             .and_then(|window| window.hwnd().map_err(|error| error.to_string()))
@@ -90,21 +116,29 @@ fn read(app: &AppHandle) -> ForegroundFullscreen {
             .map_or(true, |island| {
                 win32::window::share_monitor(win32::window::foreground_window(), island)
             });
-    ForegroundFullscreen { active, on_island_monitor }
+    Observation { foreground, state: ForegroundFullscreen { active, on_island_monitor }, process_id,
+        signal: Some(signal_name), covered: Some(covers_monitor(rect, monitor)) }
 }
 
 pub(crate) fn start(app: &AppHandle) {
     let app = app.clone();
-    thread::spawn(move || loop {
-        let next = read(&app);
-        let changed = {
-            let mut state = STATE.lock().unwrap_or_else(|poison| poison.into_inner());
-            std::mem::replace(&mut *state, next) != next
-        };
-        if changed {
-            let _ = app.emit(FOREGROUND_FULLSCREEN_CHANGED_EVENT, next);
+    thread::spawn(move || {
+        let mut previous = None;
+        loop {
+            let observation = read(&app);
+            let next = observation.state;
+            let changed = {
+                let mut state = STATE.lock().unwrap_or_else(|poison| poison.into_inner());
+                std::mem::replace(&mut *state, next) != next
+            };
+            if changed {
+                let _ = app.emit(FOREGROUND_FULLSCREEN_CHANGED_EVENT, next);
+            }
+            let evidence = (observation.signal, observation.covered, next.active.then_some(observation.process_id));
+            if changed || previous != Some(evidence) { observation.record(); }
+            previous = Some(evidence);
+            thread::sleep(POLL_INTERVAL);
         }
-        thread::sleep(POLL_INTERVAL);
     });
 }
 

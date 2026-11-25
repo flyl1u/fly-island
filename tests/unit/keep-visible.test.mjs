@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULT_SETTINGS, normalizeSettings } from "../../src/features/appearance/settings.ts";
-import { keepIslandVisible } from "../../src/windows/island/keepVisible.ts";
+import { keepIslandVisible, keepVisibleReason } from "../../src/windows/island/keepVisible.ts";
 import { idlePlan } from "../../src/windows/island/idleCollapse.ts";
 
 const activity = { agentVisualState: "idle", collapsedItem: "todo", songPlaying: false, activeTodoId: null, timer: null };
@@ -46,4 +46,12 @@ test("keep-visible only pauses collapsed idle plan B, never expanded plan A", ()
   assert.equal(idlePlan("collapsed", DEFAULT_SETTINGS, false, false, true), null);
   assert.deepEqual(idlePlan("expanded", DEFAULT_SETTINGS, false, false, true), { seconds: 30, action: "collapse" });
   assert.deepEqual(idlePlan("collapsed", DEFAULT_SETTINGS, false, false, false), { seconds: 30, action: "tuck" });
+});
+
+test("diagnostic reasons use stable priority without exposing content", () => {
+  const settings = { ...DEFAULT_SETTINGS, keepVisibleWhileAgentRunning: true, keepVisibleWhileLyrics: true, keepVisibleWhileTodoRunning: true };
+  const lyric = { ...activity, collapsedItem: "lyrics", songPlaying: true, activeTodoId: "private-id" };
+  assert.equal(keepVisibleReason(settings, { ...lyric, agentVisualState: "running" }, 1000), "keep_visible_agent");
+  assert.equal(keepVisibleReason(settings, lyric, 1000), "keep_visible_lyrics");
+  assert.equal(keepVisibleReason(settings, { ...lyric, songPlaying: false }, 1000), "keep_visible_todo");
 });

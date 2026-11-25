@@ -7,6 +7,7 @@ import { usePanelPreview } from "./usePanelPreview";
 import { useTuckedHoverOpen } from "./useTuckedHoverOpen";
 import { tuckedHoverOpensPanel } from "./tuckedHover";
 import type { IslandPage } from "./types";
+import type { IslandModeReason } from "./diagnosticMode";
 import { useIslandPickerOpen } from "../../lib/islandPicker";
 
 type IslandHoverOptions = {
@@ -17,7 +18,7 @@ type IslandHoverOptions = {
   hasMessagePreview: boolean;
   /** The island names a running agent, so opening it shows the Agent page. */
   namesAgent: boolean;
-  openEnabledPage: (page: IslandPage) => void;
+  openEnabledPage: (page: IslandPage, reason?: IslandModeReason) => void;
 };
 
 /** Opening the island by hovering it, tucked or not, and the panel preview; returns the tucked island's hover handler. */
@@ -26,9 +27,10 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
   const { mode, page, isTucked, isPeeking, collapseIsland, peekIsland, retractsAfterPeek, resumePeek } = navigation;
   // While the island names a running agent, opening it shows the Agent page.
   const openCurrentPage = useCallback(
-    () => openEnabledPage(namesAgent ? "agents" : page),
+    () => openEnabledPage(namesAgent ? "agents" : page, "hover"),
     [namesAgent, openEnabledPage, page],
   );
+  const collapseOnHoverLeave = useCallback(() => collapseIsland("hover_leave"), [collapseIsland]);
   useHoverExpand({
     enabled: settings.expandTrigger === "hover" && !quiet,
     delayMs: settings.hoverExpandDelayMs,
@@ -42,7 +44,7 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     // a peeking island as still tucked left hover-open dead after the first tuck until a click.
     isTucked,
     onExpand: openCurrentPage,
-    onCollapse: collapseIsland,
+    onCollapse: collapseOnHoverLeave,
   });
   const hoverTucked = useTuckedHoverOpen({
     opensPanel: tuckedHoverOpensPanel(settings.expandTrigger, quiet),

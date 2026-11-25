@@ -104,7 +104,8 @@ pub(crate) fn apply_stage_geometry(
     let stage_height = STAGE_WINDOW_HEIGHT
         .max((state.expanded_height * state.expanded_scale).ceil() + STAGE_WINDOW_PADDING_Y);
 
-    resize_stage(window, LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height))?;
+    resize_stage(window, LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height))
+        .map_err(|error| super::diagnostics::stage_failure("resize_failed", error))?;
 
     let current_monitor = window
         .current_monitor()
@@ -121,10 +122,14 @@ pub(crate) fn apply_stage_geometry(
         MonitorFollow::Primary => None,
         _ => state.followed_monitor.and_then(|point| monitor_at(window, point).ok().flatten()),
     };
+    let reason = if has_custom_monitor { "custom_position" }
+        else if followed_monitor.is_some() {
+            match state.monitor_follow { MonitorFollow::Cursor => "follow_cursor", MonitorFollow::Foreground => "follow_foreground", MonitorFollow::Primary => "primary" }
+        } else if primary_monitor.is_some() { "primary" } else { "current_fallback" };
     let monitor = custom_monitor
         .or(followed_monitor)
         .or_else(|| primary_monitor.or(current_monitor))
-        .ok_or_else(|| "No monitor is available for island positioning.".to_string())?;
+        .ok_or_else(|| super::diagnostics::stage_failure("monitor_unavailable", "No monitor is available for island positioning.".into()))?;
 
     let scale = monitor.scale_factor();
     let monitor_position = monitor.position();
@@ -153,14 +158,15 @@ pub(crate) fn apply_stage_geometry(
     }
     let generation = POSITION_ANIMATION_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     let target = PhysicalPosition::new(x, y);
-    let start = window.outer_position().map_err(|error| error.to_string())?;
+    let start = window.outer_position().map_err(|error| super::diagnostics::stage_failure("position_unavailable", error.to_string()))?;
+    super::diagnostics::stage(&monitor, (x, y), stage_height, state.active_size(), top_inset, animate_position && start != target, reason);
     if start == target {
         return Ok(());
     }
     if !animate_position {
         return window
             .set_position(Position::Physical(target))
-            .map_err(|error| error.to_string());
+            .map_err(|error| super::diagnostics::stage_failure("set_position_failed", error.to_string()));
     }
 
     *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner) = Some((generation, (x, y)));
@@ -176,6 +182,7 @@ pub(crate) fn apply_stage_geometry(
             .min(1.0);
             let position = interpolate_stage_position(start, target, progress);
             if let Err(error) = window.set_position(Position::Physical(position)) {
+                crate::app_log::event(crate::app_log::Category::Window, "stage_failed", &[("reason", "animate_position_failed")]);
                 eprintln!("Failed to animate island position: {error}");
                 break;
             }

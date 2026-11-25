@@ -14,11 +14,16 @@ type KeepVisibleSettings = Pick<IslandSettings, "keepVisibleWhileAgentRunning" |
 
 /** Only holds idle tucking: navigation and game mode retain their own behavior. */
 export function keepIslandVisible(settings: KeepVisibleSettings, activity: Activity, now: number): boolean {
-  return (settings.keepVisibleWhileAgentRunning && activity.agentVisualState === "running")
-    || (settings.keepVisibleWhileLyrics && settings.showCollapsedText
-      && activity.collapsedItem === "lyrics" && activity.songPlaying)
-    || (settings.keepVisibleWhileTodoRunning && settings.todoEnabled
-      && (Boolean(activity.activeTodoId) || Boolean(activity.timer && activity.timer.endsAt > now)));
+  return keepVisibleReason(settings, activity, now) !== null;
+}
+
+export function keepVisibleReason(settings: KeepVisibleSettings, activity: Activity, now: number) {
+  if (settings.keepVisibleWhileAgentRunning && activity.agentVisualState === "running") return "keep_visible_agent";
+  if (settings.keepVisibleWhileLyrics && settings.showCollapsedText && activity.collapsedItem === "lyrics" && activity.songPlaying) return "keep_visible_lyrics";
+  if (settings.keepVisibleWhileTodoRunning && settings.todoEnabled && (activity.activeTodoId || (activity.timer && activity.timer.endsAt > now))) {
+    return "keep_visible_todo";
+  }
+  return null;
 }
 
 /**

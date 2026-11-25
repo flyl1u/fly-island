@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { logDiagnostic } from "../../features/diagnostics/api";
 import { listenIslandHover } from "./api";
 
 // The tucked island sits on the screen's top edge, where the cursor often passes on
@@ -70,7 +71,10 @@ export function useTuckedHoverOpen(options: TuckedHoverOptions) {
   }, [scheduleOpen]);
 
   return useCallback(() => {
-    if (optionsRef.current.blocked) return;
+    if (optionsRef.current.blocked) {
+      logDiagnostic("island", "peek_blocked", { reason: "game_mode" });
+      return;
+    }
     optionsRef.current.onPeek();
     scheduleOpen();
   }, [scheduleOpen]);

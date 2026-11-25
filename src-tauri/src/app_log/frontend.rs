@@ -13,7 +13,9 @@ pub(crate) struct FrontendDiagnostic {
 #[tauri::command]
 pub(crate) fn record_diagnostic(window: tauri::Window, diagnostic: FrontendDiagnostic) {
     if window.label() != "main" { return; }
-    if let (Category::Startup, "settings") = (diagnostic.category, diagnostic.name.as_str()) {
+    if let (Category::Island, name) = (diagnostic.category, diagnostic.name.as_str()) {
+        record_island(name, &diagnostic.fields);
+    } else if let (Category::Startup, "settings") = (diagnostic.category, diagnostic.name.as_str()) {
         let settings = safe_settings(&diagnostic.fields);
         let values: Vec<_> = settings.iter().map(|(key, value)| (key.as_str(), value.as_str().map_or_else(|| value.to_string(), str::to_owned))).collect();
         let mut fields = vec![("reason", "webview_ready")];
@@ -25,6 +27,28 @@ pub(crate) fn record_diagnostic(window: tauri::Window, diagnostic: FrontendDiagn
         if let (Some(id @ ("dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "clockWeather" | "calendarMarks")), Some(enabled)) = (id, enabled) {
             event(Category::Startup, "builtin_plugin", &[("reason", "webview_ready"), ("id", id), ("version", env!("CARGO_PKG_VERSION")), ("enabled", &enabled.to_string())]);
         }
+    }
+}
+
+fn record_island(name: &str, fields: &Map<String, Value>) {
+    let value = |key| fields.get(key).and_then(Value::as_str).unwrap_or_default();
+    let reason = value("reason");
+    const MODES: &[&str] = &["collapsed", "expanded", "tucked", "peek"];
+    match name {
+        "mode" if matches!(reason, "launch" | "click" | "hover" | "hover_leave" | "idle_timer" | "game_mode"
+            | "minimize_button" | "message" | "keep_visible" | "peek_timeout" | "preview" | "shortcut" | "focus_lost") => {
+            let from = value("from");
+            let to = value("to");
+            if (from == "none" || MODES.contains(&from)) && MODES.contains(&to) {
+                event(Category::Island, "mode", &[("reason", reason), ("from", from), ("to", to)]);
+            }
+        }
+        "tuck_blocked" if matches!(reason, "keep_visible_agent" | "keep_visible_lyrics" | "keep_visible_todo" | "panel_preview" | "picker_open" | "message") => {
+            event(Category::Island, "tuck_blocked", &[("reason", reason)]);
+        }
+        "collapse_blocked" if reason == "editing_or_picker" => event(Category::Island, "collapse_blocked", &[("reason", reason)]),
+        "peek_blocked" if reason == "game_mode" => event(Category::Island, "peek_blocked", &[("reason", reason)]),
+        _ => {}
     }
 }
 

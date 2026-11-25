@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import { listenIslandHover } from "./api";
 import { idlePlan } from "./idleCollapse";
-import { keepIslandVisible, keepVisibleChangesAt } from "./keepVisible";
+import { keepVisibleReason, keepVisibleChangesAt } from "./keepVisible";
+import { logDiagnostic } from "../../features/diagnostics/api";
 import { retractsPeek, revealsForKeepVisible } from "./tuckRules";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { isEditingText } from "./useHoverExpand";
@@ -15,7 +16,7 @@ type IslandTuckingOptions = {
   navigation: ReturnType<typeof useIslandNavigation>;
   hasMessagePreview: boolean;
   /** What "Stay visible while…" looks at (keepVisible.ts). */
-  activity: Parameters<typeof keepIslandVisible>[1];
+  activity: Parameters<typeof keepVisibleReason>[1];
   /** Game mode holds the island back or tucked it; keep-visible does not undo that. */
   gameHolds: boolean;
 };
@@ -28,13 +29,14 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
   const { mode, page, isTucked, isPeeking, peekRetractDelayMs, tuckedAutomatically, idleTuck, collapseIsland, revealIsland, revealForMessage, endPeek } = navigation;
   const isHovering = useIslandHovering();
   const pickerOpen = useIslandPickerOpen();
-  const keepVisible = useKeepVisible(settings, activity);
+  const holdReason = useKeepVisible(settings, activity);
+  const keepVisible = holdReason !== null;
   const tuckState = {
     isTucked, isPeeking, tuckedAutomatically, keepVisible, hasMessagePreview, isPreviewing: navigation.isPreviewing, gameHolds,
   };
   const revealForActivity = revealsForKeepVisible(tuckState);
   useEffect(() => {
-    if (revealForActivity) revealIsland();
+    if (revealForActivity) revealIsland("keep_visible");
   }, [revealForActivity, revealIsland]);
   // A showing preview holds the idle timer, which then restarts in full once it ends.
   const tuckWhenIdle = useCallback(
@@ -43,9 +45,16 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
   );
   // Closing under a draft would lose it; the next keystroke or move starts the wait again.
   const collapseWhenIdle = useCallback(() => {
-    if (!isEditingText() && !isIslandPickerOpen()) collapseIsland();
+    if (!isEditingText() && !isIslandPickerOpen()) collapseIsland("idle_timer");
+    else logDiagnostic("island", "collapse_blocked", { reason: "editing_or_picker" });
   }, [collapseIsland]);
   const plan = navigation.isPreviewing || pickerOpen ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
+  const tuckBlocked = mode === "collapsed" && !isTucked && settings.autoTuck
+    ? navigation.isPreviewing ? "panel_preview" : pickerOpen ? "picker_open" : hasMessagePreview ? "message" : holdReason
+    : null;
+  useEffect(() => {
+    if (tuckBlocked) logDiagnostic("island", "tuck_blocked", { reason: tuckBlocked });
+  }, [tuckBlocked]);
   useIdleTuck(
     plan !== null,
     plan?.seconds ?? 0,
@@ -71,7 +80,7 @@ function useKeepVisible(settings: IslandSettings, activity: IslandTuckingOptions
     const timer = window.setTimeout(() => rerender((count) => count + 1), Math.max(0, changesAt - Date.now()) + 50);
     return () => window.clearTimeout(timer);
   }, [changesAt]);
-  return keepIslandVisible(settings, activity, now);
+  return keepVisibleReason(settings, activity, now);
 }
 
 /** Whether the cursor is over the island, from the native hover events. */

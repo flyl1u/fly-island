@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getForegroundFullscreen, listenForegroundFullscreen, setIslandGameQuiet } from "./api";
 import { gameModeEffects, type FullscreenState, type GameModeEffects, type GameModeSettings } from "./gameMode";
 import type { IslandMode } from "./types";
+import type { IslandModeReason } from "./diagnosticMode";
 
 const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false };
 
@@ -12,9 +13,9 @@ function logError(error: unknown) {
 type GameModeActions = {
   mode: IslandMode;
   isTucked: boolean;
-  collapseIsland: () => void;
+  collapseIsland: (reason: IslandModeReason) => void;
   tuckIsland: () => void;
-  revealIsland: () => void;
+  revealIsland: (reason: IslandModeReason) => void;
 };
 
 /**
@@ -58,7 +59,7 @@ export function useGameMode(
   }, [watching]);
 
   useEffect(() => {
-    if (effects.quiet && stateRef.current.mode === "expanded") collapseIsland();
+    if (effects.quiet && stateRef.current.mode === "expanded") collapseIsland("game_mode");
   }, [collapseIsland, effects.quiet]);
 
   // The native cursor loop reads this: a tucked island over a game is not hit at all.
@@ -74,7 +75,7 @@ export function useGameMode(
       }
     } else if (tuckedByGameRef.current) {
       tuckedByGameRef.current = false;
-      if (stateRef.current.isTucked) revealIsland();
+      if (stateRef.current.isTucked) revealIsland("game_mode");
     }
   }, [effects.tuck, revealIsland, tuckIsland]);
 

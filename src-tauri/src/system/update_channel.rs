@@ -112,7 +112,25 @@ pub async fn updater_check(
     proxy: Option<String>,
     allow_downgrade: Option<bool>,
 ) -> Result<Option<UpdateInfo>, String> {
-    let endpoints = channel_endpoints(&configured_endpoints(&app)?, &channel)?;
+    let start = std::time::Instant::now();
+    let using_proxy = proxy.is_some();
+    let result = check_update(&app, &channel, proxy, allow_downgrade).await;
+    let reason = match &result {
+        Ok(Some(_)) => "available",
+        Ok(None) => "no_update",
+        Err(error) if error.contains("valid release JSON") => "manifest_unavailable",
+        Err(error) if error.contains("timed out") => "timeout",
+        Err(_) => "check_failed",
+    };
+    let target = match channel.as_str() { "stable" => "stable", "beta" => "beta", _ => "invalid" };
+    let version = result.as_ref().ok().and_then(Option::as_ref).map_or("none", |info| info.version.as_str());
+    crate::app_log::event(crate::app_log::Category::Update, "check", &[("reason", reason), ("channel", target),
+        ("version", version), ("proxy_configured", &using_proxy.to_string()), ("elapsed_ms", &start.elapsed().as_millis().to_string())]);
+    result
+}
+
+async fn check_update(app: &tauri::AppHandle, channel: &str, proxy: Option<String>, allow_downgrade: Option<bool>) -> Result<Option<UpdateInfo>, String> {
+    let endpoints = channel_endpoints(&configured_endpoints(app)?, channel)?;
     let mut builder = app
         .updater_builder()
         .endpoints(endpoints)

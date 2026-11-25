@@ -43,6 +43,7 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
 
             if is_inside != was_inside {
                 was_inside = is_inside;
+                crate::app_log::event(crate::app_log::Category::Island, "hover", &[("reason", if is_inside { "cursor_enter" } else { "cursor_leave" })]);
                 let _ = window.emit(ISLAND_HOVER_CHANGED_EVENT, is_inside);
                 // Once per hover: a dock that raised itself over the island gives way. Not over
                 // a game: reordering topmost windows there can knock it out of full screen.

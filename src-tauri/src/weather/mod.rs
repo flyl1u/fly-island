@@ -1,3 +1,5 @@
+mod diagnostics;
+
 use reqwest::{redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -559,10 +561,17 @@ pub async fn search_weather_cities(
     language: String,
 ) -> Result<Vec<WeatherCity>, String> {
     let name = name.trim();
+    let language = if language == "zh" { "zh" } else { "en" };
+    let start = std::time::Instant::now();
+    let result = search_cities(name, language).await;
+    diagnostics::search(start, name.chars().count(), language, &result);
+    result
+}
+
+async fn search_cities(name: &str, language: &str) -> Result<Vec<WeatherCity>, String> {
     if !(2..=100).contains(&name.chars().count()) {
         return Err("Enter a city name (2–100 characters).".into());
     }
-    let language = if language == "zh" { "zh" } else { "en" };
     let mut url = reqwest::Url::parse("https://geocoding-api.open-meteo.com/v1/search")
         .map_err(|error| error.to_string())?;
     url.query_pairs_mut().extend_pairs([
@@ -592,16 +601,25 @@ pub async fn search_weather_cities(
 #[tauri::command]
 pub async fn locate_weather(app: AppHandle, language: String) -> Result<LocatedWeather, String> {
     let language = if language == "zh" { "zh" } else { "en" };
+    let start = std::time::Instant::now();
+    let result = locate(&app, language, start).await;
+    diagnostics::locate(start, &result);
+    result
+}
+
+async fn locate(app: &AppHandle, language: &'static str, start: std::time::Instant) -> Result<LocatedWeather, String> {
     // Ask the network in parallel: when Windows location is off or slow, its answer is already here.
     let network = tauri::async_runtime::spawn(ip_weather_location(language));
-    if let Ok((latitude, longitude)) = windows_coordinates(&app).await {
-        if let Ok(Some(location)) = reverse_geocode(latitude, longitude, language).await {
-            network.abort();
-            return Ok(LocatedWeather {
-                location,
-                source: "windows".into(),
-            });
-        }
+    match windows_coordinates(app).await {
+        Ok((latitude, longitude)) => match reverse_geocode(latitude, longitude, language).await {
+            Ok(Some(location)) => {
+                network.abort();
+                return Ok(LocatedWeather { location, source: "windows".into() });
+            }
+            Ok(None) => diagnostics::fallback(start, None),
+            Err(error) => diagnostics::fallback(start, Some(&error)),
+        },
+        Err(error) => diagnostics::fallback(start, Some(&error)),
     }
     let network = network
         .await
@@ -619,6 +637,13 @@ pub async fn locate_weather(app: AppHandle, language: String) -> Result<LocatedW
 
 #[tauri::command]
 pub async fn get_current_weather(latitude: f64, longitude: f64) -> Result<CurrentWeather, String> {
+    let start = std::time::Instant::now();
+    let result = current_weather(latitude, longitude).await;
+    diagnostics::forecast(start, latitude, longitude, &result);
+    result
+}
+
+async fn current_weather(latitude: f64, longitude: f64) -> Result<CurrentWeather, String> {
     coordinates(latitude, longitude)?;
     let mut url = reqwest::Url::parse("https://api.open-meteo.com/v1/forecast")
         .map_err(|error| error.to_string())?;
