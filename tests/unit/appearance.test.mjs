@@ -29,6 +29,22 @@ test("installed fonts preserve legacy modes and safely fall back for missing gly
   assert.equal(withAppearanceFrom(custom, DEFAULT_SETTINGS).localFontFamily, "");
 });
 
+test("browser-tucked hover defaults to a 2.5 second dwell and normalizes hundredths", () => {
+  // Off until chosen (the contributor's version defaulted on and would tuck every island).
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuck, false);
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuckClickToOpen, false);
+  assert.equal(normalizeSettings({}).browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(normalizeSettings({ browserAutoTuck: false, browserAutoTuckDelaySeconds: 7.26 }).browserAutoTuck, false);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 7.26 }).browserAutoTuckDelaySeconds, 7.26);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: -10 }).browserAutoTuckDelaySeconds, 0);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 100 }).browserAutoTuckDelaySeconds, 10);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: Number.NaN }).browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 1.239 }).browserAutoTuckDelaySeconds, 1.24);
+  assert.equal(normalizeSettings({ browserAutoTuckClickToOpen: true }).browserAutoTuckClickToOpen, true);
+  assert.equal(normalizeSettings({ browserAutoTuckClickToOpen: "true" }).browserAutoTuckClickToOpen, false);
+});
+
 test("tucked style defaults to line and rejects unknown saved values", () => {
   assert.equal(DEFAULT_SETTINGS.tuckStyle, "line");
   for (const value of [undefined, null, "", "unknown", "LINE", 1, true, {}]) {
@@ -275,4 +291,22 @@ test("clipboard rows are saved, clamped and independent of appearance presets", 
   const chosen = normalizeSettings({ clipboardVisibleRows: 5.6 });
   assert.equal(chosen.clipboardVisibleRows, 6);
   assert.equal(withAppearanceFrom(chosen, DEFAULT_SETTINGS).clipboardVisibleRows, 6);
+});
+
+test("collapsed width range is 160–720 and saved values keep their meaning", () => {
+  const width = (value) => normalizeSettings({ collapsedAutoWidth: false, collapsedWidth: value }).collapsedWidth;
+  assert.deepEqual([width(100), width(160), width(240), width(480), width(720), width(900)], [160, 160, 240, 480, 720, 720]);
+});
+
+test("automatic width limits default to 280–340, stay in range and keep min <= max", () => {
+  const limits = (min, max) => {
+    const s = normalizeSettings({ collapsedAutoWidthMin: min, collapsedAutoWidthMax: max });
+    return [s.collapsedAutoWidthMin, s.collapsedAutoWidthMax];
+  };
+  assert.deepEqual(limits(undefined, undefined), [280, 340]);
+  assert.deepEqual(limits(200, 500), [200, 500]);
+  assert.deepEqual(limits(50, 5000), [160, 720]);
+  assert.deepEqual(limits(600, 300), [600, 600]);
+  assert.deepEqual(limits("x", null), [280, 340]);
+  assert.equal(normalizeSettings({}).collapsedAutoWidth, true);
 });

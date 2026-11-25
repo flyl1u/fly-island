@@ -1,11 +1,12 @@
 import { useEffect, useId, useState, type CSSProperties, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
+import { NumberStepper } from "../NumberStepper";
 import { SettingsRow } from "./SettingsRow";
 import "./SettingsSliderRow.css";
 
 /**
- * A row for a number on a range: title with the value in a pill (and a way back to
- * the default once it differs), then a slider across the whole row.
+ * A row for a number on a range: a value (editable when asked, resettable when changed), and a
+ * slider across the whole row.
  */
 export function SettingsSliderRow({
   title,
@@ -18,6 +19,9 @@ export function SettingsSliderRow({
   defaultValue,
   resetLabel,
   indent,
+  editable = false,
+  unit,
+  disabled = false,
   commitOnRelease = false,
   onPreviewChange,
   onChange,
@@ -33,6 +37,10 @@ export function SettingsSliderRow({
   /** Accessible name of the reset button; needed when `defaultValue` is given. */
   resetLabel?: string;
   indent?: boolean;
+  /** Replaces the value pill with a typed number and +/- buttons while retaining the slider. */
+  editable?: boolean;
+  unit?: string;
+  disabled?: boolean;
   /**
    * Report the value once the thumb is let go (pointer up, key up, focus leaving) instead of on
    * every step; the pill and the track follow the drag meanwhile. For a value that resizes the
@@ -70,6 +78,7 @@ export function SettingsSliderRow({
       title={title}
       description={description}
       indent={indent}
+      disabled={disabled}
       labelFor={id}
       control={
         <>
@@ -78,6 +87,7 @@ export function SettingsSliderRow({
               className="settings-slider__reset"
               type="button"
               aria-label={resetLabel}
+              disabled={disabled}
               onClick={() => {
                 setDraft(null);
                 onPreviewChange?.(null);
@@ -87,7 +97,21 @@ export function SettingsSliderRow({
               <RotateCcw size={13} strokeWidth={2.2} aria-hidden="true" />
             </button>
           ) : null}
-          <output className="settings-slider__value" htmlFor={id}>{format(shown)}</output>
+          {editable ? (
+            <span className="settings-slider__number">
+              <NumberStepper
+                ariaLabel={typeof title === "string" ? title : undefined}
+                value={shown}
+                min={min}
+                max={max}
+                step={step}
+                disabled={disabled}
+                formatValue={step < 1 ? (number) => number.toFixed(String(step).split(".")[1]?.length ?? 0) : undefined}
+                onChange={(next) => onChange(next)}
+              />
+              {unit ? <span className="settings-slider__unit">{unit}</span> : null}
+            </span>
+          ) : <output className="settings-slider__value" htmlFor={id}>{format(shown)}</output>}
         </>
       }
     >
@@ -99,6 +123,7 @@ export function SettingsSliderRow({
         max={max}
         step={step}
         value={shown}
+        disabled={disabled}
         style={{ "--settings-slider-fill": `${fill}%` } as CSSProperties}
         onChange={(event) => {
           const next = Number(event.currentTarget.value);

@@ -1,3 +1,4 @@
+import type { TodoPendingDisplay } from "./idleText.ts";
 export type TranslationTarget = "window" | "island";
 
 /**
@@ -70,7 +71,10 @@ export type IslandSettings = {
   glassBlur: number;
   opacity: number;
   collapsedScale: number;
+  /** The switch: the width follows the shown text, between the two limits below (B3-3). */
   collapsedAutoWidth: boolean;
+  collapsedAutoWidthMin: number;
+  collapsedAutoWidthMax: number;
   collapsedWidth: number;
   collapsedHeight: number;
   /** Space (px) between the collapsed island's sides and its first and last items. */
@@ -144,6 +148,10 @@ export type IslandSettings = {
   showTitle: boolean;
   showCollapsedText: boolean;
   showIdleTodoCount: boolean;
+  /** Custom text for the idle collapsed island; empty keeps "fly-island" (idleText.ts). */
+  idleText: string;
+  /** What shows when todos are pending but none is started. */
+  todoPendingDisplay: TodoPendingDisplay;
   carryOverIncompleteTodos: boolean;
   enableTodoReorder: boolean;
   todoReorderVersion: 1;
@@ -168,6 +176,14 @@ export type IslandSettings = {
   todoTimerReminder: boolean;
   todoTimerReminderSound: boolean;
   autoTuck: boolean;
+  /** Only the minus button or a right click tucks the island: no automatic tucking of any kind. */
+  neverAutoTuck: boolean;
+  /** Tuck to the edge while a browser is foregrounded on the island's monitor. */
+  browserAutoTuck: boolean;
+  /** Seconds the pointer must stay on the tucked island while a browser is foregrounded. */
+  browserAutoTuckDelaySeconds: number;
+  /** While a browser is foregrounded, click the tucked island to open it instead of hovering. */
+  browserAutoTuckClickToOpen: boolean;
   tuckStyle: TuckStyle;
   /** Px of the island left on screen by the "edge" tuck (TUCK_EDGE_HEIGHT). */
   tuckEdgeHeight: number;

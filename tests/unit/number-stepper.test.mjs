@@ -13,6 +13,14 @@ test("parses arbitrary integers; restores invalid edits and clamps out of range 
   assert.equal(parseStepperInput("0", 25, 1, 240), 1);
   assert.equal(parseStepperInput("999", 25, 1, 240), 240);
 });
+test("parses and steps hundredths without floating-point drift", () => {
+  assert.equal(parseStepperInput("2.57", 2.5, 0, 10, 2), 2.57);
+  assert.equal(parseStepperInput("10.234", 2.5, 0, 10, 2), 10);
+  assert.equal(parseStepperInput("-1", 2.5, 0, 10, 2), 2.5);
+  assert.equal(parseStepperInput("2.578", 2.5, 0, 10, 2), 2.58);
+  assert.equal(stepStepperValue(2.57, 1, 0.01, 0, 10), 2.58);
+  assert.equal(stepStepperValue(9.99, 1, 0.01, 0, 10), 10);
+});
 test("steps relative to arbitrary integers, accelerates and stops at endpoints", () => {
   assert.equal(stepStepperValue(7, 1, 5, 1, 240), 12);
   assert.equal(stepStepperValue(7, -1, 5, 1, 240), 2);

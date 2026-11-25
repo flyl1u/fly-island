@@ -133,6 +133,8 @@ export type ForegroundFullscreen = {
   active: boolean;
   /** It fills the monitor the island is on. */
   onIslandMonitor: boolean;
+  /** A recognized browser is in the foreground on the island's monitor. */
+  browserOnIslandMonitor: boolean;
 };
 
 /** The full-screen state at the last native check (every 800 ms). */

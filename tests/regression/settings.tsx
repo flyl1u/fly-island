@@ -116,10 +116,10 @@ if (!automated) {
         await checkTodoRotation(panel, check);
         await checkTodoFileSync(panel, check);
       }
-      // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
+      // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row); 24 -> 28: idle text, pending display, auto min/max.
       // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
       // 2026-11-19: the tucked look (+1) moves from general (16 -> 15) to appearance (22 -> 23).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 17 : category === "appearance" ? 24 : category === "clipboard" ? 10 : category === "todos" ? 9 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 19 : category === "appearance" ? 28 : category === "clipboard" ? 10 : category === "todos" ? 9 : 8;
       if (category === "clipboard") check([...panel.querySelectorAll("label")].some((label) =>
         label.textContent === "悬停时预览完整内容" && label.control?.matches('[role="switch"]:not(:checked)')),
       "Clipboard hover preview defaults off in settings");

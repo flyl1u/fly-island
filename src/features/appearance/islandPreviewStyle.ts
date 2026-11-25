@@ -26,7 +26,7 @@ export function islandPreviewStyle(settings: IslandSettings, scheme: ResolvedSch
     "--preview-text": colors.taskTextColor,
     "--preview-ink": inkOn(colors.islandBackgroundColor),
     "--preview-collapsed-scale": settings.collapsedScale,
-    "--preview-collapsed-width": settings.collapsedAutoWidth ? COLLAPSED_WIDTH.default : settings.collapsedWidth,
+    "--preview-collapsed-width": settings.collapsedAutoWidth ? Math.round((settings.collapsedAutoWidthMin + settings.collapsedAutoWidthMax) / 2) : settings.collapsedWidth,
     "--preview-collapsed-height": settings.collapsedHeight,
     "--preview-collapsed-limit": COLLAPSED_WIDTH.max * MAX_COLLAPSED_SCALE,
     "--preview-expanded-scale": settings.expandedScale,

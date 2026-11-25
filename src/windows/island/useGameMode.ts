@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { getForegroundFullscreen, listenForegroundFullscreen, setIslandGameQuiet } from "./api";
 import { gameModeEffects, type FullscreenState, type GameModeEffects, type GameModeSettings } from "./gameMode";
 import type { IslandMode } from "./types";
+import type { IslandModeReason } from "./diagnosticMode";
 
-const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false };
+const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false, browserOnIslandMonitor: false };
 
 function logError(error: unknown) {
   console.error("Failed to watch for full-screen apps", error);
@@ -12,9 +13,9 @@ function logError(error: unknown) {
 type GameModeActions = {
   mode: IslandMode;
   isTucked: boolean;
-  collapseIsland: () => void;
+  collapseIsland: (reason: IslandModeReason) => void;
   tuckIsland: () => void;
-  revealIsland: () => void;
+  revealIsland: (reason: IslandModeReason) => void;
 };
 
 /**
@@ -28,7 +29,7 @@ export function useGameMode(
   settings: GameModeSettings,
   { mode, isTucked, collapseIsland, tuckIsland, revealIsland }: GameModeActions,
 ): GameModeEffects {
-  const watching = settings.gameDoNotDisturb || settings.gameAutoTuck;
+  const watching = settings.gameDoNotDisturb || settings.gameAutoTuck || (settings.browserAutoTuck && !settings.neverAutoTuck);
   const [fullscreen, setFullscreen] = useState<FullscreenState>(NOT_FULLSCREEN);
   const effects = gameModeEffects(watching ? fullscreen : NOT_FULLSCREEN, settings);
   const tuckedByGameRef = useRef(false);
@@ -58,7 +59,7 @@ export function useGameMode(
   }, [watching]);
 
   useEffect(() => {
-    if (effects.quiet && stateRef.current.mode === "expanded") collapseIsland();
+    if (effects.quiet && stateRef.current.mode === "expanded") collapseIsland("game_mode");
   }, [collapseIsland, effects.quiet]);
 
   // The native cursor loop reads this: a tucked island over a game is not hit at all.
@@ -74,7 +75,7 @@ export function useGameMode(
       }
     } else if (tuckedByGameRef.current) {
       tuckedByGameRef.current = false;
-      if (stateRef.current.isTucked) revealIsland();
+      if (stateRef.current.isTucked) revealIsland("game_mode");
     }
   }, [effects.tuck, revealIsland, tuckIsland]);
 

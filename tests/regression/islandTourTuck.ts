@@ -84,7 +84,7 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
     const rect = material.getBoundingClientRect();
     const body = island().getBoundingClientRect();
     check(materialStyle.clipPath.startsWith("shape(") && materialStyle.pointerEvents === "none"
-      && rect.left < body.left && rect.right > body.right && rect.width <= 820 && rect.left >= 0 && rect.right <= innerWidth,
+      && rect.left < body.left && rect.right > body.right && rect.width <= 1100 && rect.left >= 0 && rect.right <= innerWidth,
     "贴顶圆角随岛身宽度展开，留在舞台内且不拦截点击");
     document.documentElement.dataset.islandTopEdge = "detached";
     await settle(650);

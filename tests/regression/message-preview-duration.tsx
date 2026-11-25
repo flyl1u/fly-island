@@ -28,7 +28,7 @@ window.setTimeout = ((callback: () => void, delay = 0) => {
   timers.set(id, { at: now + delay, callback });
   return id;
 }) as typeof window.setTimeout;
-window.clearTimeout = (id) => { if (id !== undefined) timers.delete(id); realClear(id); };
+window.clearTimeout = (id) => { if (id !== undefined) timers.delete(id as number); realClear(id); };
 const wechat = (pending = false) => ({ revision: ++revision, enabled: true, status: "listening", pending,
   lastAttentionAt: pending ? now : null, error: null, previewEnabled: false, previewStatus: "off", hideMinimizedTaskbar: false, messages: [] });
 const mail = (id = "") => ({ revision: ++revision, email: "test@qq.com", configured: true, enabled: true, syncing: false,

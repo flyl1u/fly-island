@@ -2,7 +2,8 @@ import { isUpdateTodo } from "../../features/todos/updateTodo";
 import { useMemo } from "react";
 import { useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
-import { clockWeatherWidth } from "../../features/weather";
+import { clockWeatherWidth, fitClockWeather } from "../../features/weather";
+import { idleTextDisplay } from "../../features/appearance/idleText";
 import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
@@ -48,7 +49,8 @@ export function useCollapsedTodo(
   const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
-  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null, settings.islandFontPercent / 100);
+  // Only the automatic width grows with the status slots; a manual width is the whole island.
+  const statusMinimum = useCollapsedStatusWidth(settings.collapsedAutoWidth && (clockOn || weather !== null), settings.islandFontPercent / 100);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -91,6 +93,10 @@ export function useCollapsedTodo(
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
   }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
+  const idleDisplay = idleTextDisplay(settings, {
+    itemShown: collapsedItem !== null,
+    pendingLine: collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null,
+  });
   const baseIslandWidth = useMemo(() => {
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;
@@ -102,23 +108,30 @@ export function useCollapsedTodo(
     }, null);
     const todoText = rotating && rotationTodos.length
       ? rotationTodos.reduce((widest, todo) => getCollapsedIslandWidth(todo.title, 0, fontScale) > getCollapsedIslandWidth(widest, 0, fontScale) ? todo.title : widest, "")
-      : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
+      : collapsedTaskTitle ?? (collapsedTodoCount !== null ? idleDisplay.pending ?? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
       : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
-    const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
+    const text = settings.showCollapsedText ? itemText ?? idleDisplay.brand ?? "" : "";
     // The automatic widths were set with 18px each side: more side space adds to the width, less
     // keeps it and gives the text the room.
     const sides = 2 * (settings.collapsedPadding - COLLAPSED_PADDING.default);
     return alignCollapsedIslandWidth(
       getCollapsedIslandWidth(text, sides + (coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
-        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0), fontScale),
+        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0), fontScale, settings.collapsedAutoWidthMin, settings.collapsedAutoWidthMax),
       window.innerWidth,
       window.devicePixelRatio,
+      settings.collapsedAutoWidthMin,
+      settings.collapsedAutoWidthMax,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
+  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth, settings.collapsedAutoWidthMin, settings.collapsedAutoWidthMax,
+    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, idleDisplay.brand, idleDisplay.pending, t, collapsedTimer, timers, rotating, rotationTodos]);
 
-  const collapsedIslandWidth = clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum);
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
+  const fontScale = settings.islandFontPercent / 100;
+  const statusFit = settings.collapsedAutoWidth ? { clock: true, weather: true }
+    : fitClockWeather(baseIslandWidth, clockOn, weather !== null, fontScale);
+  const collapsedIslandWidth = settings.collapsedAutoWidth
+    ? Math.min(settings.collapsedAutoWidthMax, clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, fontScale, statusMinimum))
+    : baseIslandWidth;
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, statusFit, idleDisplay, todoRotation, collapsedTimer };
 }

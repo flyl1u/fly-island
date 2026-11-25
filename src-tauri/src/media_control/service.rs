@@ -66,7 +66,11 @@ pub(crate) enum MediaCommand {
 }
 
 pub(crate) fn get_state(target: Option<String>) -> Result<MediaState, String> {
-    on_media_thread(move || read_media_state(target.as_deref()))
+    on_media_thread(move || {
+        let state = read_media_state(target.as_deref())?;
+        super::session_log::record(&state);
+        Ok(state)
+    })
 }
 
 pub(crate) fn get_audio_level() -> Result<AudioLevel, String> {

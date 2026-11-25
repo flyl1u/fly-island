@@ -21,8 +21,10 @@ import { getExpandedIslandHeight } from "./expandedHeight";
 import { getIslandStageStyle } from "./stageStyle";
 import { shapedSettings } from "../../features/appearance/islandShape";
 import { useCollapsedTodo } from "./useCollapsedTodo";
+import { useCollapsedWidthMotion } from "./useCollapsedWidthMotion";
 import { useMessageNotice } from "./useMessageNotice";
 import { useGameMode } from "./useGameMode";
+import { useMusicGrace } from "./useMusicGrace";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useCtrlWheelPages, wheelPageOrder } from "./useCtrlWheelPages";
 import { useIslandFeatures } from "./useIslandFeatures";
@@ -78,8 +80,10 @@ export function IslandApp() {
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
+  // "Stay out while music plays" follows the media session itself, not the lyric line.
+  const musicHoldsIsland = useMusicGrace(settings.musicEnabled && media.mediaState.playbackStatus === "playing");
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
@@ -91,14 +95,17 @@ export function IslandApp() {
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
+  const widthMotion = useCollapsedWidthMotion(collapsedWidthTarget, mode === "collapsed");
+  const collapsedIslandWidth = widthMotion.width;
   const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
   const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
   useIslandTucking({
     settings,
     navigation,
     hasMessagePreview,
-    activity: { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer },
+    activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
+    browserOnIslandMonitor: game.browserOnIslandMonitor,
   });
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
@@ -176,15 +183,16 @@ export function IslandApp() {
     settings,
     setSettings,
     expandedIslandHeight,
-    collapsedIslandWidth,
+    collapsedIslandWidth: widthMotion.hitWidth,
     notice: notice.nativeNotice,
     onCollapse: collapseIsland,
   });
 
-  const hoverTucked = useIslandHover({
+  const tuckedHover = useIslandHover({
     settings,
     navigation,
     quiet: game.quiet,
+    browserOnIslandMonitor: game.browserOnIslandMonitor,
     hasMessagePreview,
     namesAgent: Boolean(agentSession),
     openEnabledPage,
@@ -236,13 +244,17 @@ export function IslandApp() {
         isDetached={isPositionDetached || settings.marginY > 0}
         islandShape={settings.islandShape}
         showTitle={settings.showTitle}
+        widthMoving={widthMotion.moving}
+        brandText={idleDisplay.brand}
+        pendingText={idleDisplay.pending}
         showCollapsedText={settings.showCollapsedText}
         collapsedTaskTitle={collapsedTaskTitle}
         todoRotation={todoRotation}
         todoTimer={settings.todoEnabled ? collapsedTimer : null}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
-        collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, settings.collapsedHidden)}
+        collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, [...settings.collapsedHidden,
+          ...(statusFit.clock ? [] : ["clock" as const]), ...(statusFit.weather ? [] : ["weather" as const])])}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}
@@ -266,7 +278,10 @@ export function IslandApp() {
         onOpenTranslator={settings.translationEnabled ? openTranslator : null}
         onOpenSettings={openSettings}
         onTuck={tuckIsland}
-        onReveal={hoverTucked}
+        onContextTuck={minimizeToEdge}
+        onReveal={tuckedHover.hoverTucked}
+        clickTuckedToOpen={game.browserOnIslandMonitor && settings.browserAutoTuckClickToOpen}
+        onClickTucked={tuckedHover.clickTucked}
         onPageChange={setPage}
         pageActions={page === "agents" && (
           <AgentArrangeButton sort={settings.agentSessionSort} group={settings.agentSessionGroup} onChange={(patch) => setSettings({ ...settings, ...patch })} />

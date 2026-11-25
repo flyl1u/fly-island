@@ -2,7 +2,7 @@ import { act } from "react";
 
 export async function checkKeepVisible(panel: Element, check: (condition: unknown, message: string) => void) {
   // Indented under "tuck when idle" in the tuck group (2026-11-18 tidy-up), shown only while it is on.
-  const titles = ["Agent 运行时不贴边", "显示歌词时不贴边", "待办计时时不贴边"];
+  const titles = ["Agent 运行时不贴边", "播放音乐时不贴边", "待办计时时不贴边"];
   const keepRows = () => [...panel.querySelectorAll<HTMLInputElement>("input[role=switch]")]
     .filter((input) => titles.includes(input.labels?.[0]?.textContent ?? ""));
   const group = () => keepRows().length > 0 || null;

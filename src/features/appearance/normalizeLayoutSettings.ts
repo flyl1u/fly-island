@@ -13,6 +13,13 @@ function normalizeSize(value: unknown, limits: { min: number; max: number; defau
   return clamp(Math.round(value / step) * step, limits.min, limits.max);
 }
 
+/** The automatic width's limits, 280 and 340 until chosen; the upper one never falls below the lower. */
+function autoWidthLimits(min: unknown, max: unknown) {
+  const lower = normalizeSize(min, { ...COLLAPSED_WIDTH, default: 280 });
+  const upper = Math.max(lower, normalizeSize(max, COLLAPSED_WIDTH));
+  return { collapsedAutoWidthMin: lower, collapsedAutoWidthMax: upper };
+}
+
 /** The saved material; older versions saved liquid glass as `appearanceMode: "liquidGlass"`. */
 function normalizeMaterial(settings: LegacyIslandSettings | null | undefined): Material {
   const material = settings?.material;
@@ -62,6 +69,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
     collapsedScale: clamp(Number(collapsedScale), MIN_COLLAPSED_SCALE, MAX_COLLAPSED_SCALE),
     collapsedAutoWidth: settings?.collapsedAutoWidth !== false,
+    ...autoWidthLimits(settings?.collapsedAutoWidthMin, settings?.collapsedAutoWidthMax),
     collapsedWidth: normalizeSize(settings?.collapsedWidth, COLLAPSED_WIDTH),
     collapsedHeight: normalizeSize(settings?.collapsedHeight, COLLAPSED_HEIGHT),
     collapsedPadding: normalizeSize(settings?.collapsedPadding, COLLAPSED_PADDING),

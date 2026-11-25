@@ -2,6 +2,8 @@ import { getCollapsedTextUnits } from "../../utils/text.ts";
 
 // Keep in step with src-tauri/src/island/geometry.rs (STAGE_WINDOW_WIDTH / HEIGHT / PADDING_Y):
 // the grown island must stay inside the stage window, at any collapsed scale.
+// Notices keep the old 820 bound although the stage is wider now (1100, for a 720 collapsed island),
+// so their layout does not change.
 const STAGE_WIDTH = 820;
 const STAGE_MIN_HEIGHT = 460;
 const STAGE_PADDING_Y = 24;
@@ -80,7 +82,7 @@ export function getNoticeSize({ sender, body }: NoticeText, limits: NoticeLimits
 }
 
 /**
- * The stage (820 wide) centres the island; a width of 4 more than a multiple of 8 puts its left
+ * The stage (1100 wide; 820 before 2026-11-25, and the parity below holds for both) centres the island; a width of 4 more than a multiple of 8 puts its left
  * edge on a whole device pixel at the 1x, 1.25x, 1.5x and 2x display scales, so it does not jump
  * when the resize animation ends (alignCollapsedIslandWidth explains the jump).
  */

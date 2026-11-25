@@ -7,6 +7,7 @@ import { usePlugins } from "../../features/plugins";
 import { PLUGIN_RUNTIME_ENABLED } from "../../features/releaseFlags.ts";
 import { islandPageFor, pluginPagesFrom, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
+import type { IslandModeReason } from "./diagnosticMode";
 
 type IslandFeatureOptions = {
   settings: IslandSettings;
@@ -18,7 +19,7 @@ type IslandFeatureOptions = {
   messageSource: MessageView;
   setPage: (page: IslandPage) => void;
   setMessageSource: (source: MessageView) => void;
-  openIslandPage: (page: IslandPage) => void;
+  openIslandPage: (page: IslandPage, reason?: IslandModeReason) => void;
 };
 
 /**
@@ -90,9 +91,9 @@ export function useIslandFeatures({
     lastMailSwitchRef.current = mailSwitch;
   }, [mailConfigured, mailReceiving, mailSwitch, setMailReceiving]);
 
-  const openEnabledPage = useCallback((target: IslandPage) => {
+  const openEnabledPage = useCallback((target: IslandPage, reason?: IslandModeReason) => {
     const next = resolveIslandPage(target, features);
-    if (next) openIslandPage(next);
+    if (next) openIslandPage(next, reason);
   }, [features, openIslandPage]);
 
   return { features, openEnabledPage };

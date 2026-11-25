@@ -32,6 +32,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 `fly-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
 
+`fly-island-settings` 的空闲文字字段（2026-11）：`idleText` 默认 `""`（去首尾空白、换行变空格、最多 40 个字符，非字符串视为空；空则沿用 `fly-island`），`todoPendingDisplay` 默认 `pendingCount`（`pendingCount` / `idleText`，其余值回退）。旧记录无这两个字段时行为不变：`showTitle` 仍控制 `fly-island` 标题，`showIdleTodoCount` 仍控制剩余数量；自定义 `idleText` 非空时，只在岛上没有别的内容时显示（不依赖 `showTitle`）；`todoPendingDisplay=idleText` 时，"有待办但没开始"一行显示空闲文字（空则 `fly-island`）而不是剩余数量。
+
+
 待办并行状态保存到 `fly-island-active-todos`（去重的字符串 ID 数组，首项为主任务）和 `fly-island-todo-timers`（独立计时对象数组 `{ todoId, endsAt, durationMinutes, notified }[]`，每项 ID 唯一）。首次读取若新键缺失、JSON 损坏或根类型错误，则从旧 `fly-island-active-todo` 字符串和 `fly-island-todo-timer` 单对象兼容读取。新键中的空数组表示已停止。非法数组项忽略，通知标记缺失按 false。
 
 旧 `fly-island-active-todo` 同步主任务 ID，旧 `fly-island-todo-timer` 同步主任务的计时对象。轮换开启时，新增活动任务按开始顺序追加，岛屿保持展开。轮换关闭时，保留主任务和其他有计时的任务。开始任务或再来一轮时，该任务成为主任务，岛屿收起。停止、完成或删除只清除对应任务的计时。关闭番茄钟清空全部计时，活动任务仍遵循轮换设置。每轮首次提示前写入 `notified: true`，同一次检查中多项到时一起标记、合响一次。跨天保留所有计时中或已到时待处理任务的 ID 与结束时间。
@@ -124,7 +127,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `island-top-attachment-changed`（载荷为 `bool`：岛屿是否贴住所在显示器顶边） | `island/top_edge.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-hover-changed`（载荷为 `bool`：光标是否在岛屿形状内，供悬停展开使用） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-cursor-moved`（载荷 `{ x, y }`：光标在主窗口 CSS 像素中的位置，窗口外也有；只在 `set_island_cursor_tracking(true)` 后、光标移动时发，约 28 次/秒，供中心图案的眼睛跟随） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
-| `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
+| `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor, browserOnIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器、前台是否是浏览器且在岛所在的显示器，供游戏模式和浏览器自动贴边使用） | `system/fullscreen.rs` | 广播 |
 | `media-session-changed`（无载荷：某个媒体会话的时间线、播放状态或歌曲变了，或会话增减；主窗口收到后立即重读 `get_media_state`。2026-11-11 起） | `media_control/watcher.rs` | 广播 |
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
@@ -142,6 +145,10 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `agent-approval-closed`（载荷 `{ id, reason }`，`reason` 为 `decided` / `timeout` / `disconnected` / `handedBack` / `shutdown`） | `agent_approval/mod.rs` | 广播 |
 
 ## 其他
+
+- 诊断包（2026-11-25）：`export_diagnostic_bundle({ title, settings })` 先打开 Windows 原生 ZIP 保存对话框；成功返回所选路径，取消返回 `null`。开启/关闭文件日志均可导出，不修改日志开关或应用设置。
+
+- 结构化诊断（2026-11-25）：新增 `record_diagnostic({ diagnostic: { category, name, fields } })`；仅记录允许的事件名及字段，关闭文件日志时只保留在内存。既有日志命令、事件、设置及磁盘路径不变。内置命令不需要新增插件 ACL。
 
 - 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `fly-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。
 - 新增原生命令 `read_todo_markdown({ directory, date })`，返回 `{ filePath, version, modifiedAt, content }`：缺失文件后三项为 null；时间为 Unix 毫秒，version 为内容 SHA-256 与文件修改时间组成的不透明字符串。只允许绝对目录与真实 `YYYY-MM-DD`，只读取 UTF-8 且不超过 4 MiB 的每日文件。

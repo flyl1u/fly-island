@@ -24,6 +24,7 @@ export function SettingsToggleRow({
       title={title}
       description={description}
       indent={indent}
+      disabled={disabled}
       labelFor={id}
       control={<SettingsSwitch id={id} checked={checked} disabled={disabled} onChange={onChange} />}
     />

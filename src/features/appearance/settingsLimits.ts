@@ -34,6 +34,8 @@ export const DEFAULT_AUTO_COPY_OTP = true;
  */
 export const AUTO_COLLAPSE_SECONDS = { min: 0, max: 600, default: 30 } as const;
 export const TUCK_DELAY_SECONDS = { min: 3, max: 600, default: 30 } as const;
+/** How long the pointer must stay on the tucked island while a browser is foregrounded. */
+export const BROWSER_AUTO_TUCK_DELAY_SECONDS = { min: 0, max: 10, step: 0.01, default: 2.5 } as const;
 export const TODO_ROTATION_SECONDS = { min: 1, max: 60, default: 5 } as const;
 export const TODO_SCROLL_SPEED = { min: 10, max: 40, step: 5, default: 20 } as const;
 export const MESSAGE_PREVIEW_SECONDS = { min: 3, max: 30, step: 1, default: 5 } as const;
@@ -48,7 +50,10 @@ export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#FFFFFF";
 
 export const ISLAND_FONT_PERCENT = { min: 90, max: 120, step: 5, default: 100 } as const;
-export const COLLAPSED_WIDTH = { min: 240, max: 480, default: 340 } as const;
+// Rust clamps to the same range (MIN/MAX_COLLAPSED_ISLAND_WIDTH in island/geometry.rs). The stage
+// window must hold max × the largest collapsed scale: STAGE_WINDOW_WIDTH there and the width in
+// tauri.conf.json (B3-2, 2026-11-25: 240–480 widened to 160–720).
+export const COLLAPSED_WIDTH = { min: 160, max: 720, default: 340 } as const;
 // The floor was 32 until 2026-11-19 (用户要求最小值 26px); Rust clamps to the same range (geometry.rs).
 export const COLLAPSED_HEIGHT = { min: 26, max: 60, default: 38 } as const;
 /** The collapsed island's side space; 18 is what it always was. */

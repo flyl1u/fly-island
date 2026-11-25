@@ -35,6 +35,20 @@ export async function checkClockWeatherIsland(
     "安装后显示24小时时间，未选城市不显示天气且不发请求");
   await act(async () => setClockWeatherSettings({ showClock: true, showWeather: true, location: city }));
   await settle(450);
+  if (new URLSearchParams(location.search).has("notch")) {
+    // A manual width is the whole island (B3-1): 240 at a 120% font leaves no room for the weather,
+    // so it hides (the time stays) and the island does not grow. The wide pages cover the rest.
+    check(clock() && !weather() && clockWeatherMock.requests === 1 && Math.abs(island().getBoundingClientRect().width - baseWidth) < 1,
+      `手动窄宽度下天气先隐藏、岛屿不变长，仍只发一次请求（${baseWidth} → ${island().getBoundingClientRect().width}）`);
+    const narrowBar = document.querySelector<HTMLElement>(".island__collapsed")!;
+    const narrowBox = island().getBoundingClientRect();
+    check([...narrowBar.children].every(child => {
+      const rect = child.getBoundingClientRect();
+      return rect.left >= narrowBox.left + 8 && rect.right <= narrowBox.right - 8;
+    }) && narrowBar.querySelector(".island__text-slot")!.getBoundingClientRect().width >= 64,
+    "窄岛与放大字体下所有状态位在岛内，文字保留可读空间");
+    return;
+  }
   check(weather()?.textContent === "23°" && weather()?.querySelector("svg") && clockWeatherMock.requests === 1,
     "选城市后显示图标温度，同窗口多个订阅与StrictMode共享一次请求");
   const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
@@ -60,7 +74,8 @@ export async function checkClockWeatherIsland(
       .filter((id: string) => id !== "clockWeather")));
     window.dispatchEvent(new StorageEvent("storage", { key: NATIVE_PLUGINS_KEY }));
   });
-  await settle(450);
+  // Narrowing waits 300 ms, then glides for 400 ms; each step renders only when act() exits.
+  for (let step = 0; step < 4; step++) await settle(450);
   check(!clock() && !weather() && (new URLSearchParams(location.search).has("notch")
     ? Math.abs(island().getBoundingClientRect().width - baseWidth) < 1 : island().getBoundingClientRect().width < clockOnlyWidth),
     `另一窗口卸载后两个位消失，收起岛恢复原宽度（${baseWidth} → ${island().getBoundingClientRect().width}）`);

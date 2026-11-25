@@ -3,7 +3,7 @@ import { DEFAULT_LYRICS_SETTINGS } from "../media/lyrics/lyricsSettings.ts";
 import {
   DEFAULT_AGENT_VISIBLE_ROWS, DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS, DEFAULT_CLIPBOARD_VISIBLE_ROWS, DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
-  AUTO_COLLAPSE_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, TUCK_DELAY_SECONDS, DEFAULT_AUTO_COPY_OTP, GLASS_BLUR, TUCK_EDGE_HEIGHT,
+  AUTO_COLLAPSE_SECONDS, BROWSER_AUTO_TUCK_DELAY_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, TUCK_DELAY_SECONDS, DEFAULT_AUTO_COPY_OTP, GLASS_BLUR, TUCK_EDGE_HEIGHT,
   AGENT_QUOTA_SOURCES, TODO_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_PADDING, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT,
   TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, MESSAGE_PREVIEW_SECONDS, MESSAGE_EXPAND_MAX_WIDTH, MESSAGE_EXPAND_MAX_HEIGHT,
   MESSAGE_EXPAND_SECONDS, GAME_NOTICE_SECONDS,
@@ -26,6 +26,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   opacity: 100,
   collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.
   collapsedAutoWidth: true,
+  collapsedAutoWidthMin: 280,
+  collapsedAutoWidthMax: 340,
   collapsedWidth: COLLAPSED_WIDTH.default,
   collapsedHeight: COLLAPSED_HEIGHT.default,
   collapsedPadding: COLLAPSED_PADDING.default,
@@ -84,6 +86,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   showTitle: false,
   showCollapsedText: true,
   showIdleTodoCount: true,
+  idleText: "",
+  todoPendingDisplay: "pendingCount",
   carryOverIncompleteTodos: true,
   enableTodoReorder: true,
   todoReorderVersion: 1,
@@ -102,6 +106,11 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoTimerReminder: false,
   todoTimerReminderSound: false,
   autoTuck: true,
+  neverAutoTuck: false,
+  // Off until chosen: the contributor's version defaulted on, which would tuck every user's island.
+  browserAutoTuck: false,
+  browserAutoTuckDelaySeconds: BROWSER_AUTO_TUCK_DELAY_SECONDS.default,
+  browserAutoTuckClickToOpen: false,
   tuckStyle: "line",
   tuckEdgeHeight: TUCK_EDGE_HEIGHT.default,
   tuckDelaySeconds: TUCK_DELAY_SECONDS.default,

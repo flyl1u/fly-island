@@ -1,3 +1,5 @@
+import { COLLAPSED_WIDTH } from "../appearance/settingsLimits.ts";
+
 export type WeatherLocation = { name: string; latitude: number; longitude: number };
 export type ClockWeatherSettings = { showClock: boolean; showWeather: boolean; location: WeatherLocation | null };
 export type WeatherReading = { temperature: number; code: number; observedAt: number; fetchedAt: number };
@@ -33,8 +35,25 @@ export function normalizeWeatherCache(value: unknown): WeatherCache | null {
   return { latitude: item.latitude as number, longitude: item.longitude as number,
     temperature: item.temperature, code: item.code, observedAt: item.observedAt, fetchedAt: item.fetchedAt };
 }
+/**
+ * Coordinates that differ by less than this (about 550 m) are the same place: the located or
+ * searched point and the one saved with a reading can differ by rounding, and an exact
+ * comparison then never matched, so a successful reading was never shown.
+ */
+export const SAME_PLACE_DEGREES = 0.005;
+export function sameLocation(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }): boolean {
+  return Math.abs(a.latitude - b.latitude) < SAME_PLACE_DEGREES && Math.abs(a.longitude - b.longitude) < SAME_PLACE_DEGREES;
+}
+
+/** Waits before retrying after the 1st, 2nd, 3rd failure in a row; later ones use the normal refresh. */
+export const WEATHER_RETRY_MS = [30_000, 2 * 60_000, 10 * 60_000] as const;
+export function nextWeatherDelay(failures: number): number {
+  if (failures <= 0) return WEATHER_REFRESH_MS;
+  return WEATHER_RETRY_MS[failures - 1] ?? WEATHER_REFRESH_MS;
+}
+
 export function weatherForLocation(cache: WeatherCache | null, location: WeatherLocation | null, now = Date.now()): WeatherCache | null {
-  if (!cache || !location || cache.latitude !== location.latitude || cache.longitude !== location.longitude) return null;
+  if (!cache || !location || !sameLocation(cache, location)) return null;
   // Reject future timestamps too: a corrupt cache must not remain visible indefinitely.
   if (Math.max(cache.observedAt, cache.fetchedAt) > now + 60_000) return null;
   const age = now - Math.min(cache.observedAt, cache.fetchedAt);
@@ -61,8 +80,23 @@ export function formatClock(date: Date) {
 export function nextMinuteDelay(now: number) { return 60_000 - (now % 60_000); }
 export function formatTemperature(temperature: number) { return `${Math.round(temperature) || 0}°`; }
 
-/** Fixed digit room: minute ticks never change the island width. Sizes are before island scaling. */
+/**
+ * Manual width: the user's width is the whole island. The time and weather share it with the text
+ * (side space 36 and at least 64 for the text); when they do not fit, the weather goes first, then
+ * the time. Other slots (mail, music…) are not counted here.
+ */
+export function fitClockWeather(width: number, clock: boolean, weather: boolean, fontScale = 1) {
+  const room = width - 36 - 64 * fontScale;
+  const clockRoom = 48 * fontScale + 8;
+  const weatherRoom = 64 * fontScale + 8;
+  if (clock && weather && room >= clockRoom + weatherRoom) return { clock: true, weather: true };
+  if (clock && room >= clockRoom) return { clock: true, weather: false };
+  if (weather && !clock && room >= weatherRoom) return { clock: false, weather: true };
+  return { clock: false, weather: false };
+}
+
+/** Automatic width only: fixed digit room: minute ticks never change the island width. Sizes are before island scaling. */
 export function clockWeatherWidth(base: number, clock: boolean, weather: boolean, fontScale = 1, minimum = 0) {
   if (!clock && !weather) return base;
-  return Math.min(480, Math.max(minimum, Math.ceil(base + (clock ? 48 * fontScale + 8 : 0) + (weather ? 64 * fontScale + 8 : 0))));
+  return Math.min(COLLAPSED_WIDTH.max, Math.max(minimum, Math.ceil(base + (clock ? 48 * fontScale + 8 : 0) + (weather ? 64 * fontScale + 8 : 0))));
 }

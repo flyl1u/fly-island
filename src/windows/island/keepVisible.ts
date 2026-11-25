@@ -5,6 +5,7 @@ import type { TodoTimer } from "../../features/todos/timer";
 type Activity = {
   agentVisualState: AgentVisualState;
   collapsedItem: CollapsedItem | null;
+  /** A media session is playing, or stopped within the grace period (musicGrace.ts). */
   songPlaying: boolean;
   activeTodoId: string | null;
   timer: TodoTimer | null;
@@ -14,11 +15,18 @@ type KeepVisibleSettings = Pick<IslandSettings, "keepVisibleWhileAgentRunning" |
 
 /** Only holds idle tucking: navigation and game mode retain their own behavior. */
 export function keepIslandVisible(settings: KeepVisibleSettings, activity: Activity, now: number): boolean {
-  return (settings.keepVisibleWhileAgentRunning && activity.agentVisualState === "running")
-    || (settings.keepVisibleWhileLyrics && settings.showCollapsedText
-      && activity.collapsedItem === "lyrics" && activity.songPlaying)
-    || (settings.keepVisibleWhileTodoRunning && settings.todoEnabled
-      && (Boolean(activity.activeTodoId) || Boolean(activity.timer && activity.timer.endsAt > now)));
+  return keepVisibleReason(settings, activity, now) !== null;
+}
+
+export function keepVisibleReason(settings: KeepVisibleSettings, activity: Activity, now: number) {
+  if (settings.keepVisibleWhileAgentRunning && activity.agentVisualState === "running") return "keep_visible_agent";
+  // Any playing media session holds it, with or without lyrics and whatever the collapsed text
+  // shows (issue #117). `songPlaying` already includes the short grace after a pause or track change.
+  if (settings.keepVisibleWhileLyrics && activity.songPlaying) return "keep_visible_music";
+  if (settings.keepVisibleWhileTodoRunning && settings.todoEnabled && (activity.activeTodoId || (activity.timer && activity.timer.endsAt > now))) {
+    return "keep_visible_todo";
+  }
+  return null;
 }
 
 /**

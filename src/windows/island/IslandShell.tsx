@@ -1,3 +1,4 @@
+import { rightClickTucks } from "./tuckRules";
 import { shoulderedShapeCss } from "../../features/appearance/cornerShape";
 import { isGlass } from "../../features/appearance/settings";
 import type { CSSProperties, ReactNode, TransitionEvent } from "react";
@@ -57,6 +58,12 @@ type IslandShellProps = {
   islandShape?: IslandShape;
   islandCornerShape?: IslandCornerShape;
   showTitle: boolean;
+  /** The collapsed bar's title text (idleText.ts), or null for none. */
+  /** The collapsed width changed while collapsed: the shape glides to it (IslandShell.css). */
+  widthMoving?: boolean;
+  brandText: string | null;
+  /** Replaces the "N todos left" line, or null to show the count. */
+  pendingText: string | null;
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
@@ -98,7 +105,11 @@ type IslandShellProps = {
   /** One line from the selection shortcut, shown on the collapsed island, or null. */
   onOpenSettings: () => void;
   onTuck: () => void;
+  /** Right click on the collapsed island: tucks it to the edge like the minus button (tuckRules.ts). */
+  onContextTuck: () => void;
   onReveal: () => void;
+  clickTuckedToOpen?: boolean;
+  onClickTucked?: () => void;
   onPageChange: (page: IslandPage) => void;
   /** Buttons of the open page, first among the window actions. */
   pageActions?: ReactNode;
@@ -134,6 +145,9 @@ export function IslandShell({
   islandShape = "notch",
   islandCornerShape = "squircle",
   showTitle,
+  widthMoving = false,
+  brandText,
+  pendingText,
   showCollapsedText,
   collapsedTaskTitle,
   todoTimer = null,
@@ -164,7 +178,10 @@ export function IslandShell({
   onOpenTranslator,
   onOpenSettings,
   onTuck,
+  onContextTuck,
   onReveal,
+  clickTuckedToOpen = false,
+  onClickTucked,
   onPageChange,
   pageActions,
   children,
@@ -195,6 +212,7 @@ export function IslandShell({
     glass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
     notice && !isExpanded ? "island--notice" : "",
+    widthMoving && !isExpanded ? "island--width-motion" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -215,9 +233,17 @@ export function IslandShell({
       className={className}
       aria-label={collapsedLabel}
       onClick={(event) => {
+        if (isTucked && clickTuckedToOpen) {
+          onClickTucked?.();
+          return;
+        }
         if (!isExpanded && event.target === event.currentTarget) {
           onOpenPage(page);
         }
+      }}
+      onContextMenu={() => {
+        // The native menu is already suppressed (main.tsx); here it tucks the collapsed island.
+        if (rightClickTucks(mode, isTucked)) onContextTuck();
       }}
       onPointerMove={handleGlassPointerMove}
       onPointerLeave={resetGlassPointer}
@@ -260,6 +286,8 @@ export function IslandShell({
             isTucked={isTucked}
             positionLocked={positionLocked}
             showTitle={showTitle}
+            brandText={brandText}
+            pendingText={pendingText}
             showCollapsedText={showCollapsedText}
             collapsedLabel={collapsedLabel}
             collapsedTaskTitle={collapsedTaskTitle}

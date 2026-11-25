@@ -64,6 +64,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 媒体诊断与本地校准
 
+应用诊断由 `app_log` 的有界单写入线程收口；前端 `features/diagnostics/api.ts` 仅传白名单字段，Win32 探测保持在安全封装内。覆盖面、隐私和 ZIP 结构见 [诊断日志](../investigations/diagnostic-log.md)。
+
 `media_control/hotkeys.rs` 独立持有音乐全局快捷键的消息窗口，复用剪贴板组合键解析、`win32/hotkey` 注册与媒体 worker；前端 `features/media/useMusicShortcuts.ts` 在主窗口媒体 hook 中同步 localStorage，设置页只编辑与读取状态。快捷键冲突由设置窗口组合各领域配置，审批键始终预留。
 
 歌词源位于 `lyrics/`：QQ 专属接口与 QRC 解密（`qqmusic.rs` / `qrc_cipher.rs`）、酷狗原生缓存（`kugou_cache.rs`）、汽水只读 LMDB 快照和 msgpackr 解码（`soda_cache.rs` / `soda_lmdb.rs` / `soda_msgpack.rs`）、网易 YRC 与共享逐字格式转换（`word_formats.rs`），统一输出增强 LRC。来源顺序、兼容缓存与限制见 [歌词源说明](../lyrics-sources.md)。

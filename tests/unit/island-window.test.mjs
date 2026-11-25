@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  MAX_COLLAPSED_ISLAND_WIDTH,
-  MIN_COLLAPSED_ISLAND_WIDTH,
+  AUTO_WIDTH_DEFAULT,
   alignCollapsedIslandWidth,
   getClipboardExpandedHeight,
   getCollapsedIslandWidth,
@@ -24,17 +23,19 @@ function withStorage(entries, run) {
 }
 
 test("the collapsed island grows with its text between the min and max widths", () => {
-  assert.equal(getCollapsedIslandWidth(""), MIN_COLLAPSED_ISLAND_WIDTH);
-  assert.equal(getCollapsedIslandWidth("x".repeat(200)), MAX_COLLAPSED_ISLAND_WIDTH);
-  const mid = getCollapsedIslandWidth("abcdefg");
-  assert.ok(mid > MIN_COLLAPSED_ISLAND_WIDTH && mid < MAX_COLLAPSED_ISLAND_WIDTH, String(mid));
+  assert.equal(getCollapsedIslandWidth(""), AUTO_WIDTH_DEFAULT.min);
+  assert.equal(getCollapsedIslandWidth("x".repeat(200)), AUTO_WIDTH_DEFAULT.max);
+  const mid = getCollapsedIslandWidth("a".repeat(30));
+  assert.ok(mid > AUTO_WIDTH_DEFAULT.min && mid < AUTO_WIDTH_DEFAULT.max, String(mid));
   assert.equal(Number.isInteger(mid), true);
 });
 
 test("plugin slots widen the collapsed island by the width they need, up to the max", () => {
-  assert.equal(getCollapsedIslandWidth("", 42), MIN_COLLAPSED_ISLAND_WIDTH + 42);
-  assert.equal(getCollapsedIslandWidth("", -10), MIN_COLLAPSED_ISLAND_WIDTH);
-  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), MAX_COLLAPSED_ISLAND_WIDTH);
+  // With the widest limits the extra shows up one for one; negative extras count as none.
+  assert.equal(getCollapsedIslandWidth("", 200, 1, 160, 720), 300);
+  assert.equal(getCollapsedIslandWidth("", -10, 1, 160, 720), 160);
+  assert.equal(getCollapsedIslandWidth("abcdefg", 1000, 1, 160, 720), 720);
+  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), AUTO_WIDTH_DEFAULT.max);
 });
 
 test("the todo list scrolls after as many rows as fit under the max panel height", () => {
@@ -52,10 +53,10 @@ test("the collapsed width is nudged so the centred island starts on a whole devi
   assert.equal(alignCollapsedIslandWidth(301, 820, 1), 300);
   assert.equal(alignCollapsedIslandWidth(300, 820, 1), 300);
   for (const ratio of [1, 1.25, 1.5, 1.75, 2]) {
-    for (let width = MIN_COLLAPSED_ISLAND_WIDTH; width <= MAX_COLLAPSED_ISLAND_WIDTH; width++) {
-      const aligned = alignCollapsedIslandWidth(width, 820, ratio);
+    for (let width = AUTO_WIDTH_DEFAULT.min; width <= AUTO_WIDTH_DEFAULT.max; width++) {
+      const aligned = alignCollapsedIslandWidth(width, 820, ratio, AUTO_WIDTH_DEFAULT.min, AUTO_WIDTH_DEFAULT.max);
       assert.ok(Math.abs(aligned - width) <= 4, `${width} at ${ratio} -> ${aligned}`);
-      assert.ok(aligned >= MIN_COLLAPSED_ISLAND_WIDTH && aligned <= MAX_COLLAPSED_ISLAND_WIDTH);
+      assert.ok(aligned >= AUTO_WIDTH_DEFAULT.min && aligned <= AUTO_WIDTH_DEFAULT.max);
       assert.equal(Number.isInteger(leftEdge(aligned, ratio)), true, `${width} at ${ratio} -> ${aligned}`);
     }
   }
@@ -155,4 +156,18 @@ test("a clipboard opened in its own window is not kept as the island's page", as
   assert.equal(islandPageFor("clipboard", all, true), "todo");
   assert.equal(islandPageFor("clipboard", { ...all, todo: false, music: false }, true), "shelf");
   assert.equal(islandPageFor("music", all, true), "music");
+});
+
+test("automatic width follows the text between the saved limits and the font scale", () => {
+  const lo = 200, hi = 500;
+  assert.equal(getCollapsedIslandWidth("", 0, 1, lo, hi), lo);
+  assert.equal(getCollapsedIslandWidth("字".repeat(60), 0, 1, lo, hi), hi);
+  const text = "字".repeat(12);
+  const normal = getCollapsedIslandWidth(text, 0, 1, lo, hi);
+  const large = getCollapsedIslandWidth(text, 0, 1.2, lo, hi);
+  assert.ok(normal > lo && normal < hi && large > normal, `${normal} < ${large}`);
+  // A longer limit lets the same text grow further; a shorter one stops it.
+  assert.equal(getCollapsedIslandWidth(text, 0, 1, 160, 220), 220);
+  // Same text, same width: a lyric line keeps its fixed stand-in text, so lines never resize it.
+  assert.equal(getCollapsedIslandWidth("♪".repeat(24), 0, 1, lo, hi), getCollapsedIslandWidth("♪".repeat(24), 0, 1, lo, hi));
 });
