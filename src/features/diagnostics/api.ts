@@ -6,6 +6,12 @@ export const APP_LOG_CHANGED_EVENT = "app-log-changed";
 
 export type AppLogState = { enabled: boolean; path: string; bytes: number };
 export type AppLogEntry = { level: "error" | "warn"; message: string };
+export type DiagnosticCategory = "island" | "window" | "fullscreen" | "media" | "weather" | "plugin" | "update" | "startup";
+
+export function logDiagnostic(category: DiagnosticCategory, name: string, fields: Readonly<Record<string, string | number | boolean>>) {
+  if (!isTauri()) return;
+  void invoke<void>("record_diagnostic", { diagnostic: { category, name, fields } }).catch(() => {});
+}
 
 export function getAppLogState() {
   return invoke<AppLogState>("get_app_log_state");

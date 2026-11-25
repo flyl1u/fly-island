@@ -133,6 +133,7 @@ pub fn run() {
             if let Err(error) = plugin_host::init(app.handle()) {
                 eprintln!("failed to initialize plugins: {error}");
             }
+            app_log::record_plugins(app.handle());
             agent_status::reply_marker::init();
             agent_status::workbuddy_connection::init(app.handle());
             if !isolated {

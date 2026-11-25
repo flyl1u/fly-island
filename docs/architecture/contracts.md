@@ -143,6 +143,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## 其他
 
+- 结构化诊断（2026-11-25）：新增 `record_diagnostic({ diagnostic: { category, name, fields } })`；仅记录允许的事件名及字段，关闭文件日志时只保留在内存。既有日志命令、事件、设置及磁盘路径不变。内置命令不需要新增插件 ACL。
+
 - 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `fly-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。
 - 新增原生命令 `read_todo_markdown({ directory, date })`，返回 `{ filePath, version, modifiedAt, content }`：缺失文件后三项为 null；时间为 Unix 毫秒，version 为内容 SHA-256 与文件修改时间组成的不透明字符串。只允许绝对目录与真实 `YYYY-MM-DD`，只读取 UTF-8 且不超过 4 MiB 的每日文件。
 - 新增 `save_todo_markdown_if_unchanged({ directory, date, content, expectedVersion, recoveryContent })`，返回 `{ saved, snapshot }`，snapshot 与读取命令同型。版本不符（包括文件不存在/被新建）时 `saved: false` 并返回新快照，不写入；在 Windows 写入/删除排他锁内比较和写入。`recoveryContent` 为 null 时普通写入，否则先在同一目录创建两侧冲突副本。恢复副本是 `YYYY-MM-DD.conflict-<Unix 纳秒>-island.md` / `-file.md`，不被当作每日文件读取。既有 `save_todo_markdown` 契约和关闭开关时的行为不变；本应用命令不需要额外插件权限。

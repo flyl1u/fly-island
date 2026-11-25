@@ -7,7 +7,7 @@ use windows::{
     Win32::{
         Foundation::HWND,
         UI::{
-            Shell::{SHAppBarMessage, ABE_TOP, ABM_GETSTATE, ABM_GETTASKBARPOS, ABS_AUTOHIDE, APPBARDATA},
+            Shell::{SHAppBarMessage, ABE_BOTTOM, ABE_LEFT, ABE_RIGHT, ABE_TOP, ABM_GETSTATE, ABM_GETTASKBARPOS, ABS_AUTOHIDE, APPBARDATA},
             WindowsAndMessaging::{
                 FindWindowExW, SetWindowPos, HWND_TOPMOST, SWP_ASYNCWINDOWPOS, SWP_NOACTIVATE,
                 SWP_NOMOVE, SWP_NOSIZE,
@@ -66,11 +66,27 @@ fn is_auto_hidden() -> bool {
     state & ABS_AUTOHIDE != 0
 }
 
-fn primary_top_taskbar() -> Option<TaskbarRect> {
+fn primary_taskbar() -> Option<APPBARDATA> {
     let mut data = appbar_data();
     // SAFETY: `data` is a valid local with `cbSize` set; the shell fills `uEdge` and `rc`.
     let found = unsafe { SHAppBarMessage(ABM_GETTASKBARPOS, &mut data) } != 0;
-    (found && data.uEdge == ABE_TOP).then_some((data.rc.left, data.rc.top, data.rc.right, data.rc.bottom))
+    found.then_some(data)
+}
+
+fn primary_top_taskbar() -> Option<TaskbarRect> {
+    let data = primary_taskbar().filter(|data| data.uEdge == ABE_TOP)?;
+    Some((data.rc.left, data.rc.top, data.rc.right, data.rc.bottom))
+}
+
+pub(crate) fn diagnostic_state() -> (&'static str, bool) {
+    let edge = match primary_taskbar().map(|data| data.uEdge) {
+        Some(ABE_TOP) => "top",
+        Some(ABE_BOTTOM) => "bottom",
+        Some(ABE_LEFT) => "left",
+        Some(ABE_RIGHT) => "right",
+        _ => "unknown",
+    };
+    (edge, is_auto_hidden())
 }
 
 /// Puts `window` back at the top of the topmost band without moving, resizing or
