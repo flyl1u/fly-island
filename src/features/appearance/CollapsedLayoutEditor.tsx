@@ -120,8 +120,9 @@ export function CollapsedLayoutEditor({
   // slots' own 6px padding; the time and weather widen it as on the island.
   const style = {
     ...preview.style,
-    "--preview-collapsed-width": clockWeatherWidth(settings.collapsedAutoWidth ? 340 : settings.collapsedWidth,
-      clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100),
+    "--preview-collapsed-width": settings.collapsedAutoWidth
+      ? clockWeatherWidth(340, clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100)
+      : settings.collapsedWidth,
     "--preview-side-space": Math.max(0, settings.collapsedPadding - 6),
   } as CSSProperties;
 

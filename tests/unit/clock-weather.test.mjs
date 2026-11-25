@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeClockWeatherSettings, normalizeWeatherCache, normalizeWeatherLocation, weatherForLocation, weatherCondition,
-  WEATHER_MAX_AGE_MS, clockWeatherWidth, formatClock, nextMinuteDelay, formatTemperature } from "../../src/features/weather/model.ts";
+  WEATHER_MAX_AGE_MS, clockWeatherWidth, fitClockWeather, formatClock, nextMinuteDelay, formatTemperature } from "../../src/features/weather/model.ts";
 import { normalizeCollapsedHidden, placeCollapsedLayout, visibleCollapsedSlots } from "../../src/features/appearance/collapsedLayout.ts";
 import { normalizeBehaviorSettings } from "../../src/features/appearance/normalizeBehaviorSettings.ts";
 import { CLOCK_WEATHER_KEY, loadClockWeatherSettings, saveClockWeatherSettings } from "../../src/features/weather/storage.ts";
@@ -134,4 +134,26 @@ test("invalid location results and failed writes leave the persisted city availa
   globalThis.window.localStorage.setItem = () => { throw new Error("Quota exceeded"); };
   assert.equal(saveClockWeatherSettings({ location: { name: "Another city", latitude: -10, longitude: -20 } }), false);
   assert.deepEqual(loadClockWeatherSettings(), { showClock: true, showWeather: false, location });
+});
+
+test("a reading saved a hair away from the chosen point still matches the city", async () => {
+  const { sameLocation, nextWeatherDelay, WEATHER_REFRESH_MS } = await import("../../src/features/weather/model.ts");
+  const cache = { latitude: 39.9042, longitude: 116.4044, temperature: 20, code: 0, observedAt: 1000, fetchedAt: 1000 };
+  const city = { name: "北京", latitude: 39.9, longitude: 116.4 };
+  assert.equal(weatherForLocation(cache, city, 2000), cache);
+  assert.equal(sameLocation({ latitude: 39.9, longitude: 116.4 }, { latitude: 39.92, longitude: 116.4 }), false);
+  assert.equal(weatherForLocation(cache, { ...city, latitude: 31.2, longitude: 121.5 }, 2000), null);
+  assert.deepEqual([1, 2, 3, 4, 0].map(nextWeatherDelay), [30_000, 120_000, 600_000, WEATHER_REFRESH_MS, WEATHER_REFRESH_MS]);
+});
+
+test("manual width is the whole island: weather hides first, then the clock, never widening", () => {
+  // 240 wide with both: room is 240 - 36 - 64 = 140; clock 56 + weather 72 = 128 fits.
+  assert.deepEqual(fitClockWeather(240, true, true), { clock: true, weather: true });
+  // Larger font scales need more room, so the weather goes first.
+  assert.deepEqual(fitClockWeather(240, true, true, 1.5), { clock: true, weather: false });
+  assert.deepEqual(fitClockWeather(150, true, true), { clock: false, weather: false });
+  assert.deepEqual(fitClockWeather(200, false, true), { clock: false, weather: true });
+  // Without the plugin nothing is shown and nothing is reserved.
+  assert.deepEqual(fitClockWeather(160, false, false), { clock: false, weather: false });
+  assert.equal(clockWeatherWidth(300, false, false, 1.4, 0), 300);
 });

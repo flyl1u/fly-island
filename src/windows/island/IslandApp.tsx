@@ -82,7 +82,7 @@ export function IslandApp() {
   // "Stay out while music plays" follows the media session itself, not the lyric line.
   const musicHoldsIsland = useMusicGrace(settings.musicEnabled && media.mediaState.playbackStatus === "playing");
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, statusFit, todoRotation, collapsedTimer } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
@@ -247,7 +247,8 @@ export function IslandApp() {
         todoTimer={settings.todoEnabled ? collapsedTimer : null}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
-        collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, settings.collapsedHidden)}
+        collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, [...settings.collapsedHidden,
+          ...(statusFit.clock ? [] : ["clock" as const]), ...(statusFit.weather ? [] : ["weather" as const])])}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}

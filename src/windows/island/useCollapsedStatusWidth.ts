@@ -31,6 +31,6 @@ export function useCollapsedStatusWidth(enabled: boolean, fontScale: number) {
     children.observe(bar, { childList: true });
     observe();
     return () => { cancelAnimationFrame(frame); sizes.disconnect(); children.disconnect(); };
-  });
+  }, [enabled, fontScale]);
   return enabled ? minimum : 0;
 }

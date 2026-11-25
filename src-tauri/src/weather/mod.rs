@@ -1,3 +1,4 @@
+mod aliases;
 mod diagnostics;
 
 use reqwest::{redirect::Policy, Client};
@@ -489,7 +490,9 @@ fn cities(data: &[u8], query: &str, language: &str) -> Result<Vec<WeatherCity>, 
             let raw_name_key = clean_name(Some(&city.name), language)
                 .map(|value| name_key(&value))
                 .unwrap_or_else(|| name_key(&city.name));
+            // 拼音 / 英文查询由接口按别名匹配，返回的中文名里不含查询串，不能按名称过滤。
             if !query_key.is_empty()
+                && !query_key.is_ascii()
                 && !raw_name_key.contains(&query_key)
                 && !query_key.contains(&raw_name_key)
             {
@@ -560,7 +563,8 @@ pub async fn search_weather_cities(
     name: String,
     language: String,
 ) -> Result<Vec<WeatherCity>, String> {
-    let name = name.trim();
+    let name = aliases::expand(&name);
+    let name = name.as_str();
     let language = if language == "zh" { "zh" } else { "en" };
     let start = std::time::Instant::now();
     let result = search_cities(name, language).await;
@@ -607,19 +611,25 @@ pub async fn locate_weather(app: AppHandle, language: String) -> Result<LocatedW
     result
 }
 
+const WINDOWS_LOCATION_BUDGET: Duration = Duration::from_secs(4);
+
 async fn locate(app: &AppHandle, language: &'static str, start: std::time::Instant) -> Result<LocatedWeather, String> {
     // Ask the network in parallel: when Windows location is off or slow, its answer is already here.
     let network = tauri::async_runtime::spawn(ip_weather_location(language));
-    match windows_coordinates(app).await {
-        Ok((latitude, longitude)) => match reverse_geocode(latitude, longitude, language).await {
-            Ok(Some(location)) => {
-                network.abort();
-                return Ok(LocatedWeather { location, source: "windows".into() });
-            }
-            Ok(None) => diagnostics::fallback(start, None),
-            Err(error) => diagnostics::fallback(start, Some(&error)),
-        },
-        Err(error) => diagnostics::fallback(start, Some(&error)),
+    // Windows 定位只给 4 秒，超时直接用网络结果，避免关闭定位或系统卡住时长时间转圈。
+    let windows = tokio::time::timeout(WINDOWS_LOCATION_BUDGET, async {
+        let (latitude, longitude) = windows_coordinates(app).await?;
+        reverse_geocode(latitude, longitude, language).await
+    })
+    .await;
+    match windows {
+        Ok(Ok(Some(location))) => {
+            network.abort();
+            return Ok(LocatedWeather { location, source: "windows".into() });
+        }
+        Ok(Ok(None)) => diagnostics::fallback(start, None),
+        Ok(Err(error)) => diagnostics::fallback(start, Some(&error)),
+        Err(_) => diagnostics::fallback(start, Some("Windows location timed out.")),
     }
     let network = network
         .await
@@ -705,6 +715,23 @@ mod tests {
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].name, "Beijing · China");
         assert!(cities(b"not json", "Beijing", "en").is_err());
+    }
+    #[test]
+    fn pinyin_query_keeps_chinese_named_results() {
+        let data = r#"{"results":[{"name":"北京","latitude":39.9,"longitude":116.4,"feature_code":"PPLC","population":18960744,"admin1":"北京","country":"中国"}]}"#;
+        let list = cities(data.as_bytes(), "beijing", "zh").unwrap();
+        assert_eq!(list.len(), 1);
+        assert!(list[0].name.starts_with("北京"));
+    }
+    #[test]
+    fn same_name_places_stay_distinguishable() {
+        let data = r#"{"results":[
+            {"name":"朝阳","latitude":39.92,"longitude":116.44,"feature_code":"PPLA2","population":3500000,"admin1":"北京","country":"中国"},
+            {"name":"朝阳","latitude":41.57,"longitude":120.45,"feature_code":"PPLA2","population":3000000,"admin1":"辽宁","country":"中国"}
+        ]}"#;
+        let list = cities(data.as_bytes(), "朝阳", "zh").unwrap();
+        assert_eq!(list.len(), 2);
+        assert_ne!(list[0].name, list[1].name);
     }
     #[test]
     fn ranks_and_filters_real_shenzhen_duplicates() {

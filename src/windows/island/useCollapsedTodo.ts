@@ -2,7 +2,7 @@ import { isUpdateTodo } from "../../features/todos/updateTodo";
 import { useMemo } from "react";
 import { useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
-import { clockWeatherWidth } from "../../features/weather";
+import { clockWeatherWidth, fitClockWeather } from "../../features/weather";
 import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
@@ -48,7 +48,8 @@ export function useCollapsedTodo(
   const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
-  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null, settings.islandFontPercent / 100);
+  // Only the automatic width grows with the status slots; a manual width is the whole island.
+  const statusMinimum = useCollapsedStatusWidth(settings.collapsedAutoWidth && (clockOn || weather !== null), settings.islandFontPercent / 100);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -119,6 +120,10 @@ export function useCollapsedTodo(
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
     settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
 
-  const collapsedIslandWidth = clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, settings.islandFontPercent / 100, statusMinimum);
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
+  const fontScale = settings.islandFontPercent / 100;
+  const statusFit = settings.collapsedAutoWidth ? { clock: true, weather: true }
+    : fitClockWeather(baseIslandWidth, clockOn, weather !== null, fontScale);
+  const collapsedIslandWidth = settings.collapsedAutoWidth
+    ? clockWeatherWidth(baseIslandWidth, clockOn, weather !== null, fontScale, statusMinimum) : baseIslandWidth;
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, statusFit, todoRotation, collapsedTimer };
 }
