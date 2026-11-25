@@ -13,10 +13,12 @@ export function BatteryReadout({ level, value, readoutStyle }: {
 }) {
   const { percent, state, low } = level;
   const charging = state === "charging";
-  const compact = readoutStyle === "badge" && charging && value.length > 4;
+  const badge = readoutStyle === "badge";
+  const display = badge && value.endsWith("%") ? value.slice(0, -1).trimEnd() : value;
+  const compact = badge && charging && display.length > 4;
   const reading = <>
     {charging && <Zap className="battery-readout__bolt" size={9} fill="currentColor" strokeWidth={1.5} absoluteStrokeWidth />}
-    {value}
+    {display}
   </>;
 
   return (
@@ -24,6 +26,7 @@ export function BatteryReadout({ level, value, readoutStyle }: {
       className="battery-readout"
       data-style={readoutStyle}
       data-low={low || undefined}
+      data-empty={badge && percent === 0 || undefined}
       data-charging={charging || undefined}
       style={{ "--battery-fill": `${percent ?? 0}%` } as CSSProperties}
       aria-hidden="true"

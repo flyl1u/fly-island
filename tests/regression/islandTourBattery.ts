@@ -90,12 +90,14 @@ export async function runBatteryTour(
     const wantsTime = query.get("batteryDisplay") === "remaining";
     const badge = query.get("batteryStyle") === "badge";
     const percentValue = full ? t.fullCharge : low ? "12%" : "71%";
+    const badgeValue = percentValue.replace(/%$/, "");
+    const visibleCharge = badge ? badgeValue : percentValue;
     const systemTime = fixture === "normal" ? "2:10" : low ? "0:23" : null;
     const isTime = (value: string) => /^\d+:\d\d$/.test(value);
     const button = slot()!;
 
     check(button.getAttribute("aria-label")?.startsWith(t.buttonLabel(full ? null : percentValue, "").slice(0, -1))
-      && shown() === (wantsTime ? systemTime ?? (charging || draining ? "1:11" : percentValue) : percentValue),
+      && shown() === (wantsTime ? systemTime ?? (charging || draining ? "1:11" : visibleCharge) : visibleCharge),
     "The collapsed slot shows the chosen reading: Windows' estimate on battery, the driver's rate while charging, else the charge");
     const fill = readout().querySelector<HTMLElement>(".battery-readout__fill")!;
     const percent = full ? 100 : low ? 12 : 71;
@@ -104,8 +106,11 @@ export async function runBatteryTour(
       && Math.abs(fill.getBoundingClientRect().width / body().clientWidth - percent / 100) < 0.03,
     "The reading fits inside the rounded battery and the fill matches the charge");
     if (badge) {
-      check(layers().length === 1 && readout().dataset.style === "badge" && getComputedStyle(layers()[0]).color === "rgb(255, 255, 255)",
-        "The saved badge style uses one white reading over the entire battery");
+      const tone = readout().closest<HTMLElement>(".stage")?.dataset.tone;
+      check(layers().length === 1 && readout().dataset.style === "badge"
+        && getComputedStyle(layers()[0]).color === (tone === "light" ? "rgb(255, 255, 255)" : "rgb(16, 18, 22)")
+        && /^rgba\(/.test(getComputedStyle(body()).backgroundColor) && /^rgb\(/.test(getComputedStyle(fill).backgroundColor),
+      "The saved badge style uses theme-aware text, a translucent track and solid charge");
     } else {
       const clipped = layers()[1];
       const clip = clipped ? getComputedStyle(clipped).clipPath : "";
@@ -252,10 +257,11 @@ export async function runBatteryTour(
     const canShowTime = systemTime !== null;
     await choose(t.displayOptions.remaining);
     const slotWidth = slot()!.getBoundingClientRect().width;
-    check((canShowTime ? isTime(shown()) : shown() === percentValue) && saved().batteryDisplayMode === "remaining",
+    check((canShowTime ? isTime(shown()) : shown() === visibleCharge) && saved().batteryDisplayMode === "remaining",
       "Choosing the time left updates the island at once and is saved");
     await choose(t.readoutStyleOptions.badge);
     check(layers().length === 1 && readout().dataset.style === "badge" && saved().batteryReadoutStyle === "badge"
+      && (canShowTime ? isTime(shown()) : shown() === badgeValue)
       && saved().batteryDisplayMode === "remaining" && slot()!.getBoundingClientRect().width === slotWidth,
     "The badge style is saved without changing the reading or the slot width");
     await choose(t.readoutStyleOptions.inverted);

@@ -10,12 +10,13 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const readings = [
   ["—", null, "unknown"], ["0%", 0, "onBattery"], ["1%", 1, "onBattery"], ["15%", 15, "onBattery"],
-  ["16%", 16, "onBattery"], ["50%", 50, "onBattery"], ["99%", 99, "onBattery"],
+  ["16%", 16, "onBattery"], ["50%", 50, "onBattery"], ["89%", 89, "onBattery"], ["99%", 99, "onBattery"],
   ["99%", 99, "charging"], ["0:05", 1, "charging"], ["99:59", 50, "charging"],
   ["2:10", 71, "pluggedDischarging"], ["71%", 71, "plugged"], ["71%", 71, "idle"],
   ["满电", 100, "full"], ["Full", 100, "full"],
 ] as const;
 const backdrops = ["#000", "#fff", "linear-gradient(90deg, #000, #fff)"];
+const tones = ["dark", "light"] as const;
 const { min, max, default: normal } = ISLAND_FONT_PERCENT;
 const results = document.getElementById("results")!;
 
@@ -39,8 +40,9 @@ async function run() {
   const forced = matchMedia("(forced-colors: active)").matches;
   check(forced === new URLSearchParams(location.search).has("forcedColors"), "Expected forced-colors setting is active");
   const root = document.getElementById("root")!;
-  await act(async () => createRoot(root).render(backdrops.map((background) =>
-    <section key={background} style={{ background, color: "#cfb124", padding: 8 }}>
+  document.documentElement.dataset.theme = "light";
+  await act(async () => createRoot(root).render(tones.flatMap((tone) => backdrops.map((background) =>
+    <section key={`${tone}-${background}`} data-tone={tone} style={{ background, color: "#cfb124", padding: 8 }}>
       {[min, normal, max].map((fontPercent) =>
         <div key={fontPercent} style={{ "--island-font-scale": fontPercent / 100, display: "flex", gap: 8, padding: 4 } as CSSProperties}>
           {readings.map(([value, percent, state]) =>
@@ -50,20 +52,21 @@ async function run() {
         </div>,
       )}
     </section>,
-  )));
+  ))));
   await document.fonts.ready;
 
   let worstText = Infinity;
-  let worstFill = Infinity;
-  const colors = new Set<string>();
+  let worstNeutralBoundary = Infinity;
+  const colors = { dark: new Set<string>(), light: new Set<string>() };
   const samples = [...root.querySelectorAll<HTMLElement>(".battery-readout")];
-  for (const sample of samples) {
+  for (const [index, sample] of samples.entries()) {
     const body = sample.querySelector<HTMLElement>(".battery-readout__body")!;
     const fill = sample.querySelector<HTMLElement>(".battery-readout__fill")!;
     const values = sample.querySelectorAll<HTMLElement>(".battery-readout__value");
     const value = values[0];
     const label = `${value.textContent}, ${getComputedStyle(value).fontSize}`;
     check(values.length === 1 && getComputedStyle(value).clipPath === "none", `${label}: reading must not be split`);
+    check(value.textContent === readings[index % readings.length][0].replace(/%$/, ""), `${label}: only percent readings drop the suffix`);
     const range = document.createRange();
     range.selectNodeContents(value);
     const ink = range.getBoundingClientRect();
@@ -76,30 +79,39 @@ async function run() {
     const foreground = getComputedStyle(value).color;
     const surface = getComputedStyle(body).backgroundColor;
     const charge = getComputedStyle(fill).backgroundColor;
-    colors.add(charge);
+    const tone = sample.closest<HTMLElement>("[data-tone]")?.dataset.tone === "light" ? "light" : "dark";
+    colors[tone].add(charge);
     for (const extreme of [0, 255]) {
       const text = colorLuminance(foreground, extreme);
       const empty = colorLuminance(surface, extreme);
       const filled = colorLuminance(charge, extreme);
       worstText = Math.min(worstText, contrast(text, empty), ...(forced ? [] : [contrast(text, filled)]));
-      worstFill = Math.min(worstFill, contrast(filled, empty));
     }
     if (forced) {
       const stripe = fill.getBoundingClientRect();
       check(charge === foreground && stripe.height === 2 && ink.bottom <= stripe.top + 1, `${label}: system-color fill must sit below the reading`);
     } else {
-      check(foreground === "rgb(255, 255, 255)" && /^rgba\(/.test(surface), `${label}: white text must sit on the translucent surface`);
+      check(foreground === (tone === "light" ? "rgb(255, 255, 255)" : "rgb(16, 18, 22)")
+        && /^rgba\(/.test(surface) && /^rgb\(/.test(charge), `${label}: fixed theme ink, translucent track and solid charge`);
       if (percent === 0 && sample.hasAttribute("data-low")) {
         check(getComputedStyle(body).borderTopColor === charge, "At 0%, the red outline still indicates low charge");
+      }
+      if (!sample.hasAttribute("data-low") && !sample.hasAttribute("data-charging")) {
+        const backdrop = tone === "dark" ? 47 : 244;
+        const empty = colorLuminance(surface, backdrop);
+        const filled = colorLuminance(charge, backdrop);
+        check(tone === "dark" ? filled > empty : filled < empty, `${label}: the solid block follows the island tone`);
+        worstNeutralBoundary = Math.min(worstNeutralBoundary, contrast(filled, empty));
       }
     }
   }
 
-  check(samples.length === readings.length * backdrops.length * 3, "Every backdrop and font size must cover all readings");
-  check(colors.size === (forced ? 1 : 3), "Normal, low and charging fills differ only outside forced colors");
-  check(worstText >= 4.5 && worstFill >= 3, `Insufficient contrast: text ${worstText.toFixed(2)}:1, fill ${worstFill.toFixed(2)}:1`);
-  results.textContent = `PASS ${samples.length} readings fit without clipping (${forced ? "forced colors" : "fixed white"})\n`
-    + `PASS Minimum text contrast ${worstText.toFixed(2)}:1 and fill contrast ${worstFill.toFixed(2)}:1`;
+  check(samples.length === readings.length * backdrops.length * tones.length * 3, "Every tone, backdrop and font size covers all readings");
+  check(tones.every((tone) => colors[tone].size === (forced ? 1 : 3)), "Each tone distinguishes normal, low and charging fills");
+  check(worstText >= 4.5, `Insufficient text contrast: ${worstText.toFixed(2)}:1`);
+  check(forced || worstNeutralBoundary >= 1.9, `Insufficient separation on the standard island: ${worstNeutralBoundary.toFixed(2)}:1`);
+  results.textContent = `PASS ${samples.length} readings fit without clipping (${forced ? "forced colors" : "adaptive ink"})\n`
+    + `PASS Minimum text contrast ${worstText.toFixed(2)}:1 against both track and solid fill`;
   results.dataset.result = "passed";
 }
 

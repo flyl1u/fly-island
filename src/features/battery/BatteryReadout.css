@@ -23,20 +23,24 @@
 }
 
 .battery-readout[data-style="badge"] {
-  color: #fff;
+  color: var(--battery-badge-ink);
   font-family: var(--font-system);
-  --battery-outline: #89929e;
-  --battery-charge: var(--battery-badge-fill, #677383);
-  --battery-badge-surface: rgb(10 14 20 / 90%);
+  font-weight: 700;
+  --battery-outline: var(--battery-badge-rim);
+  --battery-charge: var(--battery-badge-fill, var(--battery-badge-neutral));
+  --battery-badge-surface: var(--battery-badge-track);
 }
 
 .battery-readout[data-style="badge"][data-low] {
-  --battery-badge-fill: #c04d56;
+  --battery-badge-fill: var(--battery-badge-low);
+}
+
+.battery-readout[data-style="badge"][data-low][data-empty] {
   --battery-outline: var(--battery-charge);
 }
 
 .battery-readout[data-style="badge"][data-charging] {
-  --battery-badge-fill: #2e8065;
+  --battery-badge-fill: var(--battery-badge-charging);
 }
 
 /* A fixed width (slotWidth.ts): 100%, 2:10 and a charging 99% all fit, so no reading moves its neighbours. */
@@ -83,7 +87,7 @@
 }
 
 .battery-readout__value[data-compact] {
-  font-size: 0.92em;
+  font-size: 0.88em;
 }
 
 .battery-readout[data-style="badge"] .battery-readout__bolt {
