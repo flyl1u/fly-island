@@ -16,6 +16,7 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentShowDsh,
     agentShowWorkbuddy,
     agentShowCursor: settings?.agentShowCursor !== false,
+    agentShowAntigravity: settings?.agentShowAntigravity !== false,
     agentShowKimiCode: settings?.agentShowKimiCode !== false,
     agentShowHermes: settings?.agentShowHermes !== false,
     agentShowZcode: settings?.agentShowZcode !== false,

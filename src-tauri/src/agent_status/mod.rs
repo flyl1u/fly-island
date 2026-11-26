@@ -19,6 +19,7 @@ pub(crate) mod dsh_usage;
 mod claude_desktop_usage;
 mod codex_version;
 mod conversation_link;
+mod antigravity_sessions;
 mod cursor_sessions;
 mod hermes_sessions;
 mod kimi_sessions;
@@ -269,7 +270,7 @@ fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallRe
 #[tauri::command]
 /// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
 /// `native`: the agents installed from the plugin market to read as well ("cursor", "kimiCode",
-/// "hermes"); left out by older callers, which read none of them.
+/// "hermes", "antigravity"); left out by older callers, which read none of them.
 pub async fn list_agent_sessions(
     app: AppHandle,
     window_hours: Option<u32>,
@@ -291,6 +292,9 @@ pub async fn list_agent_sessions(
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions.extend(dsh_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
             sessions.extend(workbuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
+            if wants("antigravity") {
+                sessions.extend(throttled(&ANTIGRAVITY, window_ms, || antigravity_sessions::list_sessions(current_unix_millis(), window_ms)));
+            }
             if wants("cursor") {
                 sessions.extend(throttled(&CURSOR, window_ms, || cursor_sessions::list_sessions(current_unix_millis(), window_ms)));
             }
@@ -311,6 +315,7 @@ pub async fn list_agent_sessions(
 }
 
 type NativeSessions = std::sync::Mutex<Option<(std::time::Instant, i64, Vec<sessions::AgentSessionSummary>)>>;
+static ANTIGRAVITY: NativeSessions = std::sync::Mutex::new(None);
 static CURSOR: NativeSessions = std::sync::Mutex::new(None);
 static KIMI: NativeSessions = std::sync::Mutex::new(None);
 static HERMES: NativeSessions = std::sync::Mutex::new(None);

@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "antigravity" | "clockWeather" | "calendarMarks";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -31,6 +31,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "kimiCode", kind: "agent", accent: "#8a8a8a", author: FLYLIU },
   { id: "zcode", kind: "agent", accent: "#7c8592", author: FLYLIU },
   { id: "hermes", kind: "agent", accent: "#b9a6ff", author: FLYLIU },
+  { id: "antigravity", kind: "agent", accent: "#4285f4", author: { name: "gyl-coding", url: "https://github.com/gyl-coding" } },
   { id: "calendarMarks", kind: "island", accent: "#f29389", author: { name: "gyl-coding", url: "https://github.com/gyl-coding" } },
   { id: "clockWeather", kind: "island", accent: "#63b9b6", author: FLYLIU, settings: { category: "clockWeather", standalone: true } },
 ];

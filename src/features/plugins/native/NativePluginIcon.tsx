@@ -6,6 +6,7 @@ import cursorIcon from "../../../assets/brands/cursor.svg";
 import kimiCodeIcon from "../../../assets/brands/kimi-code.svg";
 import zcodeIcon from "../../../assets/brands/zcode.svg";
 import hermesIcon from "../../../assets/brands/hermes.svg";
+import antigravityIcon from "../../../assets/brands/antigravity.png";
 import type { NativePluginId } from "./catalog";
 import "./NativePluginIcon.css";
 
@@ -16,6 +17,7 @@ export const NATIVE_PLUGIN_ICONS: Record<Exclude<NativePluginId, "clockWeather" 
   cursor: cursorIcon,
   kimiCode: kimiCodeIcon,
   zcode: zcodeIcon,
+  antigravity: antigravityIcon,
   hermes: hermesIcon,
 };
 

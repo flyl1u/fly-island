@@ -172,6 +172,9 @@ pub(super) fn focus_session(
     if provider == "workbuddy" {
         return super::workbuddy_sessions::focus_desktop(session_id);
     }
+    if provider == "antigravity" {
+        return super::antigravity_sessions::focus(cwd);
+    }
     if provider == "cursor" {
         return super::cursor_sessions::focus(cwd);
     }

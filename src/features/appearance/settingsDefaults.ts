@@ -54,6 +54,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentShowDsh: true,
   agentShowWorkbuddy: true,
   agentShowCursor: true,
+  agentShowAntigravity: true,
   agentShowKimiCode: true,
   agentShowHermes: true,
   agentShowZcode: true,

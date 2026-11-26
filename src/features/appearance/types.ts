@@ -109,6 +109,7 @@ export type IslandSettings = {
   agentShowCursor: boolean;
   agentShowKimiCode: boolean;
   agentShowHermes: boolean;
+  agentShowAntigravity: boolean;
   agentShowZcode: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
