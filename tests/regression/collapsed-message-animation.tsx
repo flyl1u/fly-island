@@ -252,7 +252,8 @@ async function runChecks() {
     check(document.querySelector(".island")!.getAttribute("aria-label")?.includes("Claude Code"), "无障碍标签说明是哪个 Agent");
     await notify("qq");
     check(incoming().querySelector(".island-message-preview") && !incoming().querySelector(".island__agent-session"), "消息预览优先于 Agent 标题");
-    await act(async () => button().click());
+    const statusLight = () => document.querySelector<HTMLButtonElement>(".island__agent-light")!;
+    await act(async () => statusLight().click());
     await settle();
     check(incoming().querySelector(".agent-provider-icon--claudeCode"), "预览结束后回到 Agent 标题");
     await act(async () => changeAgent({ provider: "codex", label: "Codex", title: "恢复 Windows 发布机环境" }));
@@ -260,14 +261,14 @@ async function runChecks() {
     check(incoming().querySelector(".agent-provider-icon--codex") && incoming().textContent?.includes("恢复 Windows 发布机环境"), "切换为 Codex 会话时更换图标和标题");
     await act(async () => changeAgent(null));
     await settle();
-    check(!summary().querySelector(".island__agent-session") && incoming().textContent?.includes("剩余2个待办"), "Agent 结束后恢复待办");
+    check(!incoming().querySelector(".island__agent-session") && incoming().textContent?.includes("剩余2个待办"), "Agent 结束后恢复待办");
     await act(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "插件市场功能" }));
     await settle();
     await act(async () => button().click());
     check(openedPage === "todo", "显示 Agent 标题时点击中间文字打开上一次页面");
     openedPage = null;
-    await act(async () => document.querySelector<HTMLElement>(".island__agent-light")!.click());
-    check(openedPage === "agents", "点击 Agent 指示灯打开 Agent 页");
+    await act(async () => statusLight().click());
+    check(openedPage === null, "没有轮换动作的状态灯不再打开 Agent 页");
     const agentCount = () => document.querySelector<HTMLButtonElement>(".island-agent-count");
     const tuckDot = () => document.querySelector(".island__quiet-button");
     check(!agentCount() && !tuckDot(), "AI Agent 开启且没有运行中的会话时不显示灰点和数量");
@@ -292,7 +293,7 @@ async function runChecks() {
     await notify("qqMail", true);
     const reader = () => document.querySelector<HTMLElement>(".message-notice");
     const readerBody = () => document.querySelector<HTMLElement>(".message-notice__body");
-    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__open-button"), "长消息展开时整块换成阅读卡");
+    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__collapsed:not([inert]) .island__open-button"), "长消息展开时整块换成阅读卡");
     check(readerBody()?.textContent?.includes("下阶段设计评审安排") && getComputedStyle(readerBody()!).userSelect === "text", "阅读卡显示完整邮件主题且文字可选中");
     check(readerBody()?.dataset.windowDrag === "false" && document.querySelector(".message-notice__body--scrolls"), "正文不拖动窗口，超出上限时可滚动");
     openedPage = null;

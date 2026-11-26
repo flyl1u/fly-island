@@ -4,7 +4,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { useTranslation } from "../../i18n";
 import { moveItem } from "../../utils/order.ts";
-import { WeatherIcon, clockWeatherWidth, useClockWeather } from "../weather";
+import { WeatherIcon, useClockWeather } from "../weather";
 import { placeCollapsedLayout, visibleCollapsedSlots } from "./collapsedLayout";
 import { COLLAPSED_SLOTS } from "./settingsLimits";
 import type { CollapsedSlot, IslandSettings } from "./types";
@@ -116,13 +116,9 @@ export function CollapsedLayoutEditor({
       {content[slot]}
     </button>
   );
-  // The island makes room for the side space set under Collapsed island (Appearance), less the
-  // slots' own 6px padding; the time and weather widen it as on the island.
+  // The side space set under Collapsed island, less the slots' own 6px padding.
   const style = {
     ...preview.style,
-    "--preview-collapsed-width": settings.collapsedAutoWidth
-      ? clockWeatherWidth(Math.round((settings.collapsedAutoWidthMin + settings.collapsedAutoWidthMax) / 2), clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100)
-      : settings.collapsedWidth,
     "--preview-side-space": Math.max(0, settings.collapsedPadding - 6),
   } as CSSProperties;
 

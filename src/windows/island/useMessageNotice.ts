@@ -21,7 +21,10 @@ export function useMessageNotice(preview: MessagePreview | null, settings: Islan
   const [measured, setMeasured] = useState({ at: -1, overflow: 0, tries: 0 });
   const measuredOverflow = preview && measured.at === preview.receivedAt ? measured.overflow : 0;
   const size = useMemo(() => grows && preview ? getNoticeSize(noticeText(preview, t.messages), {
-    maxWidth: settings.messageExpandMaxWidth,
+    minWidth: settings.collapsedAutoWidth ? settings.collapsedAutoWidthMin : undefined,
+    maxWidth: settings.collapsedAutoWidth
+      ? Math.max(settings.collapsedAutoWidthMin, Math.min(settings.collapsedAutoWidthMax, settings.messageExpandMaxWidth))
+      : settings.messageExpandMaxWidth,
     maxHeight: settings.messageExpandMaxHeight,
     baseWidth: collapsedIslandWidth,
     baseHeight: settings.collapsedHeight,
@@ -32,6 +35,7 @@ export function useMessageNotice(preview: MessagePreview | null, settings: Islan
     forceReader: true,
     measuredOverflow,
   }) : null, [collapsedIslandWidth, grows, measuredOverflow, preview, settings.collapsedHeight, settings.collapsedScale, settings.islandFontPercent,
+    settings.collapsedAutoWidth, settings.collapsedAutoWidthMax, settings.collapsedAutoWidthMin,
     settings.messageExpandMaxHeight, settings.messageExpandMaxWidth, t.messages]);
   // The estimate can fall short of the island as drawn (status icons beside the text, real glyph
   // widths): measure the one-line preview after layout and grow by what is still cut off.

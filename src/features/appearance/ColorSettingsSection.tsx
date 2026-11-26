@@ -42,37 +42,39 @@ export function ColorSettingsSection({
         <Undo2 size={15} aria-hidden="true" />
       </button>
     )}>
-      {colors.map(([key, label]) => (
+      <div className="appearance-color-grid">
+        {colors.map(([key, label]) => (
+          <SettingsRow
+            key={key}
+            title={label}
+            control={
+              <SettingsColor
+                value={drawn[key]}
+                ariaLabel={label}
+                onChange={(value) => onSettingsChange({ ...settings, [key]: value.toUpperCase() })}
+                valueControl={<HexColorInput value={drawn[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />}
+              />
+            }
+          />
+        ))}
         <SettingsRow
-          key={key}
-          title={label}
+          title={text.pageText}
           control={
-            <SettingsColor
-              value={drawn[key]}
-              ariaLabel={label}
-              onChange={(value) => onSettingsChange({ ...settings, [key]: value.toUpperCase() })}
-              valueControl={<HexColorInput value={drawn[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />}
-            />
+            <>
+              {settings.pageTextColor && (
+                <SettingsLinkButton onClick={() => onSettingsChange({ ...settings, pageTextColor: "" })}>{text.pageTextAuto}</SettingsLinkButton>
+              )}
+              <SettingsColor
+                value={settings.pageTextColor || schemeInk}
+                ariaLabel={text.pageText}
+                onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value.toUpperCase() })}
+                valueControl={<HexColorInput value={settings.pageTextColor || schemeInk} ariaLabel={text.pageText}
+                  onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value })} />}
+              />
+            </>
           }
         />
-      ))}
-      <SettingsRow
-        title={text.pageText}
-        control={
-          <>
-            {settings.pageTextColor && (
-              <SettingsLinkButton onClick={() => onSettingsChange({ ...settings, pageTextColor: "" })}>{text.pageTextAuto}</SettingsLinkButton>
-            )}
-            <SettingsColor
-              value={settings.pageTextColor || schemeInk}
-              ariaLabel={text.pageText}
-              onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value.toUpperCase() })}
-              valueControl={<HexColorInput value={settings.pageTextColor || schemeInk} ariaLabel={text.pageText}
-                onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value })} />}
-            />
-          </>
-        }
-      />
+      </div>
       <ColorPresetRow settings={settings} onSettingsChange={onSettingsChange} />
     </SettingsGroup>
   );

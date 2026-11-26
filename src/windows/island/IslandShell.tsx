@@ -71,7 +71,10 @@ type IslandShellProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
+  onSwitchCollapsedItem?: () => void;
+  collapsedLyrics?: import("../../features/media/lyrics/lrc").LyricLine[] | null;
   collapsedLayout: readonly CollapsedSlot[];
+  collapsedOrder?: readonly CollapsedSlot[];
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
   /** Where the collapsed island's lyric line comes from. */
@@ -154,7 +157,10 @@ export function IslandShell({
   todoRotation = null,
   collapsedTodoCount,
   collapsedItem,
+  onSwitchCollapsedItem,
+  collapsedLyrics,
   collapsedLayout,
+  collapsedOrder,
   collapsedCover,
   lyricsSettings,
   pageOrder,
@@ -216,17 +222,16 @@ export function IslandShell({
   ]
     .filter(Boolean)
     .join(" ");
-  const collapsedLabel = showCollapsedText
-    ? todoTimer
-      ? t.todo.actionOnTask(todoTimer.notified ? t.todo.timeUp : t.todo.countdown, collapsedTaskTitle ?? "")
-      : agentSession
-      ? t.island.agentSession(agentSession.label, agentSession.title)
-      : collapsedTaskTitle
-      ? t.messages.collapsedTask(collapsedTaskTitle)
-      : collapsedTodoCount !== null
-        ? t.island.pendingTodos(collapsedTodoCount)
-        : "fly-island"
-    : "fly-island";
+  let collapsedLabel = t.island.appName;
+  if (showCollapsedText && collapsedItem === "todo") {
+    if (todoTimer) collapsedLabel = t.todo.actionOnTask(todoTimer.notified ? t.todo.timeUp : t.todo.countdown, collapsedTaskTitle ?? "");
+    else if (collapsedTaskTitle) collapsedLabel = t.messages.collapsedTask(collapsedTaskTitle);
+    else if (collapsedTodoCount !== null) collapsedLabel = t.island.pendingTodos(collapsedTodoCount);
+  } else if (showCollapsedText && collapsedItem === "agent" && agentSession) {
+    collapsedLabel = t.island.agentSession(agentSession.label, agentSession.title);
+  } else if (showCollapsedText && collapsedItem === "lyrics") {
+    collapsedLabel = t.island.collapsedKinds.lyrics;
+  }
 
   return (
     <section
@@ -281,6 +286,7 @@ export function IslandShell({
             wechatReminders={wechatReminders}
             preview={preview}
             noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
+            animateWidth={widthMoving}
             page={page}
             isExpanded={isExpanded}
             isTucked={isTucked}
@@ -295,7 +301,10 @@ export function IslandShell({
             todoRotation={todoRotation}
             collapsedTodoCount={collapsedTodoCount}
             collapsedItem={collapsedItem}
+            onSwitchCollapsedItem={onSwitchCollapsedItem}
+            collapsedLyrics={collapsedLyrics}
             collapsedLayout={collapsedLayout}
+            collapsedOrder={collapsedOrder}
             collapsedCover={collapsedCover}
             lyricsSettings={lyricsSettings}
             agentSession={agentSession}

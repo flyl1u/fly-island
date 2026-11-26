@@ -24,7 +24,7 @@ export function useWindowDragGesture(disabled: boolean, onWindowDragStart: () =>
       if (
         target instanceof Element &&
         target.closest(
-          "button:not(.island__open-button), input, textarea, select, a, [contenteditable='true'], [data-window-drag='false']",
+          "button:not(.island__open-button, .island__agent-light), input, textarea, select, a, [contenteditable='true'], [data-window-drag='false']",
         )
       ) {
         return;

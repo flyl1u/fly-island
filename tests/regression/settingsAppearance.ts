@@ -31,11 +31,20 @@ export function prepareColorRegression() {
 
 async function checkColorInputs(check: (condition: unknown, message: string) => void) {
   check(!document.querySelector(".appearance-color-restore"), "Without a backup, the restore icon is absent");
-  const group = element(".settings-color").closest(".settings-group")!;
-  // The page text color row (2026-11-14) follows the three color input rows; the presets row follows them all.
-  const rows = [...group.querySelectorAll<HTMLElement>(".settings-row")].filter((row) => row.querySelector(".settings-color"));
+  const grid = element(".appearance-color-grid");
+  const rows = [...grid.querySelectorAll<HTMLElement>(".settings-row")];
   check(rows.length === 4 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("button.settings-color__swatch")),
-    "The Colors card has four rows (page text added 2026-11-14), each with a hex value and a swatch");
+    "The Colors grid keeps all four hex values and swatches");
+  const card = element(".appearance-color-grid").parentElement!;
+  const positions = () => rows.map((row) => row.getBoundingClientRect());
+  const normal = positions();
+  check(normal[0].top === normal[1].top && normal[0].left === normal[2].left && normal[0].left < normal[1].left,
+    "The four colors form a two-by-two grid at normal settings width");
+  card.style.maxWidth = "335px";
+  const narrow = positions();
+  check(narrow.every((row, index) => row.left === narrow[0].left && (index === 0 || row.top > narrow[index - 1].top)),
+    "The colors stack into one column below 360px");
+  card.style.removeProperty("max-width");
   const swatch = element<HTMLButtonElement>(".settings-color__swatch");
   // At 150% Windows scaling Chromium quantizes a 1px border to 0.666667 CSS px.
   check(swatch.getBoundingClientRect().width === 36 && parseFloat(getComputedStyle(swatch).borderTopWidth) > 0, "The round 36px swatch has a visible border");
@@ -289,11 +298,14 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await type(widthInput, "480");
     await act(async () => widthInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
     const notchWider = notchSize();
+    const configuredWidth = parseFloat(getComputedStyle(collapsedSample).getPropertyValue("--preview-collapsed-width"));
+    const fitScale = notchWider.width / configuredWidth;
     await type(heightInput, "60");
     await act(async () => heightInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
     const notchTaller = notchSize();
     check(storedSettings().collapsedWidth === 480 && storedSettings().collapsedHeight === 60 &&
-      notchWider.width > notchBefore.width && notchWider.height === notchBefore.height && notchTaller.height > notchWider.height && notchTaller.width === notchWider.width,
+      configuredWidth === 480 && notchWider.width >= notchBefore.width - 1 && Math.abs(notchWider.height - 38 * fitScale) < 1 &&
+      Math.abs(notchTaller.height - 60 * fitScale) < 1 && notchTaller.width === notchWider.width,
       "Notch width and height change separately in the preview and persist");
 
     await click(".appearance-reset");

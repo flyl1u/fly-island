@@ -30,6 +30,16 @@ export function messagePreviewText(preview: MessagePreview, copy: Translations["
   return copy.qqPreview(preview.title.trim() || "QQ", preview.body.trim() || copy.newMessage);
 }
 
+export function collapsedMessageText(preview: MessagePreview, copy: Translations["messages"]) {
+  if (preview.source === "qqMail" && preview.otpCode) return preview.title.trim() || preview.body;
+  const office = isOfficeSource(preview.source);
+  if (office || preview.source === "qq" || (preview.source === "wechat" && preview.title)) {
+    const sender = preview.title.trim() || (office ? copy.sourceLabels[preview.source] : "QQ");
+    return `${sender} · ${preview.body.trim() || copy.newMessage}`;
+  }
+  return messagePreviewText(preview, copy);
+}
+
 /**
  * The preview split for the adaptive reader (MessageNoticeReader): who sent it, and the whole
  * text. Mail shows the sender and the subject; a WeChat reminder without a sender its generic line.

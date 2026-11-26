@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSourceIcon } from "./MessageSourceIcon";
 import { isOfficeSource, messagePreviewText, type MessagePreview } from "./messagePreview";
 import { useTranslation } from "../../i18n";
@@ -8,6 +8,7 @@ type ContentTransition = {
   key: string;
   current: MessagePreview | null;
   previous: MessagePreview | null | undefined;
+  previousContent?: ReactNode;
   version: number;
   animated: boolean;
   previousAnimated: boolean;
@@ -34,21 +35,26 @@ function MessageContent({ preview }: { preview: MessagePreview }) {
 export function CollapsedMessageContent({
   preview,
   enabled,
+  contentKey,
   children,
 }: {
   preview: MessagePreview | null;
   enabled: boolean;
+  contentKey: string;
   children: ReactNode;
 }) {
   const t = useTranslation();
   const current = enabled ? preview : null;
-  const key = current ? JSON.stringify([current.source, current.receivedAt, current.title, current.body, current.otpCode]) : "idle";
+  const key = current ? JSON.stringify([current.source, current.receivedAt, current.title, current.body, current.otpCode]) : `summary:${contentKey}`;
   const [transition, setTransition] = useState<ContentTransition>({ key, current, previous: undefined, version: 0, animated: false, previousAnimated: false });
+  const lastContent = useRef(children);
+  useLayoutEffect(() => { lastContent.current = children; }, [children]);
 
   // Retain just the departing row; identical snapshots must not restart the entrance.
   if (key !== transition.key || (!enabled && (transition.previous !== undefined || transition.animated))) {
     setTransition({
       key, current, previous: enabled ? transition.current : undefined, version: transition.version + 1,
+      previousContent: enabled && transition.current === null ? lastContent.current : undefined,
       animated: enabled, previousAnimated: transition.animated,
     });
   }
@@ -56,15 +62,15 @@ export function CollapsedMessageContent({
   const { previous, version } = transition;
   const moving = previous !== undefined;
   const settle = () => setTransition((state) => state.version === version && state.previous !== undefined
-    ? { ...state, previous: undefined } : state);
+    ? { ...state, previous: undefined, previousContent: undefined } : state);
 
   useEffect(() => {
     if (!moving) return;
     const finish = () => setTransition((state) => state.version === version
-      ? { ...state, previous: undefined } : state);
+      ? { ...state, previous: undefined, previousContent: undefined } : state);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setTransition((state) => state.version === version
-        ? { ...state, previous: undefined, animated: false } : state);
+        ? { ...state, previous: undefined, previousContent: undefined, animated: false } : state);
       return;
     }
     // Hidden webviews may skip animationend; never retain an old message indefinitely.
@@ -73,7 +79,6 @@ export function CollapsedMessageContent({
   }, [moving, version]);
 
   const label = current ? t.messages.qqPreview(t.messages.sourceLabels[current.source], messagePreviewText(current, t.messages)) : undefined;
-  const row = (message: MessagePreview | null) => message ? <MessageContent preview={message} /> : children;
 
   return (
     <span className="island__summary" role="status" aria-live="polite" aria-atomic="true" aria-label={label}
@@ -81,14 +86,14 @@ export function CollapsedMessageContent({
       {moving && (
         <span key={version - 1} className="island__summary-layer island__summary-layer--outgoing" aria-hidden="true">
           <span className={`island__summary-row${transition.previousAnimated ? " island__summary-row--animated" : ""}${previous ? " island-message-preview" : ""}`}>
-            {row(previous)}
+            {previous ? <MessageContent preview={previous} /> : transition.previousContent}
           </span>
         </span>
       )}
       <span key={version} className={`island__summary-layer${moving ? " island__summary-layer--incoming" : ""}`}>
         <span className={`island__summary-row${transition.animated ? " island__summary-row--animated" : ""}${current ? " island-message-preview" : ""}`}
           onAnimationEnd={(event) => { if (event.target === event.currentTarget) settle(); }}>
-          {row(current)}
+          {current ? <MessageContent preview={current} /> : children}
         </span>
       </span>
     </span>

@@ -9,7 +9,7 @@ export function useCollapsedStatusWidth(enabled: boolean, fontScale: number) {
     if (!bar) return;
     let frame = 0;
     const measure = () => {
-      const children = [...bar.children].filter((node): node is HTMLElement => node instanceof HTMLElement);
+      const children = [...bar.children].filter((node): node is HTMLElement => node instanceof HTMLElement && node.dataset.collapsedPresence !== "leaving");
       const status = children.filter((node) => !node.classList.contains("island__text-slot"));
       const style = getComputedStyle(bar);
       const widths = status.reduce((total, node) => {
@@ -27,8 +27,10 @@ export function useCollapsedStatusWidth(enabled: boolean, fontScale: number) {
       for (const child of bar.children) if (!child.classList.contains("island__text-slot")) sizes.observe(child);
       schedule();
     };
-    const children = new MutationObserver(observe);
-    children.observe(bar, { childList: true });
+    const children = new MutationObserver((records) => {
+      if (records.some(({ target }) => target === bar || (target as Element).parentElement === bar)) observe();
+    });
+    children.observe(bar, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-collapsed-presence"] });
     observe();
     return () => { cancelAnimationFrame(frame); sizes.disconnect(); children.disconnect(); };
   }, [enabled, fontScale]);

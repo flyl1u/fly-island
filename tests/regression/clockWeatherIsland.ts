@@ -4,6 +4,12 @@ import { setClockWeatherSettings } from "../../src/features/weather";
 import { CLOCK_WEATHER_KEY, WEATHER_CACHE_KEY } from "../../src/features/weather/storage";
 import { WEATHER_MAX_AGE_MS } from "../../src/features/weather/model";
 
+export function collapsedBarOrder() {
+  return [...document.querySelectorAll<HTMLElement>(".island__collapsed > *")]
+    .filter((element) => element.dataset.collapsedPresence !== "leaving")
+    .map((element) => (element.classList.contains("island__status-slot") ? element.firstElementChild : element)?.classList[0]).join();
+}
+
 export const clockWeatherMock = {
   offline: false, requests: 0,
   current() {
@@ -18,8 +24,8 @@ export async function checkClockWeatherIsland(
   settle: (ms: number) => Promise<void>,
 ) {
   const city = { name: "Beijing · China", latitude: 39.9, longitude: 116.4 };
-  const clock = () => document.querySelector<HTMLElement>(".island__collapsed .collapsed-clock");
-  const weather = () => document.querySelector<HTMLElement>(".island__collapsed .collapsed-weather");
+  const clock = () => document.querySelector<HTMLElement>(".island__status-slot:not([data-collapsed-presence=leaving]) .collapsed-clock");
+  const weather = () => document.querySelector<HTMLElement>(".island__status-slot:not([data-collapsed-presence=leaving]) .collapsed-weather");
   const island = () => document.querySelector<HTMLElement>(".island")!;
   await act(async () => {
     setNativePluginInstalled("clockWeather", false);
@@ -29,13 +35,29 @@ export async function checkClockWeatherIsland(
   await settle(800);
   const baseWidth = island().getBoundingClientRect().width;
   check(!clock() && !weather(), "未安装时间天气插件时两个位完全隐藏");
-  await act(async () => setNativePluginInstalled("clockWeather", true));
+  await act(async () => {
+    setClockWeatherSettings({ showClock: false });
+    setNativePluginInstalled("clockWeather", true);
+  });
+  await act(async () => setClockWeatherSettings({ showClock: true }));
+  const manual = new URLSearchParams(location.search).has("notch");
+  const width = () => island().getBoundingClientRect().width;
+  if (!manual) {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const motion = island().getAnimations().find((animation): animation is CSSTransition =>
+      animation instanceof CSSTransition && animation.transitionProperty === "width");
+    const target = parseFloat(getComputedStyle(island()).getPropertyValue("--collapsed-island-width"));
+    check(motion && width() < target - 1 && width() >= baseWidth - 1,
+      `打开显示时间后首帧未跳到目标宽度（${baseWidth} → ${width()} → ${target}）`);
+    await settle(80);
+    check(width() > baseWidth + 1, "状态位宽度继续随动画增长");
+  }
   await settle(450);
   check(/^\d{2}:\d{2}$/.test(clock()?.textContent ?? "") && !weather() && clockWeatherMock.requests === 0,
     "安装后显示24小时时间，未选城市不显示天气且不发请求");
   await act(async () => setClockWeatherSettings({ showClock: true, showWeather: true, location: city }));
   await settle(450);
-  if (new URLSearchParams(location.search).has("notch")) {
+  if (manual) {
     // A manual width is the whole island (B3-1): 240 at a 120% font leaves no room for the weather,
     // so it hides (the time stays) and the island does not grow. The wide pages cover the rest.
     check(clock() && !weather() && clockWeatherMock.requests === 1 && Math.abs(island().getBoundingClientRect().width - baseWidth) < 1,
@@ -74,7 +96,7 @@ export async function checkClockWeatherIsland(
       .filter((id: string) => id !== "clockWeather")));
     window.dispatchEvent(new StorageEvent("storage", { key: NATIVE_PLUGINS_KEY }));
   });
-  // Narrowing waits 300 ms, then glides for 400 ms; each step renders only when act() exits.
+  // Narrowing waits for the status exit, then glides for 400 ms.
   for (let step = 0; step < 4; step++) await settle(450);
   check(!clock() && !weather() && (new URLSearchParams(location.search).has("notch")
     ? Math.abs(island().getBoundingClientRect().width - baseWidth) < 1 : island().getBoundingClientRect().width < clockOnlyWidth),
