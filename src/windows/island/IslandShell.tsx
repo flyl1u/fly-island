@@ -12,6 +12,7 @@ import type { MessagePreview, MessageSource } from "../../features/messages/mess
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import type { TelegramNotificationsController } from "../../features/messages/telegram/useTelegramNotifications";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
 import { isPluginPage } from "./features";
@@ -38,6 +39,7 @@ type IslandShellProps = {
   qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
+  telegram?: TelegramNotificationsController;
   onOpenMessages: (source: MessageSource) => void;
   /** The newest message preview to show on the collapsed island (useIslandNotices), or null. */
   preview: MessagePreview | null;
@@ -134,6 +136,7 @@ export function IslandShell({
   qqMail,
   qqNotifications,
   wechatReminders,
+  telegram,
   onOpenMessages,
   preview,
   notice,
@@ -290,6 +293,7 @@ export function IslandShell({
             qqMail={qqMail}
             qqNotifications={qqNotifications}
             wechatReminders={wechatReminders}
+            telegram={telegram}
             preview={preview}
             noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
             animateWidth={widthMoving}
@@ -346,6 +350,7 @@ export function IslandShell({
               agentStatusLabel={agentStatusLabel}
               qqNotificationCount={qqNotificationCount}
               wechatPending={wechatPending}
+              telegramPending={Boolean(telegram?.active && telegram.snapshot.items.length)}
               officePending={officePending}
               onPageChange={onPageChange}
               onCollapse={onCollapse}

@@ -168,6 +168,15 @@ if (!query.has("test")) {
   await openSettings("dingtalk");
   check(title() === t.categories.messages && group("dingtalk")?.querySelector("h2")?.textContent === market.items.dingtalk.name
     && groups()[groups().length - 1] === group("dingtalk"), "A message plugin has its own group at the end of Messages");
+  check(!group("telegram"), "Telegram has no Messages group before it is installed");
+
+  await open("plugins");
+  await install("telegram");
+  await openSettings("telegram");
+  check(title() === t.categories.messages && group("telegram")?.querySelector("h2")?.textContent === market.items.telegram.name
+    && group("telegram")?.querySelector<HTMLInputElement>("input[role=switch]")?.checked === false
+    && localStorage.getItem("fly-island-telegram-notifications-enabled") === null,
+    "The Telegram plugin brings its own Messages group, with receiving off until switched on");
 
   await open("plugins");
   await install("calendarMarks");
@@ -192,14 +201,14 @@ if (!query.has("test")) {
   await open("plugins");
   check(!one(".editor-panel [data-plugin-group], .editor-panel input[type='password'], .editor-panel input[inputmode='numeric']"),
     "With everything installed the Plugins page still holds only cards");
-  for (const id of ["eye-care", "minimax", "device-battery", "dingtalk", "cursor", "calendarMarks"] as const) await uninstall(id);
+  for (const id of ["eye-care", "minimax", "device-battery", "dingtalk", "telegram", "cursor", "calendarMarks"] as const) await uninstall(id);
   check(features().join() === fixed, "Uninstalling removes the sidebar entries");
   await open("agents");
   check(!group("minimax") && !group("cursor"), "Uninstalling removes the Agent groups");
   await open("agentConnect");
   check(!group("minimax"), "Uninstalling removes the connection group");
   await open("messages");
-  check(!group("dingtalk"), "Uninstalling removes the message group");
+  check(!group("dingtalk") && !group("telegram"), "Uninstalling removes the message groups");
 
   await act(async () => root.unmount());
   document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");

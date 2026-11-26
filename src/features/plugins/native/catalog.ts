@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -41,6 +41,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "dingtalk", kind: "messages", accent: "#0089ff", author: FLYLIU, settings: MESSAGES },
   { id: "feishu", kind: "messages", accent: "#3370ff", author: FLYLIU, settings: MESSAGES },
   { id: "wecom", kind: "messages", accent: "#0082f0", author: FLYLIU, settings: MESSAGES },
+  { id: "telegram", kind: "messages", accent: "#2aabee", author: { name: "baiyu0111", url: "https://github.com/baiyu0111" }, settings: MESSAGES },
   { id: "cursor", kind: "agent", accent: "#c9c7c0", author: FLYLIU, settings: AGENT_SESSIONS },
   { id: "kimiCode", kind: "agent", accent: "#8a8a8a", author: FLYLIU, settings: AGENT_SESSIONS },
   { id: "codebuddy", kind: "agent", accent: "#6c4dff", author: { name: "yiumanlenong", url: "https://github.com/yiumanlenong" }, settings: AGENT_SESSIONS },

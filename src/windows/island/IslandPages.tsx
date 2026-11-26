@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { MessagesPanel } from "../../features/messages/Messages";
 import type { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import type { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
+import type { TelegramNotificationsController } from "../../features/messages/telegram/useTelegramNotifications";
 import type { useMail } from "../../features/messages/mail/MailPanel";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import type { useTodos } from "../../features/todos/useTodos";
@@ -48,6 +49,7 @@ type IslandPagesProps = {
   qqMail: ReturnType<typeof useMail>;
   qqNotifications: ReturnType<typeof useQQNotifications>;
   wechatReminders: ReturnType<typeof useWeChatReminders>;
+  telegram: TelegramNotificationsController;
   messageSource: MessageView["messageSource"];
   openMessages: MessageView["openMessages"];
   media: ReturnType<typeof useMediaState>;
@@ -76,6 +78,7 @@ export function IslandPages({
   qqMail,
   qqNotifications,
   wechatReminders,
+  telegram,
   messageSource,
   openMessages,
   media,
@@ -116,7 +119,7 @@ export function IslandPages({
       )}
       {page === "qq" && (
         <div className="message-panel">
-          <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} enabledSources={features} onSourceChange={openMessages} onOpenMailSettings={() => openSettingsWindow("mail")} />
+          <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} telegram={telegram} source={messageSource} enabledSources={features} onSourceChange={openMessages} onOpenMailSettings={() => openSettingsWindow("mail")} />
         </div>
       )}
       {page === "music" && (

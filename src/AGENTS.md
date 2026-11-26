@@ -18,7 +18,7 @@ src/
 │   ├── clipboard/           # 剪贴板历史、快捷键
 │   ├── config-transfer/     # 配置备份 / 迁移：格式校验、前缀过滤、批量存储恢复、原生对话框与启动恢复
 │   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开
-│   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/ 子目录
+│   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/、telegram/ 等子目录
 │   ├── agent-status/        # AI 代理状态；sounds/ 为 Agent 音效：内置音效播放、设置 → 声音页、导入音效包
 │   ├── appearance/          # 外观设置、布局编辑器、预设；岛屿设置（fly-island-settings）的范围在 settingsLimits.ts、首次启动值在 settingsDefaults.ts、读取按领域在 normalizeLayout / Agent / BehaviorSettings.ts，新设置加在这几个文件里，settings.ts 只做入口
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页

@@ -1,6 +1,7 @@
 import dingtalkIcon from "../../../assets/brands/dingtalk.svg";
 import feishuIcon from "../../../assets/brands/feishu.svg";
 import wecomIcon from "../../../assets/brands/wecom.svg";
+import telegramIcon from "../../../assets/brands/telegram.svg";
 import cursorIcon from "../../../assets/brands/cursor.svg";
 import kimiCodeIcon from "../../../assets/brands/kimi-code.svg";
 import zcodeIcon from "../../../assets/brands/zcode.svg";
@@ -12,6 +13,7 @@ const BRAND_ICONS = {
   dingtalk: dingtalkIcon,
   feishu: feishuIcon,
   wecom: wecomIcon,
+  telegram: telegramIcon,
   cursor: cursorIcon,
   kimiCode: kimiCodeIcon,
   zcode: zcodeIcon,

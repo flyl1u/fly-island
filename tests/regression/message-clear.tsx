@@ -12,6 +12,7 @@ import { useMail, type MailController } from "../../src/features/messages/mail/u
 import type { MailSnapshot } from "../../src/features/messages/mail/api";
 import { useQQNotifications } from "../../src/features/messages/qq-notifications/useQQNotifications";
 import { useWeChatReminders } from "../../src/features/messages/wechat/useWeChatReminders";
+import { useTelegramNotifications } from "../../src/features/messages/telegram/useTelegramNotifications";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
@@ -35,6 +36,11 @@ let mailState: MailSnapshot = { revision, email: "demo@qq.com", configured: true
   status: "connected", error: null, unreadCount: 3, lastSyncedAt: Date.now(),
   items: ["a", "b", "c", "read"].map((id, uid) => ({ id, uid, sender: "团队", subject: `工作安排 ${id}`,
     receivedAt: Date.now(), unread: id !== "read" })) };
+let telegram = { revision, enabled: true, status: "listening", error: null,
+  items: ["tg-1", "tg-2"].map((id) => ({ id, title: "项目群", body: id, createdAt: Date.now() })) };
+const telegramOpened: unknown[] = [];
+let telegramAppOpened = 0;
+let telegramAvailable = false;
 let failMail = true;
 const marked: string[] = [];
 let concurrent = 0;
@@ -52,6 +58,13 @@ mockIPC(async (command, payload) => {
   }
   if (command === "clear_qq_notifications") return (qq = { ...qq, revision: ++revision, items: [] });
   if (command === "clear_wechat_reminders") return (wechat = { ...wechat, revision: ++revision, pending: false, messages: [] });
+  if (command === "get_telegram_notification_state") return telegram;
+  if (command === "open_telegram_notification") {
+    telegramOpened.push(args.id);
+    if (!telegramAvailable) throw new Error("Telegram activation unavailable");
+    return (telegram = { ...telegram, revision: ++revision, items: telegram.items.filter((item) => item.id !== args.id) });
+  }
+  if (command === "open_telegram") { telegramAppOpened++; return null; }
   if (command === "get_qq_mail_state") return [mailState];
   if (command === "mark_qq_mail_read") {
     const id = String(args.messageId);
@@ -74,8 +87,9 @@ function Fixture() {
   mail = useMail(false);
   const qqController = useQQNotifications(false);
   const wechatController = useWeChatReminders(false);
-  return <MessagesPanel source={source} enabledSources={{ qq: true, wechat: true, qqMail: true }}
-    onSourceChange={changeSource} qqMail={mail} qqNotifications={qqController} wechatReminders={wechatController} />;
+  const telegramController = useTelegramNotifications();
+  return <MessagesPanel source={source} enabledSources={{ qq: true, wechat: true, qqMail: true, telegram: source === "telegram" }}
+    onSourceChange={changeSource} qqMail={mail} qqNotifications={qqController} wechatReminders={wechatController} telegram={telegramController} />;
 }
 const root = createRoot(document.getElementById("fixture")!);
 const results = document.getElementById("results")!;
@@ -113,6 +127,18 @@ try {
     fixture.style.width = "300px";
     const card = (id: string) => document.querySelector<HTMLButtonElement>(`[data-message-id="${id}"] .message-card__surface`);
     const shown = () => [...document.querySelectorAll<HTMLElement>("[data-message-id]")].map((item) => item.dataset.messageId).join();
+    await act(async () => setSource("telegram"));
+    await act(async () => card("tg-2")!.click());
+    check(shown() === "tg-1,tg-2" && document.querySelector("[role=alert]"), "Failed Telegram activation keeps the notice and shows an error");
+    telegramAvailable = true;
+    await act(async () => card("tg-2")!.click());
+    check(shown() === "tg-1" && telegramOpened.join() === "tg-2,tg-2", "Opening Telegram uses the exact notice ID and removes only that card");
+    await act(async () => card("tg-1")!.click());
+    const telegramLaunch = document.querySelector<HTMLButtonElement>(".wechat-launch")!;
+    check(telegramLaunch.textContent?.includes(en ? "Click to open TG" : "点击打开 TG"), "An empty Telegram page shows the localized open action");
+    check(telegramLaunch.querySelector("img.message-brand-icon--telegram"), "The empty Telegram page uses the TG brand image");
+    await act(async () => telegramLaunch.click());
+    check(telegramAppOpened === 1, "The empty Telegram action opens the desktop app");
     await act(async () => setSource("qq"));
     await act(async () => {
       const at = Date.now();

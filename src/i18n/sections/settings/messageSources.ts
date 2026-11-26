@@ -11,6 +11,9 @@ export type SettingsMessageSourcesText = {
   gameNoticeSeconds: string;
   qqTitle: string;
   qqHint: string;
+  telegramReceive: string;
+  telegramHint: string;
+  telegramAccess: string;
   wechatTitle: string;
   wechatHint: string;
   autoCopyOtp: string;
@@ -30,6 +33,9 @@ export const zhCN: SettingsMessageSourcesText = {
   autoCopyOtp: "自动复制验证码",
   qqTitle: "QQ 通知",
   qqHint: "通过 Windows 通知读取 QQ 消息的标题和预览，只保留在本次运行的内存中。需要 QQ 已登录并开启系统通知。",
+  telegramReceive: "接收 TG 通知",
+  telegramHint: "在 Telegram Desktop 的「通知和声音」中开启桌面通知并使用 Windows 通知。点击小岛里的消息可打开对应对话，通知内容只保留在内存中。",
+  telegramAccess: "Windows 通知访问权限",
   wechatTitle: "微信提醒",
   wechatHint: "监听电脑版微信任务栏提醒；开启消息摘要后只读取普通联系人、群聊和文件传输助手，不展示公众号、订阅号、服务号等官方账号。需要微信保持登录。",
 };
@@ -48,6 +54,9 @@ export const en: SettingsMessageSourcesText = {
   autoCopyOtp: "Auto-copy verification codes",
   qqTitle: "QQ notifications",
   qqHint: "Reads the title and preview of QQ messages from Windows notifications and keeps them in memory for this run only. QQ must be signed in with system notifications on.",
+  telegramReceive: "Receive TG notifications",
+  telegramHint: "In Telegram Desktop under Notifications and Sounds, enable desktop notifications and use Windows notifications. Click an island notification to open its chat. Previews are kept in memory.",
+  telegramAccess: "Windows notification access",
   wechatTitle: "WeChat reminders",
   wechatHint: "Watches WeChat desktop taskbar reminders; with message previews on, it reads only contacts, group chats and File Transfer Assistant and hides official accounts such as public and service accounts. WeChat must stay signed in.",
 };
