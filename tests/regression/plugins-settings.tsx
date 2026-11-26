@@ -213,6 +213,16 @@ try {
     check(field("idle").getAttribute("aria-label") === (locale === "en" ? "Idle duration (1–120 minutes)" : "空闲时长（1–120 分钟）"), "空闲时长使用当前语言的标签");
     check(field("idle").closest(".settings-row")?.querySelector(".settings-row__description")?.textContent
       === manifest.settings.find((s) => s.key === "idle")!.description?.[locale], "空闲时长显示清单里当前语言的暂停、重置与恢复说明");
+    const settingRow = (key: string) => [...document.querySelectorAll<HTMLElement>(".settings-row")]
+      .find((item) => item.querySelector(".settings-row__title")?.textContent === manifest.settings.find((s) => s.key === key)!.label[locale]);
+    const fullscreenSwitch = () => settingRow("pause-fullscreen")?.querySelector<HTMLInputElement>("input[role='switch']")!;
+    check(fullscreenSwitch().checked && !settingRow("pause-fullscreen")?.querySelector(".settings-row__description"),
+      "全屏暂停开关默认开启，只有一行文案");
+    await act(async () => fullscreenSwitch().click());
+    await wait();
+    check(eyeCare.settings["pause-fullscreen"] === "false", "关闭全屏暂停立即保存");
+    await act(async () => fullscreenSwitch().click());
+    await wait();
     const edit = async (input: HTMLInputElement, value: string) => act(async () => {
       setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
     });

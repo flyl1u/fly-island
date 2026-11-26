@@ -32,19 +32,19 @@ fn idle_resets_to_a_full_interval() {
 }
 
 #[test]
-fn fullscreen_freezes_then_resumes_the_same_remaining_time() {
+fn fullscreen_pause_restarts_the_interval_and_resumes_the_whole_period() {
     let base = Instant::now();
     let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
     clock.tick(at(base, 40), false, false);
     clock.tick(at(base, 41), false, true);
-    assert_eq!(clock.remaining(at(base, 41)), Duration::from_secs(19));
+    assert_eq!(clock.remaining(at(base, 41)), Duration::from_secs(60));
     clock.tick(at(base, 500), false, true);
-    assert_eq!(clock.remaining(at(base, 500)), Duration::from_secs(19));
+    assert_eq!(clock.remaining(at(base, 500)), Duration::from_secs(60));
     assert_eq!(clock.phase(), Phase::Working);
     clock.tick(at(base, 501), false, false);
-    clock.tick(at(base, 519), false, false);
+    clock.tick(at(base, 560), false, false);
     assert_eq!(clock.phase(), Phase::Working);
-    clock.tick(at(base, 520), false, false);
+    clock.tick(at(base, 561), false, false);
     assert_eq!(clock.phase(), Phase::Resting);
 }
 

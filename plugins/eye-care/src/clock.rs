@@ -1,4 +1,4 @@
-//! One eye-rest cycle. Idle resets the interval; full-screen pauses it in place.
+//! One eye-rest cycle. An idle desk or a paused full-screen window restarts the interval and holds it.
 
 use std::time::{Duration, Instant};
 
@@ -53,15 +53,12 @@ impl Clock {
 
     pub fn tick(&mut self, now: Instant, idle: bool, fullscreen: bool) {
         match self.phase {
-            Phase::Working if idle => {
-                // An idle desk starts a completely fresh eye-use interval.
+            Phase::Working if idle || fullscreen => {
+                // An idle desk, or a full-screen window when that setting is on, starts a
+                // completely fresh eye-use interval and holds it until input or the window
+                // view returns.
                 self.deadline = now + self.period;
                 self.fullscreen_remaining = Some(self.period);
-            }
-            Phase::Working if fullscreen => {
-                if self.fullscreen_remaining.is_none() {
-                    self.fullscreen_remaining = Some(self.deadline.saturating_duration_since(now));
-                }
             }
             Phase::Working => {
                 if let Some(remaining) = self.fullscreen_remaining.take() {

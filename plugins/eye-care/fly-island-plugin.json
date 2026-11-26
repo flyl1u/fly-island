@@ -71,6 +71,15 @@
       "default": true
     },
     {
+      "key": "pause-fullscreen",
+      "label": {
+        "zh-CN": "全屏模式下暂停并重置计时",
+        "en": "Pause and reset the timer in full screen"
+      },
+      "type": "toggle",
+      "default": true
+    },
+    {
       "key": "language",
       "label": {
         "zh-CN": "提醒语言",

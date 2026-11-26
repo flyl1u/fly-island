@@ -9,7 +9,7 @@
 ## 使用与兼容
 
 - 用眼 1–720 分钟（默认 20）、休息 1–60 分钟（默认 1）、空闲时长 1–120 分钟（默认 5），仍为整数分钟并自动保存；旧秒数/小数分钟向上取整迁移不变。
-- 空闲重置用眼周期，全屏暂停剩余用眼时间；休息使用单调时钟，不受两者影响。
+- 空闲重置用眼周期；「全屏模式下暂停并重置计时」开启时（默认），全屏窗口同样重置并冻结用眼计时，恢复窗口视图后从完整周期开始，关闭后全屏不影响计时。休息使用单调时钟，不受两者影响。
 - 休息期间每个显示器出现一个按需创建的宿主窗口，休息结束自动销毁。可推迟一次，仍有 10/15/20/25/30 分钟五档；之后主动休息也不会恢复该机会。允许跳过时才显示紧急解锁，后台同样校验权限。
 - 窗口按物理显示器坐标定位，支持副屏负坐标与系统 DPI；热插拔会重建窗口，保留原截止时间。可见、已置顶的宿主窗口仍在休息画面上方；贴边、折叠和托盘隐藏由宿主管理，不强制显示隐藏窗口。
 - 深浅色与材质跟随宿主；提醒语言沿用插件设置，使用宿主双语字典且不修改全局语言偏好。整屏背景遮挡工作内容，玻璃样式用于卡片，不额外捕获桌面。窄屏按钮换行，短屏可滚动，Tab 焦点沿用宿主控件。
@@ -17,7 +17,7 @@
 
 **同时更新宿主和插件。** 新宿主为受支持的 eye-care 清单注入临时 `_host-eye-care-windows` 能力标记；不写入偏好。旧宿主缺少标记时，0.2.0 显示升级说明，不开始一个没有窗口的休息。旧 eye-care 插件仍走其原实现，不触发第二套宿主窗口。应用版本号不变。
 
-设置中的「空闲时长」说明由清单的 `settings[].description` 提供，文案为「连续无键盘和鼠标操作到达空闲时长，暂停并重置用眼计时，恢复操作后开始计时」；已开始的休息不受影响。设置项文案为「允许跳过休息」，不再写成疑问句。岛内护眼面板不再提供额外的齿轮按钮，配置统一从设置 → 插件进入。
+设置中的「空闲时长」说明由清单的 `settings[].description` 提供，文案为「连续无键盘和鼠标操作到达空闲时长，暂停并重置用眼计时，恢复操作后开始计时」；已开始的休息不受影响。另有开关「全屏模式下暂停并重置计时」：开启时进入全屏即把用眼计时重置为完整周期并冻结，退出全屏后从完整周期重新走表；关闭时全屏窗口不影响计时。（2026-11-26 用户要求）设置项文案为「允许跳过休息」，不再写成疑问句。岛内护眼面板不再提供额外的齿轮按钮，配置统一从设置 → 插件进入。
 
 岛内标题为「用眼中」或「休息中」，倒计时标注「剩余用眼时长」或「剩余休息时长」。已推迟的用眼阶段提示「已经推迟过一次，不能推迟下次休息」。不再显示规则、配置时长或远眺 / 自动解锁说明；空闲和全屏暂停时仍显示静态剩余时间。
 
@@ -55,11 +55,11 @@ The island and break window share the countdown calculation and absolute deadlin
 
 Eye Care 0.2.0 replaces fixed-color Win32/GDI break UI with on-demand host Tauri windows. They reuse host React components, theme tokens, fonts, lucide and localized action controls, including dark/light schemes, both glass treatments, narrow widths and short-screen scrolling. Each monitor uses its physical bounds; existing visible topmost host windows remain usable, and hidden windows stay hidden.
 
-The plugin retains its monotonic clock, legacy duration migration, idle/full-screen behavior, five exact postponements used once per cycle and optional skipping. Update both the host and plugin: a transient host-capability marker prevents silent missing windows on old hosts, while legacy plugins do not create duplicate host windows. No host version, existing command/window label or persisted preference key is changed. New window IDs, commands and the event are listed above.
+The plugin retains its monotonic clock, legacy duration migration, idle and optional full-screen resets, five exact postponements used once per cycle and optional skipping. Update both the host and plugin: a transient host-capability marker prevents silent missing windows on old hosts, while legacy plugins do not create duplicate host windows. No host version, existing command/window label or persisted preference key is changed. New window IDs, commands and the event are listed above.
 
 Windows are created only during an enabled break, shown after initial state and first paint, and destroyed on completion, disable/uninstall, plugin failure/restart or shutdown. Partial failures are cleaned up, readiness is bounded and retries limited. Coalesced updates and session tokens prevent unbounded UI queues and stale messages reopening closed windows. No networking, telemetry, unrelated file reads or desktop capture is introduced.
 
-The idle-duration setting carries its explanation in the manifest (`settings[].description`), which the host shows under the label: inactivity pauses and resets the screen-time timer, which starts when input resumes; an ongoing break is unaffected. The skip setting reads “Allow skipping a break” rather than a question. Configure Eye Care in Settings → Plugins; its island panel has no additional settings gear.
+The idle-duration setting carries its explanation in the manifest (`settings[].description`), which the host shows under the label: inactivity pauses and resets the screen-time timer, which starts when input resumes; an ongoing break is unaffected. A separate switch, “Pause and reset the timer in full screen”, is on by default: entering a full-screen window restarts the eye-use interval and freezes it, and leaving it resumes the whole period. Switched off, full screen no longer affects the timer. The skip setting reads “Allow skipping a break” rather than a question. Configure Eye Care in Settings → Plugins; its island panel has no additional settings gear.
 
 The island shows “Screen time” or “Resting”, with “Screen time remaining” or “Break time remaining”. After a postponement, screen time also shows “Already postponed once; the next break cannot be postponed”. Rule summaries, configured durations and break instructions are omitted; idle and full-screen pauses still show a frozen remaining time.
 
