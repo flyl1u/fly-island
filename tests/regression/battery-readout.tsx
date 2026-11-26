@@ -98,6 +98,9 @@ async function run() {
       if (percent === 0 && low) {
         check(getComputedStyle(body).borderTopColor === charge, "At 0%, the red outline still indicates low charge");
       }
+      if (tone === "light" && (low || charging)) {
+        check(surface === "rgba(0, 0, 0, 0.86)", `${label}: warning and charging retain their darker track`);
+      }
       if (!low && !charging) {
         check(charge === (tone === "dark" ? "rgb(204, 204, 204)" : "rgb(0, 0, 0)"), `${label}: ordinary fill is neutral gray or black`);
         const backdrop = tone === "dark" ? 47 : 244;
@@ -112,7 +115,7 @@ async function run() {
   check(samples.length === readings.length * backdrops.length * tones.length * 3, "Every tone, backdrop and font size covers all readings");
   check(tones.every((tone) => colors[tone].size === (forced ? 1 : 3)), "Each tone distinguishes normal, low and charging fills");
   check(worstText >= 4.5, `Insufficient text contrast: ${worstText.toFixed(2)}:1`);
-  check(forced || (worstNeutralBoundary.dark >= 1.9 && worstNeutralBoundary.light >= 1.3), "The neutral fill and track are distinguishable on the standard island");
+  check(forced || (worstNeutralBoundary.dark >= 1.9 && worstNeutralBoundary.light >= 3), "The neutral fill and track are distinguishable on the standard island");
   results.textContent = `PASS ${samples.length} readings fit without clipping (${forced ? "forced colors" : "adaptive ink"})\n`
     + `PASS Minimum text contrast ${worstText.toFixed(2)}:1 against both track and solid fill`;
   results.dataset.result = "passed";

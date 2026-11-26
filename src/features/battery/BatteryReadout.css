@@ -28,7 +28,11 @@
   font-weight: 700;
   --battery-outline: var(--battery-badge-rim);
   --battery-charge: var(--battery-badge-fill, var(--battery-badge-neutral));
-  --battery-badge-surface: var(--battery-badge-track);
+  --battery-badge-surface: var(--battery-badge-state-track, var(--battery-badge-track));
+}
+
+.battery-readout[data-style="badge"]:is([data-low], [data-charging]) {
+  --battery-badge-state-track: var(--battery-badge-status-track);
 }
 
 .battery-readout[data-style="badge"][data-low] {

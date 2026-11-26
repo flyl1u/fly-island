@@ -90,6 +90,7 @@
   --color-warning: #ffd166;
   --battery-badge-ink: #101216;
   --battery-badge-track: rgb(204 204 204 / 63%);
+  --battery-badge-status-track: var(--battery-badge-track);
   --battery-badge-rim: rgb(204 204 204 / 37%);
   --battery-badge-neutral: #ccc;
   --battery-badge-low: #eb4a38;
@@ -157,7 +158,8 @@
   --color-danger: #c7354b;
   --color-warning: #9a6700;
   --battery-badge-ink: #fff;
-  --battery-badge-track: rgb(0 0 0 / 86%);
+  --battery-badge-track: rgb(0 0 0 / 55%);
+  --battery-badge-status-track: rgb(0 0 0 / 86%);
   --battery-badge-rim: rgb(0 0 0 / 55%);
   --battery-badge-neutral: #000;
   --battery-badge-low: #d33e2f;
