@@ -57,7 +57,6 @@ type IslandCollapsedBarProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
-  onSwitchCollapsedItem?: () => void;
   collapsedLyrics?: LyricLine[] | null;
   /** Where the text and each status icon sit, left to right (Settings → Appearance). */
   collapsedLayout: readonly CollapsedSlot[];
@@ -110,7 +109,6 @@ export function IslandCollapsedBar({
   todoRotation = null,
   collapsedTodoCount,
   collapsedItem,
-  onSwitchCollapsedItem,
   collapsedLyrics = null,
   collapsedLayout,
   collapsedOrder = collapsedLayout,
@@ -169,21 +167,20 @@ export function IslandCollapsedBar({
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
+    // The agent light opens the Agent page (or the message being previewed); the text reopens the last page.
     pulse: (
       <button
         className="island__agent-light"
         type="button"
-        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
-          : t.island.switchCollapsedContent(t.island.collapsedKinds[contentKey])}
-        onMouseDown={(event) => { if (!preview && event.button === 0) event.preventDefault(); }}
+        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source]) : t.island.agentPage}
         onPointerDown={prepareWindowDrag}
         onPointerMove={handleWindowDragMove}
         onPointerUp={cancelWindowDrag}
         onPointerCancel={cancelWindowDrag}
         onClick={(event) => {
-          if (event.button !== 0 || (event.detail !== 0 && didDragRef.current)) return;
+          if (event.detail !== 0 && didDragRef.current) return;
           event.stopPropagation();
-          if (preview) openPreview(preview); else onSwitchCollapsedItem?.();
+          if (preview) openPreview(preview); else onOpenPage("agents");
         }}
       >
         <span className={pulseClassName} />

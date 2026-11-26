@@ -40,8 +40,9 @@ export function isEditingText() {
  * clicked inside. It stays open while a text field has focus or a button is held (a
  * drag that left the panel), and closes when that ends. A panel the cursor never
  * entered (opened by a shortcut or a settings preview) is left to its own closing.
- * Pressing cancels a pending open, so drags and clicks on the collapsed island work,
- * and hovering the collapsed island never takes focus from the app the user is typing
+ * Pressing cancels a pending open, so drags and clicks on the collapsed island work; so
+ * does scrolling over it, which switches what it shows (useCollapsedWheelSwitch).
+ * Hovering the collapsed island never takes focus from the app the user is typing
  * in (the expanded panel takes it while under the cursor, see useHoverFocus).
  */
 export function useHoverExpand({ enabled, delayMs, paused, pickerOpen = false, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
@@ -89,12 +90,19 @@ export function useHoverExpand({ enabled, delayMs, paused, pickerOpen = false, c
     const release = () => {
       pressingRef.current = false;
     };
+    const scroll = () => {
+      if (modeRef.current !== "collapsed") return;
+      window.clearTimeout(expandTimerRef.current);
+      armedRef.current = false;
+    };
 
+    window.addEventListener("wheel", scroll, { capture: true, passive: true });
     window.addEventListener("pointerdown", press, true);
     window.addEventListener("pointerup", release, true);
     window.addEventListener("pointercancel", release, true);
     window.addEventListener("blur", release);
     return () => {
+      window.removeEventListener("wheel", scroll, true);
       window.removeEventListener("pointerdown", press, true);
       window.removeEventListener("pointerup", release, true);
       window.removeEventListener("pointercancel", release, true);

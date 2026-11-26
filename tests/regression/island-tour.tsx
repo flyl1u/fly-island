@@ -213,6 +213,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     }
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "点击后展开");
+    check(panel().dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 100 })), "展开态的滚轮不被岛拦下");
     if (query.has("update")) {
       await click(".dot-button--todo");
       check(document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot"),

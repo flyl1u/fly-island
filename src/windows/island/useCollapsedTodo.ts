@@ -104,9 +104,9 @@ export function useCollapsedTodo(
     activeTodoId !== null && pendingTodoIds.includes(activeTodoId), Boolean(timers?.length || timer));
   if (choice !== selection.choice) setChoice(selection.choice);
   const collapsedItem = selection.item;
-  const switchCollapsedItem = () => {
+  const switchCollapsedItem = (direction: 1 | -1) => {
     if (!settings.showCollapsedText) return;
-    const next = nextCollapsedItem(settings.collapsedPriority, canSwitchTo, collapsedItem);
+    const next = nextCollapsedItem(settings.collapsedPriority, canSwitchTo, collapsedItem, direction);
     if (next !== null) setChoice(next);
   };
   const idleDisplay = idleTextDisplay(settings, {

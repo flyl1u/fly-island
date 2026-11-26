@@ -1,7 +1,7 @@
 import { rightClickTucks } from "./tuckRules";
 import { shoulderedShapeCss } from "../../features/appearance/cornerShape";
 import { isGlass } from "../../features/appearance/settings";
-import type { CSSProperties, ReactNode, TransitionEvent } from "react";
+import { useRef, type CSSProperties, type ReactNode, type TransitionEvent } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { BatteryAlert } from "../../features/device-battery/lowBattery";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
@@ -21,6 +21,7 @@ import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
 import { useMotionLayer } from "./useMotionLayer";
+import { useCollapsedWheelSwitch } from "./useCollapsedWheelSwitch";
 import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
@@ -71,7 +72,8 @@ type IslandShellProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
-  onSwitchCollapsedItem?: () => void;
+  /** Scrolling over the collapsed island: the next (1) or previous (-1) item for its text. */
+  onSwitchCollapsedItem?: (direction: 1 | -1) => void;
   collapsedLyrics?: import("../../features/media/lyrics/lrc").LyricLine[] | null;
   collapsedLayout: readonly CollapsedSlot[];
   collapsedOrder?: readonly CollapsedSlot[];
@@ -198,6 +200,9 @@ export function IslandShell({
   const isLiquidGlass = material === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
+  const islandRef = useRef<HTMLElement>(null);
+  const wheelSwitches = !isExpanded && !isTucked && !preview && !quotaAlert && !batteryAlert;
+  useCollapsedWheelSwitch(islandRef, wheelSwitches ? onSwitchCollapsedItem ?? null : null);
   const tuckMorphClass = useTuckMorph(isTucked, tuckStyle);
   const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
   const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
@@ -230,11 +235,12 @@ export function IslandShell({
   } else if (showCollapsedText && collapsedItem === "agent" && agentSession) {
     collapsedLabel = t.island.agentSession(agentSession.label, agentSession.title);
   } else if (showCollapsedText && collapsedItem === "lyrics") {
-    collapsedLabel = t.island.collapsedKinds.lyrics;
+    collapsedLabel = t.island.collapsedLyricsLabel;
   }
 
   return (
     <section
+      ref={islandRef}
       className={className}
       aria-label={collapsedLabel}
       onClick={(event) => {
@@ -301,7 +307,6 @@ export function IslandShell({
             todoRotation={todoRotation}
             collapsedTodoCount={collapsedTodoCount}
             collapsedItem={collapsedItem}
-            onSwitchCollapsedItem={onSwitchCollapsedItem}
             collapsedLyrics={collapsedLyrics}
             collapsedLayout={collapsedLayout}
             collapsedOrder={collapsedOrder}

@@ -11,7 +11,15 @@ test("manual switches follow the saved order and wrap without respecting priorit
   assert.equal(nextCollapsedItem(order, all, "lyrics"), "agent");
 });
 
-test("the light skips unavailable items and is a no-op with only one or none", () => {
+test("scrolling up walks the saved order backwards, wrapping and skipping unavailable items", () => {
+  assert.equal(nextCollapsedItem(order, all, "agent", -1), "lyrics");
+  assert.equal(nextCollapsedItem(order, all, "lyrics", -1), "todo");
+  assert.equal(nextCollapsedItem(order, { ...all, todo: false }, "lyrics", -1), "agent");
+  assert.equal(nextCollapsedItem(order, all, null, -1), "lyrics");
+  assert.equal(nextCollapsedItem(order, { agent: true, todo: false, lyrics: false }, "agent", -1), null);
+});
+
+test("switching skips unavailable items and is a no-op with only one or none", () => {
   const noTodo = { ...all, todo: false };
   assert.equal(nextCollapsedItem(order, noTodo, "agent"), "lyrics");
   assert.equal(nextCollapsedItem(order, noTodo, "todo"), "lyrics");
