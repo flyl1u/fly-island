@@ -247,6 +247,14 @@ export async function runBatteryTour(
       .find((item) => item.querySelector(".settings-group__title")?.textContent === t.name);
     check(group() && group()!.querySelectorAll(".settings-row").length === 3 && !group()!.querySelector(".settings-row--indent, [role='spinbutton'], [role='combobox']"),
       "Installed, the plugin has a settings page of its own for reading, style and history");
+    const description = group()!.querySelector<HTMLElement>(".battery-settings__style-description")!;
+    const styleRow = description.closest<HTMLElement>(".settings-row")!;
+    const styleChoice = styleRow.querySelector<HTMLElement>("[role='group']")!;
+    check(description.textContent === t.readoutStyleDescription && styleChoice.getAttribute("aria-label") === t.readoutStyle
+      && getComputedStyle(description).color !== getComputedStyle(description.parentElement!).color
+      && description.getBoundingClientRect().right < styleChoice.getBoundingClientRect().left
+      && styleRow.scrollWidth <= styleRow.clientWidth,
+    "The battery appearance setting explains both styles with readable text that fits beside the options");
     const choose = async (label: string) => {
       const option = [...group()!.querySelectorAll<HTMLButtonElement>(".settings-choice__option")].find((item) => item.textContent === label)!;
       await act(async () => option.click());

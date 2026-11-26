@@ -6,6 +6,7 @@ import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import { getNotebookBattery } from "./api";
 import { BATTERY_DISPLAY_MODES, BATTERY_READOUT_STYLES, type BatteryPreferences } from "./preferences";
+import "./BatterySettings.css";
 
 export function BatterySettings({ preferences, onChange }: {
   preferences: BatteryPreferences;
@@ -27,7 +28,7 @@ export function BatterySettings({ preferences, onChange }: {
           options={BATTERY_DISPLAY_MODES.map((value) => ({ value, label: t.displayOptions[value] }))}
           onChange={(batteryDisplayMode) => onChange({ batteryDisplayMode })} />
       } />
-      <SettingsRow title={t.readoutStyle} description={t.readoutStyleDescription} control={
+      <SettingsRow title={t.readoutStyle} description={<span className="battery-settings__style-description">{t.readoutStyleDescription}</span>} control={
         <SettingsChoice ariaLabel={t.readoutStyle} value={preferences.batteryReadoutStyle}
           options={BATTERY_READOUT_STYLES.map((value) => ({ value, label: t.readoutStyleOptions[value] }))}
           onChange={(batteryReadoutStyle) => onChange({ batteryReadoutStyle })} />
