@@ -1,9 +1,10 @@
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import type { MediaState } from "./api";
 import { songOffsetKey, wordFill, type LyricLine, type LyricWord } from "./lyrics/lrc";
 import { lyricClockAt } from "./lyrics/lyricClock";
 import { useLyricClock } from "./lyrics/useLyricClock";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
+import { useLyricScroll } from "./lyrics/useLyricScroll";
 import { useSongOffset } from "./lyrics/useSongOffset";
 import "./CollapsedLyric.css";
 
@@ -24,6 +25,7 @@ function CollapsedSungWords({ words, mediaState, offsetMs, playing }: {
  * The line being sung, for the collapsed island; the song's title and artist when it has no
  * lyrics or between lines. It wakes on its own for each line, so only this leaf re-renders while a
  * song plays; a new line replaces the last at once (the music page lets it rise in).
+ * A line too long for the island moves left while it is sung (useLyricScroll).
  * Keep prefetching while expanded; only the visible leaf drives the line-change clock.
  */
 export function CollapsedLyric({
@@ -45,11 +47,13 @@ export function CollapsedLyric({
   const song = [mediaState.title, mediaState.artist].filter(Boolean).join(" · ");
   const line = lines && index >= 0 ? lines[index] : null;
   const words = lyricsSettings.lyricWordFill === true && line?.text ? line.words : undefined;
+  const view = useRef<HTMLSpanElement>(null);
+  useLyricScroll(view, { line, next: line ? lines?.[index + 1] ?? null : null, words, mediaState, offsetMs, playing: playing && active, active });
 
   return (
-    <span className="collapsed-lyric">{words ? <CollapsedSungWords
+    <span className="collapsed-lyric" ref={view}><span className="collapsed-lyric__track" key={index}>{words ? <CollapsedSungWords
       key={`${index}:${mediaState.updatedAt}:${offsetMs}:${active}:${playing}`}
       words={words} mediaState={mediaState} offsetMs={offsetMs} playing={playing && active}
-    /> : line?.text || song}</span>
+    /> : line?.text || song}</span></span>
   );
 }

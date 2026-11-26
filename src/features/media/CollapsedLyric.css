@@ -11,6 +11,32 @@
   white-space: nowrap;
 }
 
+/* A long line on the move (useLyricScroll.ts): no ellipsis, and soft edges where text is hidden. */
+@property --collapsed-lyric-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --collapsed-lyric-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.collapsed-lyric[data-scrolling] {
+  text-overflow: clip;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--collapsed-lyric-fade-start),
+    #000 calc(100% - var(--collapsed-lyric-fade-end)), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 var(--collapsed-lyric-fade-start),
+    #000 calc(100% - var(--collapsed-lyric-fade-end)), transparent);
+}
+
+.collapsed-lyric[data-scrolling] .collapsed-lyric__track {
+  display: inline-block;
+  will-change: transform;
+}
+
 .collapsed-lyric__word {
   color: transparent;
   background: linear-gradient(90deg, var(--text-1) 50%, color-mix(in srgb, var(--text-1) 38%, transparent) 50%) 100% 0 / 200% 100% no-repeat;
