@@ -40,20 +40,27 @@ export function uniqueSessions(sessions: AgentSessionSummary[]) {
   return newest.size === sessions.length ? sessions : sessions.filter((session) => newest.get(sessionKey(session)) === session);
 }
 
-/** Sessions still working: running, waiting for the user, silent mid-turn for a while (stale), or finished with background tasks still running. */
+export function isSessionRunning(session: Pick<AgentSessionSummary, "phase" | "closed">) {
+  return session.phase === "running" && session.closed !== true;
+}
+
+export function isSessionWaiting(session: Pick<AgentSessionSummary, "phase" | "closed">) {
+  return session.phase === "waiting" && session.closed !== true;
+}
+
 export function countActiveSessions(sessions: AgentSessionSummary[]) {
-  return sessions.filter(isSessionActive).length;
+  return sessions.filter(isSessionRunning).length;
 }
 
 /**
  * A turn that ended while background tasks it started (a background command or subagent) still
- * run: the agent is still at work, so the island names it, counts it and stays out.
+ * run: the expanded Agent list still shows its background work.
  */
 export function hasBackgroundWork(session: { phase: string; backgroundTasks?: number }) {
   return session.phase === "completed" && (session.backgroundTasks ?? 0) > 0;
 }
 
-/** The one judgement of "still working" the collapsed title, the count and keep-visible share. */
+/** Which sessions stay in the expanded list when finished sessions are hidden. */
 export function isSessionActive(session: Pick<AgentSessionSummary, "phase" | "backgroundTasks">) {
   return isActivePhase(session.phase) || hasBackgroundWork(session);
 }

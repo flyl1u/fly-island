@@ -30,7 +30,7 @@ test("a peek slides back unless a preview or a keep-visible activity holds an au
 
 test("a todo timer that holds the island is re-checked when it runs out", () => {
   const settings = { ...DEFAULT_SETTINGS, keepVisibleWhileTodoRunning: true, todoEnabled: true };
-  const activity = { agentVisualState: "idle", collapsedItem: "todo", songPlaying: false, activeTodoId: null,
+  const activity = { agentVisualState: "idle", activeAgentSessionCount: 0, collapsedItem: "todo", songPlaying: false, activeTodoId: null,
     timer: { endsAt: 5000 } };
   assert.equal(keepIslandVisible(settings, activity, 1000), true);
   assert.equal(keepVisibleChangesAt(settings, activity, 1000), 5000);

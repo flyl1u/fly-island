@@ -6,6 +6,22 @@ use std::{
 
 use serde_json::json;
 
+#[test]
+fn claude_stop_finishes_the_turn_but_a_new_prompt_starts_another() {
+    use super::sessions::{parse_claude_tail, TurnState};
+
+    let prompt = json!({"type": "user", "message": {"content": "Run tests"}}).to_string();
+    let stopped = json!({"type": "system", "subtype": "stop_hook_summary", "preventedContinuation": false}).to_string();
+    let continued = json!({"type": "system", "subtype": "stop_hook_summary", "preventedContinuation": true}).to_string();
+    let sidechain = json!({"type": "user", "isSidechain": true, "message": {"content": "Subagent prompt"}}).to_string();
+    let reply = json!({"type": "assistant", "message": {"stop_reason": "end_turn"}}).to_string();
+
+    assert_eq!(parse_claude_tail(&prompt).state, TurnState::Working);
+    assert_eq!(parse_claude_tail(&[&prompt, &stopped, &sidechain].map(String::as_str).join("\n")).state, TurnState::Done);
+    assert_eq!(parse_claude_tail(&[&prompt, &stopped, &prompt].map(String::as_str).join("\n")).state, TurnState::Working);
+    assert_eq!(parse_claude_tail(&[&reply, &continued].map(String::as_str).join("\n")).state, TurnState::Working);
+}
+
 use super::notifications::WaitingNotifications;
 use super::title::*;
 

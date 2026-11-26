@@ -81,7 +81,7 @@ fn scan(
             let ended = mid_turn && summary.closed;
             // Compacting writes nothing to the transcript until it is done, for up to minutes;
             // the session works meanwhile, whether the turn or `/compact` started it.
-            summary.compacting = compacting.contains_key(&summary.session_id) && !ended;
+            summary.compacting = compacting.contains_key(&summary.session_id) && !summary.closed;
             summary.phase = if ended {
                 // Quit mid-turn (often while a question was open): nothing left to wait for.
                 "completed"

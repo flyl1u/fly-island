@@ -5,7 +5,7 @@ import { keepIslandVisible, keepVisibleReason } from "../../src/windows/island/k
 import { MUSIC_GRACE_MS, musicHolds } from "../../src/windows/island/musicGrace.ts";
 import { idlePlan } from "../../src/windows/island/idleCollapse.ts";
 
-const activity = { agentVisualState: "idle", collapsedItem: "todo", songPlaying: false, activeTodoId: null, timer: null };
+const activity = { agentVisualState: "idle", activeAgentSessionCount: 0, collapsedItem: "todo", songPlaying: false, activeTodoId: null, timer: null };
 const stays = (patch, state) => keepIslandVisible({ ...DEFAULT_SETTINGS, ...patch }, { ...activity, ...state }, 1000);
 
 test("keep-visible switches default off and normalize only booleans independently", () => {
@@ -19,6 +19,7 @@ test("keep-visible switches default off and normalize only booleans independentl
 
 test("only running agents hold the island, independently of which text is displayed", () => {
   assert.equal(stays({ keepVisibleWhileAgentRunning: true }, { agentVisualState: "running" }), true);
+  assert.equal(stays({ keepVisibleWhileAgentRunning: true }, { agentVisualState: "waiting", activeAgentSessionCount: 1 }), true);
   for (const state of ["idle", "waiting", "completed", "failed"]) {
     assert.equal(stays({ keepVisibleWhileAgentRunning: true }, { agentVisualState: state }), false);
   }

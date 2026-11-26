@@ -98,12 +98,12 @@ export function IslandApp() {
   const widthMotion = useCollapsedWidthMotion(collapsedWidthTarget, mode === "collapsed");
   const collapsedIslandWidth = widthMotion.width;
   const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
-  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
+  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, agentSessions, t);
   useIslandTucking({
     settings,
     navigation,
     hasMessagePreview,
-    activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
+    activity: { agentVisualState, activeAgentSessionCount, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
     browserOnIslandMonitor: game.browserOnIslandMonitor,
   });

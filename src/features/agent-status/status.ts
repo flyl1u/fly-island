@@ -2,7 +2,7 @@ import type { Translations } from "../../i18n";
 import type { AgentHooksState, AgentProvider, HookAgentProvider, AgentStatusSnapshot, AgentTaskPhase, AgentTaskStatus } from "./api";
 import type { SessionFilter } from "./sessionList";
 
-export type AgentVisualState = "idle" | "running" | "attention";
+export type AgentVisualState = "idle" | "running" | "waiting" | "attention";
 export type AgentHooksInstallState = "idle" | "installing" | "installed" | "error";
 
 export const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
@@ -63,15 +63,15 @@ export function isAgentAttentionPhase(phase: AgentTaskPhase) {
   return phase === "failed" || phase === "stale";
 }
 
-/**
- * `activeSessions`: sessions the session list still counts as working. The light turns blue
- * for them too, so it never shows green beside the island's blue session count.
- */
-export function getAgentVisualState(snapshot: AgentStatusSnapshot, activeSessions = 0): AgentVisualState {
+export function getAgentVisualState(snapshot: AgentStatusSnapshot, activeSessions = 0, hasWaitingSession = false): AgentVisualState {
   const statuses = listAgentStatuses(snapshot).map((entry) => entry.status);
 
   if (statuses.some((status) => isAgentAttentionPhase(status.phase))) {
     return "attention";
+  }
+
+  if (hasWaitingSession || statuses.some((status) => status.phase === "waiting")) {
+    return "waiting";
   }
 
   if (activeSessions > 0 || statuses.some((status) => status.phase === "running")) {
