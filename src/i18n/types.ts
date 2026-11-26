@@ -14,6 +14,7 @@ import type { ClipboardText } from "./sections/clipboard";
 import type { FileShelfText } from "./sections/fileShelf";
 import type { DeviceBatteryText } from "./sections/deviceBattery";
 import type { EyeCareText } from "./sections/eyeCare";
+import type { EdgePetText } from "./sections/edgePet";
 import type { PluginPanelText } from "./sections/pluginPanel";
 import type { SettingsText } from "./sections/settings/index";
 
@@ -52,6 +53,7 @@ export type Translations = {
   pluginPanel: PluginPanelText;
 
   eyeCare: EyeCareText;
+  edgePet: EdgePetText;
   deviceBattery: DeviceBatteryText;
 
   settings: SettingsText;

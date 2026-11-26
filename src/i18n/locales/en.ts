@@ -15,6 +15,7 @@ import * as todo from "../sections/todo.ts";
 import * as clipboard from "../sections/clipboard.ts";
 import * as fileShelf from "../sections/fileShelf.ts";
 import * as eyeCare from "../sections/eyeCare.ts";
+import * as edgePet from "../sections/edgePet.ts";
 import * as pluginPanel from "../sections/pluginPanel.ts";
 import * as settings from "../sections/settings/index.ts";
 
@@ -47,6 +48,7 @@ const en: Translations = {
 
   pluginPanel: pluginPanel.en,
   eyeCare: eyeCare.en,
+  edgePet: edgePet.en,
   deviceBattery,
 
   settings: settings.en,
