@@ -123,4 +123,6 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 设备电量和音频界面放在 features/device-battery，护眼休息窗口组合放在 windows/eye-care，日历标记放在 features/todos/calendar-marks。市场卡片使用 features/plugins 的安装状态。
 
+**硬性规则：新增插件必须在 `features/plugins/native/catalog.ts` 声明设置归类（`settings`），禁止把设置堆在插件页。** 规则和图标要求见 [插件设置归类规范（长期）](../docs/design/settings.md#插件设置归类规范长期)；设置面板和侧栏只按声明渲染，不写插件 id 分支。
+
 插件 API v1：`features/plugins/` 保存协议类型与共享快照；额度/会话适配在 agent-status 中，插件消息在 messages 中；新增界面仍复用 SettingsRow 与岛屿原生组件。

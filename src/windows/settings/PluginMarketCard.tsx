@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Check, Settings2 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsSwitch } from "../../components/settings/SettingsSwitch";
@@ -10,7 +10,7 @@ import { useTranslation } from "../../i18n";
 
 /** One square market card: icon, name and author, a short pitch, and the installation controls. */
 export function PluginMarketCard({
-  name, description, accent, author, icon, installed, enabled, inDevelopment, job, switching, reason, onRetry, onToggle, onChangeInstallation,
+  name, description, accent, author, icon, installed, enabled, inDevelopment, job, switching, reason, onRetry, onToggle, onChangeInstallation, onOpenSettings, update,
 }: {
   name: string;
   description: string;
@@ -28,11 +28,15 @@ export function PluginMarketCard({
   onRetry?: () => void;
   onToggle: (checked: boolean) => void;
   onChangeInstallation: () => void;
+  /** Present once the plugin is on and has settings somewhere. */
+  onOpenSettings?: () => void;
+  /** A newer published version, found by checking for updates. */
+  update?: { version: string; onUpdate: () => void };
 }) {
-  const t = useTranslation().settings.plugins.market;
+  const { market: t, update: updateLabel } = useTranslation().settings.plugins;
   const removing = job?.phase === "uninstalling";
   const stateClass = installed ? ` plugin-card--installed${enabled ? "" : " plugin-card--disabled"}` : "";
-  return <li className={`plugin-card${stateClass}${reason ? " plugin-card--with-error" : ""}`} style={{ "--plugin-accent": accent } as CSSProperties}>
+  return <li className={`plugin-card${stateClass}${reason || (update && !job) ? " plugin-card--with-error" : ""}`} style={{ "--plugin-accent": accent } as CSSProperties}>
     <div className="plugin-card__top">
       <span className="plugin-card__icon">
         {icon}
@@ -52,14 +56,24 @@ export function PluginMarketCard({
       {reason}
       {onRetry && <span className="plugin-card__retry"><SettingsLinkButton onClick={onRetry}>{t.retry}</SettingsLinkButton></span>}
     </p>}
+    {update && !job && <p className="plugin-card__update">
+      <span>{t.updateAvailable(update.version)}</span>
+      <SettingsLinkButton ariaLabel={t.updateNamed(name)} disabled={switching} onClick={update.onUpdate}>{updateLabel}</SettingsLinkButton>
+    </p>}
     <div className="plugin-card__footer">
-      {installed && <SettingsSwitch
-        size="small"
-        ariaLabel={t.enableNamed(name)}
-        checked={enabled}
-        disabled={switching || job !== undefined}
-        onChange={onToggle}
-      />}
+      {installed && <span className="plugin-card__controls">
+        <SettingsSwitch
+          size="small"
+          ariaLabel={t.enableNamed(name)}
+          checked={enabled}
+          disabled={switching || job !== undefined}
+          onChange={onToggle}
+        />
+        {onOpenSettings && !job && <button type="button" className="plugin-card__settings"
+          aria-label={t.openSettingsNamed(name)} onClick={onOpenSettings}>
+          <Settings2 size={14} strokeWidth={1.75} aria-hidden="true" />
+        </button>}
+      </span>}
       {inDevelopment ? <button type="button" className="plugin-card__action plugin-card__action--preview" disabled>
         {t.inDevelopment}
       </button> : job ? <button type="button" className="plugin-card__action" disabled aria-busy="true">

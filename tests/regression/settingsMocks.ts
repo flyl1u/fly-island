@@ -28,9 +28,13 @@ export const translationShortcutCalls: string[] = [];
 export const mediaShortcutCalls: { enabled: boolean; shortcuts: MusicShortcuts }[] = [];
 // Kept like the native store, so a page opened again reads back what was saved.
 let clipboardSettings = { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true };
+/** A page that needs a plugin host sets `handle`; undefined falls through to the answers below. */
+export const pluginMock: { handle?: (command: string, args: Record<string, unknown>) => unknown } = {};
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
+  const handled = pluginMock.handle?.(command, args);
+  if (handled !== undefined) return handled;
   switch (command) {
     case "list_installed_fonts": return [
       { family: "Consolas", label: "Consolas" },

@@ -1,0 +1,6 @@
+.plugin-card__package {
+  display: grid;
+  place-items: center;
+  color: var(--plugin-accent, var(--color-accent));
+  background: var(--color-white-a08);
+}

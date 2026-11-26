@@ -4,6 +4,8 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
 import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
 import { SettingsSidebar } from "../../src/windows/settings/SettingsSidebar";
+import { PluginPageGroups } from "../../src/windows/settings/PluginSettingsGroup";
+import type { PlacedPlugin } from "../../src/features/plugins/placement";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import { PLUGIN_PROGRESS_EVENT, type InstalledPlugin, type PluginIndexEntry, type PluginInstallProgress, type PluginManifest } from "../../src/features/plugins/api";
 import { checkInstallProgress } from "./pluginInstallProgress";
@@ -75,12 +77,16 @@ mockIPC((command, payload) => {
   return null;
 }, { shouldMockEvents: true });
 const messages: string[] = [];
+const openedSettings: PlacedPlugin[] = [];
 let latestSettings: IslandSettings = { ...DEFAULT_SETTINGS, agentShowCursor: false, agentShowZcode: false, agentQuotaSources: ["claudeCode"] };
 function Page() {
   const [settings, setSettings] = useState(latestSettings);
   return <>
     <SettingsSidebar category="plugins" onCategoryChange={() => {}} />
-    <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }} />
+    <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }}
+      onOpenSettings={(plugin) => { openedSettings.push(plugin); }} />
+    {/* The developer build also checks the number settings, on the page eye care declared. */}
+    {PLUGINS_ENABLED && <PluginPageGroups page="plugin:eye-care" />}
   </>;
 }
 function check(condition: unknown, label: string) {
@@ -220,15 +226,31 @@ try {
       await act(async () => { retry!.click(); });
       await wait();
       check(registry.installed["eye-care"]?.enabled && Boolean(remove()), "点重试后装上");
-      check(document.querySelector<HTMLInputElement>(`[aria-label="${manifest.settings[0].label[locale]}"]`),
-        "安装后显示护眼设置");
+      const gear = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.openSettingsNamed(name)}"]`);
+      check(!document.querySelector(`[aria-label="${manifest.settings[0].label[locale]}"]`)
+        && document.querySelector("[data-category='plugin:eye-care']"), "安装后护眼设置进独立栏目，插件页不显示设置行");
+      await act(async () => { gear()!.click(); });
+      check(openedSettings[openedSettings.length - 1]?.category === "plugin:eye-care", "打开设置指向护眼提醒的栏目");
+      fixture.style.width = "168px";
+      const installedCard = gear()!.closest<HTMLElement>(".plugin-card")!;
+      check(installedCard.scrollWidth <= installedCard.clientWidth
+        && gear()!.getBoundingClientRect().right < remove().getBoundingClientRect().left, "最窄卡片的开关、打开设置和卸载按钮不重叠");
+      fixture.style.width = "";
+      const noRequestYet = requests.length === 0;
+      const updates = () => document.querySelector<HTMLElement>(".plugin-market__updates")!;
+      await act(async () => { updates().querySelector("button")!.click(); });
+      await act(async () => requests[requests.length - 1].resolve([{ id: "eye-care", version: "9.0.0" } as PluginIndexEntry])); await wait();
+      check(noRequestYet && requests.length === 1 && document.querySelector(".plugin-card__update")?.textContent?.includes(market.updateAvailable("9.0.0")),
+        "只有点检查更新才请求索引，有新版本时卡片提示更新");
       await act(async () => { remove().click(); });
       await wait();
-      check(!registry.installed["eye-care"] && Boolean(install()), "市场卸载与宿主安装状态同步");
+      check(!registry.installed["eye-care"] && Boolean(install()) && !gear() && !document.querySelector("[data-category='plugin:eye-care']"),
+        "市场卸载与宿主安装状态同步，设置入口一起消失");
     }
     const guide = document.querySelector<HTMLElement>(".plugin-development")!;
     check(guide?.textContent?.includes(t.guide) && guide.textContent.includes(t.guideHint) && !guide.querySelector("h2, h3, .settings-group__title"), "市场下方只保留本地化的开发规范入口，没有开发计划标题");
-    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select") && !hostCalls.includes("get_plugins_index") && !hostCalls.includes("configure_plugins"),
+    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select")
+      && hostCalls.filter((command) => command === "get_plugins_index").length === 1 && !hostCalls.includes("configure_plugins"),
       "正式市场不会自行请求索引或开放开发者配置");
     const link = button(t.readGuide);
     await act(async () => { failOpen = true; link.click(); });

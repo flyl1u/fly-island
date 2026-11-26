@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from "react";
-import { useTranslation } from "../../i18n";
+import { useCategoryTitle } from "./useCategoryTitle";
 import type { SettingsCategory } from "./categories";
 import { SettingsSidebar } from "./SettingsSidebar";
 import { useSettingsContentHeight } from "./useSettingsContentHeight";
@@ -20,7 +20,7 @@ export function LayoutEditor({
   /** Told the height the open page needs without scrolling (the island sizes itself to it). */
   onContentHeight?: (height: number) => void;
 }) {
-  const t = useTranslation();
+  const categoryTitle = useCategoryTitle();
   const layoutRef = useRef<HTMLDivElement>(null);
   useSettingsContentHeight(layoutRef, category, onContentHeight);
   return (
@@ -30,7 +30,7 @@ export function LayoutEditor({
       {/* Keyed by page so each page opens scrolled to the top. */}
       <div className="editor-panel" key={category}>
         <div className="settings-page__header">
-          <h1 className="settings-page__title">{t.settings.categories[category]}</h1>
+          <h1 className="settings-page__title">{categoryTitle(category)}</h1>
           {titleAction}
         </div>
         {children}

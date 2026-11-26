@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Bot, Headphones, HeartPulse } from "lucide-react";
 import {
-  NATIVE_PLUGINS, NativePluginIcon, setNativePluginEnabled, setNativePluginInstalled, useNativePluginStates, type NativePluginId,
+  NATIVE_PLUGINS, setNativePluginEnabled, setNativePluginInstalled, useNativePluginStates, type NativePluginId,
 } from "../../features/plugins";
 import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
@@ -9,6 +8,11 @@ import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeI
 import type { IslandSettings } from "../../features/appearance/types";
 import { setClockWeatherSettings } from "../../features/weather";
 import { isNativePluginId, MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS, type PackagedMarketId } from "../../features/plugins/native/catalog";
+import { PluginIcon } from "../../features/plugins/PluginIcon";
+import type { PlacedPlugin } from "../../features/plugins/placement.ts";
+import { usePlacedPlugins } from "../../features/plugins/usePlacedPlugins";
+import { usePluginUpdates } from "../../features/plugins/usePluginUpdates";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { installPlugin, setPluginEnabled, uninstallPlugin } from "../../features/plugins/api";
 import { pluginFailureCode, type PluginFailure } from "../../features/plugins/errors";
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
@@ -19,18 +23,22 @@ import { PluginMarketCard } from "./PluginMarketCard";
 import "./PluginMarket.css";
 
 const MARKET_CARDS = [...NATIVE_PLUGINS, ...PACKAGED_MARKET_PLUGINS];
-const PACKAGE_ICONS = { minimax: Bot, "device-battery": Headphones, "eye-care": HeartPulse };
+type PluginMarketProps = {
+  settings: IslandSettings;
+  onSettingsChange: (settings: IslandSettings) => void;
+  /** Goes to the page, and group, a plugin's settings were placed on. */
+  onOpenSettings: (plugin: PlacedPlugin) => void;
+};
 
-function PackageIcon({ id }: { id: PackagedMarketId }) {
-  const Icon = PACKAGE_ICONS[id];
-  return <span className="native-plugin-icon plugin-card__tile plugin-card__package" aria-hidden="true"><Icon size={28} strokeWidth={1.5} /></span>;
-}
-
-type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void };
-
-/** The built-in plugins as square cards: icon with name and author beside it, a short pitch and installation controls. */
-export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
-  const t = useTranslation().settings.plugins.market;
+/**
+ * The built-in plugins as square cards: icon with name and author beside it, a short pitch and installation
+ * controls. No plugin's settings are drawn here; each card links to where they were placed.
+ */
+export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: PluginMarketProps) {
+  const text = useTranslation().settings.plugins;
+  const t = text.market;
+  const placed = usePlacedPlugins();
+  const updates = usePluginUpdates();
   const { installed, enabled } = useNativePluginStates();
   const { registry, live } = usePlugins();
   const jobs = usePluginJobs();
@@ -53,6 +61,11 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     setError(null);
     void runPluginJob(id, remove ? "uninstalling" : "downloading", () => remove ? uninstallPlugin(id) : installPlugin(id, true));
   };
+  // Updating keeps the plugin as it is: switched on or off.
+  const updatePackage = (id: PackagedMarketId) => {
+    setError(null);
+    void runPluginJob(id, "downloading", () => installPlugin(id));
+  };
   const [, setOfficeEnabled] = useOfficeImEnabled();
   // Installing is asking for it: its own switch (Messages / Agent settings) goes on with it. A switch
   // left off from before, or turned off and forgotten, kept an installed plugin off the island
@@ -72,9 +85,20 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     }
     setNativePluginInstalled(id, true);
   };
+  const packagesInstalled = PACKAGED_MARKET_PLUGINS.filter(({ id }) => registry.installed[id]?.development === false);
+  const newVersion = (id: string) => {
+    const published = updates.versions?.[id];
+    const current = registry.installed[id];
+    return published && current && !current.development && published !== current.manifest.version ? published : undefined;
+  };
   return <section className="plugin-market" aria-label={t.title}>
     <header className="plugin-market__header">
       <p className="plugin-market__hint">{t.hint}</p>
+      {packagesInstalled.length > 0 && <p className="plugin-market__updates" role="status">
+        <SettingsLinkButton disabled={updates.checking} onClick={() => { void updates.check(); }}>{text.checkUpdate}</SettingsLinkButton>
+        {updates.failure ? <span>{t.failure[updates.failure]}</span>
+          : updates.versions && !packagesInstalled.some(({ id }) => newVersion(id)) && <span>{t.upToDate}</span>}
+      </p>}
     </header>
     <ul className="plugin-market__grid">
       {MARKET_CARDS.map(({ id, accent, author }) => {
@@ -86,6 +110,8 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
         const inDevelopment = !isNative && !isInstalled && !MARKET_PACKAGES.some((plugin) => plugin.id === id);
         const status = live[id]?.status;
         const job = isNative ? undefined : jobs[id];
+        const target = placed.find((plugin) => plugin.id === id);
+        const version = newVersion(id);
         const failure = job?.phase === "failed" ? pluginFailureCode(job.error) : error?.id === id ? error.code : undefined;
         const failed = job?.phase === "failed" || error?.id === id;
         const reason = failed ? (failure ? t.failure[failure] : t.operationFailed(item.name))
@@ -100,7 +126,9 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
           else install(id);
         };
         return <PluginMarketCard key={id} name={item.name} description={item.description} accent={accent} author={author}
-          icon={isNative ? <NativePluginIcon id={id} size={44} className="plugin-card__tile" /> : <PackageIcon id={id} />}
+          icon={<PluginIcon id={id} size={44} className="plugin-card__tile" />}
+          onOpenSettings={target && isInstalled ? () => onOpenSettings(target) : undefined}
+          update={!isNative && version ? { version, onUpdate: () => updatePackage(id) } : undefined}
           installed={isInstalled} enabled={isEnabled} inDevelopment={inDevelopment}
           job={isJobActive(job) ? job : undefined} switching={!isNative && switching === id}
           reason={reason}

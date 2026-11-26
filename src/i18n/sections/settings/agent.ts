@@ -15,6 +15,8 @@ export type SettingsAgentText = {
   sources: {
     title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string;
     /** Agents installed from the plugin market; their rows appear only once installed. */
+    /** The switch in an installed Agent plugin's own group. */
+    showOnIsland: string;
     native: Record<"cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode", string>;
   };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
@@ -80,6 +82,7 @@ export const zhCN: SettingsAgentText = {
     dshHint: "读取桌面端的会话记录。点击会话可打开 DSH 主窗口。",
     workbuddy: "WorkBuddy",
     workbuddyHint: "读取桌面端的会话记录。点击会话可打开 WorkBuddy。",
+    showOnIsland: "在岛上显示",
     native: {
       cursor: "只读取 Cursor 本机的 Agent 对话。点击会话可切到对应的 Cursor 窗口。",
       kimiCode: "读取 Kimi Code CLI 的会话记录，并在 Agent 页显示套餐额度环。",
@@ -177,6 +180,7 @@ export const en: SettingsAgentText = {
     dshHint: "Reads local desktop sessions. Select a session to open the DSH window.",
     workbuddy: "WorkBuddy",
     workbuddyHint: "Reads local desktop sessions. Select a session to open WorkBuddy.",
+    showOnIsland: "Show on the island",
     native: {
       cursor: "Reads Cursor's local agent chats, read-only. Select a session to bring its Cursor window forward.",
       kimiCode: "Reads Kimi Code CLI sessions and shows its plan's quota rings on the Agent page.",
