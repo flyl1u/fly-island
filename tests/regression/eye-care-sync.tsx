@@ -19,7 +19,7 @@ let jump = 0;
 Date.now = () => base + Math.floor(performance.now() - started) + jump;
 let deadline = base + 90_400;
 let panel: Panel = {
-  headline: "Eye Care", note: null, attention: true, actions: ["snooze_10", "skip"],
+  headline: "Eye Care", note: null, attention: true, actions: ["snooze_10", "skip"], islandActions: [],
   rows: [{ id: "timer", title: "Break ends", detail: null, percent: null, countdownTo: deadline, tone: "warning" }],
 };
 const manifest = {
@@ -43,6 +43,7 @@ const island = document.getElementById("island")!;
 const rest = document.getElementById("rest")!;
 const islandRoot = createRoot(island);
 const restRoot = createRoot(rest);
+const windowActions: string[] = [];
 const messages: string[] = [];
 function check(condition: unknown, label: string) {
   if (!condition) throw new Error(label);
@@ -53,7 +54,7 @@ const islandClock = () => island.querySelector(".plugin-panel__value--countdown"
 const restClock = () => rest.querySelector("[role=timer]")?.textContent ?? "";
 const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 60 + Number(part), 0);
 const showRest = () => act(async () => restRoot.render(<I18nProvider><EyeCareRestPanel
-  snapshot={{ deadline, canSnooze: true, canSkip: true, language }} busy={false} failed={false} onAction={() => {}}
+  snapshot={{ deadline, canSnooze: true, canSkip: true, language }} busy={false} failed={false} onAction={(action) => windowActions.push(action)}
 /></I18nProvider>));
 try {
   await act(async () => { await refreshPlugins(); });
@@ -68,6 +69,12 @@ try {
   await act(async () => { await refreshPlugins(); });
   await showRest();
   check(islandClock() === restClock() && seconds(restClock()) === 300, "A new deadline updates both clocks immediately");
+  check(!island.querySelector(".plugin-panel__actions"), "Resting island shows no duplicate postponement or skip buttons");
+  check(rest.querySelectorAll(".eye-care-rest__choices button").length === 5 && rest.querySelector(".eye-care-rest__skip button"),
+    "The break window retains all five postponements and optional skipping");
+  await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[3].click());
+  await act(async () => rest.querySelector<HTMLButtonElement>(".eye-care-rest__skip button")!.click());
+  check(windowActions.join(",") === "snooze_25,skip", "The remaining break-window actions still work");
 
   jump += 10_500;
   await act(async () => window.dispatchEvent(new Event("focus")));
@@ -76,6 +83,9 @@ try {
   jump += 400_000;
   await act(async () => document.dispatchEvent(new Event("visibilitychange")));
   check(islandClock() === "00:00" && restClock() === "00:00", "Expired clocks stop at zero after visibility resumes");
+  panel = { ...panel, attention: false, actions: ["rest_now"], islandActions: ["rest_now"], rows: [{ ...panel.rows[0], countdownTo: Date.now() + 1_200_000 }] };
+  await act(async () => { await refreshPlugins(); restRoot.render(null); });
+  check(island.querySelector(".plugin-panel__action")?.textContent === "rest_now", "The working island keeps Take a break now");
 
   await act(async () => { islandRoot.unmount(); restRoot.unmount(); });
   document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");

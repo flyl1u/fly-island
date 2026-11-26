@@ -1,3 +1,4 @@
+import { islandPanelActions } from "../../features/plugins/panelActions.ts";
 import type { InstalledPlugin, Localized, PluginsSnapshot } from "../../features/plugins/api";
 import { isPluginPanelIcon, type PluginPanelIcon } from "../../features/plugins/panelTypes.ts";
 import type { MessageSource } from "../../features/messages/messagePreview";
@@ -69,7 +70,7 @@ export function pluginPagesFrom(installed: Record<string, InstalledPlugin>, live
         name: plugin.manifest.name,
         icon: isPluginPanelIcon(icon) ? icon : "puzzle",
         rows: panel?.rows.length ?? 0,
-        actions: panel?.actions.length ?? 0,
+        actions: islandPanelActions(panel).length,
         attention: panel?.attention === true,
       };
     });

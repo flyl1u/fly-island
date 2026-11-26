@@ -3,6 +3,7 @@ import { Countdown } from "../../components/countdown/Countdown";
 import { useLocale, useTranslation } from "../../i18n";
 import { runPluginAction } from "./api";
 import { refreshPlugins, usePlugins } from "./usePlugins";
+import { islandPanelActions } from "./panelActions";
 import "./PluginPanel.css";
 
 /**
@@ -20,7 +21,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   if (!installed) return null;
-  const actions = (panel?.actions ?? [])
+  const actions = islandPanelActions(panel)
     .map((id) => installed.manifest.actions.find((action) => action.id === id))
     .filter((action) => action !== undefined);
   const statusText = status === "failed" ? t.settings.plugins.status.failed : status === "starting" || status === "restarting" ? t.settings.plugins.status[status] : text.waiting;

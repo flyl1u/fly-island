@@ -21,6 +21,8 @@
 
 岛内与休息窗口使用同一截止时间和倒计时计算，按剩余秒数改变的边界刷新，不再各自从挂载时刻启动一秒定时器。窗口重新可见或获得焦点时立即校准，切换截止时间立即更新，结束后停止刷新。
 
+休息时，岛内仅显示状态和倒计时，移除重复的「推迟 10 分钟」与「跳过休息」按钮。推迟和跳过统一在休息窗口操作；用眼阶段仍保留「现在休息」。面板用 `islandActions` 告诉宿主岛上显示哪些动作（用眼阶段为 `rest_now`，休息阶段为空），`actions` 仍保留 `snooze_10` / `skip`，继续用于宿主判断推迟与跳过权限。
+
 ## 生命周期与失败
 
 只有安装、启用且进入休息状态才创建 WebView；未安装、停用、卸载、插件失败/重启、休息结束和宿主退出都会关闭窗口。状态由插件提供，窗口不接受插件 HTML/CSS 或外部网址。先取得状态并完成首帧，再显示全部显示器，避免空白窗口。创建失败会清理部分窗口并在岛内提示，不声称已覆盖全部屏幕；就绪超时 8 秒，每轮最多尝试 3 次，间隔至少 5 秒。
@@ -44,6 +46,8 @@
 真实桌面验收包括多屏与混合 DPI、热插拔、折叠与贴边、托盘隐藏、退出和资源占用。原作者的单屏演示及已完成的实测记录见 [Fly Island #92](https://github.com/flyl1u/fly-island/pull/92)。
 
 ## English
+
+During a break, the island shows status and the countdown without duplicate postpone/skip buttons. Use the break window for those actions; the working phase keeps Take a break now. The panel names the page's buttons in `islandActions` (`rest_now` while working, empty during a break) while `actions` keeps `snooze_10` / `skip` for the host's permission checks.
 
 The island and break window share the countdown calculation and absolute deadline. Updates align with remaining-second boundaries rather than mount times, resync on focus/visibility, and stop at zero.
 

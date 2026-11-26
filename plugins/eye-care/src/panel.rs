@@ -6,7 +6,7 @@ use std::time::Instant;
 pub fn unsupported(settings: &Settings) -> Value {
     json!({"panel": {"headline": settings.text("请更新配套宿主", "Update the companion host"),
         "note": settings.text("此版本需要支持护眼休息窗口的宿主，请同时更新宿主与插件", "This version needs host-rendered Eye Care windows. Update both the host and plugin"),
-        "rows": [], "actions": [], "attention": false}})
+        "rows": [], "actions": [], "islandActions": [], "attention": false}})
 }
 
 pub fn snapshot(shared: &Shared) -> Value {
@@ -83,12 +83,15 @@ pub fn snapshot(shared: &Shared) -> Value {
     } else {
         actions.push("rest_now");
     }
+    // The page offers the phase action only; postpone and skip belong to the break window.
+    let island_actions = if resting { Vec::new() } else { vec!["rest_now"] };
     json!({"panel": {
         "headline": headline, "note": note,
         "rows": [{"id":"timer", "title": if resting {t("休息结束", "Break ends")} else {t("下次护眼提醒", "Next eye break")},
             "detail": detail, "percent": null, "countdownTo": deadline,
             "tone": if resting {"warning"} else {"normal"}}],
         "actions": actions,
+        "islandActions": island_actions,
         "attention": resting
     }})
 }

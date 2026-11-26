@@ -91,6 +91,7 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert!(panel["headline"].is_string());
         assert_eq!(panel["rows"].as_array().unwrap().len(), 1);
         assert_eq!(panel["actions"], json!(["rest_now"]));
+        assert_eq!(panel["islandActions"], json!(["rest_now"]));
         assert_eq!(panel["attention"], false);
         if panel["rows"][0]["countdownTo"].is_number() {
             assert!(panel["rows"][0]["detail"]
@@ -108,6 +109,7 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
             rest["params"]["panel"]["actions"],
             json!(["snooze_10", "skip"])
         );
+        assert_eq!(rest["params"]["panel"]["islandActions"], json!([]));
         plugin.send(json!({"jsonrpc":"2.0","id":3,"method":"action","params":{"id":"snooze_25"}}));
         assert_eq!(plugin.response(3)["result"]["success"], true);
         assert_eq!(plugin.next()["params"]["panel"]["attention"], false);
