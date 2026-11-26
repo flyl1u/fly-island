@@ -29,17 +29,19 @@ test("installed fonts preserve legacy modes and safely fall back for missing gly
   assert.equal(withAppearanceFrom(custom, DEFAULT_SETTINGS).localFontFamily, "");
 });
 
-test("browser-tucked hover defaults to a 2.5 second dwell and normalizes hundredths", () => {
+test("browser-tucked hover defaults to a 0.65 second dwell and preserves saved hundredths", () => {
   // Off until chosen (the contributor's version defaulted on and would tuck every island).
   assert.equal(DEFAULT_SETTINGS.browserAutoTuck, false);
-  assert.equal(DEFAULT_SETTINGS.browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(DEFAULT_SETTINGS.browserAutoTuckDelaySeconds, 0.65);
   assert.equal(DEFAULT_SETTINGS.browserAutoTuckClickToOpen, false);
-  assert.equal(normalizeSettings({}).browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(normalizeSettings({}).browserAutoTuckDelaySeconds, 0.65);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 0.65 }).browserAutoTuckDelaySeconds, 0.65);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 2.5 }).browserAutoTuckDelaySeconds, 2.5);
   assert.equal(normalizeSettings({ browserAutoTuck: false, browserAutoTuckDelaySeconds: 7.26 }).browserAutoTuck, false);
   assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 7.26 }).browserAutoTuckDelaySeconds, 7.26);
   assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: -10 }).browserAutoTuckDelaySeconds, 0);
   assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 100 }).browserAutoTuckDelaySeconds, 10);
-  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: Number.NaN }).browserAutoTuckDelaySeconds, 2.5);
+  assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: Number.NaN }).browserAutoTuckDelaySeconds, 0.65);
   assert.equal(normalizeSettings({ browserAutoTuckDelaySeconds: 1.239 }).browserAutoTuckDelaySeconds, 1.24);
   assert.equal(normalizeSettings({ browserAutoTuckClickToOpen: true }).browserAutoTuckClickToOpen, true);
   assert.equal(normalizeSettings({ browserAutoTuckClickToOpen: "true" }).browserAutoTuckClickToOpen, false);

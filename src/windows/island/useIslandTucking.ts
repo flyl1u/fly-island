@@ -27,26 +27,23 @@ type IslandTuckingOptions = {
  * collapsed island away when idle (B), sliding it out for what needs to be seen, and ending a peek.
  */
 export function useIslandTucking({ settings, navigation, hasMessagePreview, activity, gameHolds, browserOnIslandMonitor }: IslandTuckingOptions) {
-  const { mode, page, isTucked, isPeeking, peekRetractDelayMs, tuckedAutomatically, idleTuck, collapseIsland, revealIsland, revealForMessage, endPeek } = navigation;
+  const { mode, page, isTucked, isPeeking, peekRetractDelayMs, tuckSource, idleTuck, collapseIsland, revealIsland, revealForMessage, endPeek } = navigation;
   const isHovering = useIslandHovering();
   const pickerOpen = useIslandPickerOpen();
   const holdReason = useKeepVisible(settings, activity);
   const keepVisible = holdReason !== null;
-  // Same gate as every automatic tuck (canAutoTuck); browserOnIslandMonitor already includes it.
-  useBrowserAutoTuck(
-    (browserOnIslandMonitor ?? false) && canAutoTuck(settings, "browser"),
-    canAutoTuck(settings, "browser"),
-    isTucked,
-    isHovering,
-    gameHolds,
-    navigation.tuckForBrowser,
-    revealIsland,
-    keepVisible || hasMessagePreview || navigation.isPreviewing,
-  );
+  const browserEnabled = canAutoTuck(settings, "browser");
+  const browserActive = browserEnabled && browserOnIslandMonitor === true;
+  const revealForBrowser = useCallback(() => revealIsland("browser"), [revealIsland]);
+  useRevealOnMessage(hasMessagePreview, isTucked, revealForMessage);
+  useBrowserAutoTuck({
+    enabled: browserEnabled, browserOnIslandMonitor: browserActive, isTucked, tuckSource,
+    isHovering, gameHolds, hasMessagePreview, isPreviewing: navigation.isPreviewing,
+  }, navigation.tuckForBrowser, revealForBrowser);
   const tuckState = {
-    isTucked, isPeeking, tuckedAutomatically, keepVisible, hasMessagePreview, isPreviewing: navigation.isPreviewing, gameHolds,
+    isTucked, isPeeking, tuckedAutomatically: tuckSource === "idle", keepVisible, hasMessagePreview, isPreviewing: navigation.isPreviewing, gameHolds,
   };
-  const revealForActivity = revealsForKeepVisible(tuckState);
+  const revealForActivity = !browserActive && revealsForKeepVisible(tuckState);
   useEffect(() => {
     if (revealForActivity) revealIsland("keep_visible");
   }, [revealForActivity, revealIsland]);
@@ -60,8 +57,8 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
     if (!isEditingText() && !isIslandPickerOpen()) collapseIsland("idle_timer");
     else logDiagnostic("island", "collapse_blocked", { reason: "editing_or_picker" });
   }, [collapseIsland]);
-  const plan = navigation.isPreviewing || pickerOpen ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
-  const tuckBlocked = mode === "collapsed" && !isTucked && canAutoTuck(settings, "idle_timer")
+  const plan = navigation.isPreviewing || pickerOpen || browserActive ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
+  const tuckBlocked = !browserActive && mode === "collapsed" && !isTucked && canAutoTuck(settings, "idle_timer")
     ? navigation.isPreviewing ? "panel_preview" : pickerOpen ? "picker_open" : hasMessagePreview ? "message" : holdReason
     : null;
   useEffect(() => {
@@ -74,9 +71,8 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
     `${mode}:${page}`,
     plan?.action === "collapse" ? collapseWhenIdle : tuckWhenIdle,
   );
-  useRevealOnMessage(hasMessagePreview, isTucked, revealForMessage);
   // A preview holds the peek; the island slides back once it has gone and the cursor is away.
-  useTuckPeek(retractsPeek(tuckState), endPeek, peekRetractDelayMs ?? undefined);
+  useTuckPeek(tuckSource !== "browser" && retractsPeek(tuckState), endPeek, peekRetractDelayMs ?? undefined);
 }
 
 /**

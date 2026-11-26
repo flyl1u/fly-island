@@ -65,7 +65,7 @@ export function IslandApp() {
   const { openSettings, changePresentation } = useSettingsNavigation(openIslandPage, setPage);
   const { settingsContentHeight, reportSettingsHeight } = useSettingsPageHeight();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
-  const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
+  const game = useGameMode(settings, { mode, isTucked, tuckSource: navigation.tuckSource, collapseIsland, tuckForGame: navigation.tuckForGame, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
   const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;
@@ -98,12 +98,12 @@ export function IslandApp() {
   const widthMotion = useCollapsedWidthMotion(collapsedWidthTarget, mode === "collapsed");
   const collapsedIslandWidth = widthMotion.width;
   const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
-  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
+  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, agentSessions, t);
   useIslandTucking({
     settings,
     navigation,
     hasMessagePreview,
-    activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
+    activity: { agentVisualState, activeAgentSessionCount, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
     browserOnIslandMonitor: game.browserOnIslandMonitor,
   });

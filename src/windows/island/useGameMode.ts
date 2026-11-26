@@ -3,6 +3,7 @@ import { getForegroundFullscreen, listenForegroundFullscreen, setIslandGameQuiet
 import { gameModeEffects, type FullscreenState, type GameModeEffects, type GameModeSettings } from "./gameMode";
 import type { IslandMode } from "./types";
 import type { IslandModeReason } from "./diagnosticMode";
+import type { TuckSource } from "./browserTuck";
 
 const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false, browserOnIslandMonitor: false };
 
@@ -13,8 +14,9 @@ function logError(error: unknown) {
 type GameModeActions = {
   mode: IslandMode;
   isTucked: boolean;
+  tuckSource: TuckSource | null;
   collapseIsland: (reason: IslandModeReason) => void;
-  tuckIsland: () => void;
+  tuckForGame: () => void;
   revealIsland: (reason: IslandModeReason) => void;
 };
 
@@ -27,17 +29,15 @@ type GameModeActions = {
  */
 export function useGameMode(
   settings: GameModeSettings,
-  { mode, isTucked, collapseIsland, tuckIsland, revealIsland }: GameModeActions,
+  { mode, isTucked, tuckSource, collapseIsland, tuckForGame, revealIsland }: GameModeActions,
 ): GameModeEffects {
   const watching = settings.gameDoNotDisturb || settings.gameAutoTuck || (settings.browserAutoTuck && !settings.neverAutoTuck);
   const [fullscreen, setFullscreen] = useState<FullscreenState>(NOT_FULLSCREEN);
   const effects = gameModeEffects(watching ? fullscreen : NOT_FULLSCREEN, settings);
-  const tuckedByGameRef = useRef(false);
-  const stateRef = useRef({ mode, isTucked });
+  const stateRef = useRef({ mode, isTucked, tuckSource });
   useEffect(() => {
-    stateRef.current = { mode, isTucked };
-    if (!isTucked) tuckedByGameRef.current = false;
-  }, [isTucked, mode]);
+    stateRef.current = { mode, isTucked, tuckSource };
+  }, [isTucked, mode, tuckSource]);
 
   useEffect(() => {
     if (!watching) return;
@@ -69,15 +69,11 @@ export function useGameMode(
 
   useEffect(() => {
     if (effects.tuck) {
-      if (!stateRef.current.isTucked) {
-        tuckIsland();
-        tuckedByGameRef.current = true;
-      }
-    } else if (tuckedByGameRef.current) {
-      tuckedByGameRef.current = false;
-      if (stateRef.current.isTucked) revealIsland("game_mode");
+      if (!stateRef.current.isTucked) tuckForGame();
+    } else if (stateRef.current.isTucked && stateRef.current.tuckSource === "game") {
+      revealIsland("game_mode");
     }
-  }, [effects.tuck, revealIsland, tuckIsland]);
+  }, [effects.tuck, revealIsland, tuckForGame]);
 
   return effects;
 }

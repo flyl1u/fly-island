@@ -27,7 +27,7 @@ function Harness() {
   const settings = { ...DEFAULT_SETTINGS, autoTuck: idle, autoCollapseSeconds: 0, tuckDelaySeconds: 3, gameAutoTuck: true };
   const game = useGameMode(settings, nav);
   useIslandTucking({ settings, navigation: nav, hasMessagePreview: message,
-    activity: { agentVisualState: "idle", collapsedItem: null, songPlaying: false, activeTodoId: null, timer: null },
+    activity: { agentVisualState: "idle", activeAgentSessionCount: 0, collapsedItem: null, songPlaying: false, activeTodoId: null, timer: null },
     gameHolds: game.quiet || game.tuck });
   usePanelPreview({ navigation: nav, quiet: game.quiet, hasMessagePreview: message });
   return <div className="island">{nav.mode}/{String(nav.isTucked)}/{String(nav.isPreviewing)}</div>;

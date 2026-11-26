@@ -57,6 +57,11 @@
   box-shadow: 0 0 14px rgba(61, 139, 255, 0.72);
 }
 
+.island__pulse--agent-waiting {
+  background: var(--color-light-needs);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-light-needs) 72%, transparent);
+}
+
 .island__pulse--agent-attention {
   background: var(--color-warning);
   box-shadow: 0 0 14px rgba(255, 209, 102, 0.72);

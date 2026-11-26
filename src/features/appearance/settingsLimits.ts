@@ -35,7 +35,7 @@ export const DEFAULT_AUTO_COPY_OTP = true;
 export const AUTO_COLLAPSE_SECONDS = { min: 0, max: 600, default: 30 } as const;
 export const TUCK_DELAY_SECONDS = { min: 3, max: 600, default: 30 } as const;
 /** How long the pointer must stay on the tucked island while a browser is foregrounded. */
-export const BROWSER_AUTO_TUCK_DELAY_SECONDS = { min: 0, max: 10, step: 0.01, default: 2.5 } as const;
+export const BROWSER_AUTO_TUCK_DELAY_SECONDS = { min: 0, max: 10, step: 0.01, default: 0.65 } as const;
 export const TODO_ROTATION_SECONDS = { min: 1, max: 60, default: 5 } as const;
 export const TODO_SCROLL_SPEED = { min: 10, max: 40, step: 5, default: 20 } as const;
 export const MESSAGE_PREVIEW_SECONDS = { min: 3, max: 30, step: 1, default: 5 } as const;
