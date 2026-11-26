@@ -103,6 +103,7 @@ mockIPC((command, payload) => {
       return next;
     }
     case "get_qq_notification_state": return { revision: ++revision, enabled: false, status: "disabled", items: [], error: null };
+    case "cancel_plugin_install": return false;
     case "get_telegram_notification_state": return { revision: ++revision, enabled: false, status: "disabled", items: [], error: null };
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
     case "get_wechat_reminder_state":

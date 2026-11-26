@@ -113,6 +113,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+.plugin-card__cancel {
+  margin-left: auto;
+  padding: 0 var(--space-xs);
+  color: var(--color-accent);
+  background: transparent;
+  border: 0;
+  border-radius: var(--corner-xs);
+  font: inherit;
+  cursor: pointer;
+}
+
+.plugin-card__cancel:hover:enabled {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.plugin-card__cancel:disabled {
+  color: var(--color-text-subtle);
+  cursor: default;
+}
+
+.plugin-card__cancel:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
 .plugin-card__meter {
   height: 4px;
   overflow: hidden;

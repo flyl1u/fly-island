@@ -8,7 +8,7 @@ import { PluginPageGroups } from "../../src/windows/settings/PluginSettingsGroup
 import type { PlacedPlugin } from "../../src/features/plugins/placement";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import { PLUGIN_PROGRESS_EVENT, type InstalledPlugin, type PluginIndexEntry, type PluginInstallProgress, type PluginManifest } from "../../src/features/plugins/api";
-import { checkInstallProgress } from "./pluginInstallProgress";
+import { checkInstallCancel, checkInstallProgress } from "./pluginInstallProgress";
 import { checkPluginAuthors } from "./pluginAuthors";
 import { PLUGIN_MARKET_ENABLED, PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
@@ -43,6 +43,7 @@ let failOpen = false;
 let installFailure = "";
 let holdInstall = false;
 let finishInstall: (() => void) | undefined;
+let rejectInstall: ((reason: string) => void) | undefined;
 let hostJobs: PluginInstallProgress[] = [];
 const hostCalls: string[] = [];
 mockIPC((command, payload) => {
@@ -54,11 +55,15 @@ mockIPC((command, payload) => {
   if (command === "install_plugin") {
     if (installFailure) throw installFailure;
     const apply = () => { registry.installed["eye-care"] = { ...eyeCare, enabled: args.enable === true }; };
-    if (holdInstall) return new Promise((resolve) => { finishInstall = () => { apply(); hostJobs = []; resolve(null); }; });
+    if (holdInstall) return new Promise((resolve, reject) => {
+      finishInstall = () => { apply(); hostJobs = []; resolve(null); };
+      rejectInstall = (reason) => { hostJobs = []; reject(reason); };
+    });
     apply();
     return null;
   }
   if (command === "get_plugin_installs") return structuredClone(hostJobs);
+  if (command === "cancel_plugin_install") { rejectInstall?.("plugin_install_cancelled"); return true; }
   if (command === "set_plugin_enabled") {
     registry.installed["eye-care"].enabled = Boolean(args.enabled);
     return null;
@@ -213,6 +218,14 @@ try {
         },
         finish: async () => { await act(async () => finishInstall?.()); await wait(); },
       });
+      await act(async () => { remove().click(); });
+      await wait();
+      await checkInstallCancel({
+        t: market, name, check, wait, progress, install,
+        cancelCalls: () => hostCalls.filter((command) => command === "cancel_plugin_install").length,
+      });
+      await act(async () => { install().click(); });
+      await act(async () => finishInstall?.()); await wait();
       holdInstall = false;
       check(hostCalls.includes("install_plugin") && !hostCalls.includes("set_plugin_enabled") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
         "市场包由宿主在同一个任务里安装并启用，保留卡片入口");

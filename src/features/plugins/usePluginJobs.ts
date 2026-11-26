@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { getPluginInstalls, onPluginInstallProgress, type PluginInstallProgress, type PluginInstallPhase } from "./api";
-import { isJobActive, restoreJobs, withJob, withoutJob, type PluginJobs } from "./jobs.ts";
+import { isJobActive, isJobOver, restoreJobs, withJob, withoutJob, type PluginJobs } from "./jobs.ts";
 import { pluginFailureCode } from "./errors.ts";
 import { refreshPlugins } from "./usePlugins";
 import { PLUGIN_RUNTIME_ENABLED } from "../releaseFlags.ts";
@@ -27,7 +27,7 @@ async function settle(id: string) {
 
 function receive(job: PluginInstallProgress) {
   newer.add(job.id);
-  if (job.phase === "done") void settle(job.id);
+  if (isJobOver(job)) void settle(job.id);
   else publish(withJob(current, job));
 }
 
@@ -87,6 +87,12 @@ export async function runPluginJob(id: string, phase: PluginInstallPhase, action
       // Another window started it; follow that one.
       publish(withoutJob(current, id));
       await restore();
+      return;
+    }
+    if (code === "plugin_install_cancelled") {
+      // The user's own choice, not a failure: the card goes back to how it was.
+      publish(withoutJob(current, id));
+      await refreshPlugins();
       return;
     }
     const failure = phase === "uninstalling" ? "plugin_uninstall_failed" : code ?? null;

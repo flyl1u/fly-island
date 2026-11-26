@@ -18,6 +18,7 @@ export type SettingsPluginMarketText = {
   title: string; hint: string; officeHint: (name: string) => string; install: string; uninstall: string; installed: string;
   inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
+  cancel: string; cancelNamed: (name: string) => string;
   authors: string; operationFailed: (name: string) => string;
   installing: string; uninstalling: string; retry: string; connecting: string; verifying: string; unpacking: string;
   downloaded: (done: string, total: string) => string; progressNamed: (name: string) => string;
@@ -41,6 +42,7 @@ export const zhCN: SettingsPluginsText = {
     hint: "装上后，插件会出现在对应的小岛功能里。卡片上的开关可随时停用插件并保留设置。",
     install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
+    cancel: "取消", cancelNamed: (name) => `取消安装 ${name}`,
     authors: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
     installing: "安装中…", uninstalling: "卸载中…", retry: "重试", connecting: "正在准备下载…", verifying: "正在校验安装包…", unpacking: "正在安装…",
     downloaded: (done, total) => `已下载 ${done} / ${total} MB`, progressNamed: (name) => `${name} 的安装进度`,
@@ -62,6 +64,7 @@ export const zhCN: SettingsPluginsText = {
       plugin_disk_full: "磁盘空间不足，请清理后重试。",
       plugin_install_in_progress: "这个插件正在安装或卸载，请稍候。",
       plugin_uninstall_failed: "未能卸载插件，请重试。",
+      plugin_install_cancelled: "已取消安装。",
     },
     items: {
       minimax: { name: "MiniMax Code", description: "在 AI 会话和消息页查看额度、任务进度和待审批提醒。" },
@@ -97,6 +100,7 @@ export const en: SettingsPluginsText = {
     hint: "Installed plugins appear where you use them on the island. Use the switch on a card to turn its plugin off and keep its settings.",
     install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
+    cancel: "Cancel", cancelNamed: (name) => `Cancel installing ${name}`,
     authors: "Authors", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
     installing: "Installing…", uninstalling: "Removing…", retry: "Retry", connecting: "Preparing…", verifying: "Verifying…", unpacking: "Installing…",
     downloaded: (done, total) => `${done} / ${total} MB`, progressNamed: (name) => `Install progress of ${name}`,
@@ -118,6 +122,7 @@ export const en: SettingsPluginsText = {
       plugin_disk_full: "Not enough disk space. Free some and try again.",
       plugin_install_in_progress: "This plugin is already being installed or removed.",
       plugin_uninstall_failed: "Could not remove the plugin. Try again.",
+      plugin_install_cancelled: "Installation cancelled.",
     },
     items: {
       minimax: { name: "MiniMax Code", description: "See quota, session progress and pending approvals on the island." },

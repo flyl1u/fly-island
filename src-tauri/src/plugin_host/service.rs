@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, path::{Path, PathBuf}, sync::{Arc, Mutex, Poiso
 use serde::Serialize;
 use serde_json::{json, Value};
 use tauri::Emitter;
-use super::{download, jobs::{Job, Jobs, Phase}, manifest::Manifest, packages::{self, IndexEntry}, process::{self, Worker}, protocol::Contributions, storage::{self, Installed, Registry}};
+use super::{download, jobs::{self, Job, Jobs, Phase}, manifest::Manifest, packages::{self, IndexEntry}, process::{self, Worker}, protocol::Contributions, storage::{self, Installed, Registry}};
 
 pub const EVENT: &str = "plugins-changed";
 const DEFAULT_INDEX: &str = "https://github.com/flyl1u/fly-island/releases/download/plugins-channel/plugins-index.json";
@@ -213,10 +213,21 @@ impl Host {
         if !self.allows(id) { return Err("Plugin is unavailable in this build".into()); }
         let job = self.jobs.begin(id, Phase::Downloading)?;
         let archive = self.root.join("plugins").join(format!(".download-{id}.zip"));
-        let result = match self.fetch_package(id, &archive, &job).await {
-            Ok(entry) => {
-                let _guard = self.operation.lock().await;
-                job.phase(Phase::Installing);
+        let token = job.token();
+        // Cancelling drops this future wherever it is waiting: the index, a stalled read, the
+        // pause before a retry, or another plugin's operation.
+        let ready = tokio::select! {
+            biased;
+            () = token.cancelled() => Err(jobs::CANCELLED.to_owned()),
+            ready = async {
+                let entry = self.fetch_package(id, &archive, &job).await?;
+                let guard = self.operation.lock().await;
+                job.begin_install()?;
+                Ok((entry, guard))
+            } => ready,
+        };
+        let result = match ready {
+            Ok((entry, _guard)) => {
                 let applied = self.apply_package(id, &archive, &entry);
                 if enable { applied.and_then(|()| self.enable(id, true)) } else { applied }
             }
@@ -235,7 +246,7 @@ impl Host {
             return Err(self.failure(Some(id), "plugin_index_incompatible", &format!("Requires Fly Island {}", entry.min_app_version)));
         }
         job.size(entry.size);
-        download::package(&entry, local, archive, self.limits, &|received| job.downloaded(received), &|| job.phase(Phase::Verifying)).await
+        download::package(&entry, local, archive, self.limits, &job.token(), &|received| job.downloaded(received), &|| job.phase(Phase::Verifying)).await
             .map_err(|error| {
                 let code = if error.code == download::REFUSED { download::FAILED } else { error.code };
                 self.failure(Some(id), code, &error.detail)

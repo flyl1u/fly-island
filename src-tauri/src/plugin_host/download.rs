@@ -5,7 +5,7 @@
 use std::{fs::File, io::{Read, Write}, path::Path, time::{Duration, Instant}};
 use reqwest::{header, StatusCode, Url};
 use sha2::{Digest, Sha256};
-use super::packages::IndexEntry;
+use super::{jobs::{CancelToken, CANCELLED}, packages::IndexEntry};
 
 pub const TIMEOUT: &str = "plugin_download_timeout";
 pub const INTERRUPTED: &str = "plugin_download_interrupted";
@@ -212,6 +212,7 @@ struct Package<'a> {
     received: u64,
     reported: Option<Instant>,
     progress: &'a (dyn Fn(u64) + Send + Sync),
+    cancel: &'a CancelToken,
 }
 
 impl Sink for Package<'_> {
@@ -228,6 +229,8 @@ impl Sink for Package<'_> {
     }
 
     fn write(&mut self, chunk: &[u8]) -> Result<(), Failure> {
+        // Not retryable, so the transfer ends here.
+        if self.cancel.is_cancelled() { return Err(Failure::new(CANCELLED, "Cancelled by the user")); }
         self.file.write_all(chunk).map_err(|e| Failure::io(&e))?;
         self.hash.update(chunk);
         self.received += chunk.len() as u64;
@@ -241,23 +244,23 @@ impl Sink for Package<'_> {
 
 /// Downloads one package into `target` and checks its size and SHA-256 against the index.
 /// `progress` gets the bytes received, at most every 200 ms; `verifying` runs once they are
-/// all there. `target` is removed on failure.
+/// all there. `target` is removed on failure, cancellation included.
 pub async fn package(
-    entry: &IndexEntry, local: bool, target: &Path, limits: Limits,
+    entry: &IndexEntry, local: bool, target: &Path, limits: Limits, cancel: &CancelToken,
     progress: &(dyn Fn(u64) + Send + Sync), verifying: &(dyn Fn() + Send + Sync),
 ) -> Result<(), Failure> {
-    let result = write_package(entry, local, target, limits, progress, verifying).await;
+    let result = write_package(entry, local, target, limits, cancel, progress, verifying).await;
     if result.is_err() { let _ = std::fs::remove_file(target); }
     result
 }
 
 async fn write_package(
-    entry: &IndexEntry, local: bool, target: &Path, limits: Limits,
+    entry: &IndexEntry, local: bool, target: &Path, limits: Limits, cancel: &CancelToken,
     progress: &(dyn Fn(u64) + Send + Sync), verifying: &(dyn Fn() + Send + Sync),
 ) -> Result<(), Failure> {
     let source = source(&entry.url, local)?;
     let file = File::create(target).map_err(|e| Failure::io(&e))?;
-    let mut sink = Package { file, hash: Sha256::new(), received: 0, reported: None, progress };
+    let mut sink = Package { file, hash: Sha256::new(), received: 0, reported: None, progress, cancel };
     let limit = entry.size.min(super::packages::PACKAGE_LIMIT);
     match source {
         Source::Local(path) => {

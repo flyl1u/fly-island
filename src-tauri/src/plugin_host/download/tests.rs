@@ -103,7 +103,7 @@ fn temporary(name: &str) -> PathBuf {
 fn download(name: &str, entry: &IndexEntry) -> (Result<(), Failure>, PathBuf, Vec<u64>) {
     let target = temporary(name).join("package.zip");
     let seen = Mutex::new(Vec::new());
-    let result = tauri::async_runtime::block_on(package(entry, true, &target, limits(),
+    let result = tauri::async_runtime::block_on(package(entry, true, &target, limits(), &Default::default(),
         &|received| seen.lock().unwrap().push(received), &|| {}));
     (result, target, seen.into_inner().unwrap())
 }
@@ -216,4 +216,49 @@ fn a_second_install_of_the_same_plugin_returns_at_once() {
     assert!(!host.root.join("plugins/.download-example-hello.zip").exists());
     drop(host);
     std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn cancelling_a_stalled_download_leaves_nothing_behind_and_frees_the_plugin() {
+    let root = temporary("cancel");
+    // Part of the body, then silence: the install is waiting on a read when it is cancelled.
+    let (url, requests) = serve(vec![Reply::Stall(10)]);
+    let index = root.join("index.json");
+    std::fs::write(&index, serde_json::to_vec(&[entry(url)]).unwrap()).unwrap();
+    let mut host = Host::new(root.join("data"), None, true).unwrap();
+    // Far longer than the test: only cancellation can end the wait in time.
+    host.limits.idle = Duration::from_secs(60);
+    let host = Arc::new(host);
+    let mut registry = host.snapshot().registry;
+    registry.developer_mode = true;
+    registry.index_url = index.to_string_lossy().into_owned();
+    host.persist(registry).unwrap();
+    assert!(!host.jobs.cancel("example-hello"), "nothing to cancel yet");
+    let running = host.clone();
+    let first = thread::spawn(move || tauri::async_runtime::block_on(running.install("example-hello", false)));
+    let until = std::time::Instant::now() + Duration::from_secs(3);
+    while requests.lock().unwrap().is_empty() && std::time::Instant::now() < until { thread::sleep(Duration::from_millis(10)); }
+    thread::sleep(Duration::from_millis(100));
+    let asked = std::time::Instant::now();
+    assert!(host.jobs.cancel("example-hello"));
+    assert_eq!(first.join().unwrap().unwrap_err(), "plugin_install_cancelled");
+    assert!(asked.elapsed() < Duration::from_secs(1), "a stalled read stops at once");
+    assert!(host.jobs.list().is_empty(), "a cancelled job is not shown as failed");
+    assert!(!host.root.join("plugins/.download-example-hello.zip").exists());
+    assert!(!host.root.join("plugins/.staging-example-hello").exists());
+    assert!(!host.snapshot().registry.installed.contains_key("example-hello"));
+    drop(host.jobs.begin("example-hello", crate::plugin_host::jobs::Phase::Downloading).unwrap());
+    drop(host);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_chunk_after_cancellation_is_not_written() {
+    let (url, _) = serve(vec![Reply::Whole]);
+    let target = temporary("cancel-chunk").join("package.zip");
+    let token = crate::plugin_host::jobs::CancelToken::default();
+    token.cancel();
+    let failure = tauri::async_runtime::block_on(package(&entry(url), true, &target, limits(), &token, &|_| {}, &|| {})).unwrap_err();
+    assert_eq!(failure.code, "plugin_install_cancelled");
+    assert!(!target.exists());
 }

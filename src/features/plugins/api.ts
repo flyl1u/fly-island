@@ -17,7 +17,7 @@ export type InstalledPlugin = { manifest: PluginManifest; enabled: boolean; dire
 export type PluginsSnapshot = { registry: { developerMode: boolean; indexUrl: string; installed: Record<string, InstalledPlugin> }; live: Record<string, { status: string; quota: PluginQuota[]; sessions: PluginSession[]; notifications: PluginNotification[]; panel?: PluginPanel | null }> };
 export type PluginIndexEntry = { id: string; version: string; name: Localized; description: Localized; apiVersion: number; url: string; sha256: string; size: number; minAppVersion: string };
 /** Mirrors plugin_host/jobs.rs (Phase, Progress). */
-export type PluginInstallPhase = "downloading" | "verifying" | "installing" | "uninstalling" | "done" | "failed";
+export type PluginInstallPhase = "downloading" | "verifying" | "installing" | "uninstalling" | "done" | "failed" | "cancelled";
 export type PluginInstallProgress = { id: string; phase: PluginInstallPhase; downloaded: number; total: number; error: string | null };
 export const PLUGINS_EVENT = "plugins-changed";
 export const PLUGIN_PROGRESS_EVENT = "plugin-install-progress";
@@ -25,6 +25,8 @@ export const getPlugins = () => invoke<PluginsSnapshot>("get_plugins");
 export const getPluginsIndex = () => invoke<PluginIndexEntry[]>("get_plugins_index");
 /** `enable` switches the plugin on as part of the same job, even if this window closes meanwhile. */
 export const installPlugin = (id: string, enable = false) => invoke<void>("install_plugin", { id, enable });
+/** Stops a download or its check; false once the package is already being installed. */
+export const cancelPluginInstall = (id: string) => invoke<boolean>("cancel_plugin_install", { id });
 export const getPluginInstalls = () => invoke<PluginInstallProgress[]>("get_plugin_installs");
 export const onPluginInstallProgress = (handle: (progress: PluginInstallProgress) => void) =>
   listen<PluginInstallProgress>(PLUGIN_PROGRESS_EVENT, (event) => handle(event.payload));
