@@ -65,7 +65,7 @@ export function IslandApp() {
   const { openSettings, changePresentation } = useSettingsNavigation(openIslandPage, setPage);
   const { settingsContentHeight, reportSettingsHeight } = useSettingsPageHeight();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
-  const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
+  const game = useGameMode(settings, { mode, isTucked, tuckSource: navigation.tuckSource, collapseIsland, tuckForGame: navigation.tuckForGame, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
   const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;

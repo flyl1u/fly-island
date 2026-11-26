@@ -6,6 +6,7 @@ import { showClipboardHistoryIsland } from "../../features/clipboard/api";
 import { loadLastPage, saveLastPage } from "./lastPage";
 import type { IslandModeReason } from "./diagnosticMode";
 import { useModeDiagnostics } from "./useModeDiagnostics";
+import type { TuckSource } from "./browserTuck";
 
 /** Collapsed / expanded / tucked mode and the open page of the island. */
 export function useIslandNavigation() {
@@ -17,8 +18,7 @@ export function useIslandNavigation() {
   const [isPeekTuck, setIsPeekTuck] = useState(false);
   // How long a peeking island waits after the cursor leaves; null keeps the minimize default.
   const [peekRetractDelayMs, setPeekRetractDelayMs] = useState<number | null>(null);
-  // The current tuck came from the idle timer: "stay visible while…" may undo it (tuckRules.ts).
-  const [tuckedAutomatically, setTuckedAutomatically] = useState(false);
+  const [tuckSource, setTuckSource] = useState<TuckSource | null>(null);
   const [page, setPage] = useState<IslandPage>(loadLastPage);
   const markMode = useModeDiagnostics(mode, isTucked, isPeekTuck && !isTucked);
   useEffect(() => saveLastPage(page), [page]);
@@ -37,7 +37,7 @@ export function useIslandNavigation() {
     setMode(nextMode);
     setIsTucked(false);
     setIsPeekTuck(false);
-    setTuckedAutomatically(false);
+    setTuckSource(null);
   }, [markMode]);
 
   // Keeps a peek: a panel opened from a peeking island closes, and the island slides
@@ -49,14 +49,22 @@ export function useIslandNavigation() {
   }, [markMode]);
 
   const tuckIsland = useCallback(() => {
+    setIslandMode("collapsed", "click");
+    setIsTucked(true);
+    setTuckSource("manual");
+  }, [setIslandMode]);
+
+  const tuckForGame = useCallback(() => {
     setIslandMode("collapsed", "game_mode");
     setIsTucked(true);
+    setTuckSource("game");
   }, [setIslandMode]);
 
   /** Tucks because a browser came to the front (browser auto-tuck): not an idle tuck, so keep-visible does not undo it. */
   const tuckForBrowser = useCallback(() => {
     setIslandMode("collapsed", "browser");
     setIsTucked(true);
+    setTuckSource("browser");
   }, [setIslandMode]);
 
   const minimizeToEdge = useCallback(() => {
@@ -64,6 +72,7 @@ export function useIslandNavigation() {
     setIsTucked(true);
     setIsPeekTuck(true);
     setPeekRetractDelayMs(null);
+    setTuckSource("manual");
   }, [setIslandMode]);
 
   /**
@@ -75,14 +84,14 @@ export function useIslandNavigation() {
     setIsTucked(true);
     setIsPeekTuck(retractDelayMs !== null);
     setPeekRetractDelayMs(retractDelayMs);
-    setTuckedAutomatically(true);
+    setTuckSource("idle");
   }, [setIslandMode]);
 
   const revealIsland = useCallback((reason: IslandModeReason = "click") => {
     markMode(reason);
     setIsTucked(false);
     setIsPeekTuck(false);
-    setTuckedAutomatically(false);
+    setTuckSource(null);
   }, [markMode]);
 
   /**
@@ -111,7 +120,8 @@ export function useIslandNavigation() {
   const resumePeek = useCallback(() => {
     markMode("hover");
     setIsPeekTuck(true);
-  }, [markMode]);
+    setTuckSource(tuckSource);
+  }, [markMode, tuckSource]);
 
   const openIslandPage = useCallback((nextPage: IslandPage, reason: IslandModeReason = "click") => {
     if (nextPage === "clipboard" && openDetachedClipboardHistory()) return;
@@ -120,7 +130,7 @@ export function useIslandNavigation() {
     setMode("expanded");
     setIsTucked(false);
     setIsPeekTuck(false);
-    setTuckedAutomatically(false);
+    setTuckSource(null);
   }, [markMode]);
 
   const openClipboardHistory = useCallback(() => {
@@ -155,11 +165,12 @@ export function useIslandNavigation() {
     /** Tucked such that hovering only peeks it out (minimized, or idle-tucked with retract). */
     retractsAfterPeek: isPeekTuck,
     peekRetractDelayMs,
-    tuckedAutomatically,
+    tuckSource,
     page,
     setPage,
     collapseIsland,
     tuckIsland,
+    tuckForGame,
     tuckForBrowser,
     revealIsland,
     revealForMessage,

@@ -56,8 +56,9 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     const slider = tuck[7].querySelector<HTMLInputElement>("input[type='range']")!;
     const number = tuck[7].querySelector<HTMLInputElement>("[role='spinbutton']")!;
     check(slider.min === "0" && slider.max === "10" && slider.step === "0.01"
-      && number.value === "2.50" && tuck[7].querySelectorAll(".number-stepper__button").length === 2,
-      "General: browser dwell has a hundredth-second slider and number stepper");
+      && slider.value === "0.65" && number.value === "0.65"
+      && tuck[7].querySelectorAll(".number-stepper__button").length === 2,
+      "General: browser dwell slider and number stepper both show 0.65 s at hundredth-second precision");
     const setInput = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     await act(async () => number.focus());
     await act(async () => { setInput.call(number, "3.47"); number.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -68,6 +69,9 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     check(savedDelay === 3.47, `General: typed dwell is saved (${savedDelay})`);
     const reset = tuck[7].querySelector<HTMLButtonElement>(".settings-slider__reset")!;
     await act(async () => reset.click());
+    check(slider.value === "0.65" && number.value === "0.65"
+      && JSON.parse(localStorage.getItem("fly-island-settings")!).browserAutoTuckDelaySeconds === 0.65,
+      "General: browser dwell reset saves exactly 0.65 s");
     const clickToOpen = tuck[8].querySelector<HTMLInputElement>("[role='switch']")!;
     await act(async () => clickToOpen.click());
     check(slider.disabled && number.disabled

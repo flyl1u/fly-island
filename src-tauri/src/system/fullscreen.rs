@@ -74,6 +74,7 @@ fn is_fullscreen_foreground(
 struct Observation {
     foreground: HWND,
     state: ForegroundFullscreen,
+    browser: bool,
     process_id: u32,
     signal: Option<&'static str>,
     covered: Option<bool>,
@@ -92,6 +93,8 @@ impl Observation {
         event(Category::Fullscreen, "foreground", &[
             ("reason", self.reason),
             ("active", &self.state.active.to_string()), ("on_island_monitor", &self.state.on_island_monitor.to_string()),
+            ("browser", &self.browser.to_string()),
+            ("browser_on_island_monitor", &self.state.browser_on_island_monitor.to_string()),
             ("class", &class), ("process", process.as_deref().unwrap_or("unknown")),
             ("covers_monitor", self.covered.map_or("not_read", |covered| if covered { "true" } else { "false" })),
             ("notification_signal", signal), ("retained", &self.signal.is_none().to_string()),
@@ -105,6 +108,8 @@ struct Tracker {
     /// The raw handle (the type is not `Send`); only compared and queried, never acted on.
     held: Option<isize>,
     own_since: Option<Instant>,
+    browser_window: Option<(isize, u32)>,
+    browsers: browser_apps::RegisteredBrowsers,
 }
 
 fn held_window(held: isize) -> HWND {
@@ -129,6 +134,7 @@ fn shares_island_monitor(app: &AppHandle, window: HWND) -> bool {
 }
 
 fn read(app: &AppHandle, tracker: &mut Tracker) -> Observation {
+    tracker.browsers.refresh_if_due();
     let foreground = win32::window::foreground_window();
     let process_id = if foreground.is_invalid() { 0 } else { win32::process::window_process_id(foreground) };
     // One of our own windows in front (the island took the focus, a click on it, the settings
@@ -142,20 +148,28 @@ fn read(app: &AppHandle, tracker: &mut Tracker) -> Observation {
         let own_for = tracker.own_since.get_or_insert_with(Instant::now).elapsed();
         let previous = get_foreground_fullscreen();
         let facts = tracker.held.map(held_facts);
-        let (state, reason) = match decide_own_foreground(previous.active, facts, own_for) {
+        let (mut state, reason) = match decide_own_foreground(previous.active, facts, own_for) {
             HoldDecision::Keep => {
                 // The held window may sit on another monitor than the island by now.
                 let on_island = tracker.held.map_or(previous.on_island_monitor, |held| {
                     previous.active && shares_island_monitor(app, held_window(held))
                 });
-                (ForegroundFullscreen { active: previous.active, on_island_monitor: on_island, browser_on_island_monitor: previous.browser_on_island_monitor }, "own_process_held")
+                (ForegroundFullscreen { active: previous.active, on_island_monitor: on_island, browser_on_island_monitor: false }, "own_process_held")
             }
             HoldDecision::Clear(reason) => {
                 tracker.held = None;
                 (ForegroundFullscreen::default(), reason)
             }
         };
-        return Observation { foreground, state, process_id, signal: None, covered: facts.map(|facts| facts.covers_monitor), reason };
+        tracker.browser_window = tracker.browser_window.filter(|&(handle, pid)| {
+            let window = held_window(handle);
+            win32::window::is_visible(window) && !win32::window::is_minimized(window)
+                && win32::process::window_process_id(window) == pid
+        });
+        let browser = tracker.browser_window.is_some();
+        state.browser_on_island_monitor = tracker.browser_window
+            .is_some_and(|(handle, _)| shares_island_monitor(app, held_window(handle)));
+        return Observation { foreground, state, browser, process_id, signal: None, covered: facts.map(|facts| facts.covers_monitor), reason };
     }
     tracker.own_since = None;
     let (signal, signal_name) = win32::notification_state::fullscreen_signal();
@@ -167,9 +181,10 @@ fn read(app: &AppHandle, tracker: &mut Tracker) -> Observation {
     // Only a window the shell's guess is confirmed by is remembered for later.
     tracker.held = (active && matches!(signal, win32::notification_state::FullscreenSignal::FullscreenApp))
         .then_some(foreground.0 as isize);
-    let browser = browser_apps::is_browser_image_path(win32::process::image_path(process_id).as_deref());
+    let browser = tracker.browsers.contains(win32::process::image_path(process_id).as_deref());
+    tracker.browser_window = browser.then_some((foreground.0 as isize, process_id));
     let browser_on_island_monitor = browser && shares_island_monitor(app, foreground);
-    Observation { foreground, state: ForegroundFullscreen { active, on_island_monitor, browser_on_island_monitor }, process_id,
+    Observation { foreground, state: ForegroundFullscreen { active, on_island_monitor, browser_on_island_monitor }, browser, process_id,
         signal: Some(signal_name), covered: Some(covers_monitor(rect, monitor)), reason: "foreground_changed" }
 }
 
@@ -188,7 +203,9 @@ pub(crate) fn start(app: &AppHandle) {
             if changed {
                 let _ = app.emit(FOREGROUND_FULLSCREEN_CHANGED_EVENT, next);
             }
-            let evidence = (observation.signal, observation.covered, observation.reason, next.active.then_some(observation.process_id));
+            let evidence = (observation.signal, observation.covered, observation.reason,
+                observation.browser, next.browser_on_island_monitor,
+                (next.active || observation.browser).then_some(observation.process_id));
             if changed || previous != Some(evidence) { observation.record(); }
             previous = Some(evidence);
             thread::sleep(POLL_INTERVAL);

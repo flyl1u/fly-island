@@ -13,6 +13,46 @@ use windows::{
         },
     },
 };
+use windows::{
+    core::PWSTR,
+    Win32::System::Registry::{
+        RegCloseKey, RegEnumKeyExW, RegOpenKeyExW, KEY_READ, RRF_NOEXPAND,
+        RRF_RT_REG_EXPAND_SZ,
+    },
+};
+
+struct OpenKey(HKEY);
+
+impl Drop for OpenKey {
+    fn drop(&mut self) {
+        // SAFETY: the successfully opened key is owned by this guard and closed exactly once.
+        let _ = unsafe { RegCloseKey(self.0) };
+    }
+}
+
+pub(crate) fn subkeys(root: HKEY, subkey: &str) -> Vec<String> {
+    let mut key = HKEY::default();
+    let subkey = HSTRING::from(subkey);
+    // SAFETY: the subkey is NUL-terminated and the output key pointer is writable.
+    if unsafe { RegOpenKeyExW(root, &subkey, None, KEY_READ, &mut key) }.is_err() {
+        return Vec::new();
+    }
+    let key = OpenKey(key);
+    let mut names = Vec::new();
+    for index in 0.. {
+        let mut name = [0u16; 256];
+        let mut length = name.len() as u32;
+        // SAFETY: name has length writable UTF-16 units; the key is open and other outputs are unused.
+        let result = unsafe {
+            RegEnumKeyExW(key.0, index, Some(PWSTR(name.as_mut_ptr())), &mut length, None, None, None, None)
+        };
+        if result.is_err() {
+            break;
+        }
+        names.push(String::from_utf16_lossy(&name[..length as usize]));
+    }
+    names
+}
 
 /// UTF-16 units read per value, including the terminating NUL. Longer values
 /// fail with `ERROR_MORE_DATA` and are reported as missing.
@@ -24,6 +64,19 @@ const MAX_BINARY_BYTES: usize = 64;
 /// Reads a `REG_SZ` value under `root\subkey`. Returns `None` when the key or
 /// value does not exist, is not a string, or does not fit in the buffer.
 pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<String> {
+    read_string_value(root, subkey, value, RRF_RT_REG_SZ)
+}
+
+pub(crate) fn read_command(root: HKEY, subkey: &str) -> Option<String> {
+    read_string_value(root, subkey, "", RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND)
+}
+
+fn read_string_value(
+    root: HKEY,
+    subkey: &str,
+    value: &str,
+    flags: windows::Win32::System::Registry::REG_ROUTINE_FLAGS,
+) -> Option<String> {
     let subkey = HSTRING::from(subkey);
     let value = HSTRING::from(value);
     let mut data = [0u16; MAX_STRING_UNITS];
@@ -36,7 +89,7 @@ pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<Strin
             root,
             &subkey,
             &value,
-            RRF_RT_REG_SZ,
+            flags,
             None,
             Some(data.as_mut_ptr().cast()),
             Some(&mut bytes),

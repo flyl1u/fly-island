@@ -149,6 +149,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 诊断包（2026-11-25）：`export_diagnostic_bundle({ title, settings })` 先打开 Windows 原生 ZIP 保存对话框；成功返回所选路径，取消返回 `null`。开启/关闭文件日志均可导出，不修改日志开关或应用设置。
 
 - 结构化诊断（2026-11-25）：新增 `record_diagnostic({ diagnostic: { category, name, fields } })`；仅记录允许的事件名及字段，关闭文件日志时只保留在内存。既有日志命令、事件、设置及磁盘路径不变。内置命令不需要新增插件 ACL。
+- 浏览器贴边诊断：`island / browser_auto_tuck` 只在决策变化时记录稳定的 `reason`，包括贴边、接管、阻止、等待悬停、恢复与禁用；`fullscreen / foreground` 增加布尔字段 `browser` 和 `browser_on_island_monitor`。不记录注册路径或用户内容，无新增 IPC 或设置字段。
 
 - 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `fly-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。
 - 新增原生命令 `read_todo_markdown({ directory, date })`，返回 `{ filePath, version, modifiedAt, content }`：缺失文件后三项为 null；时间为 Unix 毫秒，version 为内容 SHA-256 与文件修改时间组成的不透明字符串。只允许绝对目录与真实 `YYYY-MM-DD`，只读取 UTF-8 且不超过 4 MiB 的每日文件。

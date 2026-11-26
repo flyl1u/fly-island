@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { nextTodoRotationIndex } from "../../features/todos/todoRotation";
+import { logDiagnostic } from "../../features/diagnostics/api";
+import { browserTuckDecision, type BrowserTuckState } from "./browserTuck";
 
 export function useTodoRotation(
   todoIds: string[],
@@ -84,45 +86,23 @@ export function useRevealOnMessage(hasPreview: boolean, isTucked: boolean, onRev
 
 /** Tucks as soon as a browser reaches the island's monitor, then restores when it leaves. */
 export function useBrowserAutoTuck(
-  browserOnIslandMonitor: boolean,
-  enabled: boolean,
-  isTucked: boolean,
-  isHovering: boolean,
-  gameHolds: boolean,
+  state: BrowserTuckState,
   tuck: () => void,
   reveal: () => void,
-  /** A message preview, a settings preview or a "stay visible" activity holds the island out. */
-  blocked = false,
 ) {
-  const browserTucked = useRef(false);
-  const current = useRef({ isTucked, isHovering, gameHolds });
+  const decision = browserTuckDecision(state);
+  const lastDecision = useRef<typeof decision>(null);
+  const shouldTuck = decision === "took_over_idle_tuck" || (decision === "tucked" && !state.isTucked);
 
   useEffect(() => {
-    current.current = { isTucked, isHovering, gameHolds };
-    if (!enabled) {
-      if (browserTucked.current && !gameHolds) {
-        if (current.current.isTucked) reveal();
-        browserTucked.current = false;
-      }
-      return;
+    if (decision !== lastDecision.current) {
+      if (decision) logDiagnostic("island", "browser_auto_tuck", { reason: decision });
+      lastDecision.current = decision;
     }
-    if (browserOnIslandMonitor) {
-      if (gameHolds || blocked) return;
-      if (!browserTucked.current) {
-        if (current.current.isTucked) return;
-        browserTucked.current = true;
-        tuck();
-        return;
-      }
-      if (!isTucked && !isHovering) {
-        tuck();
-      }
-      return;
-    }
-    if (!browserTucked.current || gameHolds) return;
-    if (browserTucked.current && current.current.isTucked && !current.current.gameHolds) {
-      reveal();
-    }
-    browserTucked.current = false;
-  }, [blocked, browserOnIslandMonitor, enabled, gameHolds, isHovering, isTucked, reveal, tuck]);
+  }, [decision]);
+
+  useEffect(() => {
+    if (shouldTuck) tuck();
+    else if (decision === "revealed_browser_left" || decision === "revealed_disabled") reveal();
+  }, [decision, reveal, shouldTuck, tuck]);
 }

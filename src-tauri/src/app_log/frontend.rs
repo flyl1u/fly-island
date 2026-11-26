@@ -35,7 +35,7 @@ fn record_island(name: &str, fields: &Map<String, Value>) {
     let reason = value("reason");
     const MODES: &[&str] = &["collapsed", "expanded", "tucked", "peek"];
     match name {
-        "mode" if matches!(reason, "launch" | "click" | "hover" | "hover_leave" | "idle_timer" | "game_mode"
+        "mode" if matches!(reason, "launch" | "click" | "hover" | "hover_leave" | "idle_timer" | "game_mode" | "browser"
             | "minimize_button" | "message" | "keep_visible" | "peek_timeout" | "preview" | "shortcut" | "focus_lost") => {
             let from = value("from");
             let to = value("to");
@@ -43,7 +43,12 @@ fn record_island(name: &str, fields: &Map<String, Value>) {
                 event(Category::Island, "mode", &[("reason", reason), ("from", from), ("to", to)]);
             }
         }
-        "tuck_blocked" if matches!(reason, "keep_visible_agent" | "keep_visible_lyrics" | "keep_visible_todo" | "panel_preview" | "picker_open" | "message") => {
+        "browser_auto_tuck" if matches!(reason, "tucked" | "took_over_idle_tuck" | "skipped_already_tucked"
+            | "blocked_message_preview" | "blocked_settings_preview" | "blocked_game"
+            | "waiting_hover" | "revealed_browser_left" | "revealed_disabled" | "disabled") => {
+            event(Category::Island, "browser_auto_tuck", &[("reason", reason)]);
+        }
+        "tuck_blocked" if matches!(reason, "keep_visible_agent" | "keep_visible_music" | "keep_visible_lyrics" | "keep_visible_todo" | "panel_preview" | "picker_open" | "message") => {
             event(Category::Island, "tuck_blocked", &[("reason", reason)]);
         }
         "collapse_blocked" if reason == "editing_or_picker" => event(Category::Island, "collapse_blocked", &[("reason", reason)]),
