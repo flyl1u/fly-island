@@ -1,10 +1,8 @@
-import { useState, type CSSProperties } from "react";
-import { Bot, Check, Headphones, HeartPulse } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { useState } from "react";
+import { Bot, Headphones, HeartPulse } from "lucide-react";
 import {
   NATIVE_PLUGINS, NativePluginIcon, setNativePluginEnabled, setNativePluginInstalled, useNativePluginStates, type NativePluginId,
 } from "../../features/plugins";
-import { SettingsSwitch } from "../../components/settings/SettingsSwitch";
 import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
@@ -14,7 +12,10 @@ import { isNativePluginId, MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS, type Packag
 import { installPlugin, setPluginEnabled, uninstallPlugin } from "../../features/plugins/api";
 import { pluginFailureCode, type PluginFailure } from "../../features/plugins/errors";
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
+import { clearPluginJob, runPluginJob, usePluginJobs } from "../../features/plugins/usePluginJobs";
+import { isJobActive } from "../../features/plugins/jobs.ts";
 import { useTranslation } from "../../i18n";
+import { PluginMarketCard } from "./PluginMarketCard";
 import "./PluginMarket.css";
 
 const MARKET_CARDS = [...NATIVE_PLUGINS, ...PACKAGED_MARKET_PLUGINS];
@@ -32,19 +33,25 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
   const t = useTranslation().settings.plugins.market;
   const { installed, enabled } = useNativePluginStates();
   const { registry, live } = usePlugins();
-  const [busy, setBusy] = useState<PackagedMarketId | null>(null);
+  const jobs = usePluginJobs();
+  const [switching, setSwitching] = useState<PackagedMarketId | null>(null);
   const [error, setError] = useState<{ id: PackagedMarketId; code?: PluginFailure } | null>(null);
-  const withPackage = async (id: PackagedMarketId, change: () => Promise<void>) => {
-    if (busy) return;
-    setBusy(id);
+  const switchPackage = async (id: PackagedMarketId, checked: boolean) => {
+    if (switching) return;
+    setSwitching(id);
     setError(null);
-    try { await change(); }
+    clearPluginJob(id);
+    try { await setPluginEnabled(id, checked); }
     catch (failure) {
       setError({ id, code: pluginFailureCode(failure) });
     } finally {
       await refreshPlugins();
-      setBusy(null);
+      setSwitching(null);
     }
+  };
+  const changePackage = (id: PackagedMarketId, remove: boolean) => {
+    setError(null);
+    void runPluginJob(id, remove ? "uninstalling" : "downloading", () => remove ? uninstallPlugin(id) : installPlugin(id, true));
   };
   const [, setOfficeEnabled] = useOfficeImEnabled();
   // Installing is asking for it: its own switch (Messages / Agent settings) goes on with it. A switch
@@ -78,66 +85,27 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
         const isEnabled = isNative ? enabled[id] : isInstalled && p?.enabled === true;
         const inDevelopment = !isNative && !isInstalled && !MARKET_PACKAGES.some((plugin) => plugin.id === id);
         const status = live[id]?.status;
-        const reason = error?.id === id ? (error.code ? t.failure[error.code] : t.operationFailed(item.name))
+        const job = isNative ? undefined : jobs[id];
+        const failure = job?.phase === "failed" ? pluginFailureCode(job.error) : error?.id === id ? error.code : undefined;
+        const failed = job?.phase === "failed" || error?.id === id;
+        const reason = failed ? (failure ? t.failure[failure] : t.operationFailed(item.name))
           : !isNative && isEnabled && (status === "failed" || status === "restarting") ? t.failure.plugin_start_failed : null;
         const toggle = (checked: boolean) => {
           if (isNative) setNativePluginEnabled(id, checked);
-          else void withPackage(id, () => setPluginEnabled(id, checked));
+          else void switchPackage(id, checked);
         };
         const changeInstallation = () => {
-          if (isNative) {
-            if (isInstalled) setNativePluginInstalled(id, false);
-            else install(id);
-            return;
-          }
-          void withPackage(id, async () => {
-            if (isInstalled) await uninstallPlugin(id);
-            else {
-              await installPlugin(id);
-              await setPluginEnabled(id, true);
-            }
-          });
+          if (!isNative) changePackage(id, isInstalled);
+          else if (isInstalled) setNativePluginInstalled(id, false);
+          else install(id);
         };
-        const stateClass = isInstalled ? ` plugin-card--installed${isEnabled ? "" : " plugin-card--disabled"}` : "";
-        return <li key={id} className={`plugin-card${stateClass}${reason ? " plugin-card--with-error" : ""}`} style={{ "--plugin-accent": accent } as CSSProperties}>
-          <div className="plugin-card__top">
-            <span className="plugin-card__icon">
-              {isNative ? <NativePluginIcon id={id} size={44} className="plugin-card__tile" /> : <PackageIcon id={id} />}
-              {isInstalled && <span className="plugin-card__check" aria-hidden="true"><Check size={10} strokeWidth={3} /></span>}
-            </span>
-            <div className="plugin-card__heading">
-              <h3 className="plugin-card__name">{item.name}</h3>
-              <p className="plugin-card__author">
-                {t.by}{" "}
-                <a className="plugin-card__author-link" href={author.url}
-                  onClick={(event) => { event.preventDefault(); void openUrl(author.url).catch(console.error); }}>@{author.name}</a>
-              </p>
-            </div>
-          </div>
-          <p className="plugin-card__description">{item.description}</p>
-          {reason && <p className="plugins-settings__error plugin-card__error" role="alert">{reason}</p>}
-          <div className="plugin-card__footer">
-            {isInstalled && <SettingsSwitch
-              size="small"
-              ariaLabel={t.enableNamed(item.name)}
-              checked={isEnabled}
-              disabled={!isNative && busy !== null}
-              onChange={toggle}
-            />}
-            {inDevelopment ? <button type="button" className="plugin-card__action plugin-card__action--preview" disabled>
-              {t.inDevelopment}
-            </button> : <button
-              type="button"
-              className={`plugin-card__action${isInstalled ? " plugin-card__action--remove" : ""}`}
-              aria-label={isInstalled ? t.uninstallNamed(item.name) : t.installNamed(item.name)}
-              disabled={!isNative && busy !== null}
-              aria-busy={busy === id || undefined}
-              onClick={changeInstallation}
-            >
-              {isInstalled ? <><span className="plugin-card__state">{t.installed}</span><span className="plugin-card__remove">{t.uninstall}</span></> : t.install}
-            </button>}
-          </div>
-        </li>;
+        return <PluginMarketCard key={id} name={item.name} description={item.description} accent={accent} author={author}
+          icon={isNative ? <NativePluginIcon id={id} size={44} className="plugin-card__tile" /> : <PackageIcon id={id} />}
+          installed={isInstalled} enabled={isEnabled} inDevelopment={inDevelopment}
+          job={isJobActive(job) ? job : undefined} switching={!isNative && switching === id}
+          reason={reason}
+          onRetry={!isNative && job?.phase === "failed" ? () => changePackage(id, job.error === "plugin_uninstall_failed") : undefined}
+          onToggle={toggle} onChangeInstallation={changeInstallation} />;
       })}
     </ul>
   </section>;

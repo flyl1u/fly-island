@@ -1,10 +1,12 @@
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import { emit } from "@tauri-apps/api/event";
 import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
 import { SettingsSidebar } from "../../src/windows/settings/SettingsSidebar";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
-import type { InstalledPlugin, PluginIndexEntry, PluginManifest } from "../../src/features/plugins/api";
+import { PLUGIN_PROGRESS_EVENT, type InstalledPlugin, type PluginIndexEntry, type PluginInstallProgress, type PluginManifest } from "../../src/features/plugins/api";
+import { checkInstallProgress } from "./pluginInstallProgress";
 import { PLUGIN_MARKET_ENABLED, PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
 import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
@@ -36,6 +38,9 @@ let resolveRegistry: (() => void) | undefined;
 let opened = "";
 let failOpen = false;
 let installFailure = "";
+let holdInstall = false;
+let finishInstall: (() => void) | undefined;
+let hostJobs: PluginInstallProgress[] = [];
 const hostCalls: string[] = [];
 mockIPC((command, payload) => {
   hostCalls.push(command);
@@ -45,9 +50,12 @@ mockIPC((command, payload) => {
     : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
   if (command === "install_plugin") {
     if (installFailure) throw installFailure;
-    registry.installed["eye-care"] = { ...eyeCare, enabled: false };
+    const apply = () => { registry.installed["eye-care"] = { ...eyeCare, enabled: args.enable === true }; };
+    if (holdInstall) return new Promise((resolve) => { finishInstall = () => { apply(); hostJobs = []; resolve(null); }; });
+    apply();
     return null;
   }
+  if (command === "get_plugin_installs") return structuredClone(hostJobs);
   if (command === "set_plugin_enabled") {
     registry.installed["eye-care"].enabled = Boolean(args.enabled);
     return null;
@@ -172,19 +180,46 @@ try {
       await act(async () => { install().click(); });
       await wait();
       const alert = install().closest("li")?.querySelector("[role='alert']");
-      check(alert?.textContent === market.failure.plugin_index_unavailable && alert.scrollWidth <= alert.clientWidth
+      check(alert?.textContent === market.failure.plugin_index_unavailable + market.retry && alert.scrollWidth <= alert.clientWidth
         && alert.getBoundingClientRect().bottom <= install().getBoundingClientRect().top, "目录未发布时在窄卡片内显示本地化原因并保留重试");
       installFailure = "https://user:secret@example.com/D:/private";
       await act(async () => { install().click(); });
       await wait();
-      check(install().closest("li")?.querySelector("[role='alert']")?.textContent === market.operationFailed(name)
+      check(install().closest("li")?.querySelector("[role='alert']")?.textContent === market.operationFailed(name) + market.retry
         && !document.body.textContent?.includes("user:secret"), "未知错误不泄露路径或凭据");
       fixture.style.width = "";
       installFailure = "";
+      holdInstall = true;
+      const progress = async (phase: PluginInstallProgress["phase"], downloaded: number, total: number) => {
+        hostJobs = [{ id: "eye-care", phase, downloaded, total, error: null }];
+        await act(async () => { await emit(PLUGIN_PROGRESS_EVENT, hostJobs[0]); });
+      };
+      await checkInstallProgress({
+        t: market, name, check, wait, progress, install,
+        installCalls: () => hostCalls.filter((command) => command === "install_plugin").length,
+        remount: async () => {
+          await act(async () => app.render(<StrictMode><I18nProvider><span /></I18nProvider></StrictMode>));
+          await act(async () => app.render(<StrictMode><I18nProvider><Page /></I18nProvider></StrictMode>));
+          await wait();
+        },
+        finish: async () => { await act(async () => finishInstall?.()); await wait(); },
+      });
+      holdInstall = false;
+      check(hostCalls.includes("install_plugin") && !hostCalls.includes("set_plugin_enabled") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
+        "市场包由宿主在同一个任务里安装并启用，保留卡片入口");
+      await act(async () => { remove().click(); });
+      await wait();
+      installFailure = "plugin_download_timeout";
       await act(async () => { install().click(); });
       await wait();
-      check(hostCalls.includes("install_plugin") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
-        "市场包使用宿主安装和启用，保留卡片入口");
+      const failedCard = install().closest("li")!;
+      const retry = [...failedCard.querySelectorAll("button")].find((item) => item.textContent === market.retry);
+      check(failedCard.querySelector("[role='alert']")?.textContent?.startsWith(market.failure.plugin_download_timeout) && retry,
+        "下载失败时卡片内显示原因和重试链接");
+      installFailure = "";
+      await act(async () => { retry!.click(); });
+      await wait();
+      check(registry.installed["eye-care"]?.enabled && Boolean(remove()), "点重试后装上");
       check(document.querySelector<HTMLInputElement>(`[aria-label="${manifest.settings[0].label[locale]}"]`),
         "安装后显示护眼设置");
       await act(async () => { remove().click(); });

@@ -16,10 +16,18 @@ export type PluginNotification = { id: string; sourceId: string; appName: string
 export type InstalledPlugin = { manifest: PluginManifest; enabled: boolean; directory: string; development: boolean; settings: Record<string, boolean | string> };
 export type PluginsSnapshot = { registry: { developerMode: boolean; indexUrl: string; installed: Record<string, InstalledPlugin> }; live: Record<string, { status: string; quota: PluginQuota[]; sessions: PluginSession[]; notifications: PluginNotification[]; panel?: PluginPanel | null }> };
 export type PluginIndexEntry = { id: string; version: string; name: Localized; description: Localized; apiVersion: number; url: string; sha256: string; size: number; minAppVersion: string };
+/** Mirrors plugin_host/jobs.rs (Phase, Progress). */
+export type PluginInstallPhase = "downloading" | "verifying" | "installing" | "uninstalling" | "done" | "failed";
+export type PluginInstallProgress = { id: string; phase: PluginInstallPhase; downloaded: number; total: number; error: string | null };
 export const PLUGINS_EVENT = "plugins-changed";
+export const PLUGIN_PROGRESS_EVENT = "plugin-install-progress";
 export const getPlugins = () => invoke<PluginsSnapshot>("get_plugins");
 export const getPluginsIndex = () => invoke<PluginIndexEntry[]>("get_plugins_index");
-export const installPlugin = (id: string) => invoke<void>("install_plugin", { id });
+/** `enable` switches the plugin on as part of the same job, even if this window closes meanwhile. */
+export const installPlugin = (id: string, enable = false) => invoke<void>("install_plugin", { id, enable });
+export const getPluginInstalls = () => invoke<PluginInstallProgress[]>("get_plugin_installs");
+export const onPluginInstallProgress = (handle: (progress: PluginInstallProgress) => void) =>
+  listen<PluginInstallProgress>(PLUGIN_PROGRESS_EVENT, (event) => handle(event.payload));
 export const uninstallPlugin = (id: string) => invoke<void>("uninstall_plugin", { id });
 export const setPluginEnabled = (id: string, enabled: boolean) => invoke<void>("set_plugin_enabled", { id, enabled });
 export const setPluginSetting = (id: string, key: string, value: boolean | string) => invoke<void>("set_plugin_setting", { id, key, value });

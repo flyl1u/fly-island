@@ -49,6 +49,47 @@
 
 .plugin-card--with-error { aspect-ratio: auto; }
 .plugin-card__error { margin: 0; }
+.plugin-card__retry { margin-left: var(--space-sm); }
+
+/* While a job runs, its progress takes the description's place, so the card keeps its size. */
+.plugin-card__progress {
+  display: grid;
+  gap: var(--space-sm);
+  min-width: 0;
+  color: var(--color-text-subtle);
+  font-size: calc(11.5px * var(--island-font-scale, 1));
+  line-height: 1.4;
+}
+
+.plugin-card__progress-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-sm);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.plugin-card__meter {
+  height: 4px;
+  overflow: hidden;
+  background: var(--color-white-a08);
+  border-radius: var(--radius-pill);
+}
+
+.plugin-card__meter > span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 200ms linear;
+}
+
+.plugin-card__action:disabled[aria-busy="true"] {
+  color: var(--color-text-subtle);
+  background: var(--color-white-a06);
+  cursor: progress;
+}
 
 .plugin-card:hover {
   background-color: var(--color-white-a06);

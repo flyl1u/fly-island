@@ -19,6 +19,8 @@ export type SettingsPluginMarketText = {
   inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
   by: string; operationFailed: (name: string) => string;
+  installing: string; uninstalling: string; retry: string; connecting: string; verifying: string; unpacking: string;
+  downloaded: (done: string, total: string) => string; progressNamed: (name: string) => string;
   failure: Record<PluginFailure, string>;
   items: Record<MarketPluginId, { name: string; description: string }>;
 };
@@ -38,6 +40,8 @@ export const zhCN: SettingsPluginsText = {
     install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
     by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
+    installing: "安装中…", uninstalling: "卸载中…", retry: "重试", connecting: "正在准备下载…", verifying: "正在校验安装包…", unpacking: "正在安装…",
+    downloaded: (done, total) => `已下载 ${done} / ${total} MB`, progressNamed: (name) => `${name} 的安装进度`,
     failure: {
       plugin_index_unavailable: "插件目录尚未发布或暂时无法连接，请稍后重试。",
       plugin_index_incompatible: "插件目录格式不受支持，或插件需要更新版本的 Fly Island。",
@@ -47,6 +51,13 @@ export const zhCN: SettingsPluginsText = {
       plugin_package_invalid: "无法解压安装包，或插件清单不匹配。",
       plugin_install_failed: "无法保存插件文件，请检查磁盘空间和写入权限。",
       plugin_start_failed: "插件未能启动。请尝试重新启用或安装。",
+      plugin_download_timeout: "下载超时：很久没有收到数据，请检查网络后重试。",
+      plugin_download_interrupted: "下载中途网络断开，请重试。",
+      plugin_download_http_client: "下载地址拒绝了请求（HTTP 4xx），安装包可能已下架。",
+      plugin_download_http_server: "下载服务器出错（HTTP 5xx），请稍后重试。",
+      plugin_disk_full: "磁盘空间不足，请清理后重试。",
+      plugin_install_in_progress: "这个插件正在安装或卸载，请稍候。",
+      plugin_uninstall_failed: "未能卸载插件，请重试。",
     },
     items: {
       minimax: { name: "MiniMax Code", description: "在 AI 会话和消息页查看额度、任务进度和待审批提醒。" },
@@ -82,6 +93,8 @@ export const en: SettingsPluginsText = {
     install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
     by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
+    installing: "Installing…", uninstalling: "Removing…", retry: "Retry", connecting: "Preparing…", verifying: "Verifying…", unpacking: "Installing…",
+    downloaded: (done, total) => `${done} / ${total} MB`, progressNamed: (name) => `Install progress of ${name}`,
     failure: {
       plugin_index_unavailable: "The plugin catalog is not published or temporarily unreachable. Try again later.",
       plugin_index_incompatible: "The catalog format is unsupported, or the plugin needs a newer version of Fly Island.",
@@ -91,6 +104,13 @@ export const en: SettingsPluginsText = {
       plugin_package_invalid: "The package could not be unpacked, or its manifest did not match.",
       plugin_install_failed: "Could not save plugin files. Check disk space and write permissions.",
       plugin_start_failed: "The plugin could not start. Try enabling or installing it again.",
+      plugin_download_timeout: "Download timed out: no data arrived for a while. Check your connection.",
+      plugin_download_interrupted: "The connection dropped during the download. Try again.",
+      plugin_download_http_client: "The server refused the download (HTTP 4xx). The package may be gone.",
+      plugin_download_http_server: "The download server failed (HTTP 5xx). Try again later.",
+      plugin_disk_full: "Not enough disk space. Free some and try again.",
+      plugin_install_in_progress: "This plugin is already being installed or removed.",
+      plugin_uninstall_failed: "Could not remove the plugin. Try again.",
     },
     items: {
       minimax: { name: "MiniMax Code", description: "See quota, session progress and pending approvals on the island." },
