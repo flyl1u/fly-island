@@ -11,5 +11,6 @@ members = [
     "office-im",
     "eye-care",
     "minimax",
+    "device-battery/engine",
 ]
 resolver = "2"

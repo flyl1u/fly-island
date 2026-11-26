@@ -23,6 +23,6 @@ Rust `weather/` 用已有 reqwest 异步请求固定 Open-Meteo 端点；城市�
 
 ## 正式市场包
 
-插件市场打开时，正式宿主只安装和运行 `plugins/market-packages.json` 中的包，固定使用官方索引。清单之外的外部插件卡片显示「开发中」。收录流程：改清单 → 运行 `pnpm release:plugins` 发布独立通道 → 下一个应用版本带上新清单。已收录插件的更新无需发布应用。v3.3.0 及以前正式版不受影响。开发目录和自定义源仍由 `plugins` 发布开关控制。日历标记沿用内置插件开关。设备市场包只在设备/设置页或收起态的低频电量检查时使用独立读取器，由宿主解析安装目录与结束读取进程。MiniMax Code 与护眼提醒使用 stdio。
+插件市场打开时，正式宿主只安装和运行 `plugins/market-packages.json` 中的包，固定使用官方索引。清单之外的外部插件卡片显示「开发中」。收录流程：改清单 → 运行 `pnpm release:plugins` 发布独立通道 → 下一个应用版本带上新清单。已收录插件的更新无需发布应用。v3.3.0 及以前正式版不受影响。开发目录和自定义源仍由 `plugins` 发布开关控制。日历标记沿用内置插件开关。设备市场包只在设备/设置页或收起态的低频电量检查时使用独立读取器，由宿主解析安装目录与结束读取进程。该包由 C# bridge（音频与两个原生读取器）和 Rust 读取引擎（`plugins/device-battery/engine`，插件工作区成员，48 个读取器）组成，不含 Python；引擎按宿主固定的路径放在 `engine/runtime/python.exe`，每次读取起一个新进程，详见 [插件说明](../../plugins/device-battery/README.md)。MiniMax Code 与护眼提醒使用 stdio。
 
 安装失败按目录不可达、目录或宿主不兼容、尚未收录、下载、完整性、解包、启动分别提示。市场仅显示已知本地化错误，不显示原始 URL 或路径。诊断写入 `plugin-logs/catalog.log` 和 stderr，插件运行日志仍在 `<id>.log`。

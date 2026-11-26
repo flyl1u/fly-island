@@ -1,0 +1,26 @@
+[package]
+name = "device-battery-engine"
+version = "0.2.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+description = "Device battery readers for the Fly Island device-battery plugin (Rust port of MyFinder Device Battery)"
+
+[dependencies]
+hidapi = { version = "=2.6.7", default-features = false, features = ["windows-native"] }
+serde_json = "1"
+sha2 = "0.10"
+
+[dependencies.windows]
+version = "0.61"
+features = [
+    "Devices_Bluetooth",
+    "Foundation",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Devices_HumanInterfaceDevice",
+    "Win32_Devices_Properties",
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_LibraryLoader",
+    "Win32_System_WinRT",
+]

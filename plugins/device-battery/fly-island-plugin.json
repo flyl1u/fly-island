@@ -5,7 +5,7 @@
     "zh-CN": "查看支持的无线设备电量并切换扬声器与耳机",
     "en": "Check battery levels for supported devices and switch speakers and headphones"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "apiVersion": 1,
   "runtime": { "command": "device-battery-bridge.exe" },
   "permissions": ["panel", "system-devices"],
