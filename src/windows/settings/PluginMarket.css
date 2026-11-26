@@ -48,7 +48,92 @@
 }
 
 .plugin-card--with-error { aspect-ratio: auto; }
+
+.plugin-market__updates,
+.plugin-card__update {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-md);
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: calc(11.5px * var(--island-font-scale, 1));
+  line-height: 1.5;
+}
+
+.plugin-card__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.plugin-card__settings {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--color-text-subtle);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.plugin-card__settings:hover {
+  color: var(--color-text);
+  background: var(--color-white-a08);
+}
+
+.plugin-card__settings:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
 .plugin-card__error { margin: 0; }
+.plugin-card__retry { margin-left: var(--space-sm); }
+
+/* While a job runs, its progress takes the description's place, so the card keeps its size. */
+.plugin-card__progress {
+  display: grid;
+  gap: var(--space-sm);
+  min-width: 0;
+  color: var(--color-text-subtle);
+  font-size: calc(11.5px * var(--island-font-scale, 1));
+  line-height: 1.4;
+}
+
+.plugin-card__progress-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-sm);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.plugin-card__meter {
+  height: 4px;
+  overflow: hidden;
+  background: var(--color-white-a08);
+  border-radius: var(--radius-pill);
+}
+
+.plugin-card__meter > span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 200ms linear;
+}
+
+.plugin-card__action:disabled[aria-busy="true"] {
+  color: var(--color-text-subtle);
+  background: var(--color-white-a06);
+  cursor: progress;
+}
 
 .plugin-card:hover {
   background-color: var(--color-white-a06);
@@ -239,13 +324,4 @@
 .plugin-card__action--remove:enabled:hover .plugin-card__remove,
 .plugin-card__action--remove:focus-visible .plugin-card__remove {
   opacity: 1;
-}
-
-.plugin-card__package {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  color: var(--plugin-accent);
-  background: var(--color-white-a08);
 }

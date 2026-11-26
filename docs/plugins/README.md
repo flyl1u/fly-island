@@ -77,6 +77,20 @@ Fork 仓库 → 本地改造小岛源码 → 在真实小岛里自测、录制�
 - **安全与隐私。** 不偷偷联网、不收集数据、不读和功能无关的文件；如果需要联网或读文件，在 PR 里写清楚连哪些域名、读写哪些路径、为什么。不提交任何账号、密钥或私人数据。
 - **性能。** 小岛常驻后台，不要加高频轮询或常驻的重计算；展开、收起不能变卡。
 
+### 设置放在哪里
+
+插件装上后，它的设置**不会**出现在「设置 → 插件」下面（插件页只放安装卡片和「打开设置」按钮），而是按类别放到对应页面：
+
+| 插件做什么 | 设置出现在 |
+| --- | --- |
+| 岛屿或独立功能（提醒、设备、天气一类） | 侧栏「功能」组末尾的独立栏目，栏目名就是插件名 |
+| 接入 AI 工具的额度、会话 | 「AI Agent → AI 会话」页里以插件命名的分组 |
+| AI 工具的连接、接入配置 | 「AI Agent → 接入 AI 工具」页里以插件命名的分组 |
+| 新的消息来源 | 「消息」页里以插件命名的分组 |
+| 没有设置项 | 不出现设置入口 |
+
+请在 PR 里写明：插件属于哪一类；每个设置项和动作按钮的性质（偏好，还是连接 / 接入配置）；图标（有品牌的给出官方图标来源和使用授权，没有的建议一个 [lucide](https://lucide.dev/icons/) 图标和一个低饱和强调色，不接受字母头像、占位图或位图图标）。外部进程插件的设置项照旧写在清单的 `settings` 里，上线时由维护者在插件目录里声明归类；开发者模式加载的插件按清单 `contributes` 归类（`quota` / `sessions` → AI 会话，否则 `notifications` → 消息，否则独立栏目）。完整规范见 [插件设置归类规范](../design/settings.md#插件设置归类规范长期)。
+
 ### 4. 提交前自测
 
 在仓库根目录运行，全部通过再提交：
@@ -144,6 +158,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 **Flow:** fork → modify the island's source → test and record a demo inside the real island → open a PR with the [plugin template](../../.github/PULL_REQUEST_TEMPLATE/plugin.md) → flyl1u reviews and adapts it into an optional install → it ships with a release.
 
 **Rules:** follow [AGENTS.md](../../AGENTS.md), [src/AGENTS.md](../../src/AGENTS.md) and [DESIGN.md](../../DESIGN.md). When upgrading a feature, change it in place rather than building a parallel copy; when adding one, put it in `src/features/<name>/` and wire it into the existing pages and settings. A plugin window follows the clipboard window's pattern: a new window label and `?window=` value, created on demand. Either way, keep new logic in its own files with a few clearly listed hook points. Never change saved data keys, Tauri command names or window labels ([contracts.md](../architecture/contracts.md)). Use the island's own components and styles, and provide every visible string in Chinese and English. Declare any network domains or file access, and add no heavy polling. Run `pnpm check`, `pnpm build`, `pnpm test:regression` (and `cargo test` for Rust changes) before submitting.
+
+**Where settings appear:** never on the Plugins page, which only has install cards and an "open settings" button. Island or standalone features get their own sidebar page at the end of Features; AI quota and session plugins get a group named after them on AI Agent → AI sessions (connection setup goes to Connect AI tools); message sources get a group on Messages. Say which category your plugin is and what each setting and action is for, and give an icon: an official brand mark with its source and licence, or a lucide icon plus a muted accent colour (no letter avatars or placeholders). Rules: [plugin settings placement](../design/settings.md#插件设置归类规范长期).
 
 **Required in the PR:** a public link to a demo recording of the plugin in use inside the real island, the author(s), a public contact, your GitHub profile and the source repository/branch, a plain-language description for the plugin list, a list of changed files and hook points, and your self-test results. flyl1u handles the optional-install packaging; submission does not guarantee a merge or immediate release.
 

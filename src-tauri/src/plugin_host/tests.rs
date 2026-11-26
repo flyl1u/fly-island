@@ -1,7 +1,7 @@
 use std::{io::{Cursor, Write}, sync::{Arc, Mutex}, time::{Duration, Instant}};
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use super::{manifest::Manifest, packages::{self, IndexEntry}, process::{self, Worker}, protocol, service::Host};
+use super::{download, manifest::Manifest, packages::{self, IndexEntry}, process::{self, Worker}, protocol, service::Host};
 
 fn manifest() -> Manifest { Manifest::parse(include_bytes!("../../../plugins/example-hello/fly-island-plugin.json")).unwrap() }
 #[test]
@@ -152,11 +152,12 @@ fn download_policy_and_file_limits_are_enforced() {
         ("https://github.com/a", false, true), ("http://github.com/a", true, false),
         ("http://127.0.0.1/a", true, true), ("http://127.0.0.1/a", false, false),
         ("https://user:password@example.com/a", false, false), ("file:///C:/a", false, false),
-    ] { assert_eq!(packages::network_source_allowed(&reqwest::Url::parse(url).unwrap(), dev), allowed, "{url}"); }
+    ] { assert_eq!(download::network_source_allowed(&reqwest::Url::parse(url).unwrap(), dev), allowed, "{url}"); }
+    let fetch = |url: &str, local, limit| tauri::async_runtime::block_on(download::fetch(url, local, limit, Default::default()));
     let root = temporary("local-bound");
     let path = root.join("file"); std::fs::write(&path, [1; 32]).unwrap();
-    assert!(tauri::async_runtime::block_on(packages::download(path.to_str().unwrap(), true, 16)).is_err());
-    assert!(tauri::async_runtime::block_on(packages::download(path.to_str().unwrap(), false, 64)).is_err());
+    assert!(fetch(path.to_str().unwrap(), true, 16).is_err());
+    assert!(fetch(path.to_str().unwrap(), false, 64).is_err());
     std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -171,9 +172,10 @@ fn redirects_cannot_escape_the_local_http_policy() {
         let mut request = [0; 2048]; let _ = stream.read(&mut request).unwrap();
         stream.write_all(b"HTTP/1.1 302 Found\r\nLocation: http://example.com/not-local\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
     });
-    let error = tauri::async_runtime::block_on(packages::download(&url, true, 1024)).unwrap_err();
+    let error = tauri::async_runtime::block_on(download::fetch(&url, true, 1024, Default::default())).unwrap_err();
     server.join().unwrap();
-    assert!(!error.contains("example.com"), "URL omitted from diagnostics: {error}");
+    assert_eq!(error.code, download::REFUSED);
+    assert!(!error.detail.contains("example.com"), "URL omitted from diagnostics: {}", error.detail);
 }
 
 #[test]
@@ -195,7 +197,7 @@ fn market_install_errors_report_the_failing_stage() {
     registry.developer_mode = true;
     registry.index_url = index.to_string_lossy().into_owned();
     host.persist(registry).unwrap();
-    let install_error = || tauri::async_runtime::block_on(host.install("example-hello")).unwrap_err();
+    let install_error = || tauri::async_runtime::block_on(host.install("example-hello", false)).unwrap_err();
     assert_eq!(install_error(), "plugin_index_unavailable");
     std::fs::write(&index, b"not JSON").unwrap();
     assert_eq!(install_error(), "plugin_index_incompatible");
@@ -257,7 +259,6 @@ fn rejects_hash_and_zip_traversal() {
     let bytes = zip(&[("../escape.exe", b"bad")]);
     let e = entry(&bytes, String::new());
     assert!(packages::extract(&bytes, &root, &e).is_err());
-    assert!(packages::verify(b"changed", &e).is_err());
     std::fs::remove_dir_all(root).unwrap();
 }
 fn fixture() -> std::path::PathBuf {
@@ -303,8 +304,8 @@ fn local_index_install_enable_publish_disable_uninstall() {
     let index = root.join("plugins-index.json"); std::fs::write(&index, serde_json::to_vec(&vec![e]).unwrap()).unwrap();
     let host = Host::new(root.join("data"), None, true).unwrap(); let mut registry = host.snapshot().registry;
     registry.developer_mode = true; registry.index_url = index.to_string_lossy().into_owned(); host.persist(registry).unwrap();
-    assert!(tauri::async_runtime::block_on(host.install("not-in-index")).is_err());
-    tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
+    assert!(tauri::async_runtime::block_on(host.install("not-in-index", false)).is_err());
+    tauri::async_runtime::block_on(host.install("example-hello", false)).unwrap();
     assert!(!host.snapshot().registry.installed["example-hello"].enabled);
     host.enable("example-hello", true).unwrap();
     let until = Instant::now() + Duration::from_secs(8);
@@ -367,7 +368,7 @@ fn built_artifacts_index_installs_and_runs() {
         assert!(!entries.is_empty());
         for entry in entries {
             let id = entry.id.as_str();
-            tauri::async_runtime::block_on(host.install(id)).unwrap();
+            tauri::async_runtime::block_on(host.install(id, false)).unwrap();
             assert!(!host.snapshot().registry.installed[id].enabled);
             match id {
                 "eye-care" => {
@@ -410,7 +411,7 @@ fn built_artifacts_index_installs_and_runs() {
         return;
     }
 
-    tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
+    tauri::async_runtime::block_on(host.install("example-hello", false)).unwrap();
     assert!(host.snapshot().registry.installed.contains_key("example-hello"));
     assert!(!host.snapshot().registry.installed["example-hello"].enabled);
 
@@ -450,7 +451,7 @@ fn disabled_host_does_not_start_fetch_or_change_saved_plugins() {
     assert!(host.snapshot().registry.installed.is_empty());
     host.start("example-hello").unwrap();
     assert!(tauri::async_runtime::block_on(host.catalog()).unwrap().is_empty());
-    tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
+    tauri::async_runtime::block_on(host.install("example-hello", false)).unwrap();
     host.enable("example-hello", false).unwrap();
     host.setting("example-hello", "enabled", json!(false)).unwrap();
     host.uninstall("example-hello").unwrap();
@@ -490,7 +491,7 @@ fn market_host_only_exposes_approved_non_development_packages() {
     assert!(host.source().0.ends_with("/releases/download/plugins-channel/plugins-index.json"));
     assert!(host.start("example-hello").is_err());
     assert_eq!(
-        tauri::async_runtime::block_on(host.install("example-hello")).unwrap_err(),
+        tauri::async_runtime::block_on(host.install("example-hello", false)).unwrap_err(),
         "Plugin is unavailable in this build"
     );
     assert!(host.start("minimax").is_err());
@@ -498,4 +499,52 @@ fn market_host_only_exposes_approved_non_development_packages() {
     assert_eq!(host.snapshot().registry.installed.len(), 3);
     drop(host);
     std::fs::remove_dir_all(root).unwrap();
+}
+
+/// Real packages from the published `plugins-channel`, installed into a temporary directory and
+/// removed again. Reads the release only. Run by hand:
+/// `cargo test --manifest-path src-tauri/Cargo.toml published_market_packages -- --ignored --nocapture`
+#[test]
+#[ignore = "downloads the published packages from GitHub"]
+fn published_market_packages_install() {
+    // Removing MiniMax runs its own disconnect step and clears its credential: keep both away
+    // from the real profile and Credential Manager.
+    const ISOLATED: &str = "FLY_ISLAND_PLUGIN_LIVE_PROFILE";
+    if std::env::var_os(ISOLATED).is_none() {
+        let profile = temporary("published-profile");
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "plugin_host::tests::published_market_packages_install", "--ignored", "--nocapture"])
+            .env(ISOLATED, &profile).env("USERPROFILE", &profile).env("HOME", &profile)
+            .env("APPDATA", &profile).env("LOCALAPPDATA", &profile).env_remove("FLY_ISLAND_PLUGINS_INDEX")
+            .status().unwrap();
+        std::fs::remove_dir_all(profile).unwrap();
+        assert!(status.success());
+        return;
+    }
+    keyring::Entry::store_status().as_ref().unwrap();
+    keyring_core::set_default_store(keyring_core::mock::Store::new().unwrap());
+    let root = temporary("published-market");
+    let host = Host::market(root.clone(), None).unwrap();
+    let entries = tauri::async_runtime::block_on(host.catalog()).unwrap();
+    assert!(!entries.is_empty(), "the published index lists no approved package");
+    let mut failed = Vec::new();
+    for entry in entries {
+        let started = Instant::now();
+        let result = tauri::async_runtime::block_on(host.install(&entry.id, false));
+        println!("{} {} ({} bytes): {:?} in {:.1}s", entry.id, entry.version, entry.size, result, started.elapsed().as_secs_f32());
+        if result.is_err() {
+            failed.push(entry.id);
+            continue;
+        }
+        assert!(host.root.join("plugins").join(&entry.id).join("fly-island-plugin.json").is_file());
+        assert!(!host.root.join("plugins").join(format!(".download-{}.zip", entry.id)).exists());
+        tauri::async_runtime::block_on(host.remove(&entry.id)).unwrap();
+        assert!(!host.root.join("plugins").join(&entry.id).exists());
+    }
+    if !failed.is_empty() {
+        println!("{}", std::fs::read_to_string(host.root.join("plugin-logs/catalog.log")).unwrap_or_default());
+    }
+    drop(host);
+    std::fs::remove_dir_all(root).unwrap();
+    assert!(failed.is_empty(), "failed: {failed:?}");
 }

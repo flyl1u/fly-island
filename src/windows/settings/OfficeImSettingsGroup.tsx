@@ -1,26 +1,26 @@
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
-import { NativePluginIcon, useNativePlugins } from "../../features/plugins";
+import { PluginIcon } from "../../features/plugins/PluginIcon";
+import type { NativePluginId } from "../../features/plugins/native/catalog";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled, useOfficeImSnapshot } from "../../features/messages/office-im/useOfficeIm";
 import { useTranslation } from "../../i18n";
 
-/** DingTalk / Feishu / WeCom switches, one row per client installed from the plugin market. */
-export function OfficeImSettingsGroup() {
+/** One installed work-message plugin's group on the Messages page: its receive switch. */
+export function OfficeImSettingsGroup({ id }: { id: NativePluginId }) {
   const t = useTranslation();
-  const installed = useNativePlugins();
   const [enabled, setEnabled] = useOfficeImEnabled();
   const snapshot = useOfficeImSnapshot();
-  const sources = OFFICE_SOURCES.filter((source) => installed[source]);
-  if (sources.length === 0) return null;
+  const source = OFFICE_SOURCES.find((item) => item === id);
+  if (!source) return null;
   // As the WeChat group does: a listener that cannot start says why here, not only on its page.
-  const failed = sources.find((source) => enabled[source] && snapshot[source].error);
-  const footer = failed
-    ? <span className="messages-settings__error" role="alert">{`${t.messages.sourceLabels[failed]}：${snapshot[failed].error}`}</span>
-    : t.settings.plugins.market.officeHint;
-  return <SettingsGroup title={t.settings.plugins.market.officeTitle} footer={footer}>
-    {sources.map((source) => <SettingsToggleRow key={source}
-      title={<span className="messages-settings__office-title"><NativePluginIcon id={source} size={16} />{t.messages.office.receive(t.messages.sourceLabels[source])}</span>}
-      checked={enabled[source]} onChange={(on) => setEnabled(source, on)} />)}
+  const error = enabled[source] ? snapshot[source].error : null;
+  const footer = error
+    ? <span className="messages-settings__error" role="alert">{error}</span>
+    : t.settings.plugins.market.officeHint(t.messages.sourceLabels[source]);
+  return <SettingsGroup anchor={source} icon={<PluginIcon id={source} size={16} />}
+    title={t.settings.plugins.market.items[source].name} footer={footer}>
+    <SettingsToggleRow title={t.messages.office.receive(t.messages.sourceLabels[source])}
+      checked={enabled[source]} onChange={(on) => setEnabled(source, on)} />
   </SettingsGroup>;
 }
