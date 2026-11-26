@@ -1,6 +1,6 @@
 [package]
 name = "eye-care"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "Host-themed multi-monitor eye rest reminders for fly-island"

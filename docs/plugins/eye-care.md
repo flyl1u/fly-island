@@ -4,7 +4,7 @@
 
 作者 / Author：[zlohs (@zloghs)](https://github.com/zloghs)。Logo 沿用宿主 HeartPulse 图标，来源与许可见 [Logo 说明](../assets/eye-care/README.md)。
 
-0.2.0 将休息画面交给 Fly Island 宿主：使用同一 React 入口、主题、字体、lucide 与 SettingsLinkButton，替换固定配色的 Win32/GDI 窗口和按钮。窗口遵守[插件规范](README.md)及[插件 PR 自检](../../.github/PULL_REQUEST_TEMPLATE/plugin.md)。
+1.0.0 将休息画面交给 Fly Island 宿主：使用同一 React 入口、主题、字体、lucide 与 SettingsLinkButton，替换固定配色的 Win32/GDI 窗口和按钮。窗口遵守[插件规范](README.md)及[插件 PR 自检](../../.github/PULL_REQUEST_TEMPLATE/plugin.md)。
 
 ## 使用与兼容
 
@@ -15,7 +15,7 @@
 - 深浅色与材质跟随宿主；提醒语言沿用插件设置，使用宿主双语字典且不修改全局语言偏好。整屏背景遮挡工作内容，玻璃样式用于卡片，不额外捕获桌面。窄屏按钮换行，短屏可滚动，Tab 焦点沿用宿主控件。
 - Alt+F4 不结束本轮休息；系统安全快捷键仍可用。这是休息画面，不是 Windows 身份验证锁屏。
 
-**同时更新宿主和插件。** 新宿主为受支持的 eye-care 清单注入临时 `_host-eye-care-windows` 能力标记；不写入偏好。旧宿主缺少标记时，0.2.0 显示升级说明，不开始一个没有窗口的休息。旧 eye-care 插件仍走其原实现，不触发第二套宿主窗口。应用版本号不变。
+**同时更新宿主和插件。** 新宿主为受支持的 eye-care 清单注入临时 `_host-eye-care-windows` 能力标记；不写入偏好。旧宿主缺少标记时，1.0.0 显示升级说明，不开始一个没有窗口的休息。旧 eye-care 插件仍走其原实现，不触发第二套宿主窗口。应用版本号不变。
 
 设置中的「空闲时长」说明由清单的 `settings[].description` 提供，文案为「连续无键盘和鼠标操作到达空闲时长，暂停并重置用眼计时，恢复操作后开始计时」；已开始的休息不受影响。另有开关「全屏模式下暂停并重置计时」：开启时进入全屏即把用眼计时重置为完整周期并冻结，退出全屏后从完整周期重新走表；关闭时全屏窗口不影响计时。（2026-11-26 用户要求）设置项文案为「允许跳过休息」，不再写成疑问句。岛内护眼面板不再提供额外的齿轮按钮，配置统一从设置 → 插件进入。
 
@@ -23,7 +23,7 @@
 
 岛内与休息窗口使用同一截止时间和倒计时计算，按剩余秒数改变的边界刷新，不再各自从挂载时刻启动一秒定时器。窗口重新可见或获得焦点时立即校准，切换截止时间立即更新，结束后停止刷新。
 
-休息画面只保留标题「休息一下」、剩余倒计时、推迟档位和可选的「跳过休息」：不再显示带眼睛图标的插件名标志、远眺 / 闭眼提示，也不写「休息结束后自动开始下一轮」；跳过按钮直接写「跳过休息」。（2026-11-26 用户要求）版式沿用岛内护眼页：整块屏幕作为遮罩，中间一张卡片，12px 的标题在上，倒计时用强调色等宽数字（52–88px，随窗口宽度缩放），标签「剩余休息时间」在下，再往下是 4px 的剩余进度条；分隔线以下依次是「可以推迟一次，下次请完成休息」、六档推迟胶囊按钮（5、10、15 一行，20、25、30 一行）和右下角的「跳过休息」。进度条直接使用面板上报的 `percent`，宿主不再自行推算；插件未提供时只显示数字。
+休息画面只保留标题「休息一下」、剩余倒计时、推迟档位和可选的「跳过休息」：不再显示带眼睛图标的插件名标志、远眺 / 闭眼提示，也不写「休息结束后自动开始下一轮」；跳过按钮直接写「跳过休息」。（2026-11-26 用户要求）版式沿用岛内护眼页：整块屏幕作为遮罩，中间一张卡片，12px 的标题在上，倒计时用黄色（`--color-warning`，与岛内休息状态的剩余时长同色）等宽数字（52–88px，随窗口宽度缩放），标签「剩余休息时长」在下，再往下是 4px 的剩余进度条（同样使用 `--color-warning`）；分隔线以下依次是「可以推迟一次，下次请完成休息」、六档推迟胶囊按钮（5、10、15 一行，20、25、30 一行）和右下角的「跳过休息」。进度条直接使用面板上报的 `percent`，宿主不再自行推算；插件未提供时只显示数字。
 
 休息时，岛内仅显示状态和倒计时，移除重复的「推迟 10 分钟」与「跳过休息」按钮。推迟和跳过统一在休息窗口操作；用眼阶段仍保留「现在休息」。面板用 `islandActions` 告诉宿主岛上显示哪些动作（用眼阶段为 `rest_now`，休息阶段为空），`actions` 仍保留 `snooze_10` / `skip`，继续用于宿主判断推迟与跳过权限。
 
@@ -57,9 +57,9 @@ The island and break window share the countdown calculation and absolute deadlin
 
 The break window keeps only the “Take a break” title, the remaining countdown, the postponement choices and the optional “Skip break”. The Eye Care badge with its eye icon, the looking-away hint and “Your next interval starts automatically” are gone, and skipping is no longer worded as an emergency unlock. (2026-11-26, per user request)
 
-The layout follows the island's Eye Care page: the display itself is the dim surface, with one centred card. A 12px title sits on top, the countdown is accent-coloured tabular figures (52–88px, scaling with the window), “Remaining break time” sits under it, then a 4px bar for the share left. Below a divider come the one-postponement note, six postponement pills in two rows of three (5/10/15, then 20/25/30) and “Skip break” in the bottom-right corner. The bar reads the panel's reported `percent`; the host no longer estimates it, and the digits stand alone when the plugin sends none.
+The layout follows the island's Eye Care page: the display itself is the dim surface, with one centred card. A 12px title sits on top, the countdown is warning-yellow tabular figures (52–88px, the same `--color-warning` the island uses while resting, scaling with the window), “Remaining break time” sits under it, then a 4px bar in the same yellow for the share left. Below a divider come the one-postponement note, six postponement pills in two rows of three (5/10/15, then 20/25/30) and “Skip break” in the bottom-right corner. The bar reads the panel's reported `percent`; the host no longer estimates it, and the digits stand alone when the plugin sends none.
 
-Eye Care 0.2.0 replaces fixed-color Win32/GDI break UI with on-demand host Tauri windows. They reuse host React components, theme tokens, fonts, lucide and localized action controls, including dark/light schemes, both glass treatments, narrow widths and short-screen scrolling. Each monitor uses its physical bounds; existing visible topmost host windows remain usable, and hidden windows stay hidden.
+Eye Care 1.0.0 replaces fixed-color Win32/GDI break UI with on-demand host Tauri windows. They reuse host React components, theme tokens, fonts, lucide and localized action controls, including dark/light schemes, both glass treatments, narrow widths and short-screen scrolling. Each monitor uses its physical bounds; existing visible topmost host windows remain usable, and hidden windows stay hidden.
 
 The plugin retains its monotonic clock, legacy duration migration, idle and optional full-screen resets, six exact postponements (5–30 minutes) used once per cycle and optional skipping. Update both the host and plugin: a transient host-capability marker prevents silent missing windows on old hosts, while legacy plugins do not create duplicate host windows. No host version, existing command/window label or persisted preference key is changed. New window IDs, commands and the event are listed above.
 

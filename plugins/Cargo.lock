@@ -553,7 +553,7 @@ dependencies = [
 
 [[package]]
 name = "eye-care"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "fly-island-plugin-sdk",
  "serde_json",

@@ -7,7 +7,7 @@ export type EyeCareText = {
 
 export const zhCN: EyeCareText = {
   title: "休息一下",
-  remaining: "剩余休息时间",
+  remaining: "剩余休息时长",
   postpone: "推迟本次休息", postponeOnce: "可以推迟一次，下次请完成休息",
   alreadyPostponed: "本轮已推迟过，请完成休息", skip: "跳过休息",
   failed: "操作未完成，请重试；也可以返回小岛检查插件状态。",

@@ -167,7 +167,7 @@ The SDK also has SHA-256, AES-GCM, DPAPI and Chromium v10 helpers; see source fo
 
 ## 本分支原生页面 / Native pages in this branch
 
-manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一个可空 `panel` 对象。旧 quota / sessions / notifications 契约保持兼容；未声明的 panel 被拒绝。宿主新增的是融入原有导航和设置的 React 页面，panel 数据不提供 HTML/CSS；护眼 0.2.0 的休息 WebView 由宿主按新版规范按需创建，见 [Eye Care](eye-care.md)。
+manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一个可空 `panel` 对象。旧 quota / sessions / notifications 契约保持兼容；未声明的 panel 被拒绝。宿主新增的是融入原有导航和设置的 React 页面，panel 数据不提供 HTML/CSS；护眼 1.0.0 的休息 WebView 由宿主按新版规范按需创建，见 [Eye Care](eye-care.md)。
 
 | 字段 / Field | 约束 / Constraint |
 | --- | --- |
@@ -182,6 +182,6 @@ manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一�
 
 Every publish replaces the complete panel; omission/null clears it. Text is bounded to 4096 UTF-8 bytes without NUL and row IDs are unique/nonempty. The host ticks countdowns locally, publishes changes only when snapshots differ, and rejects undeclared/invalid fields or actions. Legacy adapters without panels are unchanged.
 
-Eye Care 0.2.0 的窗口是固定宿主源码接入，不是插件可指定的通用 URL/HTML 窗口。仅支持带完整休息动作与 desktop-windows 权限的 eye-care 清单；由 attention、timer 行截止时间和当前动作得到有界状态，snooze_10 表示本轮可推迟，skip 表示可跳过。宿主初始化时临时提供 `_host-eye-care-windows` 能力标记。其他适配器不受影响。
+Eye Care 1.0.0 的窗口是固定宿主源码接入，不是插件可指定的通用 URL/HTML 窗口。仅支持带完整休息动作与 desktop-windows 权限的 eye-care 清单；由 attention、timer 行截止时间和当前动作得到有界状态，snooze_10 表示本轮可推迟，skip 表示可跳过。宿主初始化时临时提供 `_host-eye-care-windows` 能力标记。其他适配器不受影响。
 
 Eye Care windows are a fixed host-source integration, not a general plugin-provided URL/HTML window. Supported manifests supply the timer deadline and current action availability; the host derives snooze/skip state, injects the transient capability marker and owns all presentation. Legacy adapters remain compatible.

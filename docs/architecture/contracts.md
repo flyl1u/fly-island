@@ -242,14 +242,14 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - `locate_weather({ language }) → { location: { name, latitude, longitude }, source: "windows" | "ip" }`：只在用户点击时同时请求 Windows Geolocator 和 `ipwho.is` 网络粗定位；Windows 有坐标时用 Nominatim 反向解析城市，否则用 `ipwho.is` 返回的本地化城市名。坐标不写入 Rust 文件或独立位置记录，错误由前端显示可操作提示。
 - `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。天气与地理编码命令异步请求固定 HTTPS 服务，不新增事件、Tauri 权限或原生持久化文件。
 
-- 护眼插件（2026-11-17）：id `eye-care`，runtime `eye-care.exe`，permissions `panel` / `desktop-windows`，panel icon `heart-pulse`；设置 key `period`（分钟字符串）、`rest-minutes`（整数分钟字符串，1–60）、`idle`（分钟字符串）、`allow-skip`（布尔）、`pause-fullscreen`（布尔，默认 true，2026-11-26 新增）、`language`（`zh-CN` / `en`）；动作 `rest_now`。升级时将旧 `rest` 秒数（包括旧清单默认值）换算为分钟后向上取整，旧小数分钟同样向上取整为至少 1 分钟；插件兼容读取旧 key，新 key 优先。三个时长以 manifest 的 `number` 类型（必填 min / max，保存值仍是字符串）声明并自动保存，其他设置类型不变。复用 API v1；既有宿主命令、事件和 Tauri 窗口 label 保持兼容，0.2.0 的新增窗口契约见下文。
+- 护眼插件（2026-11-17）：id `eye-care`，runtime `eye-care.exe`，permissions `panel` / `desktop-windows`，panel icon `heart-pulse`；设置 key `period`（分钟字符串）、`rest-minutes`（整数分钟字符串，1–60）、`idle`（分钟字符串）、`allow-skip`（布尔）、`pause-fullscreen`（布尔，默认 true，2026-11-26 新增）、`language`（`zh-CN` / `en`）；动作 `rest_now`。升级时将旧 `rest` 秒数（包括旧清单默认值）换算为分钟后向上取整，旧小数分钟同样向上取整为至少 1 分钟；插件兼容读取旧 key，新 key 优先。三个时长以 manifest 的 `number` 类型（必填 min / max，保存值仍是字符串）声明并自动保存，其他设置类型不变。复用 API v1；既有宿主命令、事件和 Tauri 窗口 label 保持兼容，1.0.0 的新增窗口契约见下文。
 
-## 护眼宿主窗口（0.2.0，2026-11-19）
+## 护眼宿主窗口（1.0.0，2026-11-19）
 
 - 新增按需窗口标签 `eye-care-rest-<serial>-<screen>` 与页面入口 `?window=eye-care`；不改旧的四个窗口。
 - 新增命令 `get_eye_care_break()`、`show_eye_care_break_window()`，仅操作已登记的休息窗口；事件 `eye-care-break-changed` 为可空的 `{deadline, canSnooze, canSkip, percent, language}`（`percent` 为 0–100 的剩余比例，取自面板 timer 行，插件未上报时为 `null`，2026-11-26 新增）。独立 capability 只允许休息窗口监听/取消监听事件，不授予 opener/updater。
 - 插件 id、既有设置 key 与计时迁移不变，manifest 新增 `snooze_5/10/15/20/25/30` 和 `skip` 动作；状态机仍校验阶段、一次推迟和跳过权限。`rest_now` 保留。
-- 新宿主仅为该受支持清单的初始化 settings 注入保留键 `_host-eye-care-windows: true`；该键不写入注册文件，也不是用户设置。旧宿主缺少标记时，0.2.0 显示升级说明，不假装已覆盖显示器；旧插件清单不会触发宿主窗口，避免双重遮罩。
+- 新宿主仅为该受支持清单的初始化 settings 注入保留键 `_host-eye-care-windows: true`；该键不写入注册文件，也不是用户设置。旧宿主缺少标记时，1.0.0 显示升级说明，不假装已覆盖显示器；旧插件清单不会触发宿主窗口，避免双重遮罩。
 
 
 - 设备电量与音频使用固定插件 id device-battery。命令 device_battery_read(progress?)、device_battery_audio(speakerId, headsetId, target?) 仅对已启用的市场包生效，调用端不提供可执行文件路径。音频绑定存放于 fly-island-device-battery 的 speakerId / headsetId。

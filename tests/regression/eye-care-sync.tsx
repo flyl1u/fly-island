@@ -24,7 +24,7 @@ let panel: Panel = {
 };
 const manifest = {
   id: "eye-care", name: { "zh-CN": "护眼提醒", en: "Eye Care" },
-  description: { "zh-CN": "护眼", en: "Eye Care" }, version: "0.2.0", apiVersion: 1,
+  description: { "zh-CN": "护眼", en: "Eye Care" }, version: "1.0.0", apiVersion: 1,
   runtime: { command: "eye-care.exe" }, contributes: ["panel"], permissions: ["panel", "desktop-windows"],
   settings: [], panel: { icon: "heart-pulse" },
   actions: ["rest_now", "snooze_10", "skip"].map((id) => ({ id, label: { "zh-CN": id, en: id } })),

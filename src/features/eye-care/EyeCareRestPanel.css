@@ -39,9 +39,10 @@
   margin-top: 12px;
 }
 
-/* The countdown is the page: digits first, its own label under them, the bar under both. */
+/* The countdown is the page: digits first, its own label under them, the bar under both.
+   Both digits and bar use the warning tone the island shows while resting. */
 .eye-care-rest__clock {
-  color: var(--color-accent);
+  color: var(--color-warning);
   font-size: clamp(52px, 13vw, 88px);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -69,7 +70,7 @@
 .eye-care-rest__meter span {
   display: block;
   height: 100%;
-  background: var(--color-accent);
+  background: var(--color-warning);
   border-radius: inherit;
   transition: width 400ms ease;
 }

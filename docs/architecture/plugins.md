@@ -18,7 +18,7 @@ API v1 已实现为独立进程平台，协议见 [API](../plugins/api.md)。没
 
 Rust `weather/` 用已有 reqwest 异步请求固定 Open-Meteo 端点；城市搜索质量不足时补充 Nominatim，用户点击定位时优先 Windows Geolocator，再以 `ipwho.is` 粗定位兜底；没有凭据或原生后台服务。天气每三十分钟刷新，失败静默保留有效观测，三小时到期隐藏；时间只由叶子组件整分钟刷新。细节见 [时间与天气](../plugins/clock-weather.md)。
 
-`plugins/eye-care/` 是独立护眼插件：`clock.rs` 管理单调时钟与一次推迟状态，`panel.rs` 输出宿主面板，`win32/` 只隔离空闲 / 全屏探测。0.2.0 多屏休息窗口由宿主 `src-tauri/src/eye_care` 与 `src/windows/eye-care` 按需创建，复用共享主题与控件。它只依赖插件 SDK 与 Windows API，不向主程序引入依赖；配置复用宿主插件设置，生命周期随启停和 stdin EOF 结束。详见 [护眼插件](../plugins/eye-care.md)。
+`plugins/eye-care/` 是独立护眼插件：`clock.rs` 管理单调时钟与一次推迟状态，`panel.rs` 输出宿主面板，`win32/` 只隔离空闲 / 全屏探测。1.0.0 多屏休息窗口由宿主 `src-tauri/src/eye_care` 与 `src/windows/eye-care` 按需创建，复用共享主题与控件。它只依赖插件 SDK 与 Windows API，不向主程序引入依赖；配置复用宿主插件设置，生命周期随启停和 stdin EOF 结束。详见 [护眼插件](../plugins/eye-care.md)。
 
 
 ## 正式市场包
