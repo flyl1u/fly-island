@@ -136,6 +136,10 @@ try {
     await act(async () => weatherInstall().click());
     const toggle = weatherSwitch()!;
     const card = toggle.closest<HTMLElement>(".plugin-card")!;
+    const shownCards = () => [...document.querySelectorAll<HTMLElement>(".plugin-card")];
+    check(shownCards()[0] === card && shownCards().every((item, index, all) => index === 0
+      || !item.classList.contains("plugin-card--installed") || all[index - 1].classList.contains("plugin-card--installed")),
+      "Installed cards come first in the market");
     const visuals = [card.querySelector(".plugin-card__tile")!, card.querySelector(".plugin-card__check")!];
     check(toggle.checked && weatherSidebar() && !document.querySelector(`input[aria-label='${t.clockWeather.city}']`),
       "安装默认启用，天气设置只出现在独立栏目");
