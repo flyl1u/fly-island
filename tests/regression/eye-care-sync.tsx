@@ -54,7 +54,7 @@ const islandClock = () => island.querySelector(".eye-care-island__value--countdo
 const restClock = () => rest.querySelector("[role=timer]")?.textContent ?? "";
 const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 60 + Number(part), 0);
 const showRest = () => act(async () => restRoot.render(<I18nProvider><EyeCareRestPanel
-  snapshot={{ deadline, canSnooze: true, canSkip: true, language }} busy={false} failed={false} onAction={(action) => windowActions.push(action)}
+  snapshot={{ deadline, canSnooze: true, canSkip: true, percent: 60, language }} busy={false} failed={false} onAction={(action) => windowActions.push(action)}
 /></I18nProvider>));
 try {
   await act(async () => { await refreshPlugins(); });
@@ -77,11 +77,13 @@ try {
   await showRest();
   check(islandClock() === restClock() && seconds(restClock()) === 300, "A new deadline updates both clocks immediately");
   check(!island.querySelector(".eye-care-island__actions"), "Resting island shows no duplicate postponement or skip buttons");
-  check(rest.querySelectorAll(".eye-care-rest__choices button").length === 5 && rest.querySelector(".eye-care-rest__skip button"),
-    "The break window retains all five postponements and optional skipping");
-  await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[3].click());
-  await act(async () => rest.querySelector<HTMLButtonElement>(".eye-care-rest__skip button")!.click());
-  check(windowActions.join(",") === "snooze_25,skip", "The remaining break-window actions still work");
+  check(rest.querySelectorAll(".eye-care-rest__choices button").length === 6 && rest.querySelector(".eye-care-rest__actions button"),
+    "The break window retains all six postponements and optional skipping");
+  check(rest.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width === "60%",
+    "The break window drains the same kind of bar as the island");
+  await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[5].click());
+  await act(async () => rest.querySelector<HTMLButtonElement>(".eye-care-rest__actions button")!.click());
+  check(windowActions.join(",") === "snooze_30,skip", "The remaining break-window actions still work");
 
   jump += 10_500;
   await act(async () => window.dispatchEvent(new Event("focus")));

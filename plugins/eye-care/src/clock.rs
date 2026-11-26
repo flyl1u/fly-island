@@ -89,7 +89,7 @@ impl Clock {
     /// The current break may be postponed exactly once. When it returns, all snooze
     /// controls stay unavailable until that break has completed or been skipped.
     pub fn snooze(&mut self, now: Instant, minutes: u64) -> bool {
-        if !self.can_snooze() || now >= self.deadline || ![10, 15, 20, 25, 30].contains(&minutes) {
+        if !self.can_snooze() || now >= self.deadline || ![5, 10, 15, 20, 25, 30].contains(&minutes) {
             return false;
         }
         self.snooze_used = true;

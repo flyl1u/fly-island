@@ -1,45 +1,163 @@
+/* The break screen is a full-display dim surface with one card in the middle, drawn like the
+   island's own Eye Care page: a quiet title, the remaining time as the loudest element, its
+   label underneath, a thin bar for what is left, then the postponements and the optional skip.
+   Vertical auto margins centre the card but let a short screen scroll from its top. */
 .eye-care-rest {
-  width: min(100%, 560px);
-  margin: auto;
-  flex: 0 0 auto;
-  padding: clamp(20px, 4vw, 36px);
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(20px, 5vw, 56px);
   color: var(--text-1);
-  background: var(--color-surface-dark);
-  border: 1px solid var(--color-white-a12);
-  border-radius: var(--corner-2xl);
-  corner-shape: var(--corner-shape);
   text-align: center;
   overflow-wrap: anywhere;
 }
 
-.eye-care-rest__name {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-md);
+.eye-care-rest__card {
+  width: min(100%, 460px);
+  margin-block: auto;
+  padding: clamp(22px, 3.4vw, 32px) clamp(20px, 3vw, 30px) clamp(18px, 2.6vw, 24px);
+  background: var(--color-popover);
+  border: 1px solid var(--color-white-a12);
+  border-radius: var(--corner-2xl);
+  corner-shape: var(--corner-shape);
+}
+
+.eye-care-rest__title {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.eye-care-rest__timer {
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* The countdown is the page: digits first, its own label under them, the bar under both. */
+.eye-care-rest__clock {
   color: var(--color-accent);
-  font-size: 13px;
+  font-size: clamp(52px, 13vw, 88px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.eye-care-rest__label {
+  margin: 8px 0 0;
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.eye-care-rest__meter {
+  height: 4px;
+  margin-top: 14px;
+  overflow: hidden;
+  background: rgba(var(--ink-rgb), 0.14);
+  border-radius: var(--radius-pill);
+}
+
+.eye-care-rest__meter span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+
+.eye-care-rest__body {
+  margin-top: clamp(18px, 2.6vw, 24px);
+  padding-top: clamp(16px, 2.2vw, 20px);
+  border-top: 1px solid var(--color-white-a08);
+}
+
+.eye-care-rest__caption,
+.eye-care-rest__note {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* Six postponements in two rows of three, so 5 minutes leads and the widest window stay even. */
+.eye-care-rest__choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Each postponement reads as a quiet pill, the same control as the island's. */
+.eye-care-rest__choices .settings-link-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  justify-content: center;
+  padding: 0 clamp(4px, 1.6vw, 14px);
+  color: var(--text-2);
+  background: var(--color-white-a10);
+  border-radius: var(--radius-pill);
+  font-size: clamp(11px, 3.2vw, 12.5px);
   font-weight: 600;
 }
 
-.eye-care-rest h1 { margin: 16px 0 var(--space-lg); font-size: clamp(22px, 5vw, 28px); font-weight: 700; }
-.eye-care-rest__hint { margin: 0; color: var(--text-2); line-height: 1.6; }
-.eye-care-rest__clock { margin: 24px 0 var(--space-lg); font-size: clamp(44px, 12vw, 76px); line-height: 1.15; font-weight: 600; font-variant-numeric: tabular-nums; }
-.eye-care-rest__note { margin: var(--space-md) 0; color: var(--text-3); font-size: 13px; line-height: 1.6; }
-.eye-care-rest__postpone { margin-top: 24px; }
-.eye-care-rest__postpone p { margin: 0 0 var(--space-md); color: var(--text-2); font-size: 13px; line-height: 1.6; }
-.eye-care-rest__choices { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-sm) var(--space-xl); }
-.eye-care-rest__choices .settings-link-button { min-height: 36px; padding: var(--space-md); }
-.eye-care-rest__skip { margin-top: 20px; }
-.eye-care-rest__skip .settings-link-button { min-height: 36px; white-space: normal; }
-.eye-care-rest__error { margin: var(--space-xl) 0 0; color: var(--color-error-text); font-size: 13px; line-height: 1.6; }
+.eye-care-rest__choices .settings-link-button:hover:not(:disabled) {
+  color: var(--text-1);
+  background: var(--color-white-a10);
+  filter: brightness(1.12);
+}
 
-:root[data-material="liquidGlass"] .eye-care-rest {
-  background: linear-gradient(180deg, var(--color-white-a12), transparent 46%), var(--color-surface-dark);
+.eye-care-rest__choices .settings-link-button:focus-visible,
+.eye-care-rest__actions .settings-link-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.eye-care-rest__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.eye-care-rest__actions .settings-link-button {
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.eye-care-rest__error {
+  margin: 14px 0 0;
+  color: var(--color-error-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+:root[data-material="liquidGlass"] .eye-care-rest__card {
+  background: linear-gradient(180deg, var(--color-white-a12), transparent 46%), var(--color-popover);
   box-shadow: inset 0 1px 0 var(--color-white-a12);
 }
 
-:root[data-material="frostedGlass"] .eye-care-rest {
-  background: color-mix(in srgb, var(--color-surface-dark) 88%, var(--color-window));
+:root[data-material="frostedGlass"] .eye-care-rest__card {
+  background: color-mix(in srgb, var(--color-popover) 86%, var(--color-window));
   backdrop-filter: blur(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eye-care-rest__meter span {
+    transition: none;
+  }
 }

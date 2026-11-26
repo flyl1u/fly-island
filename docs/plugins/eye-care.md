@@ -10,7 +10,7 @@
 
 - 用眼 1–720 分钟（默认 20）、休息 1–60 分钟（默认 1）、空闲时长 1–120 分钟（默认 5），仍为整数分钟并自动保存；旧秒数/小数分钟向上取整迁移不变。
 - 空闲重置用眼周期；「全屏模式下暂停并重置计时」开启时（默认），全屏窗口同样重置并冻结用眼计时，恢复窗口视图后从完整周期开始，关闭后全屏不影响计时。休息使用单调时钟，不受两者影响。
-- 休息期间每个显示器出现一个按需创建的宿主窗口，休息结束自动销毁。可推迟一次，仍有 10/15/20/25/30 分钟五档；之后主动休息也不会恢复该机会。允许跳过时才显示紧急解锁，后台同样校验权限。
+- 休息期间每个显示器出现一个按需创建的宿主窗口，休息结束自动销毁。可推迟一次，仍有 5/10/15/20/25/30 分钟六档；之后主动休息也不会恢复该机会。允许跳过时才显示「跳过休息」，后台同样校验权限。
 - 窗口按物理显示器坐标定位，支持副屏负坐标与系统 DPI；热插拔会重建窗口，保留原截止时间。可见、已置顶的宿主窗口仍在休息画面上方；贴边、折叠和托盘隐藏由宿主管理，不强制显示隐藏窗口。
 - 深浅色与材质跟随宿主；提醒语言沿用插件设置，使用宿主双语字典且不修改全局语言偏好。整屏背景遮挡工作内容，玻璃样式用于卡片，不额外捕获桌面。窄屏按钮换行，短屏可滚动，Tab 焦点沿用宿主控件。
 - Alt+F4 不结束本轮休息；系统安全快捷键仍可用。这是休息画面，不是 Windows 身份验证锁屏。
@@ -22,6 +22,8 @@
 岛内标题为「用眼中」或「休息中」，倒计时标注「剩余用眼时长」或「剩余休息时长」。已推迟的用眼阶段提示「已经推迟过一次，不能推迟下次休息」。不再显示规则、配置时长或远眺 / 自动解锁说明；空闲和全屏暂停时仍显示静态剩余时间。岛内页面由护眼自己的组件绘制（`src/features/eye-care/EyeCareIslandPanel`），通用插件页不受影响：状态、剩余时间、剩余进度条和「现在休息」收在一张卡片内，26px 等宽倒计时在上、标签在下、4px 进度条在底，暂停时不给 `percent` 也不显示进度条，页高由 `getEyeCareIslandHeight` 单独计算。（2026-11-26 用户要求）
 
 岛内与休息窗口使用同一截止时间和倒计时计算，按剩余秒数改变的边界刷新，不再各自从挂载时刻启动一秒定时器。窗口重新可见或获得焦点时立即校准，切换截止时间立即更新，结束后停止刷新。
+
+休息画面只保留标题「休息一下」、剩余倒计时、推迟档位和可选的「跳过休息」：不再显示带眼睛图标的插件名标志、远眺 / 闭眼提示，也不写「休息结束后自动开始下一轮」；跳过按钮直接写「跳过休息」。（2026-11-26 用户要求）版式沿用岛内护眼页：整块屏幕作为遮罩，中间一张卡片，12px 的标题在上，倒计时用强调色等宽数字（52–88px，随窗口宽度缩放），标签「剩余休息时间」在下，再往下是 4px 的剩余进度条；分隔线以下依次是「可以推迟一次，下次请完成休息」、六档推迟胶囊按钮（5、10、15 一行，20、25、30 一行）和右下角的「跳过休息」。进度条直接使用面板上报的 `percent`，宿主不再自行推算；插件未提供时只显示数字。
 
 休息时，岛内仅显示状态和倒计时，移除重复的「推迟 10 分钟」与「跳过休息」按钮。推迟和跳过统一在休息窗口操作；用眼阶段仍保留「现在休息」。面板用 `islandActions` 告诉宿主岛上显示哪些动作（用眼阶段为 `rest_now`，休息阶段为空），`actions` 仍保留 `snooze_10` / `skip`，继续用于宿主判断推迟与跳过权限。
 
@@ -53,9 +55,13 @@ During a break, the island shows status and the countdown without duplicate post
 
 The island and break window share the countdown calculation and absolute deadline. Updates align with remaining-second boundaries rather than mount times, resync on focus/visibility, and stop at zero.
 
+The break window keeps only the “Take a break” title, the remaining countdown, the postponement choices and the optional “Skip break”. The Eye Care badge with its eye icon, the looking-away hint and “Your next interval starts automatically” are gone, and skipping is no longer worded as an emergency unlock. (2026-11-26, per user request)
+
+The layout follows the island's Eye Care page: the display itself is the dim surface, with one centred card. A 12px title sits on top, the countdown is accent-coloured tabular figures (52–88px, scaling with the window), “Remaining break time” sits under it, then a 4px bar for the share left. Below a divider come the one-postponement note, six postponement pills in two rows of three (5/10/15, then 20/25/30) and “Skip break” in the bottom-right corner. The bar reads the panel's reported `percent`; the host no longer estimates it, and the digits stand alone when the plugin sends none.
+
 Eye Care 0.2.0 replaces fixed-color Win32/GDI break UI with on-demand host Tauri windows. They reuse host React components, theme tokens, fonts, lucide and localized action controls, including dark/light schemes, both glass treatments, narrow widths and short-screen scrolling. Each monitor uses its physical bounds; existing visible topmost host windows remain usable, and hidden windows stay hidden.
 
-The plugin retains its monotonic clock, legacy duration migration, idle and optional full-screen resets, five exact postponements used once per cycle and optional skipping. Update both the host and plugin: a transient host-capability marker prevents silent missing windows on old hosts, while legacy plugins do not create duplicate host windows. No host version, existing command/window label or persisted preference key is changed. New window IDs, commands and the event are listed above.
+The plugin retains its monotonic clock, legacy duration migration, idle and optional full-screen resets, six exact postponements (5–30 minutes) used once per cycle and optional skipping. Update both the host and plugin: a transient host-capability marker prevents silent missing windows on old hosts, while legacy plugins do not create duplicate host windows. No host version, existing command/window label or persisted preference key is changed. New window IDs, commands and the event are listed above.
 
 Windows are created only during an enabled break, shown after initial state and first paint, and destroyed on completion, disable/uninstall, plugin failure/restart or shutdown. Partial failures are cleaned up, readiness is bounded and retries limited. Coalesced updates and session tokens prevent unbounded UI queues and stale messages reopening closed windows. No networking, telemetry, unrelated file reads or desktop capture is introduced.
 

@@ -19,7 +19,7 @@ const material = query.get("material") ?? "classic";
 const text = TRANSLATIONS[language].eyeCare;
 localStorage.setItem(LOCALE_STORAGE_KEY, hostLanguage);
 localStorage.setItem(STORAGE_KEY, JSON.stringify({ colorScheme: theme, material }));
-const snapshot: EyeCareBreak = { deadline: Date.now() + 90_000, canSnooze: true, canSkip: true, language };
+const snapshot: EyeCareBreak = { deadline: Date.now() + 90_000, canSnooze: true, canSkip: true, percent: 72, language };
 const actions: { id: string; action: string }[] = [];
 let revealed = 0;
 let failAction = false;
@@ -54,25 +54,40 @@ const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 
 try {
   await mount(); await wait(160);
   check(document.querySelector("h1")?.textContent === text.title, "The break uses its configured language");
+  check(!document.querySelector(".eye-care-rest__name") && !document.querySelector(".eye-care-rest__hint"),
+    "The break window has no plugin badge or looking-away hint");
+  const card = document.querySelector<HTMLElement>(".eye-care-rest__card")!;
+  check(card.contains(document.querySelector(".eye-care-rest__title")!)
+    && card.contains(document.querySelector("[role=timer]")!)
+    && card.contains(document.querySelector(".eye-care-rest__label")!)
+    && card.contains(document.querySelector(".eye-care-rest__meter")!)
+    && card.contains(document.querySelector(".eye-care-rest__choices")!),
+    "Title, countdown, its label, the bar and the choices share one card");
+  check(document.querySelector(".eye-care-rest__label")?.textContent === text.remaining,
+    "The countdown carries its own label under the digits");
+  check(document.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width === "72%",
+    "The bar drains by the share the plugin reports");
   check(localStorage.getItem(LOCALE_STORAGE_KEY) === hostLanguage, "Break language does not overwrite the host preference");
   check(document.documentElement.dataset.theme === theme && document.documentElement.dataset.material === material,
     "The window follows the host scheme and material");
   check(revealed > 0, "The host is asked to reveal only after state and first paint");
-  check(document.querySelectorAll(".eye-care-rest__choices .settings-link-button").length === 5,
-    "All five postponements reuse host controls");
+  const pills = [...document.querySelectorAll<HTMLElement>(".eye-care-rest__choices .settings-link-button")];
+  check(pills.length === 6, "All six postponements reuse host controls");
+  check(pills.map((pill) => pill.textContent).join(",") === [5, 10, 15, 20, 25, 30].map(text.minutes).join(","),
+    "Postponements run from five to thirty minutes in order");
   check(document.querySelector(".settings-link-button--danger")?.textContent === text.skip,
     "Skipping has the localized host action style");
   const before = clock();
   await wait(1200);
   check(seconds(clock()) < seconds(before), "The displayed countdown advances locally");
-  await act(async () => document.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[3].click());
-  check(actions[actions.length - 1]?.id === "eye-care" && actions[actions.length - 1]?.action === "snooze_25", "Postponement routes to the plugin's 25-minute action");
+  await act(async () => document.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[0].click());
+  check(actions[actions.length - 1]?.id === "eye-care" && actions[actions.length - 1]?.action === "snooze_5", "Postponement routes to the plugin's 5-minute action");
   failAction = true;
   await act(async () => document.querySelector<HTMLButtonElement>(".settings-link-button--danger")!.click());
   check(document.querySelector("[role=alert]")?.textContent === text.failed, "Failed actions offer localized guidance without raw errors");
   failAction = false;
   await update({ ...snapshot, canSnooze: false, canSkip: false });
-  check(!document.querySelector(".eye-care-rest__choices") && !document.querySelector(".eye-care-rest__skip"),
+  check(!document.querySelector(".eye-care-rest__choices") && !document.querySelector(".eye-care-rest__actions"),
     "A used postponement and forbidden skip have no controls");
   fixture.style.width = "260px";
   fixture.style.height = "220px";

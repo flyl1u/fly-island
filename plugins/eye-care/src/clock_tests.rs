@@ -92,11 +92,11 @@ fn emergency_unlock_skips_rest_and_starts_a_fresh_cycle() {
 
 #[test]
 fn all_postponements_are_exact_and_invalid_choices_do_not_consume_one() {
-    for minutes in [10, 15, 20, 25, 30] {
+    for minutes in [5, 10, 15, 20, 25, 30] {
         let base = Instant::now();
         let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
         clock.rest_now(base);
-        for invalid in [0, 9, 11, 31, u64::MAX] {
+        for invalid in [0, 4, 6, 9, 11, 31, u64::MAX] {
             assert!(!clock.snooze(base, invalid));
         }
         assert!(clock.snooze(base, minutes));

@@ -247,8 +247,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 ## 护眼宿主窗口（0.2.0，2026-11-19）
 
 - 新增按需窗口标签 `eye-care-rest-<serial>-<screen>` 与页面入口 `?window=eye-care`；不改旧的四个窗口。
-- 新增命令 `get_eye_care_break()`、`show_eye_care_break_window()`，仅操作已登记的休息窗口；事件 `eye-care-break-changed` 为可空的 `{deadline, canSnooze, canSkip, language}`。独立 capability 只允许休息窗口监听/取消监听事件，不授予 opener/updater。
-- 插件 id、既有设置 key 与计时迁移不变，manifest 新增 `snooze_10/15/20/25/30` 和 `skip` 动作；状态机仍校验阶段、一次推迟和跳过权限。`rest_now` 保留。
+- 新增命令 `get_eye_care_break()`、`show_eye_care_break_window()`，仅操作已登记的休息窗口；事件 `eye-care-break-changed` 为可空的 `{deadline, canSnooze, canSkip, percent, language}`（`percent` 为 0–100 的剩余比例，取自面板 timer 行，插件未上报时为 `null`，2026-11-26 新增）。独立 capability 只允许休息窗口监听/取消监听事件，不授予 opener/updater。
+- 插件 id、既有设置 key 与计时迁移不变，manifest 新增 `snooze_5/10/15/20/25/30` 和 `skip` 动作；状态机仍校验阶段、一次推迟和跳过权限。`rest_now` 保留。
 - 新宿主仅为该受支持清单的初始化 settings 注入保留键 `_host-eye-care-windows: true`；该键不写入注册文件，也不是用户设置。旧宿主缺少标记时，0.2.0 显示升级说明，不假装已覆盖显示器；旧插件清单不会触发宿主窗口，避免双重遮罩。
 
 
