@@ -3,7 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 
 // Mirrors plugin_host/{manifest,protocol,storage,service,packages}.rs.
 export type Localized = { "zh-CN": string; en: string };
-export type PluginSetting = { key: string; label: Localized; type: "toggle" | "text" | "secret" | "select" | "number"; default: boolean | string; options: { value: string; label: Localized }[]; min?: number; max?: number };
+export type PluginSetting = { key: string; label: Localized; description?: Localized; type: "toggle" | "text" | "secret" | "select" | "number"; default: boolean | string; options: { value: string; label: Localized }[]; min?: number; max?: number };
 import type { PluginPanelIcon } from "./panelTypes";
 export type { PluginPanelIcon } from "./panelTypes";
 export type PluginPanelRow = { id: string; title: string; detail: string | null; percent: number | null; countdownTo: number | null; tone: "normal" | "warning" | "danger" | null };
