@@ -1,10 +1,14 @@
-// A plugin's line icon: the sidebar entry of its settings page. PluginIcon.tsx draws the tiles.
-import { Activity, BatteryMedium, CalendarDays, CloudSun, Eye, Gauge, HeartPulse, Puzzle, Timer, type LucideIcon } from "lucide-react";
+// The line icon of every plugin without a brand mark: its tile (PluginIcon.tsx) and its sidebar entry.
+import { Activity, BatteryMedium, CalendarDays, CloudSun, Eye, Gauge, HeartPulse, Orbit, Puzzle, Sparkles, Terminal, Timer, type LucideIcon } from "lucide-react";
 import type { PluginPanelIcon } from "./panelTypes";
 
 const PLUGIN_LINE_ICONS: Readonly<Record<string, LucideIcon>> = {
   clockWeather: CloudSun,
   calendarMarks: CalendarDays,
+  // The same glyphs AgentProviderIcon draws on the island.
+  codebuddy: Terminal,
+  antigravity: Orbit,
+  minimax: Sparkles,
   "eye-care": Eye,
   "device-battery": BatteryMedium,
 };

@@ -215,6 +215,7 @@
 ### 图标
 
 - 有品牌且能合规取得官方标识的，用品牌图标（放在 `src/assets/brands/`，在它的 README 里记录来源和授权）；否则用 lucide 线条图标配一个低饱和强调色。**不允许占位图标、字母头像或插件包自带的位图。**
-- 线条图标的卡片磁贴和「时间与天气」「日历标记」一致：同样的尺寸、圆角、描边、底色浓度和光晕强度，线宽 1.5，图形占磁贴的 72%。
+- 线条图标的卡片磁贴和「时间与天气」「日历标记」一致：同样的尺寸、圆角、描边、底色浓度和光晕强度，线宽 1.5，图形占磁贴的 72%。强调色用目录里的 `accent`，磁贴底色是它的 16%，与卡片光晕同色。
+- 现有分配：时间与天气 `CloudSun`、日历标记 `CalendarDays`、护眼提醒 `Eye`、设备电量与音频 `BatteryMedium`、MiniMax Code `Sparkles`（暂无合规来源的品牌图标）、CodeBuddy `Terminal`、Antigravity `Orbit`（后两个与小岛上的 `AgentProviderIcon` 同一套）。
 - 同一个插件在插件卡片、侧栏栏目、分组标题三处用同一套图标。侧栏统一用线条图标，不用彩色图标块。
 - 图标只在 `features/plugins/PluginIcon.tsx`（磁贴）和 `features/plugins/pluginLineIcons.ts`（线条图标）里定义。

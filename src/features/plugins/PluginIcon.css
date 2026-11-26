@@ -1,6 +1,7 @@
-.plugin-card__package {
+/* The accent is mixed toward the text colour so the pale ones stay legible on the light theme. */
+.plugin-icon--line {
   display: grid;
   place-items: center;
-  color: var(--plugin-accent, var(--color-accent));
-  background: var(--color-white-a08);
+  color: color-mix(in srgb, var(--plugin-tint) 82%, var(--color-text));
+  background: color-mix(in srgb, var(--plugin-tint) 16%, var(--color-white-a06));
 }

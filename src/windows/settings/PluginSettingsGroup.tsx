@@ -45,7 +45,7 @@ export function ExternalPluginGroup({ plugin, external, page }: { plugin: Placed
   // A standalone page is already titled with the plugin's name.
   const titled = !plugin.standalone;
   return <SettingsGroup anchor={plugin.id}
-    title={titled ? name : undefined} icon={titled ? <PluginIcon id={plugin.id} size={16} /> : undefined}
+    title={titled ? name : undefined} icon={titled ? <PluginIcon id={plugin.id} size={16} panelIcon={manifest.panel?.icon} /> : undefined}
     footer={error ? <span className="plugins-settings__error" role="alert">{error}</span> : undefined}>
     {settings.map((setting) => <PluginSettingRow
       key={`${plugin.id}/${setting.key}/${setting.type === "number" ? "number" : JSON.stringify(external.settings[setting.key])}`}
