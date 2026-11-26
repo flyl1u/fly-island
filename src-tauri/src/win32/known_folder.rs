@@ -2,17 +2,26 @@
 //! profile folder, so they are asked from Windows rather than assumed.
 
 use std::path::PathBuf;
+use windows::core::GUID;
 use windows::Win32::{
     System::Com::CoTaskMemFree,
-    UI::Shell::{FOLDERID_Downloads, SHGetKnownFolderPath, KF_FLAG_DEFAULT},
+    UI::Shell::{FOLDERID_Downloads, FOLDERID_LocalAppData, SHGetKnownFolderPath, KF_FLAG_DEFAULT},
 };
 
 /// The current user's Downloads folder; `None` if Windows cannot say.
 pub(crate) fn downloads() -> Option<PathBuf> {
-    // SAFETY: FOLDERID_Downloads is a valid known-folder id, no token is passed
+    known_folder(&FOLDERID_Downloads)
+}
+
+pub(crate) fn local_app_data() -> Option<PathBuf> {
+    known_folder(&FOLDERID_LocalAppData)
+}
+
+fn known_folder(id: &GUID) -> Option<PathBuf> {
+    // SAFETY: id is a known-folder GUID, no token is passed
     // (current user), and the returned buffer is freed below with CoTaskMemFree,
     // as SHGetKnownFolderPath requires, whether or not it reads as a string.
-    let path = unsafe { SHGetKnownFolderPath(&FOLDERID_Downloads, KF_FLAG_DEFAULT, None) }.ok()?;
+    let path = unsafe { SHGetKnownFolderPath(id, KF_FLAG_DEFAULT, None) }.ok()?;
     // SAFETY: on success `path` points to a NUL-terminated UTF-16 string.
     let text = unsafe { path.to_string() };
     // SAFETY: `path` came from SHGetKnownFolderPath and is freed exactly once.

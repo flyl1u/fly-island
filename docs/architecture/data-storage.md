@@ -54,6 +54,7 @@ English: backups cover app storage and explicitly selected user-data files, impo
 | 通知、微信消息摘要、邮件正文 | 仅保存在内存中 | 各服务模块 |
 | 微信摘要和最小化时隐藏任务栏图标的偏好 | WebView2 的 `localStorage`，见 [对外契约](contracts.md) | `features/messages/wechat/storage.ts` |
 | 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
+| Telegram 通知预览 | 运行时内存。仅在用户点击时按需查询 Windows 通知数据库中的对应条目；激活 TG 成功后按通知 ID 删除原生通知 | `telegram_notifications/` |
 
 总览见 [overview.md](overview.md)。
 

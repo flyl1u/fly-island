@@ -75,6 +75,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `fly-island-qq-mail-remote-images`（2026-11-11 起不再读写：邮件里的远程图片总是加载，已存的值留在原处不删） | 无 |
 | `fly-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `fly-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
+| `fly-island-telegram-notifications-enabled` | `features/messages/telegram/storage.ts` |
 | `fly-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `fly-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
 | `fly-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
@@ -131,6 +132,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `clipboard-history-shortcut-status`（载荷为字符串或 `null`：剪贴板快捷键注册失败的原因，成功或关闭时为 `null`；最近一次结果也可用 `get_clipboard_shortcut_error` 读取） | `clipboard_history/hotkey.rs` | 广播 |
 | `qq-mail-changed` | `mail/service.rs`（常量在 `mod.rs`） | 广播 |
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
+| `telegram-notifications-changed` | `telegram_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
 | `office-im-changed`（载荷 `OfficeImSnapshot`：`revision` 与 `dingtalk` / `feishu` / `wecom` 各自的 `enabled`、`status`、`pending`、`lastAttentionAt`、`error`） | `office_im/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
@@ -163,6 +165,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - `clear_wechat_reminders()`（2026-11-13）清除岛内微信镜像：`pending=false`、清空 `messages`、`revision+1`，返回 `ReminderSnapshot` 并沿用 `wechat-reminder-changed` 推送；发给 settings 的快照仍剥除消息。不会操作微信客户端的已读状态或偏好。为本应用命令，不使用额外插件/核心权限；现有 `capabilities/default.json` 的本地窗口范围足够。
 - `dismiss_wechat_conversation(messageId)`（2026-11-14）清掉 `messageId` 所在会话（按会话 key）的全部摘要，保留其他会话；最新一次提醒属于该会话时同时 `pending=false`，`lastAttentionAt` 不变。返回 `ReminderSnapshot`，沿用 `wechat-reminder-changed` 推送；找不到 ID 时原样返回。前端在打开会话成功后调用。
 - `dismiss_qq_contact(title)`（2026-11-14）清掉通知标题等于 `title`（联系人或群名）的全部 QQ 通知，保留其他人，返回 `QQNotificationSnapshot` 并沿用 `qq-notifications-changed` 推送。两条命令都只改内存中的镜像，不新增 localStorage key 或事件，不需要额外权限。
+- `get_telegram_notification_state()`、`set_telegram_notifications_enabled(enabled)` 和 `open_telegram_notification(id)` 返回 Telegram 快照。消息行包含 `id`、`title`、`body`、`createdAt`。打开命令使用应用内的消息 ID。TG 确认收到对话激活请求后，`open_telegram_notification` 按 Windows 通知 ID 移除原始通知，之后才从岛内移除对应消息。`open_telegram()` 打开 TG 桌面应用。`request_telegram_notification_access()` 和 `open_telegram_notification_settings()` 分别请求 Windows 通知读取权限和打开该权限的系统设置。
 - `open_wechat` / `open_wechat_conversation` 失败时返回错误码 `wechat-open:not-installed`、`wechat-open:no-main-window`、`wechat-open:restore-failed`、`wechat-open:launch-failed`，由前端翻译成中英文提示；微信未运行时这两个命令会尝试启动它（会话命令随后返回 `false`）。
 - 应用数据目录的 `wechat-accessibility.json` 记录 `{ pid, started_at }`，用于重新校验进程并恢复岛屿临时开启的微信辅助功能标志。
 

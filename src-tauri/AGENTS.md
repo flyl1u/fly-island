@@ -28,6 +28,7 @@ src-tauri/src/
 ├── lyrics/                  # 本地 LRC、LRCLIB、QQ QRC、网易 YRC、酷狗 KRC 缓存、汽水只读 LMDB/msgpackr；word_formats.rs 统一逐字格式，在线结果缓存在 lyrics-cache/
 ├── mail/                    # 邮箱（命令名仍为 *_qq_mail）：附件（attachments.rs）、命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/        # QQ 通知监听；repair-qq-notification-registration.ps1 编入二进制，也可手动运行
+├── telegram_notifications/  # Telegram 系统通知监听与原通知的会话激活
 ├── wechat_reminders/        # source.rs 统一微信进程解析、窗口选择和任务栏提醒（被示例复用）；可选的 UI Automation 摘要与 Qt 标志恢复
 ├── weather/                 # 时间与天气：Open-Meteo 城市搜索与当前天气异步命令，不自动定位、不写原生数据文件
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）

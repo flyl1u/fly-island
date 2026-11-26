@@ -4,7 +4,7 @@ import type { MessageSource } from "./messagePreview.ts";
 /** The Messages page's tab order, as rearranged by press-and-hold dragging. */
 export const MESSAGE_SOURCE_ORDER_KEY = "fly-island-message-source-order";
 
-export const DEFAULT_SOURCE_ORDER: readonly MessageSource[] = ["wechat", "qq", "qqMail", "dingtalk", "feishu", "wecom", "plugin"];
+export const DEFAULT_SOURCE_ORDER: readonly MessageSource[] = ["wechat", "qq", "qqMail", "telegram", "dingtalk", "feishu", "wecom", "plugin"];
 
 /** A saved order with unknown entries dropped and sources it lacks (new ones) added at the end. */
 export function normalizeSourceOrder(value: unknown): MessageSource[] {

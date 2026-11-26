@@ -13,7 +13,7 @@
 ┌──────────────────────────────── Rust（Tauri 2）──────────────────────────────────────┐
 │  lib.rs 组装：插件 / setup / 托盘 / generate_handler!                                  │
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
-│           mail · qq_notifications · wechat_reminders · translation · settings_window │
+│           mail · qq_notifications · wechat_reminders · telegram_notifications · translation · settings_window │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信提醒与摘要、鼠标穿透循环          │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
              ▼
@@ -41,6 +41,8 @@ WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析�
 Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先读取 Windows 凭据管理器中的手动 API Key 配置（`zcode_api_key.rs`），未配置时回退到 Z Code 桌面版登录凭据；设置页只拿到 Key 是否存在与掩码。额度缓存在原生内存中，Key 或平台变更时清除。
 
 微信的进程解析、窗口归属和主窗口选择统一在 `wechat_reminders/source.rs`，供打开动作、提醒监听、摘要读取和探测程序复用；需比较完整路径时使用 `win32/process.rs` 的 canonicalize 与归一化回退。微信摘要开启时，微信提醒服务通过 `win32/caption_close.rs` 将微信关闭按钮的点击转为最小化，通过 `win32/taskbar.rs` 控制最小化窗口的任务栏按钮。
+
+Telegram Desktop 使用 Windows 通知时，`telegram_notifications` 通过 WinRT 读取摘要。用户点击后，服务从当前用户的系统通知数据库只读查询该条通知的激活参数，并交给 Telegram 的原生通知回调。目标失效或激活失败时保留仍可见的卡片，并显示错误。
 
 ## 目标结构
 

@@ -66,7 +66,7 @@ export function IslandApp() {
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
-  const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;
+  const { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview } = notices;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentUsages, alertUsages } =
@@ -111,6 +111,7 @@ export function IslandApp() {
     clipboardEnabled: clipboardHistory.settings.enabled,
     qqEnabled: qqNotifications.snapshot.enabled,
     wechatEnabled: wechatReminders.snapshot.enabled,
+    telegramEnabled: telegram.snapshot.enabled,
     qqMail,
     page,
     messageSource,
@@ -220,6 +221,7 @@ export function IslandApp() {
         qqMail={qqMail}
         qqNotifications={qqNotifications}
         wechatReminders={wechatReminders}
+        telegram={telegram}
         onOpenMessages={openMessages}
         preview={preview}
         notice={notice.size}
@@ -284,6 +286,7 @@ export function IslandApp() {
           qqMail={qqMail}
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}
+          telegram={telegram}
           messageSource={messageSource}
           openMessages={openMessages}
           media={media}

@@ -7,6 +7,7 @@
 | `qq.png` | [QQ](https://im.qq.com/index) | [官网图标](https://static-res.qq.com/static-res/imqq/qq-logo.png) |
 | `wechat.png` | [微信 Windows](https://pc.weixin.qq.com/) | [官网 Apple Touch 图标](https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png) |
 | `qq-mail.png` | [QQ 邮箱](https://mail.qq.com/) | [官网图标](https://res.wx.qq.com/t/webmail/webmail/res/images/qqmail_favicon_96h.8d124a7.png) |
+| `telegram.png` | Telegram Desktop | 由已安装的官方 `Telegram.exe` 应用图标提取，用于本机消息来源标识 |
 
 以下 AI Agent 图标于 2026-11-04 取得，用于在小岛上标识正在运行的 Agent：
 
@@ -17,7 +18,7 @@
 | `deepseek.png` | [DeepSeek](https://www.deepseek.com/) | [官网 favicon](https://www.deepseek.com/favicon.ico)（225×225 PNG 转 180×180；浅色圆角底由界面 CSS 提供） |
 | `workbuddy.png` | [WorkBuddy](https://www.workbuddy.cn/) | 2026-11-13 取自本机安装的 WorkBuddy 5.9.3 的应用磁贴图标（`Assets/Square44x44Logo.targetsize-256_altform-unplated.png`，256×256 缩小到 64×64） |
 
-QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有，DeepSeek 标识归杭州深度求索所有，WorkBuddy 标识归腾讯所有。图标随应用打包，不在运行时请求远程图片。
+QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Telegram 标识及相关权利归 Telegram 所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有，DeepSeek 标识归杭州深度求索所有，WorkBuddy 标识归腾讯所有。图标随应用打包，不在运行时请求远程图片。
 
 以下插件市场图标于 2026-11-18 取得，统一做成方形磁贴（SVG），用于插件卡片、消息标签与 Agent 会话：
 

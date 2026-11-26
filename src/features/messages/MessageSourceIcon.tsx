@@ -1,15 +1,17 @@
 import qqIcon from "../../assets/brands/qq.png";
 import wechatIcon from "../../assets/brands/wechat.png";
 import qqMailIcon from "../../assets/brands/qq-mail.png";
+import telegramIcon from "../../assets/brands/telegram.png";
 import { isOfficeSource, type MessageSource } from "./messagePreview";
 import { NativePluginIcon } from "../plugins";
 import { Puzzle } from "lucide-react";
 import "./MessageSourceIcon.css";
 
-const SOURCE_ICONS: Record<"qq" | "wechat" | "qqMail", string> = {
+const SOURCE_ICONS: Record<"qq" | "wechat" | "qqMail" | "telegram", string> = {
   qq: qqIcon,
   wechat: wechatIcon,
   qqMail: qqMailIcon,
+  telegram: telegramIcon,
 };
 
 export function MessageSourceIcon({ source, icon, size = 16 }: { source: MessageSource; icon?: string; size?: number }) {

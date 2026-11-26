@@ -22,6 +22,7 @@ import type { MailController } from "../../features/messages/mail/MailPanel";
 import { MailOtpCode } from "../../features/messages/mail/MailOtpCode";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import type { TelegramNotificationsController } from "../../features/messages/telegram/useTelegramNotifications";
 import { CollapsedClock, CollapsedWeather, useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
@@ -36,6 +37,7 @@ type IslandCollapsedBarProps = {
   qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
+  telegram?: TelegramNotificationsController;
   preview: MessagePreview | null;
   /** The adaptive preview's reader (sender, then the whole text) in place of the bar, or null. */
   noticeReader?: { scrolls: boolean } | null;
@@ -85,6 +87,7 @@ export function IslandCollapsedBar({
   qqMail,
   qqNotifications,
   wechatReminders,
+  telegram,
   preview,
   noticeReader = null,
   page,
@@ -133,6 +136,14 @@ export function IslandCollapsedBar({
   const openPreview = (shown: MessagePreview) => {
     const source = shown.source;
     if (source === "plugin") { onOpenMessages(source); return; }
+    if (source === "telegram") {
+      if (telegram && shown.telegramId) {
+        void telegram.openNotice(shown.telegramId).then((opened) => {
+          if (!opened) onOpenMessages(source);
+        });
+      }
+      return;
+    }
     if (isOfficeSource(source)) {
       void openOfficeClient(source).catch(() => onOpenMessages(source));
       return;

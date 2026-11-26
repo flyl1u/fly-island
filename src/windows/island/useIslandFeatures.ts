@@ -13,6 +13,7 @@ type IslandFeatureOptions = {
   clipboardEnabled: boolean;
   qqEnabled: boolean;
   wechatEnabled: boolean;
+  telegramEnabled: boolean;
   qqMail: MailController;
   page: IslandPage;
   messageSource: MessageView;
@@ -32,6 +33,7 @@ export function useIslandFeatures({
   clipboardEnabled,
   qqEnabled,
   wechatEnabled,
+  telegramEnabled,
   qqMail,
   page,
   messageSource,
@@ -57,11 +59,12 @@ export function useIslandFeatures({
     shelf: settings.shelfEnabled,
     qq: qqEnabled,
     wechat: wechatEnabled,
+    telegram: telegramEnabled,
     qqMail: settings.mailEnabled,
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
     pluginPages,
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, telegramEnabled, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
 
   useEffect(() => {
     const next = islandPageFor(page, features, settings.clipboardDetached);

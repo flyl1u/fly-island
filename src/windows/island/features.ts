@@ -1,6 +1,7 @@
 import type { InstalledPlugin, Localized, PluginsSnapshot } from "../../features/plugins/api";
 import { isPluginPanelIcon, type PluginPanelIcon } from "../../features/plugins/panelTypes.ts";
 import type { MessageSource } from "../../features/messages/messagePreview";
+import { DEFAULT_SOURCE_ORDER } from "../../features/messages/sourceOrder.ts";
 import type { BuiltinPage, IslandPage, PluginPage } from "./types";
 import { PLUGIN_RUNTIME_ENABLED } from "../../features/releaseFlags.ts";
 
@@ -26,6 +27,7 @@ export type IslandFeatures = {
   qq: boolean;
   wechat: boolean;
   qqMail: boolean;
+  telegram?: boolean;
   plugin?: boolean;
   /** Office clients installed from the plugin market and switched on. */
   dingtalk?: boolean;
@@ -40,7 +42,6 @@ export type IslandFeatures = {
 };
 
 const PAGE_ORDER: BuiltinPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
-const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail", "dingtalk", "feishu", "wecom", "plugin"];
 
 /** The page id of a plugin's page; the plugin id is namespaced so it can never meet a built-in. */
 export function pluginPageId(id: string): PluginPage {
@@ -79,7 +80,7 @@ export function isPageEnabled(page: IslandPage, features: IslandFeatures): boole
   if (page === "settings") return true;
   if (isPluginPage(page)) return features.pluginPages?.some((info) => info.page === page) ?? false;
   return page === "qq"
-    ? features.qq || features.wechat || features.qqMail || features.dingtalk === true || features.feishu === true || features.wecom === true
+    ? features.qq || features.wechat || features.qqMail || features.telegram === true || features.dingtalk === true || features.feishu === true || features.wecom === true
       || (PLUGIN_RUNTIME_ENABLED && features.plugin === true)
     : features[page] === true;
 }
@@ -103,5 +104,5 @@ export function islandPageFor(page: IslandPage, features: IslandFeatures, clipbo
 export function resolveMessageSource(source: MessageSource, features: IslandFeatures): MessageSource {
   const enabled = (candidate: MessageSource) => (PLUGIN_RUNTIME_ENABLED || candidate !== "plugin") && features[candidate] === true;
   if (enabled(source)) return source;
-  return SOURCE_ORDER.find(enabled) ?? (source === "plugin" && !PLUGIN_RUNTIME_ENABLED ? "qqMail" : source);
+  return DEFAULT_SOURCE_ORDER.find(enabled) ?? (source === "plugin" && !PLUGIN_RUNTIME_ENABLED ? "qqMail" : source);
 }
