@@ -13,8 +13,7 @@
 .collapsed-layout__island {
   position: relative;
   flex: none;
-  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
-  gap: calc(6 * var(--c));
+  gap: calc(4 * var(--c));
   /* The side space set under Collapsed island, less the slots' own padding (CollapsedLayoutEditor). */
   padding: 0 calc(var(--preview-side-space, 12) * var(--c));
 }
@@ -69,7 +68,7 @@
 .collapsed-layout__ghost {
   position: absolute;
   z-index: 3;
-  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
+  --c: min(1px, calc(100cqw / var(--preview-collapsed-width) / var(--preview-collapsed-scale)));
   color: rgb(var(--preview-ink));
   background: var(--preview-fill);
   border-radius: var(--corner-md);
@@ -80,7 +79,7 @@
 /* The box under the island: what is dropped here is not on the island. Its slots sit on the
    island's own colour so they read as they would on it. */
 .collapsed-layout__hidden {
-  --c: min(1px, calc(96cqw / var(--preview-collapsed-limit)));
+  --c: 1px;
   justify-self: stretch;
   min-height: 44px;
   display: flex;

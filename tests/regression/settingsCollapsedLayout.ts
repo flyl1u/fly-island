@@ -7,6 +7,15 @@ export async function checkCollapsedLayout(check: (condition: unknown, message: 
   const box = () => document.querySelector<HTMLElement>(".collapsed-layout__hidden")!;
   const preview = document.querySelector<HTMLElement>("figure.island-preview")!;
   const editor = island().parentElement!;
+  const width = () => island().getBoundingClientRect().width;
+  check(Math.abs(width() - 310) <= 31, `Automatic arrangement preview draws the default 280–340 midpoint at actual size (${width()}px)`);
+  const configuredWidth = editor.style.getPropertyValue("--preview-collapsed-width");
+  editor.style.setProperty("--preview-collapsed-width", "280");
+  check(Math.abs(width() - 280) <= 28, `A 280px island previews at actual size when it fits (${width()}px)`);
+  editor.style.maxWidth = "250px";
+  check(width() < 280 && width() <= editor.getBoundingClientRect().width, "The arrangement preview shrinks only to fit a narrow card");
+  editor.style.removeProperty("max-width");
+  editor.style.setProperty("--preview-collapsed-width", configuredWidth);
   for (const name of ["--preview-fill", "--preview-text", "--preview-corner-shape", "--preview-radius-collapsed-px", "--preview-font-scale", "--preview-collapsed-scale"]) {
     check(getComputedStyle(editor).getPropertyValue(name) === getComputedStyle(preview).getPropertyValue(name),
       `Layout editor shares the appearance drawing's ${name}`);
@@ -57,8 +66,8 @@ export async function checkCollapsedLayout(check: (condition: unknown, message: 
   check(box().textContent?.includes("不在岛上显示"), "The box is labelled once something is in it");
   await drag("text", centre(box()));
   check(island().querySelector("[data-slot='text']") && !hiddenOrder().includes("text"), "The text stays on the island");
-  const [, textY] = centre(slot("text"));
-  await drag("music", [slot("text").getBoundingClientRect().left + 1, textY]);
+  const shown = island().getBoundingClientRect();
+  await drag("music", [shown.left + 2, shown.top + shown.height / 2]);
   check(hiddenOrder() === "" && order().indexOf("music") < order().indexOf("text") && (saved().collapsedHidden ?? []).length === 0,
     `Dragged back, the slot returns where it is dropped (${order()})`);
 

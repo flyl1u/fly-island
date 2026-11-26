@@ -298,11 +298,14 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await type(widthInput, "480");
     await act(async () => widthInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
     const notchWider = notchSize();
+    const configuredWidth = parseFloat(getComputedStyle(collapsedSample).getPropertyValue("--preview-collapsed-width"));
+    const fitScale = notchWider.width / configuredWidth;
     await type(heightInput, "60");
     await act(async () => heightInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
     const notchTaller = notchSize();
     check(storedSettings().collapsedWidth === 480 && storedSettings().collapsedHeight === 60 &&
-      notchWider.width > notchBefore.width && notchWider.height === notchBefore.height && notchTaller.height > notchWider.height && notchTaller.width === notchWider.width,
+      configuredWidth === 480 && notchWider.width >= notchBefore.width - 1 && Math.abs(notchWider.height - 38 * fitScale) < 1 &&
+      Math.abs(notchTaller.height - 60 * fitScale) < 1 && notchTaller.width === notchWider.width,
       "Notch width and height change separately in the preview and persist");
 
     await click(".appearance-reset");
