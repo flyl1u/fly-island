@@ -71,10 +71,10 @@ export function IslandApp() {
   const game = useGameMode(settings, { mode, isTucked, tuckSource: navigation.tuckSource, collapseIsland, tuckForGame: navigation.tuckForGame, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
-  const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;
+  const { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview } = notices;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
-  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentUsages, alertUsages } =
+  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, runningAgents, agentUsages, alertUsages } =
     useIslandAgents(settings);
   const quotaAlert = useQuotaAlert(alertUsages, settings.agentStatusEnabled ? settings.agentQuotaAlertPercent : 0, {
     quiet: game.quiet,
@@ -99,6 +99,7 @@ export function IslandApp() {
     clipboardEnabled: clipboardHistory.settings.enabled,
     qqEnabled: qqNotifications.snapshot.enabled,
     wechatEnabled: wechatReminders.snapshot.enabled,
+    telegramEnabled: telegram.active,
     qqMail,
     page,
     messageSource,
@@ -111,7 +112,7 @@ export function IslandApp() {
     mode === "collapsed" && !isTucked && !game.quiet && !hasMessagePreview && quotaAlert === null,
   );
   const collapsed = mode === "collapsed" && !isTucked;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, switchCollapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, peekedAgent, switchCollapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
@@ -120,6 +121,7 @@ export function IslandApp() {
       agentSession?.title ?? null,
       { lyricsPlaying: songPlaying, lyricsAvailable: Boolean(collapsedLyrics?.some((line) => line.text.trim())),
         agentActive: activeAgentSessionCount > 0 || agentVisualState === "running" || Boolean(agentStatus.others?.some((agent) => agent.phase === "running")),
+        runningAgents, agentPeekAllowed: collapsed && !hasMessagePreview,
         coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
         activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
         // The extra is the source icon and the spacing round the sender's dot, or the code's button.
@@ -170,7 +172,7 @@ export function IslandApp() {
     agentAlertRowHeight: agentCardHeight,
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
-    pluginPanel: pluginPage ? { rows: pluginPage.rows, actions: pluginPage.actions } : undefined,
+    pluginPanel: pluginPage ? { rows: pluginPage.rows, actions: pluginPage.actions, note: pluginPage.note } : undefined,
   }));
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
@@ -237,6 +239,7 @@ export function IslandApp() {
         qqMail={qqMail}
         qqNotifications={qqNotifications}
         wechatReminders={wechatReminders}
+        telegram={telegram}
         onOpenMessages={openMessages}
         preview={preview}
         notice={notice.size}
@@ -272,7 +275,7 @@ export function IslandApp() {
         pageOrder={settings.pageOrder}
         pageButtonStyle={settings.pageButtonStyle}
         onPageOrderChange={(pageOrder) => setSettings({ ...settings, pageOrder })}
-        agentSession={agentSession}
+        agentSession={peekedAgent ?? agentSession}
         activeAgentSessionCount={activeAgentSessionCount}
         mediaState={media.mediaState}
         agentVisualState={agentVisualState}
@@ -311,6 +314,7 @@ export function IslandApp() {
           qqMail={qqMail}
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}
+          telegram={telegram}
           messageSource={messageSource}
           openMessages={openMessages}
           media={media}

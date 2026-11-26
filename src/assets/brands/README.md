@@ -30,7 +30,16 @@ QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人
 | `zcode.svg` | xiaotang-daozai `assets/ai-icons/zcode.svg`，改为方形深色底 |
 | `cursor.svg` | LobeHub Icons `cursor.svg`，浅色标记配深色底 |
 | `hermes.svg` | LobeHub Icons `nousresearch.svg`（Hermes Agent 由 Nous Research 出品），白色标记配黑底 |
+| `telegram.svg` | 2026-11-26 取自 Telegram 官网 <https://telegram.org/img/t_logo.svg>（1694 字节，原样使用的蓝色圆形标志）；官网未附单独的图标许可证，标识归 Telegram 所有，仅用于标识对应产品 |
 
-CodeBuddy 与 Antigravity 使用 `lucide-react` 的通用图标（`Terminal`、`Orbit`，随既有依赖提供，ISC），不附带第三方商标、应用图标或搜索缩略图。MiniMax Code 目前同样用通用图标 `Sparkles` 配品牌色 `#0f9ef0`，本目录还没有它的品牌图标。插件图标规则见 [插件设置归类规范](../../../docs/design/settings.md#插件设置归类规范长期)。
+以下图标于 2026-11-26 取自各产品官网，用于插件卡片、分组标题与小岛上的 Agent 会话。官网都未附单独的图标许可证：
 
-钉钉、飞书、企业微信、Kimi、Z Code（智谱）、Cursor（Anysphere）、Nous Research 的标识及相关权利归各自权利人所有，仅用于标识对应产品，不在运行时请求远程图片。
+| 文件 | 来源与处理 |
+| --- | --- |
+| `codebuddy.svg` | [CodeBuddy 官网](https://www.codebuddy.cn/) 的站点图标 <https://download.codebuddy.cn/web/website/83dd563b5dca63a0481155ad7d02b2e59064ac39/assets/logo.svg>，原样使用 |
+| `antigravity.svg` | [Antigravity 官网](https://antigravity.google/) 的矢量站点图标 <https://antigravity.google/favicon.svg>，原样使用（自带随系统深浅色切换的圆形底） |
+| `minimax.png` | [MiniMax Code 官网](https://code.minimax.io/) 的 Apple Touch 图标 <https://code.minimax.io/assets/logo/apple-touch_v2.png?v=5>（1024×1024）缩小到 128×128；官网没有提供 SVG 图标 |
+
+没有自己品牌的功能插件（时间与天气、日历标记、护眼提醒、设备电量与音频）用本项目手绘的 SVG 应用图标，在 `src/assets/plugins/`。插件图标规则见 [插件设置归类规范](../../../docs/design/settings.md#插件设置归类规范长期)。
+
+钉钉、飞书、企业微信、Kimi、Z Code（智谱）、Cursor（Anysphere）、Nous Research、Telegram、CodeBuddy（腾讯）、Antigravity（Google）、MiniMax 的标识及相关权利归各自权利人所有，仅用于标识对应产品，不在运行时请求远程图片。

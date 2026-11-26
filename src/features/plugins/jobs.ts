@@ -3,8 +3,18 @@ import type { PluginInstallProgress } from "./api";
 
 export type PluginJobs = Readonly<Record<string, PluginInstallProgress>>;
 
+/** Finished or cancelled: the host has dropped the job, so the card goes back to the installed state. */
+export function isJobOver(job: Pick<PluginInstallProgress, "phase">) {
+  return job.phase === "done" || job.phase === "cancelled";
+}
+
+/** Only a download or its check can be cancelled; installing is short and runs to the end. */
+export function isJobCancellable(job: Pick<PluginInstallProgress, "phase">) {
+  return job.phase === "downloading" || job.phase === "verifying";
+}
+
 export function isJobActive(job: PluginInstallProgress | undefined) {
-  return job !== undefined && job.phase !== "failed" && job.phase !== "done";
+  return job !== undefined && job.phase !== "failed" && !isJobOver(job);
 }
 
 export function withJob(jobs: PluginJobs, job: PluginInstallProgress): PluginJobs {
@@ -24,7 +34,7 @@ export function withoutJob(jobs: PluginJobs, id: string): PluginJobs {
  */
 export function restoreJobs(jobs: PluginJobs, listed: readonly PluginInstallProgress[], newer: ReadonlySet<string>): PluginJobs {
   const kept = Object.keys(jobs).filter((id) => !newer.has(id)).reduce(withoutJob, jobs);
-  return listed.reduce((next, job) => newer.has(job.id) || job.phase === "done" ? next : withJob(next, job), kept);
+  return listed.reduce((next, job) => newer.has(job.id) || isJobOver(job) ? next : withJob(next, job), kept);
 }
 
 /** Whole percent of a download, or null while its size is still unknown. */

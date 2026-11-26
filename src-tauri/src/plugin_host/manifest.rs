@@ -39,6 +39,9 @@ pub struct Runtime { pub command: String }
 pub struct Setting {
     pub key: String,
     pub label: Localized,
+    /// One sentence under the label, when a name alone does not explain the setting.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<Localized>,
     #[serde(rename = "type")]
     pub kind: String,
     pub default: Value,

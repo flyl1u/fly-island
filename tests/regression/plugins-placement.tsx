@@ -86,12 +86,8 @@ const uninstall = (id: keyof typeof market.items) => click(byName(market.uninsta
 const openSettings = (id: keyof typeof market.items) => click(byName(market.openSettingsNamed, id));
 const cardIcon = (id: keyof typeof market.items) => [...document.querySelectorAll<HTMLElement>(".plugin-card")]
   .find((card) => card.querySelector("h3")?.textContent === market.items[id].name)?.querySelector<HTMLElement>(".plugin-card__tile");
-/** What the line tiles must share, whichever plugin: size, corners, icon size and stroke, shadow. */
-const tileStyle = (tile: HTMLElement) => {
-  const style = getComputedStyle(tile);
-  const icon = tile.querySelector("svg")!;
-  return [style.width, style.height, style.borderRadius, style.boxShadow, icon.getAttribute("width"), icon.getAttribute("stroke-width")].join("|");
-};
+/** The full-colour app icon in a tile, drawn from the plugin's own file. */
+const appIcon = (element: Element | null | undefined, id: string) => element?.matches(`img[data-plugin-icon='${id}']`) === true;
 const fits = (element: Element) => element.scrollWidth <= element.clientWidth + 1;
 
 const root = createRoot(document.getElementById("root")!);
@@ -119,8 +115,8 @@ if (!query.has("test")) {
   check(features().join() === `${fixed},plugin:eye-care`
     && one(".settings-sidebar__item[data-category='plugin:eye-care']")?.textContent === market.items["eye-care"].name,
     "Eye care gets its own entry, under its name, at the end of Features");
-  check(cardIcon("eye-care")?.querySelector("svg.lucide-eye") && one(".settings-sidebar__item[data-category='plugin:eye-care'] svg.lucide-eye"),
-    "Eye care has the same line icon on its card and its sidebar entry");
+  check(appIcon(cardIcon("eye-care"), "eye-care") && one(".settings-sidebar__item[data-category='plugin:eye-care'] svg.lucide-eye"),
+    "Eye care has its colour app icon on the card and a line icon in the sidebar");
   check(!field(period) && !one(".editor-panel .plugin-group__permissions, .editor-panel input[inputmode='numeric']"),
     "The Plugins page draws none of its settings");
   await openSettings("eye-care");
@@ -142,7 +138,7 @@ if (!query.has("test")) {
     "An Agent plugin adds no sidebar entry and nothing to the Plugins page");
   await openSettings("minimax");
   check(title() === t.categories.agents && group("minimax")?.querySelector("h2")?.textContent === market.items.minimax.name
-    && Boolean(group("minimax")!.querySelector("h2 .plugin-icon--line svg.lucide-sparkles")) && Boolean(field(region)),
+    && appIcon(group("minimax")!.querySelector("h2 img"), "minimax") && Boolean(field(region)),
     "MiniMax has a group titled with its icon and name on AI sessions");
   const panel = one(".editor-panel")!;
   const offset = group("minimax")!.getBoundingClientRect().top - panel.getBoundingClientRect().top;
@@ -168,18 +164,29 @@ if (!query.has("test")) {
   await openSettings("dingtalk");
   check(title() === t.categories.messages && group("dingtalk")?.querySelector("h2")?.textContent === market.items.dingtalk.name
     && groups()[groups().length - 1] === group("dingtalk"), "A message plugin has its own group at the end of Messages");
+  check(!group("telegram"), "Telegram has no Messages group before it is installed");
+
+  await open("plugins");
+  await install("telegram");
+  await openSettings("telegram");
+  check(title() === t.categories.messages && group("telegram")?.querySelector("h2")?.textContent === market.items.telegram.name
+    && group("telegram")?.querySelector<HTMLInputElement>("input[role=switch]")?.checked === false
+    && localStorage.getItem("fly-island-telegram-notifications-enabled") === null,
+    "The Telegram plugin brings its own Messages group, with receiving off until switched on");
 
   await open("plugins");
   await install("calendarMarks");
   check(!one(byName(market.openSettingsNamed, "calendarMarks")), "A plugin without settings offers no settings link");
 
   await install("device-battery");
-  check(cardIcon("device-battery")?.querySelector("svg.lucide-battery-medium")
-    && one(".settings-sidebar__item[data-category='devices'] svg.lucide-battery-medium"), "Device battery has a battery icon on its card and entry");
-  const lined = (["clockWeather", "calendarMarks", "codebuddy", "antigravity", "minimax", "device-battery", "eye-care"] as const).map((id) => cardIcon(id)!);
-  check(lined.every((tile) => tile.classList.contains("plugin-icon--line") && tileStyle(tile) === tileStyle(lined[0])),
-    "Every line tile is drawn like Clock & Weather and Calendar Marks");
-  check(new Set(lined.map((tile) => getComputedStyle(tile).backgroundColor)).size === lined.length, "Each line tile takes its own accent");
+  check(appIcon(cardIcon("device-battery"), "device-battery")
+    && one(".settings-sidebar__item[data-category='devices'] svg.lucide-battery-medium"), "Device battery has its app icon on the card and a battery in the sidebar");
+  const iconIds = Object.keys(market.items) as (keyof typeof market.items)[];
+  const tiles = iconIds.map((id) => cardIcon(id));
+  check(tiles.every((tile, index) => appIcon(tile, iconIds[index]))
+    && !document.querySelector(".plugin-card .plugin-card__icon svg:not(.lucide-check)")
+    && new Set(tiles.map((tile) => (tile as HTMLImageElement).src)).size === tiles.length,
+    "Every market card has its own full-colour app icon and no line tile");
   check(features().filter((entry) => entry === "devices").length === 1 && !sidebar().includes("plugin:device-battery"),
     "Device battery uses the one Devices page");
   await openSettings("device-battery");
@@ -192,14 +199,14 @@ if (!query.has("test")) {
   await open("plugins");
   check(!one(".editor-panel [data-plugin-group], .editor-panel input[type='password'], .editor-panel input[inputmode='numeric']"),
     "With everything installed the Plugins page still holds only cards");
-  for (const id of ["eye-care", "minimax", "device-battery", "dingtalk", "cursor", "calendarMarks"] as const) await uninstall(id);
+  for (const id of ["eye-care", "minimax", "device-battery", "dingtalk", "telegram", "cursor", "calendarMarks"] as const) await uninstall(id);
   check(features().join() === fixed, "Uninstalling removes the sidebar entries");
   await open("agents");
   check(!group("minimax") && !group("cursor"), "Uninstalling removes the Agent groups");
   await open("agentConnect");
   check(!group("minimax"), "Uninstalling removes the connection group");
   await open("messages");
-  check(!group("dingtalk"), "Uninstalling removes the message group");
+  check(!group("dingtalk") && !group("telegram"), "Uninstalling removes the message groups");
 
   await act(async () => root.unmount());
   document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");

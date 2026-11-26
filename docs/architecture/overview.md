@@ -13,7 +13,7 @@
 ┌──────────────────────────────── Rust（Tauri 2）──────────────────────────────────────┐
 │  lib.rs 组装：插件 / setup / 托盘 / generate_handler!                                  │
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
-│           mail · qq_notifications · wechat_reminders · translation · settings_window │
+│           mail · qq_notifications · wechat_reminders · telegram_notifications · translation · settings_window │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信提醒与摘要、鼠标穿透循环          │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
              ▼
@@ -44,6 +44,8 @@ Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先�
 
 微信的进程解析、窗口归属和主窗口选择统一在 `wechat_reminders/source.rs`，供打开动作、提醒监听、摘要读取和探测程序复用；需比较完整路径时使用 `win32/process.rs` 的 canonicalize 与归一化回退。微信摘要开启时，微信提醒服务通过 `win32/caption_close.rs` 将微信关闭按钮的点击转为最小化，通过 `win32/taskbar.rs` 控制最小化窗口的任务栏按钮。
 
+Telegram Desktop 使用 Windows 通知时，`telegram_notifications` 通过 WinRT 读取摘要。用户点击后，服务从当前用户的系统通知数据库只读查询该条通知的激活参数，并交给 Telegram 的原生通知回调。目标失效或激活失败时保留仍可见的卡片，并显示错误。
+
 ## 目标结构
 
 前端和 Rust 的目标目录树，以及各目录的职责，分别见 [src/AGENTS.md](../../src/AGENTS.md#目标结构) 和 [src-tauri/AGENTS.md](../../src-tauri/AGENTS.md#目标结构)。本文只记录迁移映射。
@@ -68,7 +70,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 `media_control/hotkeys.rs` 独立持有音乐全局快捷键的消息窗口，复用剪贴板组合键解析、`win32/hotkey` 注册与媒体 worker；前端 `features/media/useMusicShortcuts.ts` 在主窗口媒体 hook 中同步 localStorage，设置页只编辑与读取状态。快捷键冲突由设置窗口组合各领域配置，审批键始终预留。
 
-收起岛超长歌词的滚动时间与关键帧是纯函数 `lyrics/lyricScroll.ts`，`lyrics/useLyricScroll.ts` 量文字并按歌曲进度驱动 Web Animations，不触发逐帧渲染。歌词源位于 `lyrics/`：QQ 专属接口与 QRC 解密（`qqmusic.rs` / `qrc_cipher.rs`）、酷狗原生缓存（`kugou_cache.rs`）、汽水只读 LMDB 快照和 msgpackr 解码（`soda_cache.rs` / `soda_lmdb.rs` / `soda_msgpack.rs`）、网易 YRC 与共享逐字格式转换（`word_formats.rs`），统一输出增强 LRC。来源顺序、兼容缓存与限制见 [歌词源说明](../lyrics-sources.md)。
+歌词源位于 `lyrics/`：QQ 专属接口与 QRC 解密（`qqmusic.rs` / `qrc_cipher.rs`）、酷狗原生缓存（`kugou_cache.rs`）、汽水只读 LMDB 快照和 msgpackr 解码（`soda_cache.rs` / `soda_lmdb.rs` / `soda_msgpack.rs`）、网易 YRC 与共享逐字格式转换（`word_formats.rs`），统一输出增强 LRC。来源顺序、兼容缓存与限制见 [歌词源说明](../lyrics-sources.md)。
 
 `media_control/diagnostics.rs` 只读枚举 SMTC 会话及已知播放器进程，复用 `timeline.rs` 的可信时间戳判断和 `win32/process*.rs` 的安全进程查询，文件版本读取封装在 `win32/file_version.rs`。前端 `useMediaDiagnostics.ts` 按打开面板、切换播放器与媒体事件触发五秒节流刷新，独立于媒体轮询；`MediaDiagnosticsCard` 和 `MediaCompatibilitySection` 分别显示面板提示及设置行。无时间线的歌词点击通过 `useMediaState.calibrate` 校准 `trackClock`，不改变播放器状态与 `positionAnchor`。
 - `src-tauri/src/media_plugins/`：网易云精准进度插件的只读探测、固定版本下载校验、显式安装 / 卸载与安装记录；受限提权调用封装在 `win32/media_plugin_elevation.rs`，注册表探测封装在 `win32/media_plugin_registry.rs`。
@@ -84,3 +86,5 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 
 市场插件日历标记由 features/todos/calendar-marks 提供。设备电量的界面和绑定在 features/device-battery，原生读取在 src-tauri/src/device_battery，仅执行宿主管理的市场包。MiniMax Code 的只读会话与额度、可选审批接入位于 plugins/minimax。
+
+倒计时显示：`components/countdown/Countdown.tsx` 与护眼休息面板复用 `lib/useCountdown.ts`，剩余秒数、下一刷新边界与格式化由 `utils/countdown.ts` 计算。按绝对截止时间刷新，隐藏时停止定时，恢复可见时校准；不新增后台 IPC 或持久化。

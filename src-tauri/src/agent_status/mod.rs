@@ -44,6 +44,7 @@ mod session_process;
 mod session_records;
 mod snapshot;
 mod sqlite_read;
+mod sqlite_snapshot;
 pub(crate) mod sound_packs;
 #[cfg(test)]
 mod tests;
@@ -315,7 +316,9 @@ pub async fn list_agent_sessions(
                 sessions.extend(throttled(&HERMES, window_ms, || hermes_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)));
             }
             if wants("antigravity") {
-                sessions.extend(throttled(&ANTIGRAVITY, window_ms, || antigravity::list_sessions(&home_dir, current_unix_millis(), window_ms)));
+                // Not throttled: it only copies and parses files that changed, and its state
+                // should reach the island within a poll or two.
+                sessions.extend(antigravity::list_sessions(&home_dir, current_unix_millis(), window_ms));
             }
             let is_active = |phase: &str| matches!(phase, "running" | "waiting");
             sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
@@ -332,7 +335,6 @@ static CURSOR: NativeSessions = std::sync::Mutex::new(None);
 static KIMI: NativeSessions = std::sync::Mutex::new(None);
 static HERMES: NativeSessions = std::sync::Mutex::new(None);
 static CODEBUDDY: NativeSessions = std::sync::Mutex::new(None);
-static ANTIGRAVITY: NativeSessions = std::sync::Mutex::new(None);
 
 /// Additional agents are read at most every two seconds: the island asks every second,
 /// and Cursor's store is a database rather than a file whose change time says enough.

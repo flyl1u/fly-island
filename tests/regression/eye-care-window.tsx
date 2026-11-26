@@ -19,7 +19,7 @@ const material = query.get("material") ?? "classic";
 const text = TRANSLATIONS[language].eyeCare;
 localStorage.setItem(LOCALE_STORAGE_KEY, hostLanguage);
 localStorage.setItem(STORAGE_KEY, JSON.stringify({ colorScheme: theme, material }));
-const snapshot: EyeCareBreak = { deadline: Date.now() + 90_000, canSnooze: true, canSkip: true, language };
+const snapshot: EyeCareBreak = { deadline: Date.now() + 90_000, canSnooze: true, canSkip: true, percent: 72, language };
 const actions: { id: string; action: string }[] = [];
 let revealed = 0;
 let failAction = false;
@@ -54,6 +54,19 @@ const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 
 try {
   await mount(); await wait(160);
   check(document.querySelector("h1")?.textContent === text.title, "The break uses its configured language");
+  check(!document.querySelector(".eye-care-rest__name") && !document.querySelector(".eye-care-rest__hint"),
+    "The break window has no plugin badge or looking-away hint");
+  const card = document.querySelector<HTMLElement>(".eye-care-rest__card")!;
+  check(card.contains(document.querySelector(".eye-care-rest__title")!)
+    && card.contains(document.querySelector("[role=timer]")!)
+    && card.contains(document.querySelector(".eye-care-rest__label")!)
+    && card.contains(document.querySelector(".eye-care-rest__meter")!)
+    && card.contains(document.querySelector(".eye-care-rest__choices")!),
+    "Title, countdown, its label, the bar and the choices share one card");
+  check(document.querySelector(".eye-care-rest__label")?.textContent === text.remaining,
+    "The countdown carries its own label under the digits");
+  check(document.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width === "72%",
+    "The bar drains by the share the plugin reports");
   check(localStorage.getItem(LOCALE_STORAGE_KEY) === hostLanguage, "Break language does not overwrite the host preference");
   check(document.documentElement.dataset.theme === theme && document.documentElement.dataset.material === material,
     "The window follows the host scheme and material");
@@ -72,7 +85,7 @@ try {
   check(document.querySelector("[role=alert]")?.textContent === text.failed, "Failed actions offer localized guidance without raw errors");
   failAction = false;
   await update({ ...snapshot, canSnooze: false, canSkip: false });
-  check(!document.querySelector(".eye-care-rest__choices") && !document.querySelector(".eye-care-rest__skip"),
+  check(!document.querySelector(".eye-care-rest__choices") && !document.querySelector(".eye-care-rest__actions"),
     "A used postponement and forbidden skip have no controls");
   fixture.style.width = "260px";
   fixture.style.height = "220px";

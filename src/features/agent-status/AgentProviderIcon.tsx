@@ -6,12 +6,14 @@ import cursorIcon from "../../assets/brands/cursor.svg";
 import kimiCodeIcon from "../../assets/brands/kimi-code.svg";
 import hermesIcon from "../../assets/brands/hermes.svg";
 import zcodeIcon from "../../assets/brands/zcode.svg";
+import codebuddyIcon from "../../assets/brands/codebuddy.svg";
+import antigravityIcon from "../../assets/brands/antigravity.svg";
 import type { AgentProvider } from "./api";
-import { Orbit, Puzzle, Terminal } from "lucide-react";
+import { Puzzle } from "lucide-react";
 import "./AgentProviderIcon.css";
 
 /** Each source's own app tile; DSH uses DeepSeek's mark on a light tile, as its desktop app does. */
-const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin" | "codebuddy" | "antigravity">, string> = {
+const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin">, string> = {
   claudeCode: claudeCodeIcon,
   codex: codexIcon,
   dsh: deepseekIcon,
@@ -20,12 +22,12 @@ const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin" | "codebuddy" | "an
   kimiCode: kimiCodeIcon,
   hermes: hermesIcon,
   zcode: zcodeIcon,
+  codebuddy: codebuddyIcon,
+  antigravity: antigravityIcon,
 };
 
 export function AgentProviderIcon({ provider, size = 16 }: { provider: AgentProvider; size?: number }) {
   if (provider === "plugin") return <Puzzle size={size} aria-hidden="true" />;
-  if (provider === "antigravity") return <Orbit className="agent-provider-icon agent-provider-icon--antigravity" size={size} aria-hidden="true" />;
-  if (provider === "codebuddy") return <Terminal className="agent-provider-icon agent-provider-icon--codebuddy" size={size} aria-hidden="true" />;
   return (
     <img
       className={`agent-provider-icon agent-provider-icon--${provider}`}

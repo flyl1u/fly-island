@@ -18,7 +18,8 @@ export type SettingsPluginMarketText = {
   title: string; hint: string; officeHint: (name: string) => string; install: string; uninstall: string; installed: string;
   inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
-  by: string; operationFailed: (name: string) => string;
+  cancel: string; cancelNamed: (name: string) => string;
+  authors: string; operationFailed: (name: string) => string;
   installing: string; uninstalling: string; retry: string; connecting: string; verifying: string; unpacking: string;
   downloaded: (done: string, total: string) => string; progressNamed: (name: string) => string;
   openSettingsNamed: (name: string) => string; updateAvailable: (version: string) => string; updateNamed: (name: string) => string;
@@ -41,7 +42,8 @@ export const zhCN: SettingsPluginsText = {
     hint: "装上后，插件会出现在对应的小岛功能里。卡片上的开关可随时停用插件并保留设置。",
     install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
-    by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
+    cancel: "取消", cancelNamed: (name) => `取消安装 ${name}`,
+    authors: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
     installing: "安装中…", uninstalling: "卸载中…", retry: "重试", connecting: "正在准备下载…", verifying: "正在校验安装包…", unpacking: "正在安装…",
     downloaded: (done, total) => `已下载 ${done} / ${total} MB`, progressNamed: (name) => `${name} 的安装进度`,
     openSettingsNamed: (name) => `打开 ${name} 的设置`, updateAvailable: (version) => `有新版本 ${version}`, updateNamed: (name) => `更新 ${name}`,
@@ -62,6 +64,7 @@ export const zhCN: SettingsPluginsText = {
       plugin_disk_full: "磁盘空间不足，请清理后重试。",
       plugin_install_in_progress: "这个插件正在安装或卸载，请稍候。",
       plugin_uninstall_failed: "未能卸载插件，请重试。",
+      plugin_install_cancelled: "已取消安装。",
     },
     items: {
       minimax: { name: "MiniMax Code", description: "在 AI 会话和消息页查看额度、任务进度和待审批提醒。" },
@@ -72,6 +75,7 @@ export const zhCN: SettingsPluginsText = {
       dingtalk: { name: "钉钉", description: "钉钉有新消息时岛上提醒，消息页多一个钉钉标签，点一下回到钉钉。" },
       feishu: { name: "飞书", description: "飞书有新消息时岛上提醒，消息页多一个飞书标签，点一下回到飞书。" },
       wecom: { name: "企业微信", description: "企业微信有新消息时岛上提醒，消息页多一个企业微信标签。" },
+      telegram: { name: "Telegram", description: "在岛上显示 Telegram Desktop 的 Windows 通知，消息页多一个 TG 标签，点一下打开对应对话。" },
       cursor: { name: "Cursor", description: "在 AI 会话里显示 Cursor Agent 的运行、等待与完成状态。" },
       kimiCode: { name: "Kimi Code", description: "显示 Kimi Code 的会话状态和套餐剩余额度。" },
       codebuddy: { name: "CodeBuddy", description: "在 AI 会话里显示 CodeBuddy CLI 的运行、完成与关闭状态，点一下回到运行它的终端。" },
@@ -96,7 +100,8 @@ export const en: SettingsPluginsText = {
     hint: "Installed plugins appear where you use them on the island. Use the switch on a card to turn its plugin off and keep its settings.",
     install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
-    by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
+    cancel: "Cancel", cancelNamed: (name) => `Cancel installing ${name}`,
+    authors: "Authors", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
     installing: "Installing…", uninstalling: "Removing…", retry: "Retry", connecting: "Preparing…", verifying: "Verifying…", unpacking: "Installing…",
     downloaded: (done, total) => `${done} / ${total} MB`, progressNamed: (name) => `Install progress of ${name}`,
     openSettingsNamed: (name) => `Open ${name} settings`, updateAvailable: (version) => `Version ${version}`, updateNamed: (name) => `Update ${name}`,
@@ -117,6 +122,7 @@ export const en: SettingsPluginsText = {
       plugin_disk_full: "Not enough disk space. Free some and try again.",
       plugin_install_in_progress: "This plugin is already being installed or removed.",
       plugin_uninstall_failed: "Could not remove the plugin. Try again.",
+      plugin_install_cancelled: "Installation cancelled.",
     },
     items: {
       minimax: { name: "MiniMax Code", description: "See quota, session progress and pending approvals on the island." },
@@ -127,6 +133,7 @@ export const en: SettingsPluginsText = {
       dingtalk: { name: "DingTalk", description: "Get a heads-up on the island for new DingTalk messages, with a DingTalk tab in Messages." },
       feishu: { name: "Feishu", description: "Get a heads-up on the island for new Feishu messages, with a Feishu tab in Messages." },
       wecom: { name: "WeCom", description: "Get a heads-up on the island for new WeCom messages, with a WeCom tab in Messages." },
+      telegram: { name: "Telegram", description: "Show Telegram Desktop's Windows notifications on the island, with a TG tab in Messages. Click one to open its chat." },
       cursor: { name: "Cursor", description: "Show Cursor Agent sessions as running, waiting or done in AI sessions." },
       kimiCode: { name: "Kimi Code", description: "Show Kimi Code sessions and how much of your plan is left." },
       codebuddy: { name: "CodeBuddy", description: "Show CodeBuddy CLI sessions, running or finished, and open the terminal running one." },

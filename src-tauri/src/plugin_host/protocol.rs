@@ -33,6 +33,11 @@ pub struct Panel {
     /// Ids of the plugin's declared actions to offer as buttons.
     #[serde(default)]
     pub actions: Vec<String>,
+    /// The subset of `actions` the page shows; null shows all of them. A plugin keeps actions
+    /// its own windows offer (a break window's postpone and skip) in `actions` and leaves them
+    /// out here, so the page and the window can offer different ones from one payload.
+    #[serde(default)]
+    pub island_actions: Option<Vec<String>>,
     /// A dot on the page's button, for something the user should look at (a break is due,
     /// a battery is low) without a notification.
     #[serde(default)]
@@ -134,7 +139,12 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
             })
             || !unique(panel.rows.iter().map(|r| r.id.as_str()).collect())
             || !unique(panel.actions.iter().map(String::as_str).collect())
-            || panel.actions.iter().any(|id| !declared(id)) {
+            || panel.actions.iter().any(|id| !declared(id))
+            || panel.island_actions.as_ref().is_some_and(|island| {
+                island.len() > 4
+                    || !unique(island.iter().map(String::as_str).collect())
+                    || island.iter().any(|id| !panel.actions.contains(id))
+            }) {
             return Err("Invalid plugin panel".into());
         }
     }

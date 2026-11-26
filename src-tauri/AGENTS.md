@@ -12,6 +12,7 @@ src-tauri/src/
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
 ├── agent_approval/          # 在岛上审批（B6 第 2 期）：127.0.0.1 上的审批端点（标准库 TcpListener，挂起时能发现 Agent 断开）、按会话排队、等待上限、agent-approval.json
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装；hooks/ 为编入二进制的 hook 脚本；sound_packs.rs 为导入的音效包（应用数据目录的 sound-packs/）
+│                            #   sqlite_read.rs 只读打开 Cursor / Hermes 的库；sqlite_snapshot.rs 把持续写入的 WAL 库（Antigravity）复制到临时目录后读副本，按文件时间增量
 │                            #   codex_activity.rs：增量保存 rollout 的 turn 边界，fixtures/ 为脱敏的真实记录
 │                            #   hook_migration.rs：启动时把改名前写入 Codex / Claude Code 配置的 Hook 重写到新脚本
 │                            #   reply_marker.rs：可选的回复状态标记（B9），增删 CLAUDE.md 里岛屿自己的那段说明、识别回复末行的标记
@@ -29,6 +30,7 @@ src-tauri/src/
 ├── lyrics/                  # 本地 LRC、LRCLIB、QQ QRC、网易 YRC、酷狗 KRC 缓存、汽水只读 LMDB/msgpackr；online.rs 并发请求在线来源并选分数最高者，scoring.rs / artist_match.rs / search.rs 负责评分与多关键词搜索；word_formats.rs 统一逐字格式，在线结果缓存在 lyrics-cache/
 ├── mail/                    # 邮箱（命令名仍为 *_qq_mail）：附件（attachments.rs）、命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/        # QQ 通知监听；repair-qq-notification-registration.ps1 编入二进制，也可手动运行
+├── telegram_notifications/  # Telegram 系统通知监听与原通知的会话激活
 ├── wechat_reminders/        # source.rs 统一微信进程解析、窗口选择和任务栏提醒（被示例复用）；可选的 UI Automation 摘要与 Qt 标志恢复
 ├── weather/                 # 时间与天气：Open-Meteo 城市搜索与当前天气异步命令，不自动定位、不写原生数据文件
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）

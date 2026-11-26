@@ -4,6 +4,7 @@ import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminde
 import { useMail } from "../../features/messages/mail/MailPanel";
 import { usePluginPreview } from "../../features/messages/pluginNotifications";
 import { useOfficeIm } from "../../features/messages/office-im/useOfficeIm";
+import { useTelegramNotifications } from "../../features/messages/telegram/useTelegramNotifications";
 import { latestMessagePreview, type MessagePreview } from "../../features/messages/messagePreview";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
@@ -25,13 +26,16 @@ export function useIslandNotices(settings: IslandSettings, { mode, isTucked, qui
   // Plugin previews keep their own 8 s unless an adaptive or game-mode duration applies.
   const pluginPreview = usePluginPreview(canPreviewMessages, settings.messageAutoExpand || quiet ? previewSeconds : undefined);
   const office = useOfficeIm(canPreviewMessages, previewSeconds);
+  const telegram = useTelegramNotifications(canPreviewMessages, previewSeconds, true);
   // Kept while the cursor is on it, and counted as showing, so the island neither opens under the
   // cursor nor slides back mid-read; not in game mode, where clicks pass through it.
-  const preview = useHeldPreview(useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail, office.preview), !quiet);
+  const latest = useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail, office.preview, telegram.preview);
+  const preview = useHeldPreview(latest, !quiet, (held) =>
+    held.source !== "telegram" || telegram.snapshot.items.some(({ id }) => id === held.telegramId));
   const hasMessagePreview = Boolean(
-    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || office.preview || preview,
+    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || office.preview || telegram.preview || preview,
   );
-  return { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview };
+  return { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview };
 }
 
 /**
@@ -44,6 +48,7 @@ export function useLatestPreview(
   pluginPreview: MessagePreview | null,
   qqMail: MailController,
   officePreview: MessagePreview | null = null,
+  telegramPreview: MessagePreview | null = null,
 ): MessagePreview | null {
   const [latestPreviewAt, setLatestPreviewAt] = useState(0);
   const qqPreview = qqNotifications.preview;
@@ -52,6 +57,7 @@ export function useLatestPreview(
     wechatReminders.preview,
     pluginPreview,
     officePreview,
+    telegramPreview,
     qqMail.preview ? { source: "qqMail", title: qqMail.preview.sender, body: qqMail.preview.subject, detail: qqMail.previewContent,
       detailLoading: qqMail.previewContentLoading, detailError: qqMail.previewContentError,
       otpCode: qqMail.preview.otpCode, receivedAt: qqMail.previewReceivedAt ?? 0 } : null,

@@ -8,7 +8,8 @@ import { PluginPageGroups } from "../../src/windows/settings/PluginSettingsGroup
 import type { PlacedPlugin } from "../../src/features/plugins/placement";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import { PLUGIN_PROGRESS_EVENT, type InstalledPlugin, type PluginIndexEntry, type PluginInstallProgress, type PluginManifest } from "../../src/features/plugins/api";
-import { checkInstallProgress } from "./pluginInstallProgress";
+import { checkInstallCancel, checkInstallProgress } from "./pluginInstallProgress";
+import { checkPluginAuthors } from "./pluginAuthors";
 import { PLUGIN_MARKET_ENABLED, PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
 import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
@@ -42,6 +43,7 @@ let failOpen = false;
 let installFailure = "";
 let holdInstall = false;
 let finishInstall: (() => void) | undefined;
+let rejectInstall: ((reason: string) => void) | undefined;
 let hostJobs: PluginInstallProgress[] = [];
 const hostCalls: string[] = [];
 mockIPC((command, payload) => {
@@ -53,11 +55,15 @@ mockIPC((command, payload) => {
   if (command === "install_plugin") {
     if (installFailure) throw installFailure;
     const apply = () => { registry.installed["eye-care"] = { ...eyeCare, enabled: args.enable === true }; };
-    if (holdInstall) return new Promise((resolve) => { finishInstall = () => { apply(); hostJobs = []; resolve(null); }; });
+    if (holdInstall) return new Promise((resolve, reject) => {
+      finishInstall = () => { apply(); hostJobs = []; resolve(null); };
+      rejectInstall = (reason) => { hostJobs = []; reject(reason); };
+    });
     apply();
     return null;
   }
   if (command === "get_plugin_installs") return structuredClone(hostJobs);
+  if (command === "cancel_plugin_install") { rejectInstall?.("plugin_install_cancelled"); return true; }
   if (command === "set_plugin_enabled") {
     registry.installed["eye-care"].enabled = Boolean(args.enabled);
     return null;
@@ -108,6 +114,7 @@ try {
   } else {
     const market = TRANSLATIONS[locale].settings.plugins.market;
     check(cards.length === NATIVE_PLUGINS.length + PACKAGED_MARKET_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
+    await checkPluginAuthors(cards, market.items, market.authors, check);
     const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
     await act(async () => get.click());
     check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
@@ -129,6 +136,10 @@ try {
     await act(async () => weatherInstall().click());
     const toggle = weatherSwitch()!;
     const card = toggle.closest<HTMLElement>(".plugin-card")!;
+    const shownCards = () => [...document.querySelectorAll<HTMLElement>(".plugin-card")];
+    check(shownCards()[0] === card && shownCards().every((item, index, all) => index === 0
+      || !item.classList.contains("plugin-card--installed") || all[index - 1].classList.contains("plugin-card--installed")),
+      "Installed cards come first in the market");
     const visuals = [card.querySelector(".plugin-card__tile")!, card.querySelector(".plugin-card__check")!];
     check(toggle.checked && weatherSidebar() && !document.querySelector(`input[aria-label='${t.clockWeather.city}']`),
       "安装默认启用，天气设置只出现在独立栏目");
@@ -153,6 +164,7 @@ try {
 
     const fixture = document.getElementById("fixture")!;
     fixture.style.width = "168px";
+    await wait();
     const fixtureBox = fixture.getBoundingClientRect();
     const switchBox = weatherSwitch()!.getBoundingClientRect();
     const buttonBox = weatherRemove().getBoundingClientRect();
@@ -210,6 +222,14 @@ try {
         },
         finish: async () => { await act(async () => finishInstall?.()); await wait(); },
       });
+      await act(async () => { remove().click(); });
+      await wait();
+      await checkInstallCancel({
+        t: market, name, check, wait, progress, install,
+        cancelCalls: () => hostCalls.filter((command) => command === "cancel_plugin_install").length,
+      });
+      await act(async () => { install().click(); });
+      await act(async () => finishInstall?.()); await wait();
       holdInstall = false;
       check(hostCalls.includes("install_plugin") && !hostCalls.includes("set_plugin_enabled") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
         "市场包由宿主在同一个任务里安装并启用，保留卡片入口");
@@ -285,6 +305,19 @@ try {
     check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md", "开发指引使用既有外链 opener");
     check(input.getBoundingClientRect().right <= document.getElementById("fixture")!.getBoundingClientRect().right + 1, "中英文窄布局的路径输入框不溢出");
     const field = (key: string) => document.querySelector<HTMLInputElement>(`input[aria-label='${manifest.settings.find((s) => s.key === key)!.label[locale]}']`)!;
+    check(field("idle").getAttribute("aria-label") === (locale === "en" ? "Idle duration (1–120 minutes)" : "空闲时长（1–120 分钟）"), "空闲时长使用当前语言的标签");
+    check(field("idle").closest(".settings-row")?.querySelector(".settings-row__description")?.textContent
+      === manifest.settings.find((s) => s.key === "idle")!.description?.[locale], "空闲时长显示清单里当前语言的暂停、重置与恢复说明");
+    const settingRow = (key: string) => [...document.querySelectorAll<HTMLElement>(".settings-row")]
+      .find((item) => item.querySelector(".settings-row__title")?.textContent === manifest.settings.find((s) => s.key === key)!.label[locale]);
+    const fullscreenSwitch = () => settingRow("pause-fullscreen")?.querySelector<HTMLInputElement>("input[role='switch']")!;
+    check(fullscreenSwitch().checked && !settingRow("pause-fullscreen")?.querySelector(".settings-row__description"),
+      "全屏暂停开关默认开启，只有一行文案");
+    await act(async () => fullscreenSwitch().click());
+    await wait();
+    check(eyeCare.settings["pause-fullscreen"] === "false", "关闭全屏暂停立即保存");
+    await act(async () => fullscreenSwitch().click());
+    await wait();
     const edit = async (input: HTMLInputElement, value: string) => act(async () => {
       setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
     });

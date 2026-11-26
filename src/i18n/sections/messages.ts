@@ -14,11 +14,14 @@ export type MessagesText = {
   newMessage: string;
   newMail: string;
   wechatPreview: string;
+  telegramNoMessages: string;
+  telegramClickToOpen: string;
   newMailLabel: string;
   sourceLabels: {
     qq: string;
     wechat: string;
     qqMail: string;
+    telegram: string;
     plugin: string;
     dingtalk: string;
     feishu: string;
@@ -60,11 +63,14 @@ export const zhCN: MessagesText = {
   newMessage: "收到一条新消息",
   newMail: "收到一封新邮件",
   wechatPreview: "你收到了一条消息",
+  telegramNoMessages: "暂无新消息",
+  telegramClickToOpen: "点击打开 TG",
   newMailLabel: "邮箱有新邮件，查看邮件",
   sourceLabels: {
     qq: "QQ",
     wechat: "微信",
     qqMail: "邮箱",
+    telegram: "TG",
     plugin: "插件",
     dingtalk: "钉钉",
     feishu: "飞书",
@@ -105,11 +111,14 @@ export const en: MessagesText = {
   newMessage: "New message",
   newMail: "New email",
   wechatPreview: "You received a message",
+  telegramNoMessages: "No new messages",
+  telegramClickToOpen: "Click to open TG",
   newMailLabel: "New email, view mail",
   sourceLabels: {
     qq: "QQ",
     wechat: "WeChat",
     qqMail: "Mail",
+    telegram: "TG",
     plugin: "Plugin",
     dingtalk: "DingTalk",
     feishu: "Feishu",

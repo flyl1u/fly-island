@@ -1,21 +1,21 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Check, Settings2 } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsSwitch } from "../../components/settings/SettingsSwitch";
 import type { PluginInstallProgress } from "../../features/plugins/api";
 import type { PluginAuthor } from "../../features/plugins/native/catalog";
+import { PluginAuthors } from "../../features/plugins/PluginAuthors";
 import { PluginCardProgress } from "./PluginCardProgress";
 import { useTranslation } from "../../i18n";
 
-/** One square market card: icon, name and author, a short pitch, and the installation controls. */
+/** One square market card: icon and name, the authors, a short pitch, and the installation controls. */
 export function PluginMarketCard({
-  name, description, accent, author, icon, installed, enabled, inDevelopment, job, switching, reason, onRetry, onToggle, onChangeInstallation, onOpenSettings, update,
+  name, description, accent, authors, icon, installed, enabled, inDevelopment, job, switching, reason, onRetry, onToggle, onChangeInstallation, onOpenSettings, update,
 }: {
   name: string;
   description: string;
   accent: string;
-  author: PluginAuthor;
+  authors: readonly PluginAuthor[];
   icon: ReactNode;
   installed: boolean;
   enabled: boolean;
@@ -42,15 +42,9 @@ export function PluginMarketCard({
         {icon}
         {installed && <span className="plugin-card__check" aria-hidden="true"><Check size={10} strokeWidth={3} /></span>}
       </span>
-      <div className="plugin-card__heading">
-        <h3 className="plugin-card__name">{name}</h3>
-        <p className="plugin-card__author">
-          {t.by}{" "}
-          <a className="plugin-card__author-link" href={author.url}
-            onClick={(event) => { event.preventDefault(); void openUrl(author.url).catch(console.error); }}>@{author.name}</a>
-        </p>
-      </div>
+      <h3 className="plugin-card__name">{name}</h3>
     </div>
+    <PluginAuthors authors={authors} label={t.authors} />
     {job ? <PluginCardProgress name={name} job={job} /> : <p className="plugin-card__description">{description}</p>}
     {reason && !job && <p className="plugins-settings__error plugin-card__error" role="alert">
       {reason}

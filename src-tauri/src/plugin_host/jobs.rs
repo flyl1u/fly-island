@@ -1,16 +1,17 @@
 //! The installs and removals in progress, one per plugin. The settings page follows them
 //! through `PROGRESS_EVENT` and asks for them again when it is reopened.
 
-use std::{collections::BTreeMap, sync::{Mutex, PoisonError}};
+use std::{collections::BTreeMap, sync::{atomic::{AtomicBool, Ordering}, Arc, Mutex, PoisonError}};
 use serde::Serialize;
 use tauri::Emitter;
 
 pub const PROGRESS_EVENT: &str = "plugin-install-progress";
 pub const BUSY: &str = "plugin_install_in_progress";
+pub const CANCELLED: &str = "plugin_install_cancelled";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub enum Phase { Downloading, Verifying, Installing, Uninstalling, Done, Failed }
+pub enum Phase { Downloading, Verifying, Installing, Uninstalling, Done, Failed, Cancelled }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,9 +25,31 @@ pub struct Progress {
     pub error: Option<String>,
 }
 
+/// One job's request to stop: a flag the download checks for every chunk, and a wake-up for
+/// the install that is waiting on the network.
+#[derive(Default)]
+pub struct CancelToken { requested: AtomicBool, wake: tokio::sync::Notify }
+
+impl CancelToken {
+    pub fn is_cancelled(&self) -> bool { self.requested.load(Ordering::SeqCst) }
+
+    pub fn cancel(&self) {
+        self.requested.store(true, Ordering::SeqCst);
+        // `notify_one` keeps a permit, so a request made before the install starts waiting is not lost.
+        self.wake.notify_one();
+    }
+
+    /// Resolves once cancellation is requested. Meant for the one install that owns the job.
+    pub async fn cancelled(&self) {
+        while !self.is_cancelled() { self.wake.notified().await; }
+    }
+}
+
+struct Entry { progress: Progress, cancel: Arc<CancelToken> }
+
 #[derive(Default)]
 pub struct Jobs {
-    entries: Mutex<BTreeMap<String, Progress>>,
+    entries: Mutex<BTreeMap<String, Entry>>,
     app: Option<tauri::AppHandle>,
 }
 
@@ -35,32 +58,48 @@ impl Jobs {
 
     /// Running jobs, and the failures not yet retried.
     pub fn list(&self) -> Vec<Progress> {
-        self.entries.lock().unwrap_or_else(PoisonError::into_inner).values().cloned().collect()
+        self.entries.lock().unwrap_or_else(PoisonError::into_inner).values().map(|entry| entry.progress.clone()).collect()
     }
 
     /// Drops a shown failure once the plugin has been used successfully since.
     pub fn forget_failure(&self, id: &str) {
         let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
-        if entries.get(id).is_some_and(|entry| entry.phase == Phase::Failed) { entries.remove(id); }
+        if entries.get(id).is_some_and(|entry| entry.progress.phase == Phase::Failed) { entries.remove(id); }
     }
 
     /// Claims the plugin; `BUSY` while another install or removal of it is running.
     pub fn begin(&self, id: &str, phase: Phase) -> Result<Job<'_>, String> {
         let progress = Progress { id: id.into(), phase, downloaded: 0, total: 0, error: None };
+        let cancel = Arc::new(CancelToken::default());
         {
             let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
-            if entries.get(id).is_some_and(|entry| entry.phase != Phase::Failed) { return Err(BUSY.into()); }
-            entries.insert(id.into(), progress.clone());
+            if entries.get(id).is_some_and(|entry| entry.progress.phase != Phase::Failed) { return Err(BUSY.into()); }
+            entries.insert(id.into(), Entry { progress: progress.clone(), cancel: cancel.clone() });
         }
         self.emit(&progress);
-        Ok(Job { jobs: self, progress: Mutex::new(progress), finished: false })
+        Ok(Job { jobs: self, progress: Mutex::new(progress), cancel, finished: false })
+    }
+
+    /// Asks a download or its check to stop. False once the package is being installed, when
+    /// nothing is running, or for a removal: the swap on disk is short and not to be interrupted.
+    pub fn cancel(&self, id: &str) -> bool {
+        let entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
+        match entries.get(id) {
+            Some(entry) if matches!(entry.progress.phase, Phase::Downloading | Phase::Verifying) => {
+                entry.cancel.cancel();
+                true
+            }
+            _ => false,
+        }
     }
 
     fn publish(&self, progress: &Progress) {
         {
             let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
-            if progress.phase == Phase::Done { entries.remove(&progress.id); }
-            else { entries.insert(progress.id.clone(), progress.clone()); }
+            // A cancelled job is not a failure to keep on the card: it leaves like a finished one,
+            // under its own phase so no window takes it for a successful install.
+            if matches!(progress.phase, Phase::Done | Phase::Cancelled) { entries.remove(&progress.id); }
+            else if let Some(entry) = entries.get_mut(&progress.id) { entry.progress = progress.clone(); }
         }
         self.emit(progress);
     }
@@ -70,7 +109,7 @@ impl Jobs {
     }
 }
 
-pub struct Job<'a> { jobs: &'a Jobs, progress: Mutex<Progress>, finished: bool }
+pub struct Job<'a> { jobs: &'a Jobs, progress: Mutex<Progress>, cancel: Arc<CancelToken>, finished: bool }
 
 impl Job<'_> {
     fn change(&self, change: impl FnOnce(&mut Progress)) {
@@ -84,6 +123,23 @@ impl Job<'_> {
 
     pub fn phase(&self, phase: Phase) { self.change(|progress| progress.phase = phase); }
 
+    pub fn token(&self) -> Arc<CancelToken> { self.cancel.clone() }
+
+    /// Moves on to installing, unless cancellation was accepted first. Decided under the same
+    /// lock as `Jobs::cancel`, so an accepted request always stops the install.
+    pub fn begin_install(&self) -> Result<(), String> {
+        let next = {
+            let mut entries = self.jobs.entries.lock().unwrap_or_else(PoisonError::into_inner);
+            if self.cancel.is_cancelled() { return Err(CANCELLED.into()); }
+            let mut progress = self.progress.lock().unwrap_or_else(PoisonError::into_inner);
+            progress.phase = Phase::Installing;
+            if let Some(entry) = entries.get_mut(&progress.id) { entry.progress = progress.clone(); }
+            progress.clone()
+        };
+        self.jobs.emit(&next);
+        Ok(())
+    }
+
     pub fn size(&self, total: u64) { self.change(|progress| progress.total = total); }
 
     pub fn downloaded(&self, downloaded: u64) { self.change(|progress| progress.downloaded = downloaded); }
@@ -92,6 +148,7 @@ impl Job<'_> {
         self.finished = true;
         match result {
             Ok(_) => self.phase(Phase::Done),
+            Err(error) if error == CANCELLED => self.phase(Phase::Cancelled),
             Err(error) => {
                 let error = error.clone();
                 self.change(|progress| { progress.phase = Phase::Failed; progress.error = Some(error); });
@@ -132,6 +189,28 @@ mod tests {
         let listed = jobs.list();
         assert_eq!(listed.len(), 1);
         assert_eq!((listed[0].id.as_str(), listed[0].phase), ("minimax", Phase::Failed));
+    }
+
+    #[test]
+    fn cancelling_works_only_before_installing() {
+        let jobs = Jobs::default();
+        assert!(!jobs.cancel("eye-care"), "no job");
+        let job = jobs.begin("eye-care", Phase::Downloading).unwrap();
+        job.phase(Phase::Verifying);
+        assert!(jobs.cancel("eye-care"));
+        assert_eq!(job.begin_install().unwrap_err(), CANCELLED);
+        job.finish::<()>(&Err(CANCELLED.into()));
+        assert!(jobs.list().is_empty());
+
+        let job = jobs.begin("eye-care", Phase::Downloading).unwrap();
+        assert!(!job.token().is_cancelled(), "a new job starts with its own signal");
+        job.begin_install().unwrap();
+        assert!(!jobs.cancel("eye-care"), "too late once installing");
+        assert!(!job.token().is_cancelled());
+        job.finish(&Ok(()));
+        let removal = jobs.begin("eye-care", Phase::Uninstalling).unwrap();
+        assert!(!jobs.cancel("eye-care"), "a removal cannot be cancelled");
+        removal.finish(&Ok(()));
     }
 
     #[test]

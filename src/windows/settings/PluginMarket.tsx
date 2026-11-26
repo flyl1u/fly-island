@@ -18,6 +18,7 @@ import { pluginFailureCode, type PluginFailure } from "../../features/plugins/er
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
 import { clearPluginJob, runPluginJob, usePluginJobs } from "../../features/plugins/usePluginJobs";
 import { isJobActive } from "../../features/plugins/jobs.ts";
+import { orderMarketCards } from "../../features/plugins/marketOrder.ts";
 import { useTranslation } from "../../i18n";
 import { PluginMarketCard } from "./PluginMarketCard";
 import "./PluginMarket.css";
@@ -31,8 +32,8 @@ type PluginMarketProps = {
 };
 
 /**
- * The built-in plugins as square cards: icon with name and author beside it, a short pitch and installation
- * controls. No plugin's settings are drawn here; each card links to where they were placed.
+ * The built-in plugins as square cards, installed ones first: icon and name, the authors, a short
+ * pitch and installation controls. No plugin's settings are drawn here; each card links to where they were placed.
  */
 export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: PluginMarketProps) {
   const text = useTranslation().settings.plugins;
@@ -91,6 +92,13 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
     const current = registry.installed[id];
     return published && current && !current.development && published !== current.manifest.version ? published : undefined;
   };
+  const isCardInstalled = (id: (typeof MARKET_CARDS)[number]["id"]) =>
+    isNativePluginId(id) ? installed[id] : registry.installed[id]?.development === false;
+  // The order as last drawn, so a card with a running job can keep its place.
+  const [shown, setShown] = useState<readonly string[]>([]);
+  const activeIds = new Set(Object.values(jobs).filter(isJobActive).map((job) => job.id));
+  const cards = orderMarketCards(MARKET_CARDS, isCardInstalled, activeIds, shown);
+  if (cards.map(({ id }) => id).join() !== shown.join()) setShown(cards.map(({ id }) => id));
   return <section className="plugin-market" aria-label={t.title}>
     <header className="plugin-market__header">
       <p className="plugin-market__hint">{t.hint}</p>
@@ -101,11 +109,11 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
       </p>}
     </header>
     <ul className="plugin-market__grid">
-      {MARKET_CARDS.map(({ id, accent, author }) => {
+      {cards.map(({ id, accent, authors }) => {
         const item = t.items[id];
         const isNative = isNativePluginId(id);
         const p = registry.installed[id];
-        const isInstalled = isNative ? installed[id] : Boolean(p && !p.development);
+        const isInstalled = isCardInstalled(id);
         const isEnabled = isNative ? enabled[id] : isInstalled && p?.enabled === true;
         const inDevelopment = !isNative && !isInstalled && !MARKET_PACKAGES.some((plugin) => plugin.id === id);
         const status = live[id]?.status;
@@ -125,7 +133,7 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
           else if (isInstalled) setNativePluginInstalled(id, false);
           else install(id);
         };
-        return <PluginMarketCard key={id} name={item.name} description={item.description} accent={accent} author={author}
+        return <PluginMarketCard key={id} name={item.name} description={item.description} accent={accent} authors={authors}
           icon={<PluginIcon id={id} size={44} className="plugin-card__tile" />}
           onOpenSettings={target && isInstalled ? () => onOpenSettings(target) : undefined}
           update={!isNative && version ? { version, onUpdate: () => updatePackage(id) } : undefined}

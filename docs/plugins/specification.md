@@ -59,7 +59,7 @@ Use UTF-8 JSON in `fly-island-plugin.json`, at most **65,536 bytes**. Every mani
 
 | 对象 / Object | 全字段 / All fields | 规则 / Rules |
 | --- | --- | --- |
-| `Setting` | `key: string`, `label: Localized`, `type: string`, `default: JSON`, `options?: SettingOption[]` | 前四项必填；options 缺省 `[]`。/ First four required; options defaults to `[]`. |
+| `Setting` | `key: string`, `label: Localized`, `description?: Localized`, `type: string`, `default: JSON`, `options?: SettingOption[]` | `key` / `label` / `type` / `default` 必填；`options` 缺省 `[]`；`description` 显示为标签下的一句说明 / `key`, `label`, `type` and `default` are required; `options` defaults to `[]`; `description` renders as one line under the label. |
 | `SettingOption` | `value: string`, `label: Localized` | 两项必填，供 select 使用。/ Both required, used by select. |
 | `Action` | `id: string`, `label: Localized` | 两项必填，显示为原生按钮。/ Both required; rendered as a host button. |
 

@@ -2,7 +2,7 @@ import zhCN from "../../i18n/locales/zh-CN.ts";
 import type { Translations } from "../../i18n/types";
 
 export type OfficeSource = "dingtalk" | "feishu" | "wecom";
-export type MessageSource = "qq" | "wechat" | "qqMail" | "plugin" | OfficeSource;
+export type MessageSource = "qq" | "wechat" | "qqMail" | "telegram" | "plugin" | OfficeSource;
 export const OFFICE_SOURCES: readonly OfficeSource[] = ["dingtalk", "feishu", "wecom"];
 export function isOfficeSource(source: MessageSource): source is OfficeSource {
   return (OFFICE_SOURCES as readonly string[]).includes(source);
@@ -17,6 +17,7 @@ export type MessagePreview = {
   detailError?: string | null;
   receivedAt: number;
   wechatMessageId?: string;
+  telegramId?: string;
   otpCode?: string | null;
 };
 
@@ -27,7 +28,7 @@ export function messagePreviewText(preview: MessagePreview, copy: Translations["
   if (isOfficeSource(preview.source)) return copy.newMessage;
   if (preview.source === "qqMail") return preview.otpCode
     ? `${preview.body.trim() || copy.newMail} · ${preview.otpCode}` : preview.body.trim() || copy.newMail;
-  return copy.qqPreview(preview.title.trim() || "QQ", preview.body.trim() || copy.newMessage);
+  return copy.qqPreview(preview.title.trim() || copy.sourceLabels[preview.source], preview.body.trim() || copy.newMessage);
 }
 
 export function collapsedMessageText(preview: MessagePreview, copy: Translations["messages"]) {

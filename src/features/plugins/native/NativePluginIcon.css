@@ -5,3 +5,8 @@
   border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
 }
+
+.native-plugin-icon--round {
+  border-radius: var(--radius-circle);
+  corner-shape: round;
+}

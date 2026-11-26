@@ -166,6 +166,8 @@ export function installDemoMocks(data: DemoContent) {
       case "set_qq_notifications_enabled":
       case "request_qq_notification_access": return command === "request_qq_notification_access" ? "allowed" : qq();
       case "clear_qq_notifications": qqItems = []; return qq();
+      case "cancel_plugin_install": return false;
+      case "get_telegram_notification_state": return { revision: 0, enabled: false, status: "disabled", items: [], error: null };
       case "dismiss_qq_contact": qqItems = qqItems.filter((item) => item.title !== args.title); return qq();
       case "dismiss_wechat_conversation": {
         const contact = wechatMessages.find((item) => item.id === args.messageId)?.contact;

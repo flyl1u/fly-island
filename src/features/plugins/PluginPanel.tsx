@@ -1,28 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Countdown } from "../../components/countdown/Countdown";
 import { useLocale, useTranslation } from "../../i18n";
 import { runPluginAction } from "./api";
 import { refreshPlugins, usePlugins } from "./usePlugins";
+import { islandPanelActions } from "./panelActions";
 import "./PluginPanel.css";
-
-/** A countdown the host runs itself, so a plugin keeps its polls slow. */
-function useNow(active: boolean) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [active]);
-  return now;
-}
-
-function formatRemaining(deadline: number, now: number) {
-  const totalSeconds = Math.max(0, Math.ceil((deadline - now) / 1000));
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60);
-  if (minutes < 60) return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
 
 /**
  * A plugin's page in the expanded island. The plugin sends a panel (headline, rows, action
@@ -36,12 +18,11 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
   const installed = registry.installed[pluginId];
   const status = live[pluginId]?.status;
   const panel = live[pluginId]?.panel ?? null;
+  const note = panel?.note ?? installed?.manifest.description[locale];
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const ticking = panel?.rows.some((row) => row.countdownTo !== null) ?? false;
-  const now = useNow(ticking);
   if (!installed) return null;
-  const actions = (panel?.actions ?? [])
+  const actions = islandPanelActions(panel)
     .map((id) => installed.manifest.actions.find((action) => action.id === id))
     .filter((action) => action !== undefined);
   const statusText = status === "failed" ? t.settings.plugins.status.failed : status === "starting" || status === "restarting" ? t.settings.plugins.status[status] : text.waiting;
@@ -64,7 +45,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
       <header className="plugin-panel__head">
         <div className="plugin-panel__heading">
           <h2 className="plugin-panel__headline">{panel?.headline ?? installed.manifest.name[locale]}</h2>
-          <p className="plugin-panel__note">{panel?.note ?? installed.manifest.description[locale]}</p>
+          {note && <p className="plugin-panel__note">{note}</p>}
         </div>
       </header>
       {panel && panel.rows.length > 0 ? (
@@ -74,7 +55,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
               <div className="plugin-panel__line">
                 <span className="plugin-panel__title">{row.title}</span>
                 {row.countdownTo !== null ? (
-                  <span className="plugin-panel__value plugin-panel__value--countdown">{formatRemaining(row.countdownTo, now)}</span>
+                  <span className="plugin-panel__value plugin-panel__value--countdown"><Countdown deadline={row.countdownTo} /></span>
                 ) : row.percent !== null ? (
                   <span className="plugin-panel__value">{Math.round(row.percent)}%</span>
                 ) : null}

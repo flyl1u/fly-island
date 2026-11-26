@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { AgentQuotaSource, IslandSettings } from "../../features/appearance/types";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
+import { listRunningAgents } from "../../features/agent-status/session";
 import { useIslandAgentSessions } from "../../features/agent-status/useIslandAgentSessions";
 import { useAgentUsages } from "../../features/agent-status/useAgentUsages";
 import { filterQuotaUsages } from "../../features/agent-status/usage";
@@ -22,6 +23,13 @@ export function useIslandAgents(settings: IslandSettings) {
     sessions.agentSessions,
     others,
     settings.agentStatusEnabled && settings.agentTitleEnabled,
+  );
+
+  // The ones working now, for the collapsed island to notice a task starting.
+  const namesSessions = settings.agentStatusEnabled && settings.agentTitleEnabled;
+  const runningAgents = useMemo(
+    () => (namesSessions ? listRunningAgents(sessions.agentSessions, others) : []),
+    [namesSessions, sessions.agentSessions, others],
   );
 
   // Plugin-market agents are offered like the others once installed and switched on.
@@ -64,5 +72,5 @@ export function useIslandAgents(settings: IslandSettings) {
     readAt: usages.readAt,
   }), [usages.claude, usages.codex, usages.dsh, usages.kimi, usages.zcode, usages.antigravity, usages.readAt, claudeCode, codex, dsh, kimiCode, zcode, antigravity, workbuddyUsage, watchesWorkbuddy]);
 
-  return { agentStatus, ...sessions, agentSession, agentUsages, alertUsages };
+  return { agentStatus, ...sessions, agentSession, runningAgents, agentUsages, alertUsages };
 }

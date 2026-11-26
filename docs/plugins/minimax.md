@@ -1,6 +1,6 @@
 # MiniMax Code
 
-作者 / Author [YTC0408](https://github.com/YTC0408) · [Fly Island #110](https://github.com/flyl1u/fly-island/pull/110)
+作者 / Authors [YTC0408](https://github.com/YTC0408)、[flyliu](https://github.com/flyl1u) · [Fly Island #110](https://github.com/flyl1u/fly-island/pull/110)
 
 插件市场中显示「开发中」，暂未开放安装。启用后，AI 会话页显示 MiniMax Code 最近会话与可用额度。默认读取本机 MiniMax CLI 的登录信息，亦可在插件设置填写 Token Plan 密钥。额度查询只发送到 MiniMax 官方的 HTTPS 域名。会话库以只读方式打开，任务进度只读取相应会话目录的近期记录。
 

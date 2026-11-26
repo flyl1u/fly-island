@@ -12,7 +12,8 @@ test("market errors show only recognized IPC codes, not paths or URLs", () => {
 
 test("download failures keep their own codes", () => {
   for (const code of ["plugin_download_timeout", "plugin_download_interrupted", "plugin_download_http_client",
-    "plugin_download_http_server", "plugin_disk_full", "plugin_install_in_progress", "plugin_uninstall_failed"]) {
+    "plugin_download_http_server", "plugin_disk_full", "plugin_install_in_progress", "plugin_uninstall_failed",
+    "plugin_install_cancelled"]) {
     assert.equal(pluginFailureCode(code), code);
   }
   assert.equal(pluginFailureCode("error decoding response body"), undefined);

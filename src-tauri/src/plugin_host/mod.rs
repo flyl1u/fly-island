@@ -48,6 +48,11 @@ pub async fn get_plugins_index(host: tauri::State<'_, PluginHost>) -> Result<Vec
 pub async fn install_plugin(id: String, enable: Option<bool>, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
     host.install(&id, enable.unwrap_or(false)).await
 }
+/// True when the running download will stop; false once there is nothing left to cancel.
+#[tauri::command]
+pub async fn cancel_plugin_install(id: String, host: tauri::State<'_, PluginHost>) -> Result<bool, String> {
+    Ok(host.jobs.cancel(&id))
+}
 #[tauri::command]
 pub async fn get_plugin_installs(host: tauri::State<'_, PluginHost>) -> Result<Vec<jobs::Progress>, String> { Ok(host.jobs.list()) }
 #[tauri::command]
@@ -110,6 +115,7 @@ macro_rules! tauri_commands {
             crate::plugin_host::run_plugin_action, crate::plugin_host::configure_plugins,
             crate::plugin_host::load_development_plugin,
             crate::plugin_host::get_plugin_installs,
+            crate::plugin_host::cancel_plugin_install,
         ] $($rest)*)
     };
 }
