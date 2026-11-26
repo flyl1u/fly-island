@@ -12,11 +12,14 @@ pub fn unsupported(settings: &Settings) -> Value {
 pub fn snapshot(shared: &Shared) -> Value {
     let settings = &shared.settings;
     let t = |zh, en| settings.text(zh, en);
-    let remaining = shared.clock.remaining(Instant::now());
+    let at = Instant::now();
+    let remaining = shared.clock.remaining(at);
     let seconds = remaining.as_secs() + u64::from(remaining.subsec_nanos() != 0);
     let paused = shared.clock.paused();
     let resting = shared.clock.phase() == Phase::Resting;
     let postponed = shared.clock.postponed();
+    // The bar drains with the phase; a paused timer has no bar, only its frozen time.
+    let percent = (!paused).then(|| shared.clock.percent_remaining(at));
     let headline = if resting {
         t("休息中", "Resting")
     } else {
@@ -53,7 +56,7 @@ pub fn snapshot(shared: &Shared) -> Value {
     json!({"panel": {
         "headline": headline, "note": note,
         "rows": [{"id":"timer", "title": if resting {t("剩余休息时长", "Break time remaining")} else {t("剩余用眼时长", "Screen time remaining")},
-            "detail": detail, "percent": null, "countdownTo": deadline,
+            "detail": detail, "percent": percent, "countdownTo": deadline,
             "tone": if resting {"warning"} else {"normal"}}],
         "actions": actions,
         "islandActions": island_actions,
@@ -100,6 +103,12 @@ mod tests {
             data["panel"]["rows"][0]["countdownTo"].is_null(),
             shared.clock.paused()
         );
+        // The bar drains with the phase; a paused timer drops it and keeps the frozen time.
+        let percent = data["panel"]["rows"][0]["percent"].as_f64();
+        assert_eq!(percent.is_some(), !shared.clock.paused());
+        if let Some(percent) = percent {
+            assert!((0.0..=100.0).contains(&percent));
+        }
         if !shared.clock.paused() {
             assert_eq!(data["panel"]["rows"][0]["detail"], "");
         }
@@ -139,6 +148,7 @@ mod tests {
             shared.fullscreen = true;
             let data = snapshot(&shared);
             assert!(data["panel"]["rows"][0]["countdownTo"].is_null());
+            assert!(data["panel"]["rows"][0]["percent"].is_null());
             assert_eq!(
                 data["panel"]["headline"],
                 if language == "en" {

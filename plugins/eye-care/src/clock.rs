@@ -39,6 +39,19 @@ impl Clock {
             .unwrap_or_else(|| self.deadline.saturating_duration_since(now))
     }
 
+    /// How much of the current phase is left, 0–100, for the island's bar.
+    pub fn percent_remaining(&self, now: Instant) -> f64 {
+        let span = match self.phase {
+            Phase::Working => self.period,
+            Phase::Resting => self.rest,
+        };
+        let total = span.as_secs_f64();
+        if total <= 0.0 {
+            return 0.0;
+        }
+        (self.remaining(now).as_secs_f64() / total * 100.0).clamp(0.0, 100.0)
+    }
+
     pub fn can_snooze(&self) -> bool {
         self.phase == Phase::Resting && !self.snooze_used
     }

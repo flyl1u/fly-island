@@ -6,6 +6,18 @@ fn at(base: Instant, seconds: u64) -> Instant {
 }
 
 #[test]
+fn remaining_percent_follows_the_span_of_the_current_phase() {
+    let base = Instant::now();
+    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    assert_eq!(clock.percent_remaining(base), 100.0);
+    assert_eq!(clock.percent_remaining(at(base, 15)), 75.0);
+    clock.tick(at(base, 60), false, false);
+    assert_eq!(clock.phase(), Phase::Resting);
+    assert_eq!(clock.percent_remaining(at(base, 60)), 100.0);
+    assert_eq!(clock.percent_remaining(at(base, 65)), 75.0);
+}
+
+#[test]
 fn work_turns_into_a_timed_rest_and_back() {
     let base = Instant::now();
     let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));

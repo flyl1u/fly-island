@@ -3,7 +3,7 @@ import "../../src/styles/base.css";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
-import { PluginPanel } from "../../src/features/plugins/PluginPanel";
+import { EyeCareIslandPanel } from "../../src/features/eye-care/EyeCareIslandPanel";
 import { refreshPlugins } from "../../src/features/plugins/usePlugins";
 import { EyeCareRestPanel } from "../../src/features/eye-care/EyeCareRestPanel";
 import type { PluginPanel as Panel } from "../../src/features/plugins/api";
@@ -20,7 +20,7 @@ Date.now = () => base + Math.floor(performance.now() - started) + jump;
 let deadline = base + 90_400;
 let panel: Panel = {
   headline: language === "en" ? "Resting" : "休息中", note: "", attention: true, actions: ["snooze_10", "skip"], islandActions: [],
-  rows: [{ id: "timer", title: language === "en" ? "Break time remaining" : "剩余休息时长", detail: "", percent: null, countdownTo: deadline, tone: "warning" }],
+  rows: [{ id: "timer", title: language === "en" ? "Break time remaining" : "剩余休息时长", detail: "", percent: 85, countdownTo: deadline, tone: "warning" }],
 };
 const manifest = {
   id: "eye-care", name: { "zh-CN": "护眼提醒", en: "Eye Care" },
@@ -50,7 +50,7 @@ function check(condition: unknown, label: string) {
   messages.push(`PASS ${label}`);
 }
 const wait = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
-const islandClock = () => island.querySelector(".plugin-panel__value--countdown")?.textContent ?? "";
+const islandClock = () => island.querySelector(".eye-care-island__value--countdown")?.textContent ?? "";
 const restClock = () => rest.querySelector("[role=timer]")?.textContent ?? "";
 const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 60 + Number(part), 0);
 const showRest = () => act(async () => restRoot.render(<I18nProvider><EyeCareRestPanel
@@ -58,11 +58,14 @@ const showRest = () => act(async () => restRoot.render(<I18nProvider><EyeCareRes
 /></I18nProvider>));
 try {
   await act(async () => { await refreshPlugins(); });
-  await act(async () => islandRoot.render(<I18nProvider><PluginPanel pluginId="eye-care" /></I18nProvider>));
-  check(island.querySelector(".plugin-panel__headline")?.textContent === panel.headline && island.querySelector(".plugin-panel__title")?.textContent === panel.rows[0].title,
+  await act(async () => islandRoot.render(<I18nProvider><EyeCareIslandPanel /></I18nProvider>));
+  check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline && island.querySelector(".eye-care-island__label")?.textContent === panel.rows[0].title,
     "The island shows the resting phase and remaining break time label");
-  check(!island.querySelector(".plugin-panel__note") && !island.querySelector(".plugin-panel__detail"),
+  check(!island.querySelector(".eye-care-island__note") && !island.querySelector(".eye-care-island__detail"),
     "Empty notes do not fall back to the manifest description or leave redundant instructions");
+  check(island.querySelector<HTMLElement>(".eye-care-island__meter span")?.style.width === "85%",
+    "The island drains a bar for how much of the phase is left");
+  check(island.querySelector(".eye-care-island__line--stack") !== null, "The countdown sits above its own label");
   await wait(650);
   await showRest();
   check(seconds(islandClock()) === seconds(restClock()), "Staggered mounts share the same countdown second");
@@ -73,7 +76,7 @@ try {
   await act(async () => { await refreshPlugins(); });
   await showRest();
   check(islandClock() === restClock() && seconds(restClock()) === 300, "A new deadline updates both clocks immediately");
-  check(!island.querySelector(".plugin-panel__actions"), "Resting island shows no duplicate postponement or skip buttons");
+  check(!island.querySelector(".eye-care-island__actions"), "Resting island shows no duplicate postponement or skip buttons");
   check(rest.querySelectorAll(".eye-care-rest__choices button").length === 5 && rest.querySelector(".eye-care-rest__skip button"),
     "The break window retains all five postponements and optional skipping");
   await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[3].click());
@@ -90,16 +93,22 @@ try {
   panel = { ...panel, headline: language === "en" ? "Screen time" : "用眼中", attention: false, actions: ["rest_now"], islandActions: ["rest_now"],
     rows: [{ ...panel.rows[0], title: language === "en" ? "Screen time remaining" : "剩余用眼时长", countdownTo: Date.now() + 1_200_000 }] };
   await act(async () => { await refreshPlugins(); restRoot.render(null); });
-  check(island.querySelector(".plugin-panel__action")?.textContent === "rest_now", "The working island keeps Take a break now");
-  check(island.querySelector(".plugin-panel__headline")?.textContent === panel.headline && island.querySelector(".plugin-panel__title")?.textContent === panel.rows[0].title,
+  check(island.querySelector(".eye-care-island__action")?.textContent === "rest_now", "The working island keeps Take a break now");
+  check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline && island.querySelector(".eye-care-island__label")?.textContent === panel.rows[0].title,
     "The island shows the working phase and remaining screen time label");
+  const card = island.querySelector(".eye-care-island__card");
+  check(card !== null && card.contains(island.querySelector(".eye-care-island__headline")!)
+    && card.contains(island.querySelector(".eye-care-island__value--countdown")!)
+    && card.contains(island.querySelector(".eye-care-island__action")!),
+    "The phase, the remaining time and Take a break now share one card");
   panel = { ...panel, note: language === "en" ? "Already postponed once; the next break cannot be postponed" : "已经推迟过一次，不能推迟下次休息" };
   await act(async () => { await refreshPlugins(); });
-  check(island.querySelector(".plugin-panel__note")?.textContent === panel.note && island.querySelector(".plugin-panel__headline")?.textContent === panel.headline,
+  check(island.querySelector(".eye-care-island__note")?.textContent === panel.note && island.querySelector(".eye-care-island__headline")?.textContent === panel.headline,
     "Postponement adds its warning while keeping the working headline");
-  panel = { ...panel, rows: [{ ...panel.rows[0], countdownTo: null, detail: "20:00" }] };
+  panel = { ...panel, rows: [{ ...panel.rows[0], countdownTo: null, percent: null, detail: "20:00" }] };
   await act(async () => { await refreshPlugins(); });
-  check(!islandClock() && island.querySelector(".plugin-panel__detail")?.textContent === "20:00" && island.querySelector(".plugin-panel__note")?.textContent === panel.note,
+  check(!islandClock() && island.querySelector(".eye-care-island__detail")?.textContent === "20:00" && island.querySelector(".eye-care-island__note")?.textContent === panel.note
+    && !island.querySelector(".eye-care-island__meter"),
     "A paused timer retains its frozen remaining time and postponement warning");
 
   await act(async () => { islandRoot.unmount(); restRoot.unmount(); });

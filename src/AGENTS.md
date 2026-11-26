@@ -121,6 +121,6 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 3. 如果用到插件或核心权限，更新 `src-tauri/capabilities/default.json`。
 4. 运行 `pnpm build` 和 Rust 侧要求的验证。
 
-设备电量和音频界面放在 features/device-battery，护眼休息窗口组合放在 windows/eye-care，日历标记放在 features/todos/calendar-marks。市场卡片使用 features/plugins 的安装状态。
+设备电量和音频界面放在 features/device-battery，护眼休息窗口组合放在 windows/eye-care，日历标记放在 features/todos/calendar-marks。市场卡片使用 features/plugins 的安装状态。护眼在岛内的页面放在 features/eye-care/EyeCareIslandPanel 与 islandHeight（`IslandPages` 与 `expandedHeight` 各一处分支），不要改 `features/plugins/PluginPanel` 里的通用插件页。
 
 插件 API v1：`features/plugins/` 保存协议类型与共享快照；额度/会话适配在 agent-status 中，插件消息在 messages 中；新增界面仍复用 SettingsRow 与岛屿原生组件。

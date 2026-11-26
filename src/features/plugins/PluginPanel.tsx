@@ -55,7 +55,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
               <div className="plugin-panel__line">
                 <span className="plugin-panel__title">{row.title}</span>
                 {row.countdownTo !== null ? (
-                  <span className="plugin-panel__value plugin-panel__value--countdown"><Countdown deadline={row.countdownTo} padMinutes={pluginId === "eye-care"} /></span>
+                  <span className="plugin-panel__value plugin-panel__value--countdown"><Countdown deadline={row.countdownTo} /></span>
                 ) : row.percent !== null ? (
                   <span className="plugin-panel__value">{Math.round(row.percent)}%</span>
                 ) : null}
