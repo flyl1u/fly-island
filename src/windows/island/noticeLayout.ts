@@ -26,6 +26,7 @@ const MIN_WIDTH = 244;
 
 export type NoticeText = { sender: string; body: string };
 export type NoticeLimits = {
+  minWidth?: number;
   maxWidth: number;
   maxHeight: number;
   /** The collapsed island's own size: the one-line preview never goes below it, nor does the reader's height. */
@@ -74,7 +75,7 @@ export function getNoticeSize({ sender, body }: NoticeText, limits: NoticeLimits
   // As wide as the message needs, even narrower than the collapsed bar: a short WeChat line in a
   // wide island left most of it empty (2026-11-18, owner). MIN_WIDTH is the narrowest island (240,
   // COLLAPSED_WIDTH.min and MIN_COLLAPSED_ISLAND_WIDTH in geometry.rs) on alignNoticeWidth's grid.
-  const width = Math.max(MIN_WIDTH, alignNoticeWidth(Math.min(widest, natural), widest));
+  const width = Math.max(limits.minWidth ?? MIN_WIDTH, alignNoticeWidth(Math.min(widest, natural), widest));
   const textRoom = Math.max(1, width - SIDE_PADDING * 2);
   const lines = Math.max(1, paragraphs.reduce((total, line) => total + Math.max(1, Math.ceil(textWidth(line) / textRoom)), 0));
   const wanted = Math.ceil(VERTICAL_PADDING * 2 + HEADER_HEIGHT + HEADER_GAP + lines * LINE_HEIGHT * limits.fontScale);

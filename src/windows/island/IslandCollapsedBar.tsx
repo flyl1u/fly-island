@@ -28,6 +28,7 @@ import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import { isTodoTimerEndingSoon, type TodoTimer } from "../../features/todos/timer";
 import { CollapsedTodoContent, type TodoRotationDisplay } from "./CollapsedTodoContent";
+import { CollapsedPresence } from "./CollapsedPresence";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
@@ -39,6 +40,7 @@ type IslandCollapsedBarProps = {
   preview: MessagePreview | null;
   /** The adaptive preview's reader (sender, then the whole text) in place of the bar, or null. */
   noticeReader?: { scrolls: boolean } | null;
+  animateWidth: boolean;
   page: IslandPage;
   isExpanded: boolean;
   isTucked: boolean;
@@ -56,6 +58,7 @@ type IslandCollapsedBarProps = {
   collapsedItem: CollapsedItem | null;
   /** Where the text and each status icon sit, left to right (Settings → Appearance). */
   collapsedLayout: readonly CollapsedSlot[];
+  collapsedOrder?: readonly CollapsedSlot[];
   /** The playing song's cover, or null when it is not shown. */
   collapsedCover: string | null;
   lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
@@ -89,6 +92,7 @@ export function IslandCollapsedBar({
   wechatReminders,
   preview,
   noticeReader = null,
+  animateWidth,
   page,
   isExpanded,
   isTucked,
@@ -104,6 +108,7 @@ export function IslandCollapsedBar({
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
+  collapsedOrder = collapsedLayout,
   collapsedCover,
   lyricsSettings,
   agentSession,
@@ -154,13 +159,7 @@ export function IslandCollapsedBar({
     });
   };
 
-  if (noticeReader && preview && !isExpanded && !isTucked) return (
-    <div className="island__collapsed island__collapsed--notice">
-      <MessageNoticeReader preview={preview} scrolls={noticeReader.scrolls} onOpen={() => openPreview(preview)}
-        onRetry={qqMail.retryPreviewContent}
-        drag={{ onPointerDown: prepareWindowDrag, onPointerMove: handleWindowDragMove, onPointerUp: cancelWindowDrag, onPointerCancel: cancelWindowDrag }} />
-    </div>
-  );
+  const reader = Boolean(noticeReader && preview && !isExpanded && !isTucked);
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
@@ -303,18 +302,27 @@ export function IslandCollapsedBar({
       ) : null,
   };
 
-  return (
+  return <>
     <div
       className="island__collapsed"
-      aria-hidden={isExpanded}
-      inert={isExpanded}
+      data-under-notice={reader || undefined}
+      aria-hidden={isExpanded || reader}
+      inert={isExpanded || reader}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           onOpenPage(page);
         }
       }}
     >
-      {collapsedLayout.map((slot) => <Fragment key={slot}>{slots[slot]}</Fragment>)}
+      {collapsedOrder.map((slot) => slot === "text" ? <Fragment key={slot}>{slots.text}</Fragment>
+        : <CollapsedPresence key={slot} className="island__status-slot" animate={animateWidth}>
+          {collapsedLayout.includes(slot) && slots[slot]}
+        </CollapsedPresence>)}
     </div>
-  );
+    <CollapsedPresence className="island__collapsed island__collapsed--notice" animate={animateWidth}>
+      {reader && preview && noticeReader && <MessageNoticeReader preview={preview} scrolls={noticeReader.scrolls} onOpen={() => openPreview(preview)}
+        onRetry={qqMail.retryPreviewContent}
+        drag={{ onPointerDown: prepareWindowDrag, onPointerMove: handleWindowDragMove, onPointerUp: cancelWindowDrag, onPointerCancel: cancelWindowDrag }} />}
+    </CollapsedPresence>
+  </>;
 }

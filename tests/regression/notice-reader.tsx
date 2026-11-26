@@ -98,7 +98,7 @@ try {
   await qq("明天下午三点在三楼会议室开项目评审会，请准备材料");
   await settle();
   // Either it fits one wider line, or past the width limit it turns into the reader.
-  const slot = document.querySelector<HTMLElement>(".island__text-slot");
+  const slot = document.querySelector<HTMLElement>(".island__collapsed:not([inert]) .island__text-slot");
   const clipped = slot ? [slot, ...slot.querySelectorAll<HTMLElement>("*")].some((element) => element.scrollWidth - element.clientWidth > 4) : !body();
   check(document.querySelector<HTMLElement>(".island")!.getBoundingClientRect().width > baseWidth && !clipped
     && native().noticeWidth !== null, "比岛长的消息撑大岛屿，文字不再被截断");

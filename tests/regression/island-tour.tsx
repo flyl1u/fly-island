@@ -1,6 +1,6 @@
 // Run pnpm dev and open /tests/regression/island-tour.html for the island against a mock desktop.
 // ?media=playing|paused|nocover|long|nolyrics|none, ?lyrics=0, ?empty=1, ?lang=en, ?detached=1, ?capsule=1 and ?test=1 configure the tour.
-import { checkClockWeatherIsland, clockWeatherMock } from "./clockWeatherIsland";
+import { checkClockWeatherIsland, clockWeatherMock, collapsedBarOrder } from "./clockWeatherIsland";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
@@ -144,13 +144,14 @@ const click = async (selector: string) => {
 };
 
 function checkShapeMotion(expectedSeconds: number) {
-  const style = getComputedStyle(document.querySelector<HTMLElement>(".island")!);
+  const island = document.querySelector<HTMLElement>(".island")!;
+  const style = getComputedStyle(island);
   const properties = style.transitionProperty.split(",").map((value) => value.trim());
   const durations = style.transitionDuration.split(",").map(Number.parseFloat);
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   check(["width", "height", "border-radius"].every((property) => {
     const index = properties.indexOf(property);
-    return index >= 0 && durations[index % durations.length] > 0 && durations[index % durations.length] === expectedSeconds;
+    return index >= 0 && durations[index % durations.length] === (property === "width" && island.classList.contains("island--width-motion") ? 0.4 : expectedSeconds);
   }), `岛屿形状完整过渡（reduce=${reduce}; property=${style.transitionProperty}; duration=${style.transitionDuration}）`);
   check(interaction.animatePosition === true, `贴边收起与滑出始终请求位置动画（reduce=${reduce}）`);
 }
@@ -288,10 +289,12 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
       .reduce((sum, value) => sum + parseFloat(value), 0);
     const panelScale = panel().getBoundingClientRect().width / panel().offsetWidth;
     const tipTop = dotBox.bottom - (parseFloat(tip.bottom) + tipHeight) * panelScale;
-    check(dock.a > 1.3 && dock.f < -2 && getComputedStyle(dots[1]).transform === "none"
+    const reduceDockMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dockMotionFitsPreference = reduceDockMotion ? dock.a === 1 && dock.f === 0 : dock.a > 1.3 && dock.f < -2;
+    check(dockMotionFitsPreference && getComputedStyle(dots[1]).transform === "none"
       && dots[1].getBoundingClientRect().width === dotBox.width && tip.opacity === "1"
       && tipTop >= island().getBoundingClientRect().top,
-      `键盘聚焦也会放大上浮并显示名称，命中区域不动，名称不会被屏幕顶边裁切（${dock.a}, ${dock.f}, ${tipTop.toFixed(1)}px）`);
+      `键盘聚焦显示名称且遵循减少动画（${reduceDockMotion}）；命中区不动、名称不裁切（${dock.a}, ${dock.f}, ${tipTop.toFixed(1)}px）`);
     dots[1].blur();
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     const list = document.querySelector<HTMLElement>(".shelf-list")!;
@@ -350,15 +353,14 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
     // Appearance → On the island: the music waveform moved left of the light and the text sits on
     // the collapsed island's left.
-    const barOrder = () => [...document.querySelectorAll<HTMLElement>(".island__collapsed > *")].map((element) => element.classList[0]).join();
     for (let step = 0; step < 4; step++) {
       await act(async () => {
         document.querySelector<HTMLElement>(".collapsed-layout__slot--music")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       });
     }
     const savedLayout = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
-    check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather" && barOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
-      `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${barOrder()}）`);
+    check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather" && collapsedBarOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
+      `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${collapsedBarOrder()}）`);
     await click(".settings-sidebar__item[data-category='general']");
     const lockSwitch = () => [...document.querySelectorAll<HTMLElement>(".settings-row")]
       .find((row) => row.querySelector(".settings-row__title")?.textContent === "锁定小岛位置")!.querySelector<HTMLInputElement>("[role='switch']")!;

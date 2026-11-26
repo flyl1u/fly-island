@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { visibleCollapsedSlots } from "../../features/appearance/collapsedLayout";
 // First: the message panels it loads bring CSS that must come before the page panels' and the shell's.
 import { useLowBatteryAlert } from "../../features/device-battery/useLowBatteryAlert";
+import { quotaAlertText } from "../../features/agent-status/QuotaAlertPopup";
+import { collapsedMessageText } from "../../features/messages/messagePreview";
 import { useIslandNotices } from "./useIslandNotices";
 // The page panels; before IslandShell so their CSS keeps its place in the cascade.
 import { IslandPages } from "./IslandPages";
@@ -83,30 +85,7 @@ export function IslandApp() {
   // "Stay out while music plays" follows the media session itself, not the lyric line.
   const musicHoldsIsland = useMusicGrace(settings.musicEnabled && media.mediaState.playbackStatus === "playing");
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
-    useCollapsedTodo(
-      settings.todoEnabled ? todos : NO_TODOS,
-      settings.todoEnabled ? activeTodoId : null,
-      settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
-      mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
-      agentSession?.title ?? null,
-      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
-        activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [] },
-    );
-  // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
-  const collapsedCover = collapsedItem === "lyrics" ? cover : null;
-  const widthMotion = useCollapsedWidthMotion(collapsedWidthTarget, mode === "collapsed");
-  const collapsedIslandWidth = widthMotion.width;
-  const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
   const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
-  useIslandTucking({
-    settings,
-    navigation,
-    hasMessagePreview,
-    activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
-    gameHolds: game.quiet || game.tuck,
-    browserOnIslandMonitor: game.browserOnIslandMonitor,
-  });
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
 
@@ -129,6 +108,31 @@ export function IslandApp() {
     features.pluginPages?.some((entry) => entry.id === "device-battery") ?? false,
     mode === "collapsed" && !isTucked && !game.quiet && !hasMessagePreview && quotaAlert === null,
   );
+  const collapsed = mode === "collapsed" && !isTucked;
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
+    useCollapsedTodo(
+      settings.todoEnabled ? todos : NO_TODOS,
+      settings.todoEnabled ? activeTodoId : null,
+      settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
+      !collapsed || !settings.showCollapsedText || hasMessagePreview,
+      agentSession?.title ?? null,
+      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
+        activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
+        notice: collapsed && preview ? { text: collapsedMessageText(preview, t.messages), extraWidth: preview.otpCode ? 140 : 23 } : null,
+        alertText: quotaAlert ? quotaAlertText(quotaAlert, t.agent.quota) : batteryAlert ? t.deviceBattery.lowAlert(batteryAlert.name, batteryAlert.percent) : null },
+    );
+  const collapsedCover = collapsedItem === "lyrics" ? cover : null;
+  const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth: collapsedWidthTarget });
+  const widthMotion = useCollapsedWidthMotion(notice.size?.width ?? collapsedWidthTarget, collapsed);
+  const collapsedIslandWidth = widthMotion.width;
+  useIslandTucking({
+    settings,
+    navigation,
+    hasMessagePreview,
+    activity: { agentVisualState, collapsedItem, songPlaying: musicHoldsIsland, activeTodoId, timer },
+    gameHolds: game.quiet || game.tuck,
+    browserOnIslandMonitor: game.browserOnIslandMonitor,
+  });
   const { alertedSession, approvals: agentApprovals, agentCardHeight } = useIslandAgentAlerts({
     sessions: agentSessions,
     unseen: unseenAgentSessions.keys,
@@ -166,8 +170,8 @@ export function IslandApp() {
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
   const stageStyle = useMemo(
-    () => getIslandStageStyle(shapedSettings(settings), colors, notice.size?.width ?? collapsedIslandWidth, expandedIslandHeight, notice.size?.height),
-    [collapsedIslandWidth, colors, expandedIslandHeight, settings, notice.size],
+    () => getIslandStageStyle(shapedSettings(settings), colors, collapsedIslandWidth, expandedIslandHeight, notice.size?.height),
+    [collapsedIslandWidth, colors, expandedIslandHeight, settings, notice.size?.height],
   );
 
 
@@ -184,7 +188,7 @@ export function IslandApp() {
     setSettings,
     expandedIslandHeight,
     collapsedIslandWidth: widthMotion.hitWidth,
-    notice: notice.nativeNotice,
+    notice: { ...notice.nativeNotice, width: notice.nativeNotice.width === null ? null : widthMotion.hitWidth },
     onCollapse: collapseIsland,
   });
 
@@ -244,7 +248,7 @@ export function IslandApp() {
         isDetached={isPositionDetached || settings.marginY > 0}
         islandShape={settings.islandShape}
         showTitle={settings.showTitle}
-        widthMoving={widthMotion.moving}
+        widthMoving={widthMotion.enabled}
         brandText={idleDisplay.brand}
         pendingText={idleDisplay.pending}
         showCollapsedText={settings.showCollapsedText}
@@ -253,6 +257,7 @@ export function IslandApp() {
         todoTimer={settings.todoEnabled ? collapsedTimer : null}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
+        collapsedOrder={settings.collapsedLayout}
         collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, [...settings.collapsedHidden,
           ...(statusFit.clock ? [] : ["clock" as const]), ...(statusFit.weather ? [] : ["weather" as const])])}
         collapsedCover={collapsedCover}

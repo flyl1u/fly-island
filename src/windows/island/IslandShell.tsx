@@ -72,6 +72,7 @@ type IslandShellProps = {
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
   collapsedLayout: readonly CollapsedSlot[];
+  collapsedOrder?: readonly CollapsedSlot[];
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
   /** Where the collapsed island's lyric line comes from. */
@@ -155,6 +156,7 @@ export function IslandShell({
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
+  collapsedOrder,
   collapsedCover,
   lyricsSettings,
   pageOrder,
@@ -281,6 +283,7 @@ export function IslandShell({
             wechatReminders={wechatReminders}
             preview={preview}
             noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
+            animateWidth={widthMoving}
             page={page}
             isExpanded={isExpanded}
             isTucked={isTucked}
@@ -296,6 +299,7 @@ export function IslandShell({
             collapsedTodoCount={collapsedTodoCount}
             collapsedItem={collapsedItem}
             collapsedLayout={collapsedLayout}
+            collapsedOrder={collapsedOrder}
             collapsedCover={collapsedCover}
             lyricsSettings={lyricsSettings}
             agentSession={agentSession}

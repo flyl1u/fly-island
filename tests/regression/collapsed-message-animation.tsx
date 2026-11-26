@@ -292,7 +292,7 @@ async function runChecks() {
     await notify("qqMail", true);
     const reader = () => document.querySelector<HTMLElement>(".message-notice");
     const readerBody = () => document.querySelector<HTMLElement>(".message-notice__body");
-    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__open-button"), "长消息展开时整块换成阅读卡");
+    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__collapsed:not([inert]) .island__open-button"), "长消息展开时整块换成阅读卡");
     check(readerBody()?.textContent?.includes("下阶段设计评审安排") && getComputedStyle(readerBody()!).userSelect === "text", "阅读卡显示完整邮件主题且文字可选中");
     check(readerBody()?.dataset.windowDrag === "false" && document.querySelector(".message-notice__body--scrolls"), "正文不拖动窗口，超出上限时可滚动");
     openedPage = null;
