@@ -4,6 +4,8 @@
 
 作者 / Authors：[zlohs (@zloghs)](https://github.com/zloghs)、[flyliu](https://github.com/flyl1u)。插件卡片和分组标题用宿主手绘的应用图标（`src/assets/plugins/eye-care.svg`）；[Logo 说明](../assets/eye-care/README.md) 记录随插件提交的原图形来源与许可。
 
+0.3.0 同步了 #92 的更新（岛内快捷操作、清单 `description` 等新字段），需要 Fly Island 3.4.0 及以上（`plugins/eye-care/min-app-version.txt`），旧版宿主不会被推送此版本。
+
 0.2.0 将休息画面交给 Fly Island 宿主：使用同一 React 入口、主题、字体、lucide 与 SettingsLinkButton，替换固定配色的 Win32/GDI 窗口和按钮。窗口遵守[插件规范](README.md)及[插件 PR 自检](../../.github/PULL_REQUEST_TEMPLATE/plugin.md)。
 
 ## 使用与兼容

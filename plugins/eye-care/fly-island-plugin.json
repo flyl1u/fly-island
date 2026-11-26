@@ -8,7 +8,7 @@
     "zh-CN": "在小岛和多屏休息窗口显示护眼倒计时，复用宿主主题，支持一次推迟与可选跳过",
     "en": "Eye-break countdowns with host-themed multi-monitor windows, one postponement and optional skipping"
   },
-  "version": "0.2.0",
+  "version": "0.3.0",
   "apiVersion": 1,
   "runtime": {
     "command": "eye-care.exe"
