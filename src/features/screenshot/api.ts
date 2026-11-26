@@ -76,8 +76,13 @@ export async function saveScreenshotPngTo(pngBase64: string, path: string): Prom
 }
 
 /** 把截图钉到桌面，返回贴图窗口 label。origin 是框选区在屏幕上的逻辑坐标（CSS 像素）。 */
-export async function pinScreenshotPng(pngBase64: string, origin?: { x: number; y: number }, translation = false): Promise<string> {
-  return invoke<string>("screenshot_pin_image", { pngBase64, translation, origin: origin ? { x: origin.x, y: origin.y } : null });
+export async function pinScreenshotPng(pngBase64: string, origin?: { x: number; y: number }, translation = false, recognition = false): Promise<string> {
+  return invoke<string>("screenshot_pin_image", { pngBase64, translation, recognition, origin: origin ? { x: origin.x, y: origin.y } : null });
+}
+
+/** Rich text is escaped and formatted by the OCR document model before copying. */
+export async function copyScreenshotDocument(html: string, text: string): Promise<void> {
+  await invoke("screenshot_copy_document", { html, text });
 }
 
 /** 关闭指定贴图窗口。 */

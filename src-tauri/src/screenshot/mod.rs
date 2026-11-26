@@ -4,6 +4,7 @@
 //! 每个插件只加自己的命令与界面。
 
 mod capture;
+mod session;
 mod ocr;
 mod ocr_engine;
 pub(crate) mod hotkey;
@@ -171,9 +172,11 @@ pub fn screenshot_trace(line: String) {
 
 /// 系统已安装字体族，供字体下拉使用（复用现有 DirectWrite 枚举）。
 #[tauri::command]
-pub fn screenshot_fonts() -> Result<Vec<String>, String> {
-    let families = crate::win32::fonts::installed_families(false).map_err(|error| error.to_string())?;
-    Ok(families.into_iter().map(|(name, _label)| name).collect())
+pub async fn screenshot_fonts() -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let families = crate::win32::fonts::installed_families(false).map_err(|error| error.to_string())?;
+        Ok(families.into_iter().map(|(name, _label)| name).collect())
+    }).await.map_err(|error| error.to_string())?
 }
 
 /// 按行识别，返回 (文字, x, y, 宽, 高)，坐标是截图区域的像素。
@@ -233,6 +236,7 @@ pub(crate) async fn screenshot_pin_image(
     png_base64: String,
     origin: Option<PinOrigin>,
     translation: Option<bool>,
+    recognition: Option<bool>,
     window: tauri::WebviewWindow,
 ) -> Result<String, String> {
     use base64::Engine as _;
@@ -261,7 +265,9 @@ pub(crate) async fn screenshot_pin_image(
     // URL 只带 window=pinned-image 一个参数（见 window.rs：查询串带额外参数会被资产解析丢掉）；
     // 图片路径存进托管状态，贴图窗口用 screenshot_pinned_src 取。
     let is_translation = translation.unwrap_or(false);
-    let url = if is_translation { "index.html?window=screenshot-translation" } else { "index.html?window=pinned-image" };
+    let is_document = is_translation || recognition.unwrap_or(false);
+    let url = if is_translation { "index.html?window=screenshot-translation" }
+        else if is_document { "index.html?window=screenshot-ocr" } else { "index.html?window=pinned-image" };
     // PNG 的像素是物理像素（抓屏时乘过 DPI），而 WebviewWindow 的 inner_size 收的是
     // 逻辑像素。不除 scale_factor 的话，150% 缩放屏上贴图会凭空放大 1.5 倍——
     // 用户说的「框选多大贴上去就大一圈」。除回去才能 1:1 还原框选区域。
@@ -275,12 +281,12 @@ pub(crate) async fn screenshot_pin_image(
     // 窗口比图片大一圈透明边距，用来画 PixPin 那种图片「外侧」光晕；
     // 图片本身仍是框选的原始 1:1 尺寸，视觉大小不变。
     let glow = 8.0;
-    let width = if is_translation { 960.0_f64.min(max_w) } else { (logical_w * fit).max(1.0) + glow * 2.0 };
-    let height = if is_translation { 680.0_f64.min(max_h) } else { (logical_h * fit).max(1.0) + glow * 2.0 };
+    let width = if is_document { 1080.0_f64.min(max_w) } else { (logical_w * fit).max(1.0) + glow * 2.0 };
+    let height = if is_document { 720.0_f64.min(max_h) } else { (logical_h * fit).max(1.0) + glow * 2.0 };
     // 贴图必须钉在框选的那个位置：origin 是框选区左上角的逻辑坐标；
     // builder.position 也收逻辑坐标（内部按 DPI 换算成物理位置）。
     // 窗口外扩了 glow，左上角要相应上移/左移，图片才正好落在框选位置。
-    let physical_origin = if is_translation {
+    let physical_origin = if is_document {
         monitor.as_ref().map(|monitor| (
             monitor.position().x as f64 + (monitor.size().width as f64 - width * scale_factor) / 2.0,
             monitor.position().y as f64 + (monitor.size().height as f64 - height * scale_factor) / 2.0,
@@ -307,10 +313,10 @@ pub(crate) async fn screenshot_pin_image(
             .title("Fly Island")
             .inner_size(width, height)
             .decorations(false)
-            .transparent(true)
+            .transparent(!is_document)
             .always_on_top(true)
             .skip_taskbar(true)
-            .resizable(is_translation)
+            .resizable(is_document)
             // 光晕改由前端 CSS 画（失焦黑晕/聚焦蓝晕可切换），窗口阴影关掉避免重复。
             .shadow(false)
             // 先隐藏，等前端图片加载完再 show，避免「空白窗口闪一下再出图」。
@@ -431,6 +437,14 @@ pub(crate) async fn screenshot_pin_menu(
 pub(crate) fn screenshot_copy_text(text: String) -> Result<(), String> {
     let mut clipboard = arboard::Clipboard::new().map_err(|error| format!("无法打开剪贴板：{error}"))?;
     clipboard.set_text(text).map_err(|error| format!("无法写入剪贴板：{error}"))
+}
+
+#[tauri::command]
+pub(crate) async fn screenshot_copy_document(html: String, text: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut clipboard = arboard::Clipboard::new().map_err(|error| error.to_string())?;
+        clipboard.set_html(html, Some(text)).map_err(|error| format!("复制排版失败：{error}"))
+    }).await.map_err(|error| error.to_string())?
 }
 
 /// 从托管状态取贴图的临时文件路径。
@@ -565,6 +579,7 @@ macro_rules! tauri_commands {
             crate::screenshot::screenshot_pin_destroy,
             crate::screenshot::screenshot_pinned_src,
             crate::screenshot::screenshot_copy_text,
+            crate::screenshot::screenshot_copy_document,
             crate::screenshot::screenshot_pin_copy_image,
             crate::screenshot::screenshot_pin_save_image,
             crate::screenshot::screenshot_pin_ocr_lines,
@@ -591,7 +606,7 @@ pub(crate) async fn screenshot_pin_translate(app: tauri::AppHandle, window: taur
     use base64::Engine as _;
     let path = pinned_path(&app, window.label())?;
     let bytes = std::fs::read(path).map_err(|error| format!("读取贴图失败：{error}"))?;
-    screenshot_pin_image(app, base64::engine::general_purpose::STANDARD.encode(bytes), None, Some(true), window).await
+    screenshot_pin_image(app, base64::engine::general_purpose::STANDARD.encode(bytes), None, Some(true), None, window).await
 }
 
 /// Also runs for Alt+F4 / OS destruction, not only the explicit Close button.

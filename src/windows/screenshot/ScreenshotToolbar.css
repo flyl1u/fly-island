@@ -15,6 +15,6 @@
 .screenshot-row .screenshot-color:hover { transform: translateY(-1px); }
 .screenshot-row .screenshot-color-active { outline: 2px solid #4d96ff; outline-offset: 3px; }
 .screenshot-row-options { flex-wrap: wrap; max-width: calc(100vw - 32px); }
-.screenshot-rows > .screenshot-row { flex-wrap: wrap; max-width: calc(100vw - 32px); }
+.screenshot-rows .screenshot-row { flex-wrap: wrap; max-width: calc(100vw - 32px); }
 .screenshot-overlay .screenshot-hint { z-index: 12; max-width: calc(100vw - 24px); text-align: center; }
 .screenshot-row .screenshot-select-arrow { width: 112px; min-width: 112px; }

@@ -162,6 +162,7 @@ export function drawAnnotation(
     }
     case "text": {
       const fontSize = Math.round(item.size * s);
+      context.canvas.style.fontSynthesis = "weight style";
       context.font = `${item.italic ? "italic " : ""}${item.bold ? "bold " : ""}${fontSize}px ${item.font}`;
       context.textBaseline = "top";
       // 旋转以文字框中心为原点，360° 任意角度。
@@ -178,10 +179,8 @@ export function drawAnnotation(
       const y = angle === 0 ? item.at.y * s : 0;
       const lines = item.text.split("\n");
       const lineHeight = fontSize * 1.4;
-      let textWidth = 0;
       lines.forEach((line, index) => {
         context.fillText(line, x, y + index * lineHeight);
-        textWidth = Math.max(textWidth, context.measureText(line).width);
       });
       context.strokeStyle = item.color;
       context.lineWidth = Math.max(1, fontSize * 0.06);
@@ -339,7 +338,9 @@ export function scaleItem(item: Annotation, factor: number): Annotation {
 
 /** 量一段文字渲染后的宽度：用 canvas 量，和绘制、命中判断用的是同一套字体。 */
 export function measureText(value: string, size: number, font: string, bold?: boolean, italic?: boolean): number {
-  const canvas = document.createElement("canvas").getContext("2d");
+  const element = document.createElement("canvas");
+  element.style.fontSynthesis = "weight style";
+  const canvas = element.getContext("2d");
   const lines = (value || "文").split("\n");
   if (!canvas) return Math.max(20, Math.max(...lines.map((line) => line.length)) * size * 0.6);
   canvas.font = `${italic ? "italic " : ""}${bold ? "bold " : ""}${size}px ${font}`;

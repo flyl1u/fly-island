@@ -24,6 +24,7 @@ import { useTranslation } from "../../i18n";
 import type { ScreenshotText } from "../../i18n/sections/screenshot";
 import type { CaptureState } from "./useScreenshotCapture";
 import type { EditorState } from "./useScreenshotEditor";
+import { ScreenshotTooltips } from "./ScreenshotTooltips";
 
 /** 只要译文里能直接当按钮标题的字段（不含带参数的函数）。 */
 type LabelKey = { [K in keyof ScreenshotText]: ScreenshotText[K] extends string ? K : never }[keyof ScreenshotText];
@@ -99,7 +100,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
   };
 
   return (
-    <>
+    <ScreenshotTooltips>
       {optionTool !== "move" ? (
         <div className="screenshot-row screenshot-row-options">
           {optionTool === "shape" ? (
@@ -280,7 +281,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
             </>
           ) : null}
 
-          <span className="screenshot-colors">
+          {optionTool !== "mosaic" ? <span className="screenshot-colors">
             {COLORS.map((value) => (
               <button
                 key={value}
@@ -292,7 +293,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
                 onClick={() => pickColor(value)}
               />
             ))}
-          </span>
+          </span> : null}
         </div>
       ) : null}
 
@@ -335,7 +336,7 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
           <Undo2 size={19} aria-hidden />
         </button>
         {/* 贴图 / 保存图像 / 关闭 / 复制并关闭：跟在划词翻译后面同一排。 */}
-        <button type="button" className="screenshot-tool" title={t.pin} aria-label={t.pin} onClick={() => capture.pin()}>
+        <button type="button" className="screenshot-tool" title={t.pinHint} aria-label={t.pin} onClick={() => capture.pin()}>
           <Pin size={19} aria-hidden />
         </button>
         <button type="button" className="screenshot-tool" title={t.save} aria-label={t.save} onClick={() => capture.save()}>
@@ -379,6 +380,6 @@ export function ScreenshotToolbar({ editor, capture }: ToolbarProps) {
           </div>
         </div>
       ) : null}
-    </>
+    </ScreenshotTooltips>
   );
 }

@@ -1,4 +1,10 @@
 export type ScreenshotText = {
+  plainLinesHint: string; bilingualResult: string; copyBilingual: string;
+  resultLayout: string; readableLayout: string; sourceLayout: string; readingFontSize: string; readableHint: string;
+  ocrTitle: string; ocrResult: string; editableResult: string; showOriginal: string; keepLayout: string; copyLayout: string;
+  ocrLine: string; ocrLoading: string; ocrReady: string; ocrLayoutHint: string; imageLoadFailed: string;
+  minimizeWindow: string; maximizeWindow: string; zoomIn: string; zoomOut: string; fitImage: string;
+  resizeWheelHint: string; imageScaleLabel: string; pinHint: string;
   arrowStyle: string;
   arrowSingle: string;
   arrowDouble: string;
@@ -96,6 +102,12 @@ export type ScreenshotText = {
 };
 
 export const zhCN: ScreenshotText = {
+  plainLinesHint: "按行显示，长句自动换行", bilingualResult: "原文 / 译文对照", copyBilingual: "复制对照",
+  resultLayout: "文字排版", readableLayout: "阅读排版", sourceLayout: "原图排版", readingFontSize: "阅读字号", readableHint: "正常字号，可编辑；文字不会随原图缩小",
+  ocrTitle: "识别文字 · 图文对照", ocrResult: "识别结果", editableResult: "可编辑", showOriginal: "显示原图", keepLayout: "还原排版", copyLayout: "复制排版",
+  ocrLine: "文字行", ocrLoading: "正在识别文字…", ocrReady: "识别完成", ocrLayoutHint: "按原图位置和行高排版，Ctrl + 滚轮同步缩放", imageLoadFailed: "原图加载失败",
+  minimizeWindow: "最小化", maximizeWindow: "最大化 / 还原", zoomIn: "放大", zoomOut: "缩小", fitImage: "适应窗口",
+  resizeWheelHint: "在预览或尺寸区域滚动鼠标滚轮，直观调整大小", imageScaleLabel: "图像大小", pinHint: "桌面贴图\n将截图悬浮在桌面，滚轮缩放，拖动移动",
   arrowStyle: "箭头",
   arrowSingle: "单箭头 →",
   arrowDouble: "双箭头 ↔",
@@ -106,9 +118,9 @@ export const zhCN: ScreenshotText = {
   pinFailed: "贴图失败",
   translationTitle: "截图翻译",
   resultView: "结果显示方式",
-  textAndImage: "显示文本和图片",
-  imageOnly: "仅显示图片",
-  textOnly: "仅显示文本",
+  textAndImage: "原图与中英对照",
+  imageOnly: "仅原图",
+  textOnly: "仅中英对照",
   originalImage: "原图",
   translatedImage: "译图",
   lockAspect: "锁定宽高比",
@@ -144,12 +156,12 @@ export const zhCN: ScreenshotText = {
   formatItalic: "斜体",
   formatUnderline: "下划线",
   formatStrike: "删除线",
-  recognize: "识别文字",
+  recognize: "识别文字 · 图文对照",
   translate: "翻译",
   translateHint: "截图翻译 (Ctrl+Q)：图文对照，切换原图与译图",
   undo: "撤销",
   undoHint: "撤销 (Ctrl+Z)",
-  pin: "贴图到桌面",
+  pin: "桌面贴图",
   save: "保存图片",
   copy: "复制图片",
   copied: "已复制",
@@ -189,6 +201,12 @@ export const zhCN: ScreenshotText = {
 };
 
 export const en: ScreenshotText = {
+  plainLinesHint: "Line by line, with automatic wrapping", bilingualResult: "Original / Translation", copyBilingual: "Copy bilingual text",
+  resultLayout: "Text layout", readableLayout: "Reading layout", sourceLayout: "Original layout", readingFontSize: "Reading font size", readableHint: "Readable, editable text; image zoom does not shrink text",
+  ocrTitle: "Recognize text · Image comparison", ocrResult: "Recognized text", editableResult: "Editable", showOriginal: "Show original", keepLayout: "Preserve layout", copyLayout: "Copy formatting",
+  ocrLine: "Text line", ocrLoading: "Recognizing text…", ocrReady: "Recognition complete", ocrLayoutHint: "Positions and line heights follow the image. Ctrl + wheel zooms both panels.", imageLoadFailed: "Unable to load the original image",
+  minimizeWindow: "Minimize", maximizeWindow: "Maximize / restore", zoomIn: "Zoom in", zoomOut: "Zoom out", fitImage: "Fit to window",
+  resizeWheelHint: "Scroll over the preview or size controls to resize visually", imageScaleLabel: "Image size", pinHint: "Pin to desktop\nKeep the image floating; wheel to zoom, drag to move",
   arrowStyle: "Arrow",
   arrowSingle: "Single →",
   arrowDouble: "Double ↔",
@@ -199,9 +217,9 @@ export const en: ScreenshotText = {
   pinFailed: "Unable to pin image",
   translationTitle: "Screenshot translation",
   resultView: "Result view",
-  textAndImage: "Show text and image",
-  imageOnly: "Show image only",
-  textOnly: "Show text only",
+  textAndImage: "Original and bilingual text",
+  imageOnly: "Original only",
+  textOnly: "Bilingual text only",
   originalImage: "Original",
   translatedImage: "Translation",
   lockAspect: "Lock aspect ratio",
@@ -237,7 +255,7 @@ export const en: ScreenshotText = {
   formatItalic: "Italic",
   formatUnderline: "Underline",
   formatStrike: "Strikethrough",
-  recognize: "Recognize text",
+  recognize: "Recognize text · Compare with image",
   translate: "Translate",
   translateHint: "Screenshot translation (Ctrl+Q): compare text, original and translated image",
   undo: "Undo",

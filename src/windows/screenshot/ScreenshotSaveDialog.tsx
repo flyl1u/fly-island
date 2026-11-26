@@ -1,11 +1,14 @@
 // 保存图像弹窗：预览 + 保存位置/文件名/格式/尺寸 + 系统保存对话框入口。
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { join, downloadDir } from "@tauri-apps/api/path";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { FolderOpen, ImageDown, LockKeyhole, UnlockKeyhole, RotateCcw, X } from "lucide-react";
 import { saveScreenshotPng, saveScreenshotPngTo } from "../../features/screenshot/api";
 import { useTranslation } from "../../i18n";
 import "./ScreenshotSaveDialog.css";
+import { imageScaleSize } from "../../features/screenshot/imageResize";
+import { ScreenshotResizePreview } from "./ScreenshotResizePreview";
+import { ScreenshotTooltips } from "./ScreenshotTooltips";
 
 type Props = {
   /** 标注合成后的 PNG（base64，无 data URI 前缀）。 */
@@ -46,6 +49,22 @@ export function ScreenshotSaveDialog({ png, onDone, onClose }: Props) {
   useEffect(() => { void downloadDir().then(setFolder).catch(() => {}); }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const resizeRef = useRef<HTMLDivElement | null>(null);
+  const scalePercent = original.width ? width / original.width * 100 : 100;
+  const resizeTo = (percent: number) => {
+    if (!original.width || !original.height) return;
+    const next = imageScaleSize(original.width, original.height, percent);
+    setWidth(next.width); setHeight(next.height);
+  };
+  const wheelResize = (delta: number) => resizeTo(scalePercent * (delta < 0 ? 1.1 : 1 / 1.1));
+  const wheelRef = useRef(wheelResize); wheelRef.current = wheelResize;
+  useEffect(() => {
+    const target = resizeRef.current;
+    if (!target) return;
+    const resize = (event: WheelEvent) => { event.preventDefault(); if (event.deltaY) wheelRef.current(event.deltaY); };
+    target.addEventListener("wheel", resize, { passive: false });
+    return () => target.removeEventListener("wheel", resize);
+  }, []);
 
   useEffect(() => {
     if (original.width && !width) {
@@ -123,16 +142,14 @@ export function ScreenshotSaveDialog({ png, onDone, onClose }: Props) {
   };
 
   return (
-    <div className="screenshot-save-mask" onPointerDown={(event) => event.stopPropagation()}>
+    <div className="screenshot-save-mask" onPointerDown={(event) => event.stopPropagation()}><ScreenshotTooltips>
       <div className="screenshot-save-dialog" role="dialog" aria-label={t.saveTitle} aria-modal="true">
         <header className="screenshot-save-head">
           <span>{t.saveTitle}</span>
           <button type="button" className="screenshot-save-close" aria-label={t.close} onClick={onClose}><X size={16} /></button>
         </header>
         <div className="screenshot-save-body">
-          <div className="screenshot-save-preview">
-            <img src={`data:image/png;base64,${png}`} alt={t.saveTitle} />
-          </div>
+          <ScreenshotResizePreview png={png} width={width} height={height} original={original} label={t.resizeWheelHint} onWheel={wheelResize} />
           <div className="screenshot-save-settings">
             <label className="screenshot-save-field">
               <span>{t.saveLocation}</span>
@@ -152,8 +169,12 @@ export function ScreenshotSaveDialog({ png, onDone, onClose }: Props) {
                 </select>
               </span>
             </label>
-            <div className="screenshot-save-field">
+            <div className="screenshot-save-field" ref={resizeRef}>
               <span>{t.saveResize}</span>
+              <label className="screenshot-save-scale">{Math.round(scalePercent)}%
+                <input type="range" min={5} max={400} value={scalePercent} aria-label={t.imageScaleLabel}
+                  onChange={(event) => resizeTo(Number(event.target.value))} />
+              </label>
               <div className="screenshot-save-size">
                 <label>W <input type="number" min={1} value={width || ""} onChange={(event) => onWidth(Number(event.target.value))}
                   onPointerDown={(event) => event.stopPropagation()} /></label>
@@ -166,6 +187,7 @@ export function ScreenshotSaveDialog({ png, onDone, onClose }: Props) {
                 <button type="button" onClick={() => { setWidth(original.width); setHeight(original.height); }} aria-label={t.resetSize}><RotateCcw size={14} /></button>
               </div>
               <small>{t.originalSize} {original.width} × {original.height} px</small>
+              <small>{t.resizeWheelHint}</small>
             </div>
             <p className="screenshot-save-estimate">{t.saveEstimate}：<b>{estimate}</b></p>
             {error ? <p className="screenshot-save-error" role="alert">{error}</p> : null}
@@ -178,6 +200,6 @@ export function ScreenshotSaveDialog({ png, onDone, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </ScreenshotTooltips></div>
   );
 }

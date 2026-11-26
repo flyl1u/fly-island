@@ -10,6 +10,7 @@ import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { EyeCareWindow } from "./windows/eye-care/EyeCareWindow";
 import { ClipboardWindow } from "./windows/clipboard/ClipboardWindow";
 import { ScreenshotTranslationWindow } from "./windows/screenshot-translation/ScreenshotTranslationWindow";
+import { ScreenshotOcrWindow } from "./windows/screenshot-ocr/ScreenshotOcrWindow";
 import { PinnedImageWindow } from "./windows/pinned-image/PinnedImageWindow";
 import { ScreenshotWindow } from "./windows/screenshot/ScreenshotWindow";
 import { I18nProvider, loadLocale, TRANSLATIONS } from "./i18n";
@@ -94,6 +95,8 @@ async function mountApp() {
           <SettingsWindow />
         ) : windowKind === "clipboard" ? (
           <ClipboardWindow />
+        ) : windowKind === "screenshot-ocr" ? (
+          <ScreenshotOcrWindow />
         ) : windowKind === "screenshot-translation" ? (
           <ScreenshotTranslationWindow />
         ) : windowKind === "pinned-image" ? (

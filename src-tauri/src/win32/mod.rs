@@ -11,7 +11,6 @@ pub(crate) mod desktop_duplication;
 pub(crate) mod folder_dialog;
 pub(crate) mod file_dialog;
 pub(crate) mod fonts;
-pub(crate) mod foreground;
 pub(crate) mod hotkey;
 pub(crate) mod icon;
 pub(crate) mod input;

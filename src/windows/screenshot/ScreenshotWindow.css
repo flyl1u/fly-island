@@ -193,6 +193,7 @@
 }
 .screenshot-node.screenshot-node-arrow { border-radius: 50%; }
 .screenshot-text-input {
+    font-synthesis: weight style;
   position: fixed;
   min-width: 20px;
   min-height: 20px;

@@ -3,6 +3,7 @@ import { pinOcrLines } from "../../features/screenshot/api";
 import { translateImageLines, type TranslatedImageLine } from "../../features/screenshot/translation";
 import { loadSettings, translateText, type Direction } from "../../features/translation";
 import { useTranslation } from "../../i18n";
+import { naturalTextLines } from "../../features/screenshot/ocrDocument";
 
 export function useImageTranslation(label: string) {
   const { screenshot: t } = useTranslation();
@@ -20,7 +21,7 @@ export function useImageTranslation(label: string) {
     setBusy(true);
     setError(null);
     try {
-      const source = recognize ? await pinOcrLines(label) : lines;
+      const source = recognize ? naturalTextLines(await pinOcrLines(label)) : lines;
       if (cancelled()) return;
       if (!source.length) { setError(t.nothingFound); return; }
       setLines(source.map((line) => ({ ...line, translated: "", error: null })));

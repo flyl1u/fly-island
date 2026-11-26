@@ -56,7 +56,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 其他文档
 
-截图插件的 `features/screenshot/` 提供标注算法、类型化 IPC、坐标换算及有界翻译队列；`windows/screenshot/` 组合覆盖层，`windows/pinned-image/` 组合桌面贴图，`windows/screenshot-translation/` 组合图文翻译结果。Rust 的 `screenshot/` 持有抓屏、OCR、快捷键与窗口生命周期，Windows API 仍位于 `win32/`。翻译通过 `features/translation/index.ts` 复用现有设置和请求，没有平行服务。见 [截图插件](../plugins/screenshot.md)。
+截图插件的 `features/screenshot/` 提供标注算法、类型化 IPC、坐标换算、有界翻译队列及 OCR 自然行模型；`windows/screenshot/` 组合覆盖层并提供自适应文字行，`windows/pinned-image/` 组合桌面贴图，`windows/screenshot-translation/` 提供原图与逐段原文/译文对照，`windows/screenshot-ocr/` 提供原图与可编辑顺序文字的独立窗口。文字行根据内容和可用宽度增长，不按图像坐标定位文字。Rust 的 `screenshot/` 持有抓屏、OCR、快捷键与窗口生命周期，Windows API 仍位于 `win32/`。翻译通过 `features/translation/index.ts` 复用现有设置和请求，没有平行服务。见 [截图插件](../plugins/screenshot.md)。
 
 - [data-storage.md](data-storage.md)：每项数据存在哪里、由哪个模块负责
 - [contracts.md](contracts.md)：对外契约清单（localStorage key、事件、命令与文件格式）

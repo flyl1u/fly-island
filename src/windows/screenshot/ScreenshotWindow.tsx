@@ -70,11 +70,15 @@ export function ScreenshotWindow() {
 
   const [savePng, setSavePng] = useState<string | null>(null);
   const resetEditor = editor.reset;
+  const closing = useRef(false);
   const close = useCallback(() => {
-    resetEditor();
-    setSavePng(null);
-    void dismissScreenshot().catch(() => {});
-  }, [resetEditor]);
+    if (closing.current) return;
+    closing.current = true;
+    // Keep the last composed frame until the native window is hidden. Resetting here
+    // briefly replaces a clear selection with the full-screen dim layer on exit.
+    void dismissScreenshot().then(() => setSavePng(null)).catch(() => {})
+      .finally(() => { closing.current = false; });
+  }, []);
 
   // 必须稳定引用：capture 内部的事件订阅 useEffect 依赖 arm，arm 又依赖这些回调。
   // 用内联箭头会在每次渲染（抓屏时 setBase/setScale 都会渲染）时反复取消/重订阅事件，
@@ -220,6 +224,7 @@ export function ScreenshotWindow() {
   return (
     <div
       className="screenshot-overlay"
+      tabIndex={-1}
       onPointerDown={(event) => gestures.onOverlayDown(event, windowRects.current)}
       onPointerMove={(event) => gestures.onOverlayMove(event, windowRects.current)}
       onPointerUp={gestures.onOverlayUp}

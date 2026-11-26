@@ -24,7 +24,10 @@
   flex: 1 1 auto; display: grid; place-items: center; min-width: 0; padding: 24px;
   background: #efeff3;
 }
-.screenshot-save-preview img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+.screenshot-save-preview { overflow: auto; min-height: 0; }
+.screenshot-save-preview img { max-width: none; max-height: none; object-fit: fill; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+.screenshot-save-scale { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+.screenshot-save-scale input { flex: 1; min-width: 0; padding: 0; accent-color: #4d96ff; }
 .screenshot-save-settings {
   flex: 0 0 320px; display: flex; flex-direction: column; gap: 14px;
   padding: 20px; background: #fff; border-left: 1px solid #e5e5ea; overflow: auto;

@@ -6,6 +6,7 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
 import { I18nProvider, TRANSLATIONS } from "../../src/i18n";
 import { ScreenshotWindow } from "../../src/windows/screenshot/ScreenshotWindow";
+import { drawAnnotation } from "../../src/features/screenshot/annotations";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 Object.defineProperty(window, "devicePixelRatio", { value: 1, configurable: true });
@@ -13,7 +14,7 @@ const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : 
 localStorage.setItem("fly-island-locale", lang);
 const t = TRANSLATIONS[lang].screenshot;
 mockWindows("screenshot");
-let exported = "", dismissed = 0, captures = 0;
+let exported = "", dismissed = 0, captures = 0, fontEnumerations = 0;
 mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   if (command === "screenshot_window_rect") return [0, 0, innerWidth, innerHeight];
@@ -26,7 +27,7 @@ mockIPC((command, payload) => {
     return frame;
   }
   if (command === "screenshot_windows") return [[40, 40, 640, 390], [700, 70, 1100, 500]];
-  if (command === "screenshot_fonts") return ["Segoe UI", "Consolas", "Arial"];
+  if (command === "screenshot_fonts") { fontEnumerations++; return ["Segoe UI", "Consolas", "Arial"]; }
   if (command === "screenshot_dismiss") { dismissed++; return null; }
   if (command === "screenshot_copy_png") { exported = String(args.pngBase64); return Promise.reject("keep open for inspection"); }
   return null;
@@ -72,6 +73,7 @@ for (let cycle = 0; cycle < 5; cycle++) {
   if (cycle < 4) await key(window, "Escape");
 }
 check(captures === 5 && dismissed === 4, "repeat sessions request a new raw frame each time");
+check(fontEnumerations === 1, "rapid repeated screenshots enumerate installed fonts only once");
 await pressButton(t.toolText);
 await pointer(document.querySelector(".screenshot-canvas")!, "pointerdown", 120, 120);
 const input = document.querySelector<HTMLTextAreaElement>(".screenshot-text-input")!;
@@ -99,6 +101,15 @@ await key(size, "Enter"); await act(async () => { await wait(); });
 check(document.activeElement === input && input.selectionEnd === text.length, "Enter in size field returns to the saved text selection");
 await pressButton("#4D96FF");
 check(getComputedStyle(input).color === "rgb(77, 150, 255)" && input.selectionEnd === text.length, "color changes retain the editing selection");
+check(getComputedStyle(input).fontSynthesis.includes("style"), "text editor allows synthetic italic for fonts without an italic face");
+const textCanvas = document.createElement("canvas"); textCanvas.width = 500; textCanvas.height = 100;
+const textContext = textCanvas.getContext("2d")!;
+const chinese = { kind: "text" as const, text: "中文斜体测试 Fly Island", font: "Microsoft YaHei", size: 32, color: "#111111", at: {x: 10, y: 10} };
+drawAnnotation(textContext, chinese, 1);
+const upright = textContext.getImageData(0, 0, 500, 100).data;
+textContext.clearRect(0, 0, 500, 100); drawAnnotation(textContext, {...chinese, italic: true}, 1);
+const italic = textContext.getImageData(0, 0, 500, 100).data;
+check(upright.some((value, index) => value !== italic[index]), "Microsoft YaHei italic produces visibly different exported pixels");
 await pressButton(t.copyAndClose);
 const image = new Image(); image.src = `data:image/png;base64,${exported}`; await image.decode();
 const output = document.createElement("canvas"); output.width = image.width; output.height = image.height;

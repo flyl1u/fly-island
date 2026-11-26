@@ -14,7 +14,7 @@ pub const ARM_EVENT: &str = "screenshot-arm";
 
 /// 一次截图会话是否正在进行（含"按了热键、还在抓底图、窗口尚未显示"的窗口期）。
 /// 重复按热键时忽略，否则会重新抓屏、把用户已经框好的区域和标注清空。
-static CAPTURING: AtomicBool = AtomicBool::new(false);
+static SESSION: super::session::CaptureSession = super::session::CaptureSession::new();
 static RESTORE_MAIN: AtomicBool = AtomicBool::new(false);
 
 fn build(app: &AppHandle) -> Result<WebviewWindow, String> {
@@ -71,12 +71,12 @@ pub(crate) fn precreate(app: &AppHandle) -> Result<(), String> {
 /// 打开（或重新定位）覆盖层。已经在截图时重复按键直接忽略。
 pub(crate) fn show_overlay(app: &AppHandle) -> Result<(), String> {
     // swap 原子地「读取并置位」：第一次拿到 false 继续，重复按键拿到 true 直接返回。
-    if CAPTURING.swap(true, Ordering::AcqRel) {
+    if !SESSION.open() {
         return Ok(());
     }
     // 任一步失败都要复位，否则用户卡在「再也按不出截图」的状态。
     if let Err(error) = show_overlay_inner(app) {
-        CAPTURING.store(false, Ordering::Release);
+        SESSION.cancel();
         return Err(error);
     }
     Ok(())
@@ -118,6 +118,13 @@ fn position_on_cursor_monitor(app: &AppHandle, window: &WebviewWindow) -> Result
 
     let position = monitor.position();
     let size = monitor.size();
+    // Re-entering fullscreen restores a saved placement and can briefly show an unpainted
+    // WebView. Most captures stay on the same monitor and need no native transition at all.
+    if window.is_fullscreen().unwrap_or(false)
+        && window.inner_position().ok().as_ref() == Some(position)
+        && window.inner_size().ok().as_ref() == Some(size) {
+        return Ok(());
+    }
     // Leave the previous monitor's fullscreen geometry before moving the hidden overlay.
     window.set_fullscreen(false).map_err(|error| error.to_string())?;
     window
@@ -134,46 +141,64 @@ fn position_on_cursor_monitor(app: &AppHandle, window: &WebviewWindow) -> Result
 /// 显示覆盖层并强制抢到前台。必须"先 show 再抢"，否则对隐藏窗口无效。
 #[tauri::command]
 pub async fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
-    window.show().map_err(|error| error.to_string())?;
-    // 小岛本体也是置顶窗口，会压住覆盖层吃掉鼠标：截图期间先藏起来，关闭时恢复。
-    if let Some(main) = window.app_handle().get_webview_window("main") {
-        RESTORE_MAIN.store(main.is_visible().unwrap_or(false), Ordering::Release);
-        let _ = main.hide();
-    }
-    // 小岛主窗口也是置顶的，会压住覆盖层吃掉点击：重新置顶把自己提到它上面。
-    let _ = window.set_always_on_top(false);
-    let _ = window.set_always_on_top(true);
-    let Ok(handle) = window.hwnd() else {
-        return Ok(());
-    };
-    // 反复抢：一次常常被前台锁挡回去，抢到为止（最多 ~150ms）。
-    let mut foreground = false;
+    // HWND focus on a pool thread is ineffective. Focus the Tauri WebView controller
+    // on its own UI thread, and confirm its document received focus before returning.
     for _ in 0..8 {
-        let _ = window.set_focus();
-        crate::win32::foreground::focus_webview(handle);
-        crate::win32::foreground::bring_to_front(handle);
-        std::thread::sleep(std::time::Duration::from_millis(20));
-        if crate::win32::foreground::is_foreground(handle) {
-            foreground = true;
-            break;
-        }
+        let overlay = window.clone();
+        let (sender, receiver) = std::sync::mpsc::channel();
+        window.run_on_main_thread(move || {
+            if !SESSION.active() { let _ = sender.send(false); return; }
+            if let Some(main) = overlay.app_handle().get_webview_window("main") {
+                if main.is_visible().unwrap_or(false) { RESTORE_MAIN.store(true, Ordering::Release); let _ = main.hide(); }
+            }
+            let _ = overlay.show();
+            let _ = overlay.set_always_on_top(true);
+            // The app's focus helper avoids tao's synthetic Alt-up fallback, which
+            // can interrupt a quickly repeated Alt+A gesture while Alt is still held.
+            let _ = crate::system::window_focus::focus_window(&overlay);
+            let view: &tauri::Webview = overlay.as_ref();
+            let _ = view.set_focus();
+            let _ = overlay.eval("window.focus(); if (!document.activeElement || document.activeElement === document.body) document.querySelector('.screenshot-overlay')?.focus({preventScroll:true});");
+            let focused = overlay.hwnd().is_ok_and(|handle| crate::win32::window::foreground_window() == handle);
+            let _ = sender.send(focused);
+        }).map_err(|error| error.to_string())?;
+        let focused = tauri::async_runtime::spawn_blocking(move || {
+            let focused = receiver.recv_timeout(std::time::Duration::from_secs(2)).unwrap_or(false);
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            focused
+        }).await.map_err(|error| error.to_string())?;
+        if focused || !SESSION.active() { return Ok(()); }
     }
-    eprintln!("screenshot activate: foreground={foreground}");
-    Ok(())
+    SESSION.cancel();
+    Err("无法激活截图窗口，请重新触发截图。".into())
 }
 
 /// 收起覆盖层并恢复小岛本体。
 #[tauri::command]
 pub async fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
-    hide_and_settle(window).await?;
-    if RESTORE_MAIN.swap(false, Ordering::AcqRel) {
-        if let Some(main) = app.get_webview_window("main") { let _ = main.show(); }
+    if !SESSION.begin_close() { return Ok(()); }
+    if let Err(error) = hide_and_settle(window.clone()).await { SESSION.cancel(); return Err(error); }
+    let restore = app.clone();
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let dispatched = window.run_on_main_thread(move || {
+        if RESTORE_MAIN.swap(false, Ordering::AcqRel) {
+            if let Some(main) = restore.get_webview_window("main") { let _ = main.show(); }
+        }
+        let _ = sender.send(());
+    });
+    if let Err(error) = dispatched { SESSION.cancel(); return Err(error.to_string()); }
+    let restored = tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(std::time::Duration::from_secs(2))).await;
+    if !matches!(restored, Ok(Ok(()))) { SESSION.cancel(); return Err("恢复截图窗口状态失败，请重试。".into()); }
+    if SESSION.finish_close() {
+        if let Err(error) = show_overlay_inner(&app) { SESSION.cancel(); return Err(error); }
     }
-    // Only rearm after the previous overlay has actually left the desktop.
-    CAPTURING.store(false, Ordering::Release);
     Ok(())
 }
 
 #[cfg(test)]
 #[path = "native_tests.rs"]
 mod native_tests;
+
+#[cfg(test)]
+#[path = "focus_tests.rs"]
+mod focus_tests;

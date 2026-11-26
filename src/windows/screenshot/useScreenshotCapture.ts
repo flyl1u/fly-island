@@ -68,13 +68,15 @@ export function useScreenshotCapture({
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const busy = useRef(false);
-  const arming = useRef(false);
+  const arming = useRef<object | null>(null);
+  const fontJob = useRef<Promise<string[]> | null>(null);
 
   /** 抓一张干净底图（窗口此时仍隐藏），然后把窗口显示并抢到前台。 */
   const arm = useCallback(async () => {
     // 防重入：抓屏未完成时再来事件（残留监听器/重复热键）直接忽略。
     if (arming.current) return;
-    arming.current = true;
+    const ticket = {};
+    arming.current = ticket;
     try {
       const region = await screenshotWindowRect();
       const nativeDpi = await getCurrentWindow().scaleFactor().catch(() => window.devicePixelRatio);
@@ -102,19 +104,25 @@ export function useScreenshotCapture({
       } catch {
         windowRects.current = [{ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }];
       }
+      // Once the ready frame is submitted, a rapid close/reopen may start the next
+      // session even while this session's focus acknowledgement or font list returns.
+      arming.current = null;
+      await activateScreenshot();
+      if (!document.hasFocus()) await activateScreenshot();
       try {
-        const installed = await screenshotFonts();
+        fontJob.current ??= screenshotFonts();
+        const installed = await fontJob.current;
         if (installed.length > 0) setFonts(installed);
       } catch {
+        fontJob.current = null;
         setFonts(FALLBACK_FONTS);
       }
-      await activateScreenshot();
     } catch (error) {
       setFailure(String(error));
       // 抓屏失败时也要把窗口露出来，否则用户只看到一片空白。
       await getCurrentWindow().show().catch(() => {});
     } finally {
-      arming.current = false;
+      if (arming.current === ticket) arming.current = null;
     }
   }, [onArm, windowRects, t]);
 
@@ -233,13 +241,14 @@ export function useScreenshotCapture({
     if (!png || ocrBusy) return;
     setOcrBusy(true);
     try {
-      setOcrText(await ocrScreenshotPng(png));
+      await pinScreenshotPng(png, undefined, false, true);
+      onClose();
     } catch (error) {
-      setOcrText(t.screenshot.ocrFailed(String(error)));
+      setFailure(t.screenshot.ocrFailed(String(error)));
     } finally {
       setOcrBusy(false);
     }
-  }, [cropRaw, ocrBusy, t]);
+  }, [cropRaw, ocrBusy, onClose, t]);
 
   /** 翻译结果在独立图文窗口显示，复用 Fly Island 的服务设置。 */
   const translateInline = useCallback(async () => {

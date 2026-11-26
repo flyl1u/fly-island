@@ -12,8 +12,9 @@ src/
 │   ├── settings/            # 设置窗口
 │   ├── clipboard/           # 剪贴板历史独立窗口：自绘标题栏（拖动、图钉置顶、关闭），内容复用 features/clipboard 的面板
 │   ├── screenshot/          # 截图覆盖层、标注交互与保存弹窗
+│   ├── screenshot-ocr/      # 独立识别结果：原图对照、顺序文字、逐行编辑与纯文本复制
 │   ├── pinned-image/        # 桌面贴图、OCR 文本层与原生菜单动作
-│   ├── screenshot-translation/ # OCR 图文翻译结果、原图/译图和布局切换
+│   ├── screenshot-translation/ # 原图与逐段原文/译文对照、布局切换
 │   └── translation/         # 快捷翻译窗口
 ├── features/                # 业务领域，每个领域自包含
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出及可选反向同步
