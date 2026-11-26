@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeClockWeatherSettings, normalizeWeatherCache, normalizeWeatherLocation, weatherForLocation, weatherCondition,
-  WEATHER_MAX_AGE_MS, clockWeatherWidth, fitClockWeather, formatClock, nextMinuteDelay, formatTemperature } from "../../src/features/weather/model.ts";
+  WEATHER_MAX_AGE_MS, fitClockWeather, formatClock, nextMinuteDelay, formatTemperature } from "../../src/features/weather/model.ts";
 import { normalizeCollapsedHidden, placeCollapsedLayout, visibleCollapsedSlots } from "../../src/features/appearance/collapsedLayout.ts";
 import { normalizeBehaviorSettings } from "../../src/features/appearance/normalizeBehaviorSettings.ts";
 import { CLOCK_WEATHER_KEY, loadClockWeatherSettings, saveClockWeatherSettings } from "../../src/features/weather/storage.ts";
@@ -61,14 +61,6 @@ test("hidden slots are known ones, once each, never the text", () => {
   assert.deepEqual(normalizeCollapsedHidden("mail"), []);
   assert.deepEqual(normalizeBehaviorSettings({}).collapsedHidden, []);
   assert.deepEqual(visibleCollapsedSlots(["pulse", "text", "mail", "music"], ["mail"]), ["pulse", "text", "music"]);
-});
-
-test("status sizing reserves fixed clock/weather space and respects actual content at manual widths", () => {
-  assert.equal(clockWeatherWidth(280, false, false, 1, 400), 280);
-  assert.equal(clockWeatherWidth(280, true, false), 336);
-  assert.equal(clockWeatherWidth(280, false, true), 352);
-  assert.equal(clockWeatherWidth(340, true, true, 1.2), 491);
-  assert.equal(clockWeatherWidth(240, true, true, 1, 432), 432);
 });
 
 test("arranging the editor keeps uninstalled plugin slots in their saved places", () => {
@@ -153,7 +145,6 @@ test("manual width is the whole island: weather hides first, then the clock, nev
   assert.deepEqual(fitClockWeather(240, true, true, 1.5), { clock: true, weather: false });
   assert.deepEqual(fitClockWeather(150, true, true), { clock: false, weather: false });
   assert.deepEqual(fitClockWeather(200, false, true), { clock: false, weather: true });
-  // Without the plugin nothing is shown and nothing is reserved.
+  // Without the plugin nothing is shown.
   assert.deepEqual(fitClockWeather(160, false, false), { clock: false, weather: false });
-  assert.equal(clockWeatherWidth(300, false, false, 1.4, 0), 300);
 });

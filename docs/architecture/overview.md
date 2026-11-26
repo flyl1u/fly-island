@@ -75,7 +75,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 时间与天气及排列预览（2026-11-19）
 
-内置插件 `clockWeather` 通过 `features/plugins/native` 的安装态启用，并声明独立的时间与天气设置页。`features/weather/` 收口城市与缓存存储、IPC、WMO 纯映射及时间/天气叶子组件；`src-tauri/src/weather/` 封装 Open-Meteo 请求。主窗口 `useCollapsedTodo` 低频预留状态位宽度，`useCollapsedStatusWidth` 测量实际状态兄弟元素保护窄岛文字。时间的分钟状态留在叶子中，不驱动窗口重渲染。数据与契约见对应文档。
+内置插件 `clockWeather` 通过 `features/plugins/native` 的安装态启用，并声明独立的时间与天气设置页。`features/weather/` 收口城市与缓存存储、IPC、WMO 纯映射及时间/天气叶子组件；`src-tauri/src/weather/` 封装 Open-Meteo 请求。主窗口 `useCollapsedTodo` 低频预留状态位宽度，自动长度时 `useCollapsedChrome` 测量收起栏里文字以外的部分（状态位、留白、间距），`collapsedTextMeasure` 用画布按收起栏字体量文字，宽度本身由纯函数 `collapsedWidth.ts` 计算。时间的分钟状态留在叶子中，不驱动窗口重渲染。数据与契约见对应文档。
 
 排列编辑器和 `IslandPreview` 共享 `features/appearance/islandPreviewStyle.ts` 的外观变量。通用排序 hook 的 FLIP/指针跟随为可选参数，仅编辑器启用；页面入口与其它调用者保持原有交互。
 ### 护眼休息窗口（插件 0.2.0）

@@ -122,7 +122,8 @@ export function IslandApp() {
         agentActive: activeAgentSessionCount > 0 || agentVisualState === "running" || Boolean(agentStatus.others?.some((agent) => agent.phase === "running")),
         coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
         activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
-        notice: collapsed && preview ? { text: collapsedMessageText(preview, t.messages), extraWidth: preview.otpCode ? 140 : 23 } : null,
+        // The extra is the source icon and the spacing round the sender's dot, or the code's button.
+        notice: collapsed && preview ? { text: collapsedMessageText(preview, t.messages), extraWidth: preview.otpCode ? 140 : 30 } : null,
         alertText: quotaAlert ? quotaAlertText(quotaAlert, t.agent.quota) : batteryAlert ? t.deviceBattery.lowAlert(batteryAlert.name, batteryAlert.percent) : null },
     );
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;

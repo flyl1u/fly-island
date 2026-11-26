@@ -27,20 +27,42 @@ export async function checkClockWeatherIsland(
   const clock = () => document.querySelector<HTMLElement>(".island__status-slot:not([data-collapsed-presence=leaving]) .collapsed-clock");
   const weather = () => document.querySelector<HTMLElement>(".island__status-slot:not([data-collapsed-presence=leaving]) .collapsed-weather");
   const island = () => document.querySelector<HTMLElement>(".island")!;
+  const manual = new URLSearchParams(location.search).has("notch");
+  // The default lower limit (280) already holds the clock and weather: a low one lets them show
+  // in the automatic width.
+  const settingsKey = "fly-island-settings";
+  const settings = localStorage.getItem(settingsKey)!;
+  const saveSettings = (value: string) => act(async () => {
+    localStorage.setItem(settingsKey, value);
+    window.dispatchEvent(new StorageEvent("storage", { key: settingsKey }));
+  });
+  if (!manual) await saveSettings(JSON.stringify({ ...JSON.parse(settings), collapsedAutoWidthMin: 160 }));
+  // The text keeps readable room: all of it, or at least 64px of it.
+  const textKeepsRoom = () => {
+    const slot = document.querySelector<HTMLElement>(".island__text-slot")!;
+    const text = slot.querySelector<HTMLElement>(".island__summary-layer:last-child :is(.island__agent-session, .island__active-task, .island__todo-count)");
+    return slot.getBoundingClientRect().width >= 64 || Boolean(!manual && text && text.scrollWidth <= text.clientWidth);
+  };
   await act(async () => {
     setNativePluginInstalled("clockWeather", false);
     localStorage.removeItem(CLOCK_WEATHER_KEY);
     window.dispatchEvent(new StorageEvent("storage", { key: CLOCK_WEATHER_KEY }));
   });
-  await settle(800);
-  const baseWidth = island().getBoundingClientRect().width;
+  // A narrower width starts its transition only when a wait ends, and a busy machine takes longer:
+  // wait until the width has held still over two waits.
+  let baseWidth = 0;
+  for (let step = 0, still = 0; step < 16 && still < 2; step++) {
+    await settle(800);
+    const current = island().getBoundingClientRect().width;
+    still = Math.abs(current - baseWidth) < 0.1 ? still + 1 : 0;
+    baseWidth = current;
+  }
   check(!clock() && !weather(), "未安装时间天气插件时两个位完全隐藏");
   await act(async () => {
     setClockWeatherSettings({ showClock: false });
     setNativePluginInstalled("clockWeather", true);
   });
   await act(async () => setClockWeatherSettings({ showClock: true }));
-  const manual = new URLSearchParams(location.search).has("notch");
   const width = () => island().getBoundingClientRect().width;
   if (!manual) {
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -67,7 +89,7 @@ export async function checkClockWeatherIsland(
     check([...narrowBar.children].every(child => {
       const rect = child.getBoundingClientRect();
       return rect.left >= narrowBox.left + 8 && rect.right <= narrowBox.right - 8;
-    }) && narrowBar.querySelector(".island__text-slot")!.getBoundingClientRect().width >= 64,
+    }) && textKeepsRoom(),
     "窄岛与放大字体下所有状态位在岛内，文字保留可读空间");
     return;
   }
@@ -78,7 +100,7 @@ export async function checkClockWeatherIsland(
   check([...bar.children].every(child => {
     const rect = child.getBoundingClientRect();
     return rect.left >= box.left + 8 && rect.right <= box.right - 8;
-  }) && bar.querySelector(".island__text-slot")!.getBoundingClientRect().width >= 64,
+  }) && textKeepsRoom(),
     "窄岛与放大字体下所有状态位在岛内，文字保留可读空间");
   const fixedClockWidth = clock()!.getBoundingClientRect().width;
   await act(async () => window.dispatchEvent(new Event("focus")));
@@ -121,4 +143,5 @@ export async function checkClockWeatherIsland(
   await settle(450);
   check(weather()?.textContent === "23°" && !weather()?.textContent?.includes("-2"),
     "切回城市读取匹配缓存，不混用其它位置的天气");
+  if (!manual) await saveSettings(settings);
 }

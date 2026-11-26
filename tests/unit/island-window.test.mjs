@@ -4,7 +4,6 @@ import {
   AUTO_WIDTH_DEFAULT,
   alignCollapsedIslandWidth,
   getClipboardExpandedHeight,
-  getCollapsedIslandWidth,
   getTodoScrollStartRows,
   getTodoVisualRows,
 } from "../../src/windows/island/layout.ts";
@@ -21,22 +20,6 @@ function withStorage(entries, run) {
     else delete globalThis.window;
   }
 }
-
-test("the collapsed island grows with its text between the min and max widths", () => {
-  assert.equal(getCollapsedIslandWidth(""), AUTO_WIDTH_DEFAULT.min);
-  assert.equal(getCollapsedIslandWidth("x".repeat(200)), AUTO_WIDTH_DEFAULT.max);
-  const mid = getCollapsedIslandWidth("a".repeat(30));
-  assert.ok(mid > AUTO_WIDTH_DEFAULT.min && mid < AUTO_WIDTH_DEFAULT.max, String(mid));
-  assert.equal(Number.isInteger(mid), true);
-});
-
-test("plugin slots widen the collapsed island by the width they need, up to the max", () => {
-  // With the widest limits the extra shows up one for one; negative extras count as none.
-  assert.equal(getCollapsedIslandWidth("", 200, 1, 160, 720), 300);
-  assert.equal(getCollapsedIslandWidth("", -10, 1, 160, 720), 160);
-  assert.equal(getCollapsedIslandWidth("abcdefg", 1000, 1, 160, 720), 720);
-  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), AUTO_WIDTH_DEFAULT.max);
-});
 
 test("the todo list scrolls after as many rows as fit under the max panel height", () => {
   // 490px is the default: eight of the compact 38px rows fit under it (six of the old 46px ones did).
@@ -156,18 +139,4 @@ test("a clipboard opened in its own window is not kept as the island's page", as
   assert.equal(islandPageFor("clipboard", all, true), "todo");
   assert.equal(islandPageFor("clipboard", { ...all, todo: false, music: false }, true), "shelf");
   assert.equal(islandPageFor("music", all, true), "music");
-});
-
-test("automatic width follows the text between the saved limits and the font scale", () => {
-  const lo = 200, hi = 500;
-  assert.equal(getCollapsedIslandWidth("", 0, 1, lo, hi), lo);
-  assert.equal(getCollapsedIslandWidth("字".repeat(60), 0, 1, lo, hi), hi);
-  const text = "字".repeat(12);
-  const normal = getCollapsedIslandWidth(text, 0, 1, lo, hi);
-  const large = getCollapsedIslandWidth(text, 0, 1.2, lo, hi);
-  assert.ok(normal > lo && normal < hi && large > normal, `${normal} < ${large}`);
-  // A longer limit lets the same text grow further; a shorter one stops it.
-  assert.equal(getCollapsedIslandWidth(text, 0, 1, 160, 220), 220);
-  // Same text, same width: a lyric line keeps its fixed stand-in text, so lines never resize it.
-  assert.equal(getCollapsedIslandWidth("♪".repeat(24), 0, 1, lo, hi), getCollapsedIslandWidth("♪".repeat(24), 0, 1, lo, hi));
 });

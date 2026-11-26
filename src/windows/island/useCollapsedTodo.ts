@@ -1,10 +1,9 @@
 import { isUpdateTodo } from "../../features/todos/updateTodo";
 import { useMemo, useState } from "react";
 import { useClockWeather, useCurrentWeather } from "../../features/weather";
-import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
+import { useCollapsedChrome } from "./useCollapsedChrome";
 import { fitClockWeather } from "../../features/weather";
 import { idleTextDisplay } from "../../features/appearance/idleText";
-import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
 import type { CollapsedItem, IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
@@ -23,6 +22,8 @@ const AGENT_ICON_TEXT = "MM";
 const LYRICS_WIDTH_TEXT = "♪".repeat(24);
 // The song's cover (22px) and the gap after it.
 const COVER_WIDTH = 30;
+// An alert's icon and the spacing round its parts.
+const ALERT_CHROME = 30;
 // A countdown pill beside the todo title: gap, padding and about 7px a digit (12px a CJK glyph).
 function timerPillWidth(text: string, fontScale: number) {
   return 20 + fontScale * [...text].reduce((width, char) => width + (/[\u2E80-\uFFFF]/.test(char) ? 12 : 7), 0);
@@ -54,8 +55,9 @@ export function useCollapsedTodo(
   const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
-  // Only the automatic width grows with the status slots; a manual width is the whole island.
-  const statusMinimum = useCollapsedStatusWidth(settings.collapsedAutoWidth, settings.islandFontPercent / 100);
+  // Only the automatic width is measured; a manual width is the whole island.
+  const chrome = useCollapsedChrome(settings.collapsedAutoWidth, settings.islandFontPercent / 100,
+    `${settings.fontFamily}:${settings.localFontFamily}`);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -130,6 +132,7 @@ export function useCollapsedTodo(
     return {
       text: settings.showCollapsedText ? itemText ?? "" : "",
       brand: settings.showCollapsedText ? idleDisplay.brand : null,
+      fixedText: collapsedItem === "lyrics",
       extraWidth: widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0,
     };
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, fontScale, settings.showCollapsedText,
@@ -138,14 +141,14 @@ export function useCollapsedTodo(
   const statusFit = fitClockWeather(settings.collapsedAutoWidth ? settings.collapsedAutoWidthMax : settings.collapsedWidth,
     clockOn, weather !== null, fontScale);
   const coverWidth = coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH : 0;
-  const replacement = notice ?? (alertText === null ? null : { text: alertText, extraWidth: 22 });
+  const replacement = notice ?? (alertText === null ? null : { text: alertText, extraWidth: ALERT_CHROME });
   const collapsedIslandWidth = collapsedWidthTarget({
     manual: settings.collapsedWidth,
     range: settings.collapsedAutoWidth ? { min: settings.collapsedAutoWidthMin, max: settings.collapsedAutoWidthMax } : null,
     content: { ...content, extraWidth: content.extraWidth + coverWidth },
     preview: replacement && { ...replacement, extraWidth: replacement.extraWidth + coverWidth },
-    fontScale, paddingExtra: 2 * (settings.collapsedPadding - COLLAPSED_PADDING.default),
-    clock: statusFit.clock, weather: statusFit.weather, statusMinimum, stageWidth: window.innerWidth, devicePixelRatio: window.devicePixelRatio,
+    fontScale, chrome: chrome.width, measure: chrome.measure,
+    stageWidth: window.innerWidth, devicePixelRatio: window.devicePixelRatio,
   });
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, switchCollapsedItem, collapsedIslandWidth, statusFit, idleDisplay, todoRotation, collapsedTimer };
 }

@@ -11,7 +11,7 @@ import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkIslandTourPageButtons } from "./islandTourPageButtons";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkCollapsedShape, checkIslandShapeMotion } from "./islandTourShape";
-import { checkCollapsedItemSwitch } from "./islandTourCollapsedItem";
+import { checkCollapsedItemSwitch } from "./islandTourCollapsedItem"; import { checkIslandAutoWidth } from "./islandTourAutoWidth";
 import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } from "./islandTourTheme";
 import { prepareTourGlassBackdrop, runShoulderFixture } from "./islandTourShoulders";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
@@ -88,7 +88,7 @@ mockIPC((command, payload) => {
     case "delete_clipboard_history_items": return { ...TOUR_CLIPBOARD, items: TOUR_CLIPBOARD.items.filter((item) => !(args.ids as string[]).includes(item.id)) };
     case "read_clipboard_history_image": return TOUR_CLIPBOARD.items.find((item) => item.id === args.id)?.image?.thumbnailDataUrl ?? "";
     case "get_file_shelf": return { items: empty ? [] : TOUR_SHELF };
-    case "list_agent_sessions": return empty ? [] : tourSessions(args.native);
+    case "list_agent_sessions": return empty || query.has("autoWidth") ? [] : tourSessions(args.native);
     case "get_kimi_usage": return empty ? null : TOUR_KIMI_USAGE; case "get_zcode_usage": return null;
     case "agent_sessions_in_front": return [];
     case "agent_approval_pending": return [];
@@ -183,6 +183,9 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
   results.remove();
 } else if (query.get("pageButtons") === "iconLabel") {
   await checkIslandTourPageButtons({ mount, click, settle, check, results, messages }).finally(restore);
+} else if (query.has("autoWidth")) {
+  try { await checkIslandAutoWidth({ mount, unmount: () => root.render(null), settle, check }); results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`; results.dataset.result = "passed"; }
+  catch (error) { results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`; results.dataset.result = "failed"; } finally { restore(); }
 } else {
   try {
     await act(async () => { mount(); });
