@@ -19,8 +19,8 @@ let jump = 0;
 Date.now = () => base + Math.floor(performance.now() - started) + jump;
 let deadline = base + 90_400;
 let panel: Panel = {
-  headline: "Eye Care", note: null, attention: true, actions: ["snooze_10", "skip"], islandActions: [],
-  rows: [{ id: "timer", title: "Break ends", detail: null, percent: null, countdownTo: deadline, tone: "warning" }],
+  headline: language === "en" ? "Resting" : "休息中", note: "", attention: true, actions: ["snooze_10", "skip"], islandActions: [],
+  rows: [{ id: "timer", title: language === "en" ? "Break time remaining" : "剩余休息时长", detail: "", percent: null, countdownTo: deadline, tone: "warning" }],
 };
 const manifest = {
   id: "eye-care", name: { "zh-CN": "护眼提醒", en: "Eye Care" },
@@ -59,6 +59,10 @@ const showRest = () => act(async () => restRoot.render(<I18nProvider><EyeCareRes
 try {
   await act(async () => { await refreshPlugins(); });
   await act(async () => islandRoot.render(<I18nProvider><PluginPanel pluginId="eye-care" /></I18nProvider>));
+  check(island.querySelector(".plugin-panel__headline")?.textContent === panel.headline && island.querySelector(".plugin-panel__title")?.textContent === panel.rows[0].title,
+    "The island shows the resting phase and remaining break time label");
+  check(!island.querySelector(".plugin-panel__note") && !island.querySelector(".plugin-panel__detail"),
+    "Empty notes do not fall back to the manifest description or leave redundant instructions");
   await wait(650);
   await showRest();
   check(seconds(islandClock()) === seconds(restClock()), "Staggered mounts share the same countdown second");
@@ -83,9 +87,20 @@ try {
   jump += 400_000;
   await act(async () => document.dispatchEvent(new Event("visibilitychange")));
   check(islandClock() === "00:00" && restClock() === "00:00", "Expired clocks stop at zero after visibility resumes");
-  panel = { ...panel, attention: false, actions: ["rest_now"], islandActions: ["rest_now"], rows: [{ ...panel.rows[0], countdownTo: Date.now() + 1_200_000 }] };
+  panel = { ...panel, headline: language === "en" ? "Screen time" : "用眼中", attention: false, actions: ["rest_now"], islandActions: ["rest_now"],
+    rows: [{ ...panel.rows[0], title: language === "en" ? "Screen time remaining" : "剩余用眼时长", countdownTo: Date.now() + 1_200_000 }] };
   await act(async () => { await refreshPlugins(); restRoot.render(null); });
   check(island.querySelector(".plugin-panel__action")?.textContent === "rest_now", "The working island keeps Take a break now");
+  check(island.querySelector(".plugin-panel__headline")?.textContent === panel.headline && island.querySelector(".plugin-panel__title")?.textContent === panel.rows[0].title,
+    "The island shows the working phase and remaining screen time label");
+  panel = { ...panel, note: language === "en" ? "Already postponed once; the next break cannot be postponed" : "已经推迟过一次，不能推迟下次休息" };
+  await act(async () => { await refreshPlugins(); });
+  check(island.querySelector(".plugin-panel__note")?.textContent === panel.note && island.querySelector(".plugin-panel__headline")?.textContent === panel.headline,
+    "Postponement adds its warning while keeping the working headline");
+  panel = { ...panel, rows: [{ ...panel.rows[0], countdownTo: null, detail: "20:00" }] };
+  await act(async () => { await refreshPlugins(); });
+  check(!islandClock() && island.querySelector(".plugin-panel__detail")?.textContent === "20:00" && island.querySelector(".plugin-panel__note")?.textContent === panel.note,
+    "A paused timer retains its frozen remaining time and postponement warning");
 
   await act(async () => { islandRoot.unmount(); restRoot.unmount(); });
   document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");

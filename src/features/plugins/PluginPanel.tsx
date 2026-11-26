@@ -18,6 +18,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
   const installed = registry.installed[pluginId];
   const status = live[pluginId]?.status;
   const panel = live[pluginId]?.panel ?? null;
+  const note = panel?.note ?? installed?.manifest.description[locale];
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   if (!installed) return null;
@@ -44,7 +45,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
       <header className="plugin-panel__head">
         <div className="plugin-panel__heading">
           <h2 className="plugin-panel__headline">{panel?.headline ?? installed.manifest.name[locale]}</h2>
-          <p className="plugin-panel__note">{panel?.note ?? installed.manifest.description[locale]}</p>
+          {note && <p className="plugin-panel__note">{note}</p>}
         </div>
       </header>
       {panel && panel.rows.length > 0 ? (

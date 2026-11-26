@@ -88,16 +88,15 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         let published = plugin.next();
         assert_eq!(published["method"], "publish");
         let panel = &published["params"]["panel"];
-        assert!(panel["headline"].is_string());
+        assert_eq!(panel["headline"], "Screen time");
+        assert_eq!(panel["note"], "");
+        assert_eq!(panel["rows"][0]["title"], "Screen time remaining");
         assert_eq!(panel["rows"].as_array().unwrap().len(), 1);
         assert_eq!(panel["actions"], json!(["rest_now"]));
         assert_eq!(panel["islandActions"], json!(["rest_now"]));
         assert_eq!(panel["attention"], false);
         if panel["rows"][0]["countdownTo"].is_number() {
-            assert!(panel["rows"][0]["detail"]
-                .as_str()
-                .unwrap()
-                .contains("1 min break"));
+            assert_eq!(panel["rows"][0]["detail"], "");
         }
         plugin.send(json!({"jsonrpc":"2.0","id":1,"method":"action","params":{"id":"skip"}}));
         assert_eq!(plugin.response(1)["error"]["code"], -32000);
@@ -105,6 +104,12 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert_eq!(plugin.response(2)["result"]["success"], true);
         let rest = plugin.next();
         assert_eq!(rest["params"]["panel"]["attention"], true);
+        assert_eq!(rest["params"]["panel"]["headline"], "Resting");
+        assert_eq!(rest["params"]["panel"]["note"], "");
+        assert_eq!(
+            rest["params"]["panel"]["rows"][0]["title"],
+            "Break time remaining"
+        );
         assert_eq!(
             rest["params"]["panel"]["actions"],
             json!(["snooze_10", "skip"])
@@ -112,7 +117,13 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert_eq!(rest["params"]["panel"]["islandActions"], json!([]));
         plugin.send(json!({"jsonrpc":"2.0","id":3,"method":"action","params":{"id":"snooze_25"}}));
         assert_eq!(plugin.response(3)["result"]["success"], true);
-        assert_eq!(plugin.next()["params"]["panel"]["attention"], false);
+        let postponed = plugin.next();
+        assert_eq!(postponed["params"]["panel"]["attention"], false);
+        assert_eq!(postponed["params"]["panel"]["headline"], "Screen time");
+        assert_eq!(
+            postponed["params"]["panel"]["note"],
+            "Already postponed once; the next break cannot be postponed"
+        );
         plugin.send(json!({"jsonrpc":"2.0","id":4,"method":"action","params":{"id":"rest_now"}}));
         assert_eq!(plugin.response(4)["result"]["success"], true);
         assert_eq!(plugin.next()["params"]["panel"]["actions"], json!(["skip"]));
