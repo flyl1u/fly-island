@@ -74,7 +74,7 @@ export function IslandApp() {
   const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
-  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentUsages, alertUsages } =
+  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, runningAgents, agentUsages, alertUsages } =
     useIslandAgents(settings);
   const quotaAlert = useQuotaAlert(alertUsages, settings.agentStatusEnabled ? settings.agentQuotaAlertPercent : 0, {
     quiet: game.quiet,
@@ -111,7 +111,7 @@ export function IslandApp() {
     mode === "collapsed" && !isTucked && !game.quiet && !hasMessagePreview && quotaAlert === null,
   );
   const collapsed = mode === "collapsed" && !isTucked;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, switchCollapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, peekedAgent, switchCollapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
@@ -120,6 +120,7 @@ export function IslandApp() {
       agentSession?.title ?? null,
       { lyricsPlaying: songPlaying, lyricsAvailable: Boolean(collapsedLyrics?.some((line) => line.text.trim())),
         agentActive: activeAgentSessionCount > 0 || agentVisualState === "running" || Boolean(agentStatus.others?.some((agent) => agent.phase === "running")),
+        runningAgents, agentPeekAllowed: collapsed && !hasMessagePreview,
         coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
         activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
         // The extra is the source icon and the spacing round the sender's dot, or the code's button.
@@ -272,7 +273,7 @@ export function IslandApp() {
         pageOrder={settings.pageOrder}
         pageButtonStyle={settings.pageButtonStyle}
         onPageOrderChange={(pageOrder) => setSettings({ ...settings, pageOrder })}
-        agentSession={agentSession}
+        agentSession={peekedAgent ?? agentSession}
         activeAgentSessionCount={activeAgentSessionCount}
         mediaState={media.mediaState}
         agentVisualState={agentVisualState}
