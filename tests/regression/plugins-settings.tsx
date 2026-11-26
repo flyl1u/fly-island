@@ -9,6 +9,7 @@ import type { PlacedPlugin } from "../../src/features/plugins/placement";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import { PLUGIN_PROGRESS_EVENT, type InstalledPlugin, type PluginIndexEntry, type PluginInstallProgress, type PluginManifest } from "../../src/features/plugins/api";
 import { checkInstallProgress } from "./pluginInstallProgress";
+import { checkPluginAuthors } from "./pluginAuthors";
 import { PLUGIN_MARKET_ENABLED, PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
 import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
@@ -108,6 +109,7 @@ try {
   } else {
     const market = TRANSLATIONS[locale].settings.plugins.market;
     check(cards.length === NATIVE_PLUGINS.length + PACKAGED_MARKET_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
+    await checkPluginAuthors(cards, market.items, market.authors, check);
     const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
     await act(async () => get.click());
     check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
@@ -153,6 +155,7 @@ try {
 
     const fixture = document.getElementById("fixture")!;
     fixture.style.width = "168px";
+    await wait();
     const fixtureBox = fixture.getBoundingClientRect();
     const switchBox = weatherSwitch()!.getBoundingClientRect();
     const buttonBox = weatherRemove().getBoundingClientRect();

@@ -31,7 +31,7 @@ type PluginMarketProps = {
 };
 
 /**
- * The built-in plugins as square cards: icon with name and author beside it, a short pitch and installation
+ * The built-in plugins as square cards: icon and name, the authors, a short pitch and installation
  * controls. No plugin's settings are drawn here; each card links to where they were placed.
  */
 export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: PluginMarketProps) {
@@ -101,7 +101,7 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
       </p>}
     </header>
     <ul className="plugin-market__grid">
-      {MARKET_CARDS.map(({ id, accent, author }) => {
+      {MARKET_CARDS.map(({ id, accent, authors }) => {
         const item = t.items[id];
         const isNative = isNativePluginId(id);
         const p = registry.installed[id];
@@ -125,7 +125,7 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
           else if (isInstalled) setNativePluginInstalled(id, false);
           else install(id);
         };
-        return <PluginMarketCard key={id} name={item.name} description={item.description} accent={accent} author={author}
+        return <PluginMarketCard key={id} name={item.name} description={item.description} accent={accent} authors={authors}
           icon={<PluginIcon id={id} size={44} className="plugin-card__tile" />}
           onOpenSettings={target && isInstalled ? () => onOpenSettings(target) : undefined}
           update={!isNative && version ? { version, onUpdate: () => updatePackage(id) } : undefined}

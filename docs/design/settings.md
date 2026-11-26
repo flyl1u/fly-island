@@ -215,8 +215,17 @@
 
 ### 图标
 
-- 有品牌且能合规取得官方标识的，用品牌图标（放在 `src/assets/brands/`，在它的 README 里记录来源和授权）；否则用 lucide 线条图标配一个低饱和强调色。**不允许占位图标、字母头像或插件包自带的位图。**
-- 线条图标的卡片磁贴和「时间与天气」「日历标记」一致：同样的尺寸、圆角、描边、底色浓度和光晕强度，线宽 1.5，图形占磁贴的 72%。强调色用目录里的 `accent`，磁贴底色是它的 16%，与卡片光晕同色。
-- 现有分配：时间与天气 `CloudSun`、日历标记 `CalendarDays`、护眼提醒 `Eye`、设备电量与音频 `BatteryMedium`、MiniMax Code `Sparkles`（暂无合规来源的品牌图标）、CodeBuddy `Terminal`、Antigravity `Orbit`（后两个与小岛上的 `AgentProviderIcon` 同一套）。
-- 同一个插件在插件卡片、侧栏栏目、分组标题三处用同一套图标。侧栏统一用线条图标，不用彩色图标块。
-- 图标只在 `features/plugins/PluginIcon.tsx`（磁贴）和 `features/plugins/pluginLineIcons.ts`（线条图标）里定义。
+2026-11-26 维护者要求：插件图标用真实的品牌图标，或认真手绘的彩色 SVG；原来的线条图标磁贴「很丑」，取代此前「没有品牌图标就用线条图标」的规定。
+
+- **有品牌的插件用官方品牌图标**（SVG 优先；官网只有位图时用至少 128px 的 PNG / webp）。放在 `src/assets/brands/`，在它的 README 里记录来源 URL 和授权情况。只从官网、官方仓库或官方应用资源取。
+- **没有品牌的功能插件手绘一个 SVG 应用图标**，放在 `src/assets/plugins/`：`viewBox="0 0 64 64"`，带自己的圆角底色（圆角 14），全彩、主色块加简洁图形，路径尽量少，缩到 16px 仍能认出，不嵌位图。主色靠近目录里的 `accent`。
+- **插件卡片禁止用 lucide 线条图标、占位图标、字母头像或插件包自带的位图。**
+- **分工**：插件卡片和归类后的分组标题用全彩应用图标（同一个文件）；侧栏栏目继续用线条图标，和侧栏其他项一致（时间与天气 `CloudSun`、护眼提醒 `Eye`、设备电量与音频 `BatteryMedium`，定义在 `features/plugins/pluginLineIcons.ts`）。小岛上的 Agent 来源图标用同一套品牌图标。
+- 内置和打包市场插件的图标在 `features/plugins/native/NativePluginIcon.tsx` 登记，类型要求目录里每个插件都有一个。本身是圆形的标志（Telegram、CodeBuddy、Antigravity）按圆形裁切，卡片阴影跟着圆形走。
+- 只有开发者模式下加载、目录里没有的插件，没有应用图标可用，按清单的面板图标画线条磁贴。
+
+### 作者
+
+- 目录里每个插件声明 `authors`，按显示顺序排列。**他人开发的插件固定为「贡献者第一、flyliu 第二」**（flyliu 协助上线并做过修复）；卡片、README 和插件文档都按这个顺序。维护者自己写的插件只列一次 flyliu。这只是界面和文档上的署名展示，不涉及 git 提交署名。
+- 卡片在名称下面列出作者：GitHub 头像（`https://github.com/<login>.png?size=64`，login 取自作者链接，20px 圆形，`loading="lazy"`、`referrerPolicy="no-referrer"`，不加时间戳参数）加用户名。头像加载失败或离线时换成中性灰底的首字母圆形，不出现破图图标。
+- 作者行固定在名称下面，**永远横排一行，不换行、不竖排**（用户要求 2026-11-26）。名字放得下时显示头像加名字；挤不下时这张卡只显示头像，不截断名字，悬停提示完整名字。每位作者单独可点，用系统浏览器打开其 GitHub 主页。

@@ -1,0 +1,70 @@
+/* Always one line; a crowded row drops the names and keeps the avatars. */
+.plugin-authors {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-md);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-authors__item {
+  flex: 0 0 auto;
+}
+
+.plugin-authors--compact {
+  gap: var(--space-xs);
+}
+
+.plugin-authors--compact .plugin-author__name {
+  display: none;
+}
+
+.plugin-author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  color: var(--color-text-subtle);
+  font-size: calc(11.5px * var(--island-font-scale, 1));
+  line-height: 1.3;
+  text-decoration: none;
+  border-radius: var(--radius-pill);
+}
+
+.plugin-author:hover {
+  color: var(--color-text);
+}
+
+.plugin-author:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.plugin-author__name {
+  white-space: nowrap;
+}
+
+.plugin-author:hover .plugin-author__name {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.plugin-author__avatar {
+  display: block;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: var(--radius-circle);
+}
+
+.plugin-author__avatar--fallback {
+  display: grid;
+  place-items: center;
+  color: var(--color-text);
+  font-size: 10px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+}

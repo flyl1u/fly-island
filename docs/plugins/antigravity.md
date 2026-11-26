@@ -1,6 +1,6 @@
 # Antigravity 会话与额度 / Antigravity sessions and quota
 
-在「设置 → 插件」安装 Antigravity（作者 [lilipeng0615-cyber](https://github.com/lilipeng0615-cyber)），在「AI Agent → 会话来源」控制是否显示，在「额度环」勾选是否显示按模型的剩余额度。
+在「设置 → 插件」安装 Antigravity（作者 [lilipeng0615-cyber](https://github.com/lilipeng0615-cyber)、[flyliu](https://github.com/flyl1u)），在「AI Agent → 会话来源」控制是否显示，在「额度环」勾选是否显示按模型的剩余额度。
 
 仅当此来源安装且启用时才会读取：
 - `~/.gemini/antigravity`、`antigravity-cli`、`antigravity-ide` 下的 `conversation_summaries.db` 和各会话 `transcript.jsonl` 的末尾部分（读法见下一节）。

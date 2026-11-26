@@ -18,7 +18,7 @@ export type SettingsPluginMarketText = {
   title: string; hint: string; officeHint: (name: string) => string; install: string; uninstall: string; installed: string;
   inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
-  by: string; operationFailed: (name: string) => string;
+  authors: string; operationFailed: (name: string) => string;
   installing: string; uninstalling: string; retry: string; connecting: string; verifying: string; unpacking: string;
   downloaded: (done: string, total: string) => string; progressNamed: (name: string) => string;
   openSettingsNamed: (name: string) => string; updateAvailable: (version: string) => string; updateNamed: (name: string) => string;
@@ -41,7 +41,7 @@ export const zhCN: SettingsPluginsText = {
     hint: "装上后，插件会出现在对应的小岛功能里。卡片上的开关可随时停用插件并保留设置。",
     install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
-    by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
+    authors: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
     installing: "安装中…", uninstalling: "卸载中…", retry: "重试", connecting: "正在准备下载…", verifying: "正在校验安装包…", unpacking: "正在安装…",
     downloaded: (done, total) => `已下载 ${done} / ${total} MB`, progressNamed: (name) => `${name} 的安装进度`,
     openSettingsNamed: (name) => `打开 ${name} 的设置`, updateAvailable: (version) => `有新版本 ${version}`, updateNamed: (name) => `更新 ${name}`,
@@ -97,7 +97,7 @@ export const en: SettingsPluginsText = {
     hint: "Installed plugins appear where you use them on the island. Use the switch on a card to turn its plugin off and keep its settings.",
     install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
-    by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
+    authors: "Authors", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
     installing: "Installing…", uninstalling: "Removing…", retry: "Retry", connecting: "Preparing…", verifying: "Verifying…", unpacking: "Installing…",
     downloaded: (done, total) => `${done} / ${total} MB`, progressNamed: (name) => `Install progress of ${name}`,
     openSettingsNamed: (name) => `Open ${name} settings`, updateAvailable: (version) => `Version ${version}`, updateNamed: (name) => `Update ${name}`,
