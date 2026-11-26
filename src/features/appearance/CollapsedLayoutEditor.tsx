@@ -10,6 +10,7 @@ import { COLLAPSED_SLOTS } from "./settingsLimits";
 import type { CollapsedSlot, IslandSettings } from "./types";
 import { islandPreviewStyle } from "./islandPreviewStyle";
 import { useCollapsedSlotDrag, type SlotArrangement } from "./useCollapsedSlotDrag";
+import { useFitScale } from "./useFitScale";
 import { useResolvedScheme } from "./useDocumentTheme";
 import "./IslandPreview.css";
 import "./CollapsedLayoutEditor.css";
@@ -116,9 +117,12 @@ export function CollapsedLayoutEditor({
       {content[slot]}
     </button>
   );
+  // The island is as wide as its slots need; a narrow card shrinks the whole drawing.
+  const fit = useFitScale(drag.rootRef, ".collapsed-layout__island", settings.collapsedScale);
   // The side space set under Collapsed island, less the slots' own 6px padding.
   const style = {
     ...preview.style,
+    "--collapsed-layout-fit": fit,
     "--preview-side-space": Math.max(0, settings.collapsedPadding - 6),
   } as CSSProperties;
 
@@ -141,7 +145,7 @@ export function CollapsedLayoutEditor({
         </div>
         {drag.ghost && (
           <div className={`${slotClass(drag.ghost.slot)} collapsed-layout__ghost`} aria-hidden="true"
-            style={{ left: drag.ghost.left, top: drag.ghost.top, width: drag.ghost.width, height: drag.ghost.height }}>
+            style={{ left: drag.ghost.left, top: drag.ghost.top, width: drag.ghost.width, height: drag.ghost.height, scale: String(drag.ghost.scale) }}>
             {content[drag.ghost.slot]}
           </div>
         )}

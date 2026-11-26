@@ -1,7 +1,9 @@
-/* Appearance → On the island: a collapsed island drawn at its real size to arrange by hand. */
+/* Appearance → On the island: a collapsed island to arrange by hand. It is as wide as its slots
+   need (not the width setting), and shrinks as a whole when the card is narrower. */
 .collapsed-layout {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: start center;
   row-gap: 16px;
   container-type: inline-size;
@@ -10,9 +12,15 @@
   padding: 22px 12px 18px;
 }
 
-.collapsed-layout__island {
+.collapsed-layout .collapsed-layout__island {
+  /* Drawn at full size; the transform below scales background and slots together. */
+  --c: 1px;
   position: relative;
   flex: none;
+  /* Centred even when wider than the card, so the scaled drawing lands inside it. */
+  justify-self: center;
+  width: max-content;
+  transform: scale(calc(var(--preview-collapsed-scale) * var(--collapsed-layout-fit, 1)));
   gap: calc(4 * var(--c));
   /* The side space set under Collapsed island, less the slots' own padding (CollapsedLayoutEditor). */
   padding: 0 calc(var(--preview-side-space, 12) * var(--c));
@@ -68,7 +76,8 @@
 .collapsed-layout__ghost {
   position: absolute;
   z-index: 3;
-  --c: min(1px, calc(100cqw / var(--preview-collapsed-width) / var(--preview-collapsed-scale)));
+  --c: 1px;
+  transform-origin: top left;
   color: rgb(var(--preview-ink));
   background: var(--preview-fill);
   border-radius: var(--corner-md);
@@ -138,10 +147,10 @@
   opacity: 0.32;
 }
 
-/* The text takes what is left, like the open button on the island. */
+/* The sample text is always whole: at least four CJK glyphs wide, never squeezed. */
 .collapsed-layout__slot--text {
-  min-width: 0;
-  flex: 1;
+  min-width: calc(4em + 12 * var(--c));
+  flex: none;
   justify-content: flex-start;
   gap: calc(10 * var(--c));
   overflow: hidden;
