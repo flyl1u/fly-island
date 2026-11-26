@@ -17,6 +17,7 @@ let dismissed = 0;
 let recognition: Record<string, unknown> | null = null;
 mockIPC((command, payload) => {
   switch (command) {
+    case "screenshot_ready": return new URLSearchParams(location.search).has("cold");
     case "screenshot_window_rect": return [-1920, 0, innerWidth, innerHeight];
     case "screenshot_raw": {
       const frame = new ArrayBuffer(8 + innerWidth * innerHeight * 4);
@@ -39,7 +40,7 @@ const messages: string[] = [];
 const check = (ok: unknown, label: string) => messages.push(`${ok ? "PASS" : "FAIL"} ${label}`);
 const root = createRoot(document.getElementById("root")!);
 await act(async () => root.render(<I18nProvider><ScreenshotWindow /></I18nProvider>));
-await act(async () => { await emit("screenshot-arm"); await new Promise((resolve) => setTimeout(resolve, 50)); });
+await act(async () => { if (!new URLSearchParams(location.search).has("cold")) await emit("screenshot-arm"); await new Promise((resolve) => setTimeout(resolve, 50)); });
 const overlay = document.querySelector<HTMLElement>(".screenshot-overlay")!;
 await act(async () => overlay.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, clientX: 80, clientY: 80, pointerId: 1 })));
 await act(async () => overlay.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: 600, clientY: 360, pointerId: 1 })));

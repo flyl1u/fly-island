@@ -1,9 +1,9 @@
 //! 截图覆盖层窗口：按下快捷键时铺满光标所在显示器。
 //!
-//! 窗口启动时就建好（隐藏），按快捷键只是定位 + 通知前端，避免首次创建窗口的延迟。
+//! 按需创建，前端监听就绪后才抓屏；连续截图短暂复用，空闲后释放 WebView。
 //! 前端抓到干净底图并画好遮罩之后才显示，避免下一轮把自己抓进底图。
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 /// 窗口 label，同时也是 `?window=` 参数值（对外契约，不要改）。
@@ -16,8 +16,12 @@ pub const ARM_EVENT: &str = "screenshot-arm";
 /// 重复按热键时忽略，否则会重新抓屏、把用户已经框好的区域和标注清空。
 static SESSION: super::session::CaptureSession = super::session::CaptureSession::new();
 static RESTORE_MAIN: AtomicBool = AtomicBool::new(false);
+static READY: AtomicBool = AtomicBool::new(false);
+static PENDING_ARM: AtomicBool = AtomicBool::new(false);
+static IDLE_REVISION: AtomicU64 = AtomicU64::new(0);
 
 fn build(app: &AppHandle) -> Result<WebviewWindow, String> {
+    READY.store(false, Ordering::Release);
     // 注意：URL 里只能有 window=screenshot 这一个查询参数。
     // 额外参数会让资产解析丢掉查询串，页面就会退化成小岛、收不到快捷键事件。
     let window = WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::App("index.html?window=screenshot".into()))
@@ -60,29 +64,29 @@ pub(crate) async fn hide_and_settle(window: WebviewWindow) -> Result<(), String>
     }).await.map_err(|error| error.to_string())?
 }
 
-/// 启动时先把窗口建好并藏起来，第一次按快捷键就不用再建了。
-pub(crate) fn precreate(app: &AppHandle) -> Result<(), String> {
-    if app.get_webview_window(WINDOW_LABEL).is_none() {
-        build(app)?;
-    }
-    Ok(())
-}
-
 /// 打开（或重新定位）覆盖层。已经在截图时重复按键直接忽略。
 pub(crate) fn show_overlay(app: &AppHandle) -> Result<(), String> {
+    super::runtime::require_enabled()?;
+    IDLE_REVISION.fetch_add(1, Ordering::AcqRel);
     // swap 原子地「读取并置位」：第一次拿到 false 继续，重复按键拿到 true 直接返回。
     if !SESSION.open() {
         return Ok(());
     }
     // 任一步失败都要复位，否则用户卡在「再也按不出截图」的状态。
-    if let Err(error) = show_overlay_inner(app) {
-        SESSION.cancel();
-        return Err(error);
-    }
-    Ok(())
+    dispatch_overlay(app)
+}
+
+fn dispatch_overlay(app: &AppHandle) -> Result<(), String> {
+    let handle = app.clone();
+    app.run_on_main_thread(move || {
+        if let Err(error) = show_overlay_inner(&handle) {
+            SESSION.cancel(); eprintln!("failed to prepare screenshot window: {error}");
+        }
+    }).map_err(|error| { SESSION.cancel(); error.to_string() })
 }
 
 fn show_overlay_inner(app: &AppHandle) -> Result<(), String> {
+    super::runtime::require_enabled()?;
     let window = match app.get_webview_window(WINDOW_LABEL) {
         Some(window) => window,
         None => build(app)?,
@@ -90,8 +94,60 @@ fn show_overlay_inner(app: &AppHandle) -> Result<(), String> {
     window.hide().map_err(|error| error.to_string())?;
     position_on_cursor_monitor(app, &window)?;
     window.hide().map_err(|error| error.to_string())?;
-    window.emit(ARM_EVENT, ()).map_err(|error| format!("无法通知截图窗口：{error}"))?;
+    PENDING_ARM.store(true, Ordering::Release);
+    if READY.load(Ordering::Acquire) && PENDING_ARM.swap(false, Ordering::AcqRel) {
+        window.emit(ARM_EVENT, ()).map_err(|error| format!("无法通知截图窗口：{error}"))?;
+    }
     Ok(())
+}
+
+#[tauri::command]
+pub(crate) fn screenshot_ready(window: WebviewWindow) -> Result<bool, String> {
+    if window.label() != WINDOW_LABEL { return Err("无效的截图窗口。".into()); }
+    READY.store(true, Ordering::Release);
+    Ok(super::runtime::enabled() && SESSION.active() && PENDING_ARM.swap(false, Ordering::AcqRel))
+}
+
+pub(crate) fn destroyed() {
+    READY.store(false, Ordering::Release);
+    PENDING_ARM.store(false, Ordering::Release);
+    SESSION.cancel();
+}
+
+pub(crate) async fn shutdown(app: &AppHandle) -> Result<(), String> {
+    IDLE_REVISION.fetch_add(1, Ordering::AcqRel);
+    let handle = app.clone();
+    let (sender, receiver) = std::sync::mpsc::channel();
+    app.run_on_main_thread(move || {
+        destroyed();
+        if RESTORE_MAIN.swap(false, Ordering::AcqRel) {
+            if let Some(main) = handle.get_webview_window("main") { let _ = main.show(); }
+        }
+        let mut errors = Vec::new();
+        for (label, window) in handle.webview_windows() {
+            if label == WINDOW_LABEL || label.starts_with("pinned-image-") {
+                if let Err(error) = window.destroy() { errors.push(error.to_string()); }
+            }
+        }
+        let _ = sender.send(if errors.is_empty() { Ok(()) } else { Err(errors.join("; ")) });
+    }).map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(std::time::Duration::from_secs(5)))
+        .await.map_err(|error| error.to_string())?.map_err(|error| error.to_string())?
+}
+
+fn release_when_idle(app: AppHandle) {
+    let revision = IDLE_REVISION.fetch_add(1, Ordering::AcqRel) + 1;
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if IDLE_REVISION.load(Ordering::Acquire) != revision || SESSION.active() { return; }
+            if let Some(window) = handle.get_webview_window(WINDOW_LABEL) {
+                if let Err(error) = window.destroy() { eprintln!("failed to release idle capture window: {error}"); }
+            }
+            super::capture::release();
+        });
+    });
 }
 
 /// 覆盖层窗口在屏幕上的物理矩形，前端据此抓一张全屏底图。
@@ -190,8 +246,8 @@ pub async fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result
     let restored = tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(std::time::Duration::from_secs(2))).await;
     if !matches!(restored, Ok(Ok(()))) { SESSION.cancel(); return Err("恢复截图窗口状态失败，请重试。".into()); }
     if SESSION.finish_close() {
-        if let Err(error) = show_overlay_inner(&app) { SESSION.cancel(); return Err(error); }
-    }
+        dispatch_overlay(&app)?;
+    } else { release_when_idle(app); }
     Ok(())
 }
 

@@ -58,6 +58,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 截图插件的 `features/screenshot/` 提供标注算法、类型化 IPC、坐标换算、有界翻译队列及 OCR 自然行模型；`windows/screenshot/` 组合覆盖层并提供自适应文字行，`windows/pinned-image/` 组合桌面贴图，`windows/screenshot-translation/` 提供原图与逐段原文/译文对照，`windows/screenshot-ocr/` 提供原图与可编辑顺序文字的独立窗口。文字行根据内容和可用宽度增长，不按图像坐标定位文字。Rust 的 `screenshot/` 持有抓屏、OCR、快捷键与窗口生命周期，Windows API 仍位于 `win32/`。翻译通过 `features/translation/index.ts` 复用现有设置和请求，没有平行服务。见 [截图插件](../plugins/screenshot.md)。
 
+截图以 `native/screenshot` 安装状态独立门控，插件卡片打开 `ScreenshotPluginSettings`；`useIslandScreenshot` 将安装开关和快捷键偏好同步到 Rust `screenshot/runtime.rs`，关闭和卸载保留偏好。截图相关窗口前端通过动态导入按需加载，原生窗口首次创建使用就绪握手，空闲 30 秒释放。抓屏 worker 与 OCR 模型分别在空闲后释放重资源，未安装不预建窗口或预热驱动。`screenshot_capabilities` 与 `screenshot_start_task` 为长截图/录屏预留能力版本和统一入口，未实现时明确不可用。见 [资源与扩展规划](../plugins/screenshot-roadmap.md)。
+
 - [data-storage.md](data-storage.md)：每项数据存在哪里、由哪个模块负责
 - [contracts.md](contracts.md)：对外契约清单（localStorage key、事件、命令与文件格式）
 - [migration-map.md](migration-map.md)：结构重构时旧文件到新位置的对照

@@ -10,6 +10,7 @@ import {
   copyScreenshotText,
   ocrScreenshotPng,
   onScreenshotArm,
+  screenshotReady,
   pinScreenshotPng,
   screenshotFonts,
   screenshotWindowRect,
@@ -22,6 +23,7 @@ import { overlayWindows } from "../../features/screenshot/geometry";
 import { waitForScreenshotViewport } from "../../features/screenshot/displayMetrics";
 import { drawAnnotation, measureHeight, measureText } from "../../features/screenshot/annotations";
 import type { Editing } from "./useScreenshotEditor";
+import { loadScreenshotSettings } from "../../features/screenshot/storage";
 
 /** 系统字体列表取不到时的兜底。 */
 export const FALLBACK_FONTS = ["Microsoft YaHei", "SimSun", "SimHei", "KaiTi", "Segoe UI", "Consolas"];
@@ -98,7 +100,7 @@ export function useScreenshotCapture({
         onArm();
       });
       try {
-        const physical = await screenshotWindows();
+        const physical = loadScreenshotSettings().windowSnapping ? await screenshotWindows() : [];
         windowRects.current = [...overlayWindows(physical, region, ratio, frame.height / viewport.height),
           { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }];
       } catch {
@@ -135,6 +137,7 @@ export function useScreenshotCapture({
         // 否则每次重渲染都残留一个监听器，反复抓屏导致卡顿与闪烁。
         if (cancelled) { off(); return; }
         dispose = off;
+        void screenshotReady().then((pending) => { if (!cancelled && pending) void arm(); }).catch(() => {});
       })
       .catch(() => {});
     return () => { cancelled = true; dispose?.(); };

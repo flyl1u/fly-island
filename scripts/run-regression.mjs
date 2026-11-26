@@ -28,7 +28,7 @@ export const PAGES = [
   "screenshot-polish.html?lang=en&theme=light&scale=1.5&dpr=1.5",
   "screenshot-shapes.html",
   "screenshot-shapes.html?lang=en",
-  "screenshot-session.html",
+  ...["screenshot-session.html", "screenshot-session.html?cold=1", "screenshot-plugin.html", "screenshot-plugin.html?lang=en&theme=light", "screenshot-plugin.html?viewportWidth=512&viewportHeight=480&dpr=2"],
   ...["screenshot-text.html", "screenshot-text.html?lang=en", "screenshot-ocr.html", "screenshot-ocr.html?dense=1", "screenshot-ocr.html?lang=en&theme=light", "screenshot-ocr.html?viewportWidth=512&viewportHeight=288&dpr=3", "screenshot-ocr.html?viewportWidth=455&viewportHeight=256&dpr=3&lang=en"],
   "screenshot-translation.html",
   ...["screenshot-translation.html?theme=light&lang=en", "screenshot-translation.html?viewportWidth=512&viewportHeight=288&dpr=3", "screenshot-translation.html?viewportWidth=455&viewportHeight=256&dpr=3&lang=en"],

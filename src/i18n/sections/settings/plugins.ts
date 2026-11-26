@@ -17,7 +17,7 @@ export type SettingsPluginMarketText = {
   title: string; hint: string; officeTitle: string; officeHint: string; install: string; uninstall: string; installed: string;
   inDevelopment: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string; enableNamed: (name: string) => string;
-  by: string; operationFailed: (name: string) => string;
+  by: string; operationFailed: (name: string) => string; configureNamed: (name: string) => string; configure: string;
   items: Record<MarketPluginId, { name: string; description: string }>;
 };
 
@@ -31,12 +31,14 @@ export const zhCN: SettingsPluginsText = {
   status: { starting: "启动中", running: "运行中", restarting: "正在重启", stopped: "已停用", failed: "启动失败" },
   permission: { network: "联网", "read-home-files": "读取本地文件", "write-home-files": "配置本地钩子", notifications: "消息", quota: "额度", sessions: "会话", panel: "岛上页面", "system-devices": "设备与音频输出", "desktop-windows": "桌面窗口", "private-browser": "独立登录" },
   market: {
+    configure: "设置",
     title: "插件市场", officeTitle: "办公消息", officeHint: "钉钉、飞书、企业微信的任务栏图标闪动时在岛上提醒，看不到消息内容；点提醒回到对应软件。",
     hint: "装上后，插件会出现在对应的小岛功能里。卡片上的开关可随时停用插件并保留设置。",
     install: "安装", uninstall: "卸载", installed: "已安装", inDevelopment: "开发中",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`, enableNamed: (name) => `启用 ${name}`,
-    by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`,
+    by: "作者", operationFailed: (name) => `未能完成 ${name} 的操作，请重试。`, configureNamed: (name) => `${name}设置`,
     items: {
+      screenshot: { name: "截图", description: "截图、标注、识别文字、翻译与桌面贴图；支持自定义快捷键。" },
       minimax: { name: "MiniMax Code", description: "在 AI 会话和消息页查看额度、任务进度和待审批提醒。" },
       "eye-care": { name: "护眼提醒", description: "在岛上查看用眼倒计时，休息时在各显示器上收到提醒。" },
       "device-battery": { name: "设备电量与音频", description: "查看支持的无线设备电量和低电量提醒，快速切换音频输出。" },
@@ -63,12 +65,14 @@ export const en: SettingsPluginsText = {
   status: { starting: "Starting", running: "Running", restarting: "Restarting", stopped: "Disabled", failed: "Failed to start" },
   permission: { network: "Network", "read-home-files": "Read local files", "write-home-files": "Configure local hooks", notifications: "Messages", quota: "Quota", sessions: "Sessions", panel: "Island page", "system-devices": "Devices and audio output", "desktop-windows": "Desktop windows", "private-browser": "Private sign-in" },
   market: {
+    configure: "Settings",
     title: "Plugin market", officeTitle: "Work messages", officeHint: "Get a heads-up when DingTalk, Feishu or WeCom flashes in the taskbar; message text is not read. Click the reminder to switch to the app.",
     hint: "Installed plugins appear where you use them on the island. Use the switch on a card to turn its plugin off and keep its settings.",
     install: "Get", uninstall: "Remove", installed: "Installed", inDevelopment: "In development",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`, enableNamed: (name) => `Enable ${name}`,
-    by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`,
+    by: "by", operationFailed: (name) => `Could not complete the action for ${name}. Please try again.`, configureNamed: (name) => `${name} settings`,
     items: {
+      screenshot: { name: "Screenshot", description: "Capture, annotate, recognize, translate and pin images, with a customizable shortcut." },
       minimax: { name: "MiniMax Code", description: "See quota, session progress and pending approvals on the island." },
       "eye-care": { name: "Eye Care", description: "Track screen time on the island and get break reminders on each display." },
       "device-battery": { name: "Device Battery & Audio", description: "Check battery levels for supported wireless devices and switch audio outputs." },

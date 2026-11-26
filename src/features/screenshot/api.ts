@@ -5,6 +5,15 @@ import { listen } from "@tauri-apps/api/event";
 /** 覆盖层被叫醒时 Rust 发出的事件名（与 screenshot/window.rs 的 ARM_EVENT 一致）。 */
 const ARM_EVENT = "screenshot-arm";
 
+/** Matches screenshot/runtime.rs CaptureMode and CaptureCapabilities (protocol v1). */
+export type CaptureMode = "screenshot" | "scroll" | "recording";
+export type CaptureCapabilities = { version: number; screenshot: boolean; scroll: boolean; recording: boolean };
+export const screenshotCapabilities = () => invoke<CaptureCapabilities>("screenshot_capabilities");
+export const startCaptureTask = (mode: CaptureMode) => invoke<void>("screenshot_start_task", { mode });
+export const configureScreenshotPlugin = (enabled: boolean, shortcut: string) => invoke<string>("configure_screenshot_plugin", { enabled, shortcut });
+/** Resolves the initial capture only after the cold-created page has installed its listener. */
+export const screenshotReady = () => invoke<boolean>("screenshot_ready");
+
 /** 屏幕像素矩形，和 Rust 侧的 `(x, y, x + width, y + height)` 对应。 */
 export type ScreenRect = {
   x: number;

@@ -19,3 +19,4 @@
   color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white-a06));
 }
+.native-plugin-icon--capture { display: inline-flex; align-items: center; justify-content: center; color: #9ab5ff; background: #7c9cff22; border-radius: 12px; }

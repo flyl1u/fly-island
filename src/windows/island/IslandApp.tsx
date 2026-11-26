@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useIslandScreenshot } from "./useIslandScreenshot";
 import { visibleCollapsedSlots } from "../../features/appearance/collapsedLayout";
 // First: the message panels it loads bring CSS that must come before the page panels' and the shell's.
 import { useLowBatteryAlert } from "../../features/device-battery/useLowBatteryAlert";
@@ -55,6 +56,7 @@ const NO_TODOS: TodoItem[] = [];
  * there rather than here, so parallel changes do not all meet in this file.
  */
 export function IslandApp() {
+  useIslandScreenshot();
   const t = useTranslation();
   const navigation = useIslandNavigation();
   const { mode, isTucked, page, setPage, collapseIsland, tuckIsland, revealIsland, minimizeToEdge, openIslandPage, toggleClipboardHistory } = navigation;

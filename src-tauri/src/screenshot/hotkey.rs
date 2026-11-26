@@ -5,7 +5,7 @@
 //! 快捷键本身存在前端（`localStorage`），启动时由前端回填，和翻译一致。
 
 use std::{
-    sync::{mpsc, Mutex, OnceLock},
+    sync::{atomic::{AtomicBool, Ordering}, mpsc, Mutex, OnceLock},
     thread,
     time::{Duration, Instant},
 };
@@ -24,9 +24,6 @@ use crate::{
     },
 };
 
-/// 默认快捷键：和微信截图相同，可在设置里改。
-pub(crate) const DEFAULT_SHORTCUT: &str = "Alt+A";
-
 const HOTKEY_ID: i32 = 0x5301;
 const REBIND_MESSAGE: u32 = WM_APP + 40;
 const WINDOW_CLASS: &str = "Fly Island Screenshot Hotkey";
@@ -37,25 +34,39 @@ static APP: OnceLock<AppHandle> = OnceLock::new();
 static WINDOW: Mutex<Option<isize>> = Mutex::new(None);
 static ACTIVE: Mutex<Option<ShortcutBinding>> = Mutex::new(None);
 static PENDING: Mutex<Option<Pending>> = Mutex::new(None);
+static STARTED: AtomicBool = AtomicBool::new(false);
 
 /// 启动快捷键线程；失败只记录，不影响小岛其余功能。
 pub(crate) fn init(app: &AppHandle) {
     let _ = APP.set(app.clone());
+}
+
+fn ensure_started() {
+    if STARTED.swap(true, Ordering::AcqRel) { return; }
     thread::spawn(|| {
         if let Err(error) = run_loop() {
             eprintln!("failed to start the screenshot hotkey: {error}");
         }
+        STARTED.store(false, Ordering::Release);
     });
 }
 
 /// 换一个快捷键；`""` 表示关闭。返回实际生效的按键描述。
 #[tauri::command]
-pub fn set_screenshot_shortcut(shortcut: String) -> Result<String, String> {
+pub async fn set_screenshot_shortcut(shortcut: String) -> Result<String, String> {
+    super::runtime::require_enabled()?;
+    tauri::async_runtime::spawn_blocking(move || set_shortcut(shortcut)).await.map_err(|error| error.to_string())?
+}
+
+pub(crate) fn set_shortcut(shortcut: String) -> Result<String, String> {
     let binding = if shortcut.trim().is_empty() {
         None
     } else {
         Some(parse_shortcut_binding(&shortcut).ok_or_else(|| format!("无法识别快捷键：{shortcut}"))?)
     };
+    if binding.is_none() && !STARTED.load(Ordering::Acquire) { return Ok(String::new()); }
+    ensure_started();
+    let hwnd = wait_for_window()?;
     let (sender, receiver) = mpsc::channel();
     {
         let mut pending = PENDING.lock().map_err(|error| error.to_string())?;
@@ -64,7 +75,6 @@ pub fn set_screenshot_shortcut(shortcut: String) -> Result<String, String> {
         }
         *pending = Some((binding, sender));
     }
-    let hwnd = wait_for_window()?;
     if let Err(error) = message_window::post_message(HWND(hwnd as *mut _), REBIND_MESSAGE) {
         if let Ok(mut pending) = PENDING.lock() {
             *pending = None;
@@ -95,17 +105,6 @@ fn run_loop() -> Result<(), String> {
         .map_err(|_| "无法注册截图快捷键窗口。".to_string())?;
     let hwnd = message_window::create_message_only_window(instance, WINDOW_CLASS, "Fly Island Screenshot Hotkey")
         .map_err(|error| error.to_string())?;
-    if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT) {
-        match hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code) {
-            Ok(()) => {
-                eprintln!("screenshot hotkey registered: {}", binding.label);
-                if let Ok(mut active) = ACTIVE.lock() {
-                    *active = Some(binding);
-                }
-            }
-            Err(error) => eprintln!("screenshot hotkey registration failed: {error}"),
-        }
-    }
     if let Ok(mut window) = WINDOW.lock() {
         *window = Some(hwnd.0 as isize);
     }
@@ -118,6 +117,12 @@ fn apply_pending(hwnd: HWND) {
     let pending = PENDING.lock().ok().and_then(|mut value| value.take());
     let Some((binding, sender)) = pending else { return };
     let previous = ACTIVE.lock().ok().and_then(|mut value| value.take());
+    if binding.as_ref().map(|value| &value.label) == previous.as_ref().map(|value| &value.label) {
+        let label = previous.as_ref().map(|value| value.label.clone()).unwrap_or_default();
+        if let Ok(mut active) = ACTIVE.lock() { *active = previous; }
+        let _ = sender.send(Ok(label));
+        return;
+    }
     if previous.is_some() {
         let _ = hotkey::unregister(hwnd, HOTKEY_ID);
     }

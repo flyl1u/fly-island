@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "clockWeather" | "calendarMarks" | "screenshot";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -24,6 +24,7 @@ export type NativePlugin = {
 };
 
 export const NATIVE_PLUGINS: readonly NativePlugin[] = [
+  { id: "screenshot", kind: "island", accent: "#7c9cff", author: { name: "Philipfanw", url: "https://github.com/Philipfanw" }, settings: { category: "plugins" } },
   { id: "dingtalk", kind: "messages", accent: "#0089ff", author: FLYLIU },
   { id: "feishu", kind: "messages", accent: "#3370ff", author: FLYLIU },
   { id: "wecom", kind: "messages", accent: "#0082f0", author: FLYLIU },

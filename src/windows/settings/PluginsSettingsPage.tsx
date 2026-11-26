@@ -14,13 +14,22 @@ import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin
 import { useLocale, useTranslation } from "../../i18n";
 import { PluginDevelopmentPage } from "./PluginDevelopmentPage";
 import { PluginMarket } from "./PluginMarket";
+import { ScreenshotPluginSettings, type ScreenshotShortcutIssue } from "./ScreenshotPluginSettings";
+import { useNativePluginStates } from "../../features/plugins/native";
 import type { IslandSettings } from "../../features/appearance/types";
 import "./PluginsSettingsPage.css";
 
 /** The built-in plugin market comes first; the external data host below follows the release flag. */
 export function PluginsSettingsPage({ settings, onSettingsChange }: { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void }) {
+  const [screenshotOpen, setScreenshotOpen] = useState(false);
+  const [screenshotIssue, setScreenshotIssue] = useState<ScreenshotShortcutIssue | null>(null);
+  const screenshotState = useNativePluginStates();
+  useEffect(() => {
+    if (!screenshotState.installed.screenshot || screenshotState.enabled.screenshot) setScreenshotIssue(null);
+  }, [screenshotState]);
+  if (screenshotOpen) return <ScreenshotPluginSettings settings={settings} issue={screenshotIssue} onIssueResolved={() => setScreenshotIssue(null)} onBack={() => setScreenshotOpen(false)} />;
   return <div className="plugins-page">
-    {PLUGIN_MARKET_ENABLED && <PluginMarket settings={settings} onSettingsChange={onSettingsChange} />}
+    {PLUGIN_MARKET_ENABLED && <PluginMarket settings={settings} onSettingsChange={onSettingsChange} onConfigureScreenshot={(issue) => { if (issue) setScreenshotIssue(issue); setScreenshotOpen(true); }} />}
     {(PLUGINS_ENABLED || PLUGIN_MARKET_ENABLED) && <EnabledPluginsSettingsPage />}
     {!PLUGINS_ENABLED && <PluginDevelopmentPage />}
   </div>;

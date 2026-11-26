@@ -78,8 +78,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `fly-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `fly-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
 | `fly-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
-| `fly-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `fly-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather` / `calendarMarks` / `screenshot`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
 | `fly-island-native-plugins-disabled`（`string[]`：手动关闭的已安装内置插件 id；缺失或损坏时按空数组处理，未知和未安装 id 不生效；卸载或重装时清除对应标记） | `features/plugins/native/storage.ts` |
+| `fly-island-screenshot-settings`（`{ shortcut, shortcutEnabled, showMagnifier, windowSnapping, showHints }`，默认 `Alt+A` 和四个 true；截图插件安装 id 为 `screenshot`，旧配置不自动安装；卸载保留偏好） | `features/screenshot/storage.ts` |
 | `fly-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个显示开关，设置更新从最新记录合并，选中有效城市或主动定位才更新城市） | `features/weather/storage.ts` |
 | `fly-island-weather-cache`（`{ latitude, longitude, temperature, code, observedAt, fetchedAt }`；temperature 为摄氏数值，code 为 WMO 整数，时间均为 Unix 毫秒；只显示坐标匹配且观测/获取均未超过三小时的数据） | `features/weather/storage.ts` |
 | `fly-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
@@ -259,3 +260,5 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 窗口入口：`screenshot` / `?window=screenshot`；动态 label `pinned-image-*` 对应 `?window=pinned-image` 或 `?window=screenshot-translation`。动态窗口路径按 label 在原生内存中查找。事件：`screenshot-arm`、`pin-menu-action`。
 
 IPC 在 `features/screenshot/api.ts` 类型化封装；Rust 命令清单位于 `screenshot/mod.rs`，涵盖 `screenshot_capture/raw/copy/copy_png/save_png/save_png_to`、`screenshot_ocr/ocr_lines/windows/fonts`、`screenshot_open/activate/dismiss/close/window_rect`、`set_screenshot_shortcut` 和 `screenshot_pin_*`（创建、显示、菜单、OCR、复制、保存、翻译、关闭及销毁）、`screenshot_pinned_src`、`screenshot_copy_text`、`screenshot_trace`。`screenshot_pin_image` 的可选 `translation` 参数选择图文结果窗口；`origin` 为调用截图窗口内的 CSS 坐标，原生端结合窗口物理原点和 DPI 定位。
+
+截图插件（2026-11-26）：新增 screenshot_capabilities()（协议版本 1）、screenshot_start_task(mode: screenshot | scroll | recording)、configure_screenshot_plugin(enabled, shortcut) 和 screenshot_ready()。长截图与录屏返回开发中，不分配捕获资源；未安装截图插件时旧 screenshot_open 也受启用门控。原有命令、窗口 label 和 screenshot-arm 事件保留。详见 [接口规划](../plugins/screenshot-roadmap.md)。

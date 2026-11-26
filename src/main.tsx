@@ -9,10 +9,6 @@ import { TranslationWindow } from "./windows/translation/TranslationWindow";
 import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { EyeCareWindow } from "./windows/eye-care/EyeCareWindow";
 import { ClipboardWindow } from "./windows/clipboard/ClipboardWindow";
-import { ScreenshotTranslationWindow } from "./windows/screenshot-translation/ScreenshotTranslationWindow";
-import { ScreenshotOcrWindow } from "./windows/screenshot-ocr/ScreenshotOcrWindow";
-import { PinnedImageWindow } from "./windows/pinned-image/PinnedImageWindow";
-import { ScreenshotWindow } from "./windows/screenshot/ScreenshotWindow";
 import { I18nProvider, loadLocale, TRANSLATIONS } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
 import { installSameWindowStorageEvents } from "./lib/sameWindowStorageEvents";
@@ -24,6 +20,10 @@ import { installAppLogCapture } from "./features/diagnostics/appLogCapture";
 import { restoreConfigBeforeMount } from "./features/config-transfer/bootstrap";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
+const ScreenshotWindow = React.lazy(() => import("./windows/screenshot/ScreenshotWindow").then((module) => ({ default: module.ScreenshotWindow })));
+const ScreenshotOcrWindow = React.lazy(() => import("./windows/screenshot-ocr/ScreenshotOcrWindow").then((module) => ({ default: module.ScreenshotOcrWindow })));
+const ScreenshotTranslationWindow = React.lazy(() => import("./windows/screenshot-translation/ScreenshotTranslationWindow").then((module) => ({ default: module.ScreenshotTranslationWindow })));
+const PinnedImageWindow = React.lazy(() => import("./windows/pinned-image/PinnedImageWindow").then((module) => ({ default: module.PinnedImageWindow })));
 // First, so errors while the window starts are in the diagnostic log when it is on.
 installAppLogCapture();
 
@@ -86,7 +86,7 @@ async function mountApp() {
 
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-      <I18nProvider>
+      <I18nProvider><React.Suspense fallback={null}>
         {windowKind === "eye-care" ? (
           <EyeCareWindow />
         ) : windowKind === "translation" ? (
@@ -108,7 +108,7 @@ async function mountApp() {
         ) : (
           <IslandApp />
         )}
-      </I18nProvider>
+      </React.Suspense></I18nProvider>
     </React.StrictMode>,
   );
 }

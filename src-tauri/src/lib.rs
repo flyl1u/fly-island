@@ -65,7 +65,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|window, event| {
-            if matches!(event, WindowEvent::Destroyed) { screenshot::cleanup_pin(window.app_handle(), window.label()); }
+            if matches!(event, WindowEvent::Destroyed) {
+                screenshot::cleanup_pin(window.app_handle(), window.label());
+                if window.label() == screenshot::window::WINDOW_LABEL { screenshot::window::destroyed(); }
+            }
             if window.label() == "translation" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();

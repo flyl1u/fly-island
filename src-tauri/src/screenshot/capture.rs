@@ -9,17 +9,26 @@ use crate::win32::desktop_duplication::Duplication;
 pub(crate) type ScreenRect = (i32, i32, i32, i32);
 
 type Shot = Result<(u32, u32, Vec<u8>), String>;
-type Request = (ScreenRect, bool, std::sync::mpsc::Sender<Shot>);
+enum Request { Capture(ScreenRect, bool, std::sync::mpsc::Sender<Shot>), Release }
+static SENDER: std::sync::OnceLock<std::sync::mpsc::Sender<Request>> = std::sync::OnceLock::new();
 
 /// 常驻抓屏线程：普通裁切复用 D3D 设备；覆盖层的新会话必须丢弃旧桌面帧。
 fn worker() -> &'static std::sync::mpsc::Sender<Request> {
-    use std::sync::{mpsc, OnceLock};
-    static SENDER: OnceLock<mpsc::Sender<Request>> = OnceLock::new();
+    use std::sync::mpsc;
     SENDER.get_or_init(|| {
         let (sender, receiver) = mpsc::channel::<Request>();
         std::thread::spawn(move || {
             let mut slot: Option<((i32, i32), Duplication)> = None;
-            while let Ok((region, fresh, reply)) = receiver.recv() {
+            loop {
+                // One timed wait while a device exists; otherwise sleep indefinitely without polling.
+                let request = if slot.is_some() {
+                    match receiver.recv_timeout(std::time::Duration::from_secs(15)) {
+                        Ok(request) => request,
+                        Err(mpsc::RecvTimeoutError::Timeout) => { slot = None; continue; }
+                        Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                    }
+                } else { match receiver.recv() { Ok(request) => request, Err(_) => break } };
+                let Request::Capture(region, fresh, reply) = request else { slot = None; continue; };
                 // A timeout must never reuse a desktop containing the previous screenshot UI.
                 if fresh { slot = None; }
                 let shot = grab(&mut slot, region);
@@ -30,14 +39,8 @@ fn worker() -> &'static std::sync::mpsc::Sender<Request> {
     })
 }
 
-/// 后台预热图形驱动；覆盖层正式截图仍重新取帧，不复用预热像素。
-pub(crate) fn warm_up() {
-    std::thread::spawn(|| {
-        // 1×1 像素，只为触发设备创建与首帧。
-        if let Err(error) = capture_rgba((0, 0, 1, 1)) {
-            eprintln!("screenshot warm-up failed: {error}");
-        }
-    });
+pub(crate) fn release() {
+    if let Some(sender) = SENDER.get() { let _ = sender.send(Request::Release); }
 }
 
 fn grab(slot: &mut Option<((i32, i32), Duplication)>, region: ScreenRect) -> Shot {
@@ -109,7 +112,7 @@ fn request(region: ScreenRect, fresh: bool) -> Shot {
         return Err("选区无效：宽或高为 0".into());
     }
     let (sender, receiver) = std::sync::mpsc::channel();
-    worker().send((region, fresh, sender)).map_err(|_| "抓屏线程已退出".to_string())?;
+    worker().send(Request::Capture(region, fresh, sender)).map_err(|_| "抓屏线程已退出".to_string())?;
     receiver.recv().map_err(|_| "抓屏线程没有响应".to_string())?
 }
 

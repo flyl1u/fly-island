@@ -160,6 +160,7 @@
 
 .plugin-card__footer {
   display: flex;
+  flex-wrap: wrap;
   flex: none;
   align-items: center;
   justify-content: space-between;
@@ -188,6 +189,8 @@
 .plugin-card__action:enabled:hover {
   background: color-mix(in srgb, var(--color-accent) 24%, transparent);
 }
+
+.plugin-card__settings { display: inline-flex; gap: 4px; min-width: 0; padding: 0 9px; }
 
 .plugin-card__action:enabled:active {
   transform: scale(0.96);

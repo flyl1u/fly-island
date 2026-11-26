@@ -4,6 +4,7 @@
 //! 每个插件只加自己的命令与界面。
 
 mod capture;
+pub(crate) mod runtime;
 mod session;
 mod ocr;
 mod ocr_engine;
@@ -16,11 +17,10 @@ pub(crate) mod window;
 use image::GenericImageView;
 use tauri::ipc::Response;
 
-/// 启动截图快捷键（默认 Alt+A，设置里可改），预热抓屏设备并预建覆盖层窗口。
+/// Register lightweight state only. Installation enables hotkeys; capture resources load on demand.
 pub(crate) fn init(app: &tauri::AppHandle) {
     use tauri::{Emitter as _, Manager};
     pin::cleanup_stale(app);
-    capture::warm_up();
     // 贴图窗口 label → 本地图片路径。窗口 URL 只带 window=pinned-image 一个参数
     // （见 window.rs：查询串带额外参数会被资产解析丢掉），路径由前端用命令取。
     app.manage(std::sync::Mutex::new(std::collections::HashMap::<String, String>::new()));
@@ -39,15 +39,13 @@ pub(crate) fn init(app: &tauri::AppHandle) {
             let _ = app.emit_to(&label, "pin-menu-action", id.strip_prefix("pin:").unwrap_or(id));
         }
     });
-    if let Err(error) = window::precreate(app) {
-        eprintln!("failed to precreate the screenshot window: {error}");
-    }
     hotkey::init(app);
 }
 
 /// 打开截图覆盖层；设置页的「立即截图」按钮也走这里。
 #[tauri::command]
 pub fn screenshot_open(app: tauri::AppHandle) -> Result<(), String> {
+    runtime::require_enabled()?;
     window::show_overlay(&app)
 }
 
@@ -57,6 +55,7 @@ pub fn screenshot_open(app: tauri::AppHandle) -> Result<(), String> {
 /// 一张 4K 截图能膨胀到几十 MB；这里直接回二进制。
 #[tauri::command]
 pub async fn screenshot_capture(x: i32, y: i32, width: i32, height: i32) -> Result<Response, String> {
+    runtime::require_enabled()?;
     if width <= 0 || height <= 0 {
         return Err("选区宽高必须大于 0".into());
     }
@@ -123,6 +122,7 @@ pub async fn screenshot_save_png_to(png_base64: String, path: String) -> Result<
 /// 前端拿 `ImageData` 直接贴图，省掉 PNG 解码（4K 图能省 100ms 以上）。
 #[tauri::command]
 pub async fn screenshot_raw(window: tauri::WebviewWindow, x: i32, y: i32, width: i32, height: i32) -> Result<Response, String> {
+    runtime::require_enabled()?;
     if width <= 0 || height <= 0 {
         return Err("选区宽高必须大于 0".into());
     }
@@ -142,6 +142,7 @@ pub async fn screenshot_raw(window: tauri::WebviewWindow, x: i32, y: i32, width:
 /// 识别 PNG 里的文字（系统自带 OCR，离线）。
 #[tauri::command]
 pub async fn screenshot_ocr(app: tauri::AppHandle, png_base64: String) -> Result<String, String> {
+    runtime::require_enabled()?;
     use base64::Engine as _;
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(png_base64.as_bytes())
@@ -182,6 +183,7 @@ pub async fn screenshot_fonts() -> Result<Vec<String>, String> {
 /// 按行识别，返回 (文字, x, y, 宽, 高)，坐标是截图区域的像素。
 #[tauri::command]
 pub async fn screenshot_ocr_lines(app: tauri::AppHandle, png_base64: String) -> Result<Vec<(String, i32, i32, i32, i32)>, String> {
+    runtime::require_enabled()?;
     use base64::Engine as _;
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(png_base64.as_bytes())
@@ -241,6 +243,7 @@ pub(crate) async fn screenshot_pin_image(
 ) -> Result<String, String> {
     use base64::Engine as _;
     use tauri::{WebviewUrl, WebviewWindowBuilder};
+    runtime::require_enabled()?;
     trace("pin: start");
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(png_base64.as_bytes())
@@ -309,6 +312,7 @@ pub(crate) async fn screenshot_pin_image(
     let app_for_build = app.clone();
     let label_for_build = label.clone();
     app.run_on_main_thread(move || {
+        if let Err(error) = runtime::require_enabled() { let _ = sender.send(Err(error)); return; }
         let builder = WebviewWindowBuilder::new(&app_for_build, &label_for_build, WebviewUrl::App(url.into()))
             .title("Fly Island")
             .inner_size(width, height)
@@ -483,6 +487,7 @@ pub(crate) async fn screenshot_pin_save_image(app: tauri::AppHandle, label: Stri
 /// 按行识别贴图里的文字，坐标是原图像素；读临时文件，不经过 WebView。
 #[tauri::command]
 pub(crate) async fn screenshot_pin_ocr_lines(app: tauri::AppHandle, label: String) -> Result<Vec<(String, i32, i32, i32, i32)>, String> {
+    runtime::require_enabled()?;
     use image::GenericImageView as _;
     let dir = resolve_engine_dir(&app);
     let path = pinned_path(&app, &label)?;
@@ -596,6 +601,10 @@ macro_rules! tauri_commands {
             crate::screenshot::window::screenshot_dismiss,
             crate::screenshot::window::screenshot_close,
             crate::screenshot::hotkey::set_screenshot_shortcut,
+            crate::screenshot::runtime::configure_screenshot_plugin,
+            crate::screenshot::runtime::screenshot_capabilities,
+            crate::screenshot::runtime::screenshot_start_task,
+            crate::screenshot::window::screenshot_ready,
         ] $($rest)*)
     };
 }

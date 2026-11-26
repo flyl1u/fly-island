@@ -6,7 +6,7 @@
 //! 流程：DB 检测（概率图 → 连通域 → 外扩）→ 按框裁剪 → CTC 解码。
 
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{atomic::{AtomicU64, Ordering}, Arc, Mutex};
 
 use image::RgbaImage;
 use ndarray::{Array4, Array3};
@@ -29,7 +29,31 @@ struct Engine {
     keys: Vec<String>,
 }
 
-static ENGINE: OnceLock<Option<Engine>> = OnceLock::new();
+static ENGINE: Mutex<Option<Arc<Engine>>> = Mutex::new(None);
+static IDLE_REVISION: AtomicU64 = AtomicU64::new(0);
+
+struct EngineLease(Arc<Engine>);
+impl std::ops::Deref for EngineLease {
+    type Target = Engine;
+    fn deref(&self) -> &Engine { &self.0 }
+}
+impl Drop for EngineLease {
+    fn drop(&mut self) {
+        let revision = IDLE_REVISION.fetch_add(1, Ordering::AcqRel) + 1;
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+            if let Ok(mut engine) = ENGINE.lock() {
+                if IDLE_REVISION.load(Ordering::Acquire) == revision && engine.as_ref().is_some_and(|value| Arc::strong_count(value) == 1) {
+                    *engine = None;
+                }
+            }
+        });
+    }
+}
+pub(crate) fn release() {
+    IDLE_REVISION.fetch_add(1, Ordering::AcqRel);
+    if let Ok(mut engine) = ENGINE.lock() { *engine = None; }
+}
 
 /// 一行结果：文字 + 原图坐标。
 pub(crate) struct Line {
@@ -40,24 +64,31 @@ pub(crate) struct Line {
     pub(crate) height: i32,
 }
 
-fn engine(dir: &Path) -> Option<&'static Engine> {
-    ENGINE
-        .get_or_init(|| {
-            let dll = dir.join("onnxruntime.dll");
-            if dll.exists() {
-                // 加载随包附带的 ONNX Runtime，不依赖系统安装。
-                let _ = ort::init_from(dll.to_string_lossy().to_string()).commit();
-            }
-            let det = Session::builder().ok()?.commit_from_file(dir.join("det.onnx")).ok()?;
-            let rec = Session::builder().ok()?.commit_from_file(dir.join("rec.onnx")).ok()?;
-            let keys = std::fs::read_to_string(dir.join("keys.txt")).ok()?;
-            Some(Engine {
-                det: Mutex::new(det),
-                rec: Mutex::new(rec),
-                keys: keys.lines().map(|line| line.trim_end_matches('\r').to_string()).collect(),
-            })
-        })
-        .as_ref()
+fn engine(dir: &Path) -> Option<EngineLease> {
+    let mut cached = ENGINE.lock().ok()?;
+    if cached.is_none() {
+        let dll = dir.join("onnxruntime.dll");
+        if dll.exists() {
+            // 加载随包附带的 ONNX Runtime，不依赖系统安装。
+            let _ = ort::init_from(dll.to_string_lossy().to_string()).commit();
+        }
+        let det = session(dir.join("det.onnx"))?;
+        let rec = session(dir.join("rec.onnx"))?;
+        let keys = std::fs::read_to_string(dir.join("keys.txt")).ok()?;
+        *cached = Some(Arc::new(Engine {
+            det: Mutex::new(det),
+            rec: Mutex::new(rec),
+            keys: keys.lines().map(|line| line.trim_end_matches('\r').to_string()).collect(),
+        }));
+    }
+    IDLE_REVISION.fetch_add(1, Ordering::AcqRel);
+    Some(EngineLease(Arc::clone(cached.as_ref()?)))
+}
+
+fn session(path: PathBuf) -> Option<Session> {
+    // Desktop OCR should leave CPU time to the user's foreground work, including between jobs.
+    Session::builder().ok()?.with_intra_threads(2).ok()?.with_inter_threads(1).ok()?
+        .with_intra_op_spinning(false).ok()?.with_inter_op_spinning(false).ok()?.commit_from_file(path).ok()
 }
 
 /// 识别整张图，返回按阅读顺序排列的行。
@@ -73,13 +104,13 @@ pub(crate) fn recognize_lines(png: &[u8], dir: &Path) -> Result<Vec<Line>, Strin
         return Err("图片尺寸为 0".into());
     }
 
-    let boxes = detect(engine, &image)?;
+    let boxes = detect(&engine, &image)?;
     if boxes.is_empty() {
         return Ok(Vec::new());
     }
     let mut lines = Vec::new();
     for quad in boxes {
-        if let Ok(text) = recognize_box(engine, &image, quad) {
+        if let Ok(text) = recognize_box(&engine, &image, quad) {
             let text = text.trim().to_string();
             if text.is_empty() {
                 continue;
@@ -326,5 +357,22 @@ mod tests {
         let text = super::recognize_text(&bytes, &dir).expect("识别失败");
         println!("ENGINE => {text}");
         assert!(!text.trim().is_empty(), "没有识别出文字");
+        let previous = std::sync::Arc::downgrade(super::ENGINE.lock().unwrap().as_ref().unwrap());
+        super::release();
+        assert_eq!(previous.strong_count(), 0, "模型缓存应完整释放");
+        assert_eq!(super::recognize_text(&bytes, &dir).unwrap(), text, "释放后仍可重新加载模型");
+        super::release();
+    }
+
+    #[test]
+    #[ignore = "需要内置模型文件，并等待 60 秒空闲回收"]
+    fn engine_idle_release() {
+        let dir = super::resolve_dir(None).expect("找不到模型目录");
+        let lease = super::engine(&dir).expect("加载模型");
+        let previous = std::sync::Arc::downgrade(&lease.0);
+        drop(lease);
+        std::thread::sleep(std::time::Duration::from_secs(62));
+        assert_eq!(previous.strong_count(), 0, "空闲计时器应释放模型会话");
+        assert!(super::ENGINE.lock().unwrap().is_none());
     }
 }

@@ -12,6 +12,7 @@ import { ScreenshotToolbar } from "./ScreenshotToolbar";
 import { useScreenshotCapture } from "./useScreenshotCapture";
 import { useScreenshotEditor, type Handle } from "./useScreenshotEditor";
 import { useScreenshotGestures } from "./useScreenshotGestures";
+import { useScreenshotSettings } from "../../features/screenshot/useScreenshotSettings";
 import "./ScreenshotWindow.css";
 
 const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -58,6 +59,7 @@ const SHORTCUTS: Record<string, Tool> = {
 };
 
 export function ScreenshotWindow() {
+  const preferences = useScreenshotSettings();
   const { screenshot: t } = useTranslation();
   const editor = useScreenshotEditor();
   const gestures = useScreenshotGestures(editor);
@@ -142,7 +144,7 @@ export function ScreenshotWindow() {
     const canvas = magnifierRef.current;
     const backdrop = backdropRef.current;
     const context = canvas?.getContext("2d");
-    if (!canvas || !backdrop || !context || !magnifier) return;
+    if (!canvas || !backdrop || !context || !magnifier || !preferences.showMagnifier) return;
     const zoom = 4;
     canvas.width = 132;
     canvas.height = 96;
@@ -160,7 +162,7 @@ export function ScreenshotWindow() {
     context.moveTo(0, canvas.height / 2);
     context.lineTo(canvas.width, canvas.height / 2);
     context.stroke();
-  }, [magnifier, capture.scale, capture.scaleY]);
+  }, [magnifier, capture.scale, capture.scaleY, preferences.showMagnifier]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -270,7 +272,7 @@ export function ScreenshotWindow() {
         </div>
       ) : null}
 
-      {magnifier ? (
+      {magnifier && preferences.showMagnifier ? (
         <canvas
           ref={magnifierRef}
           className="screenshot-magnifier"
@@ -367,7 +369,7 @@ export function ScreenshotWindow() {
         </>
       ) : (
         // 快捷键唤醒时立即显示遮罩；选区内仍使用未变暗的原图导出。
-        <p className="screenshot-hint">{t.hint}</p>
+        preferences.showHints ? <p className="screenshot-hint">{t.hint}</p> : null
       )}
 
       {savePng ? (

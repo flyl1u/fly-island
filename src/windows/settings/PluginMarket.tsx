@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { Bot, Check, Headphones, HeartPulse } from "lucide-react";
+import { Bot, Check, Headphones, HeartPulse, Settings2 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   NATIVE_PLUGINS, NativePluginIcon, setNativePluginEnabled, setNativePluginInstalled, useNativePluginStates, type NativePluginId,
@@ -14,6 +14,9 @@ import { isNativePluginId, MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS, type Packag
 import { installPlugin, setPluginEnabled, uninstallPlugin } from "../../features/plugins/api";
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
 import { useTranslation } from "../../i18n";
+import { configureScreenshotPlugin } from "../../features/screenshot/api";
+import { loadScreenshotSettings } from "../../features/screenshot/storage";
+import type { ScreenshotShortcutIssue } from "./ScreenshotPluginSettings";
 import "./PluginMarket.css";
 
 const MARKET_CARDS = [...NATIVE_PLUGINS, ...PACKAGED_MARKET_PLUGINS];
@@ -24,15 +27,31 @@ function PackageIcon({ id }: { id: PackagedMarketId }) {
   return <span className="native-plugin-icon plugin-card__tile plugin-card__package" aria-hidden="true"><Icon size={28} strokeWidth={1.5} /></span>;
 }
 
-type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void };
+type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void; onConfigureScreenshot: (issue?: ScreenshotShortcutIssue) => void };
 
 /** The built-in plugins as square cards: icon with name and author beside it, a short pitch and installation controls. */
-export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
+export function PluginMarket({ settings, onSettingsChange, onConfigureScreenshot }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
   const { installed, enabled } = useNativePluginStates();
   const { registry } = usePlugins();
   const [busy, setBusy] = useState<PackagedMarketId | null>(null);
   const [error, setError] = useState("");
+  const [screenshotBusy, setScreenshotBusy] = useState(false);
+  const changeScreenshot = async (on: boolean, installation?: boolean) => {
+    if (screenshotBusy) return;
+    setScreenshotBusy(true); setError("");
+    const preference = loadScreenshotSettings();
+    try {
+      await configureScreenshotPlugin(on, preference.shortcutEnabled ? preference.shortcut : "");
+      if (installation !== undefined) setNativePluginInstalled("screenshot", installation);
+      else setNativePluginEnabled("screenshot", on);
+    } catch (cause) {
+      // Keep a failed first install configurable so a user can choose keys that are free.
+      if (installation === true) { setNativePluginInstalled("screenshot", true); setNativePluginEnabled("screenshot", false); }
+      if (on) onConfigureScreenshot({ shortcut: preference.shortcut, reason: String(cause) });
+      else setError(String(cause));
+    } finally { setScreenshotBusy(false); }
+  };
   const withPackage = async (id: PackagedMarketId, change: () => Promise<void>) => {
     if (busy) return;
     setBusy(id);
@@ -78,10 +97,12 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
         const isEnabled = isNative ? enabled[id] : isInstalled && p?.enabled === true;
         const inDevelopment = !isNative && !isInstalled && !MARKET_PACKAGES.some((plugin) => plugin.id === id);
         const toggle = (checked: boolean) => {
-          if (isNative) setNativePluginEnabled(id, checked);
+          if (id === "screenshot") void changeScreenshot(checked);
+          else if (isNative) setNativePluginEnabled(id, checked);
           else void withPackage(id, () => setPluginEnabled(id, checked));
         };
         const changeInstallation = () => {
+          if (id === "screenshot") { void changeScreenshot(!isInstalled, !isInstalled); return; }
           if (isNative) {
             if (isInstalled) setNativePluginInstalled(id, false);
             else install(id);
@@ -117,16 +138,18 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
               size="small"
               ariaLabel={t.enableNamed(item.name)}
               checked={isEnabled}
-              disabled={!isNative && busy !== null}
+              disabled={id === "screenshot" ? screenshotBusy : !isNative && busy !== null}
               onChange={toggle}
             />}
+            {id === "screenshot" && isInstalled && <button type="button" className="plugin-card__action plugin-card__settings"
+              aria-label={t.configureNamed(item.name)} title={t.configureNamed(item.name)} disabled={screenshotBusy} onClick={() => onConfigureScreenshot()}><Settings2 size={14} />{t.configure}</button>}
             {inDevelopment ? <button type="button" className="plugin-card__action plugin-card__action--preview" disabled>
               {t.inDevelopment}
             </button> : <button
               type="button"
               className={`plugin-card__action${isInstalled ? " plugin-card__action--remove" : ""}`}
               aria-label={isInstalled ? t.uninstallNamed(item.name) : t.installNamed(item.name)}
-              disabled={!isNative && busy !== null}
+              disabled={id === "screenshot" ? screenshotBusy : !isNative && busy !== null}
               aria-busy={busy === id || undefined}
               onClick={changeInstallation}
             >

@@ -41,6 +41,7 @@ fn repeated_overlay_capture_keeps_clean_desktop() {
     std::fs::create_dir_all(&probe_data).expect("isolated WebView data");
     let (sender, receiver) = mpsc::channel();
     let app = tauri::Builder::default().any_thread().setup(move |app| {
+        tauri::async_runtime::block_on(crate::screenshot::runtime::configure_screenshot_plugin(app.handle().clone(), true, String::new()))?;
         WebviewWindowBuilder::new(app, "capture-probe-background", WebviewUrl::External("about:blank".parse()?))
             .title("Fly Island capture probe").decorations(false).shadow(false).always_on_top(true)
             .focused(false).position(40.0, 80.0).inner_size(320.0, 220.0)

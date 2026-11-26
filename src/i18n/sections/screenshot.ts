@@ -1,4 +1,7 @@
+import { zhCN as pluginZh, en as pluginEn, type ScreenshotPluginText } from "./settings/screenshot.ts";
+
 export type ScreenshotText = {
+  plugin: ScreenshotPluginText;
   plainLinesHint: string; bilingualResult: string; copyBilingual: string;
   resultLayout: string; readableLayout: string; sourceLayout: string; readingFontSize: string; readableHint: string;
   ocrTitle: string; ocrResult: string; editableResult: string; showOriginal: string; keepLayout: string; copyLayout: string;
@@ -102,6 +105,7 @@ export type ScreenshotText = {
 };
 
 export const zhCN: ScreenshotText = {
+  plugin: pluginZh,
   plainLinesHint: "按行显示，长句自动换行", bilingualResult: "原文 / 译文对照", copyBilingual: "复制对照",
   resultLayout: "文字排版", readableLayout: "阅读排版", sourceLayout: "原图排版", readingFontSize: "阅读字号", readableHint: "正常字号，可编辑；文字不会随原图缩小",
   ocrTitle: "识别文字 · 图文对照", ocrResult: "识别结果", editableResult: "可编辑", showOriginal: "显示原图", keepLayout: "还原排版", copyLayout: "复制排版",
@@ -201,6 +205,7 @@ export const zhCN: ScreenshotText = {
 };
 
 export const en: ScreenshotText = {
+  plugin: pluginEn,
   plainLinesHint: "Line by line, with automatic wrapping", bilingualResult: "Original / Translation", copyBilingual: "Copy bilingual text",
   resultLayout: "Text layout", readableLayout: "Reading layout", sourceLayout: "Original layout", readingFontSize: "Reading font size", readableHint: "Readable, editable text; image zoom does not shrink text",
   ocrTitle: "Recognize text · Image comparison", ocrResult: "Recognized text", editableResult: "Editable", showOriginal: "Show original", keepLayout: "Preserve layout", copyLayout: "Copy formatting",

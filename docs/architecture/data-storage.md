@@ -75,6 +75,8 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 
 WebView2 localStorage 的 `fly-island-native-plugins` 记录安装的内置插件 id，`fly-island-native-plugins-disabled` 记录已安装但手动关闭的 id。旧配置缺少关闭清单时，已安装的插件均启用。关闭仅暂停功能，保留插件的设置；卸载清除对应的关闭标记，重装时默认启用。
 
+截图使用上述清单的 `screenshot` id，默认未安装。`fly-island-screenshot-settings` 保存快捷键（默认 Alt+A）、快捷键开关、放大镜、窗口自动框选和操作提示，缺失和损坏字段回退安全默认值；关闭或卸载不删除偏好。不新增原生配置文件或密钥，主窗口按偏好同步原生运行状态，截图和识别资源仅在使用时创建。长截图与录屏暂不保存可启用配置。
+
 ## 插件 API v1
 
 原生应用数据目录下 `plugins-state.json` 保存安装清单、启用状态、非秘密插件 settings、开发模式与索引 URL；临时原子写文件 `plugins-state.json.tmp`。这是需要在前端启动前恢复进程的安装注册表，不扩展或迁移现有 fly-island-settings。秘密存 Windows 凭据管理器 service `com.flyisland.app.plugins`，account `<id>/<setting-key>`，只经 stdin 发给对应插件，不返回前端。

@@ -11,6 +11,7 @@ fn overlay_focus_on_rapid_reopen() {
     std::fs::create_dir_all(&data).unwrap();
     let (sender, receiver) = mpsc::channel();
     let app = tauri::Builder::default().any_thread().setup(move |app| {
+        tauri::async_runtime::block_on(crate::screenshot::runtime::configure_screenshot_plugin(app.handle().clone(), true, String::new()))?;
         WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::External("about:blank".parse()?))
             .title("Fly Island focus probe").inner_size(440.0, 160.0).center()
             .decorations(true).always_on_top(true).focused(false).visible(true).data_directory(data).build()?;
