@@ -1,3 +1,4 @@
+import { islandPanelActions } from "../../features/plugins/panelActions.ts";
 import type { InstalledPlugin, Localized, PluginsSnapshot } from "../../features/plugins/api";
 import { isPluginPanelIcon, type PluginPanelIcon } from "../../features/plugins/panelTypes.ts";
 import type { MessageSource } from "../../features/messages/messagePreview";
@@ -13,6 +14,8 @@ export type PluginPageInfo = {
   /** Rows and buttons the plugin reports now, so the island can size the page around them. */
   rows: number;
   actions: number;
+  /** Whether the panel carries a note line under its headline, which takes a line of height. */
+  note: boolean;
   /** Something worth a look (a break due, a low battery): a dot on the page's button. */
   attention: boolean;
 };
@@ -69,7 +72,8 @@ export function pluginPagesFrom(installed: Record<string, InstalledPlugin>, live
         name: plugin.manifest.name,
         icon: isPluginPanelIcon(icon) ? icon : "puzzle",
         rows: panel?.rows.length ?? 0,
-        actions: panel?.actions.length ?? 0,
+        actions: islandPanelActions(panel).length,
+        note: panel ? Boolean(panel.note) : true,
         attention: panel?.attention === true,
       };
     });

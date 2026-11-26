@@ -2,6 +2,7 @@ import { messagePanelHeight, type MessageView } from "../../features/messages/Me
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
 import { BASE_EXPANDED_ISLAND_HEIGHT, DAILY_NOTE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentAlertExpandedHeight, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { AgentSessionView } from "../../features/appearance/types";
+import { getEyeCareIslandHeight } from "../../features/eye-care/islandHeight";
 import { getShelfLayout } from "../../features/file-shelf/fileShelf";
 import type { IslandPage } from "./types";
 
@@ -88,8 +89,8 @@ type ExpandedHeightInput = {
   settingsContentHeight?: number | null;
   /** Entries on the file shelf; its page fits their rows of tiles. */
   shelfItems?: number;
-  /** The open plugin page's entries and buttons; its page fits them. */
-  pluginPanel?: { rows: number; actions: number };
+  /** The open plugin page's entries, buttons and whether it carries a note line; its page fits them. */
+  pluginPanel?: { rows: number; actions: number; note: boolean };
 };
 
 /**
@@ -160,6 +161,8 @@ export function getExpandedIslandHeight({
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)
         : page === "plugin:device-battery" ? Math.min(420, maxPanelHeight)
+        : page === "plugin:eye-care"
+          ? Math.min(getEyeCareIslandHeight(pluginPanel?.rows ?? 0, pluginPanel?.actions ?? 0, pluginPanel?.note ?? false), maxPanelHeight)
         : page.startsWith("plugin:")
           ? Math.min(getPluginExpandedHeight(pluginPanel?.rows ?? 0, pluginPanel?.actions ?? 0), maxPanelHeight)
           : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);

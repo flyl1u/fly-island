@@ -20,6 +20,7 @@ import type { useClipboardHistory } from "../../features/clipboard/useClipboardH
 import { MusicPlayerPanel } from "../../features/media/MusicPlayerPanel";
 import type { useMediaState } from "../../features/media/useMediaState";
 import { DeviceDashboard } from "../../features/device-battery/DeviceDashboard";
+import { EyeCareIslandPanel } from "../../features/eye-care/EyeCareIslandPanel";
 import { PluginPanel } from "../../features/plugins/PluginPanel";
 import { FileShelfPanel } from "../../features/file-shelf/FileShelfPanel";
 import type { useFileShelf } from "../../features/file-shelf/useFileShelf";
@@ -148,7 +149,9 @@ export function IslandPages({
       {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
       {page === "plugin:device-battery"
         ? mode === "expanded" && isPageEnabled(page, features) && <DeviceDashboard onOpenSettings={() => openSettingsWindow("devices")} />
-        : isPluginPage(page) && <PluginPanel key={page} pluginId={pluginIdOfPage(page)} />}
+        : page === "plugin:eye-care"
+          ? isPageEnabled(page, features) && <EyeCareIslandPanel />
+          : isPluginPage(page) && <PluginPanel key={page} pluginId={pluginIdOfPage(page)} />}
       {page === "todo" && (
         <TodoNotebook
           {...notebookProps}

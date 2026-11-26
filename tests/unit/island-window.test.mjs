@@ -126,6 +126,7 @@ test("only enabled plugins that declare a page get one", async () => {
   assert.equal(progress.page, "plugin:activity-progress");
   assert.equal(progress.rows, 2, "the page fits the rows the plugin reports");
   assert.equal(progress.actions, 1);
+  assert.equal(progress.note, false, "a page with an empty note is sized without a note line");
   assert.equal(progress.attention, true, "a task needing attention puts a dot on the page's button");
   assert.equal(pages[1].rows, 0, "a plugin that has not published yet still has a page");
   assert.equal(pages[2].icon, "puzzle", "an unknown icon falls back to the host's");

@@ -1,0 +1,236 @@
+.eye-care-island {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-height: 0;
+  padding: 12px 0 14px;
+  color: var(--text-1);
+}
+
+/* One card for the phase, its row and the buttons: the island is narrow, so they read as a
+   single block. The ticking value is the loudest thing on the page, its label sits under it in
+   the quiet colour, and a thin bar shows how much of the phase is left. Keep the heights in
+   step with islandHeight.ts. */
+.eye-care-island__card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 13px;
+  background: var(--color-white-a6, rgba(255, 255, 255, 0.06));
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+}
+
+/* The phase names what the plugin is doing; the note warns about a postponement. */
+.eye-care-island__head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.eye-care-island__headline {
+  margin: 0;
+  color: var(--text-1);
+  font-size: calc(14px * var(--island-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 18px;
+}
+
+.eye-care-island__note {
+  margin: 0;
+  color: var(--text-3);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-weight: 500;
+  line-height: 15px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.eye-care-island__rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-color: rgba(var(--ink-rgb), 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.eye-care-island__row {
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eye-care-island__line {
+  display: flex;
+  align-items: baseline;
+  min-height: 20px;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+/* The deadline reads as the page's headline number: the value sits above its own label and the
+   bar under both, so the eye lands on the ticking digits before anything else. */
+.eye-care-island__line--stack {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.eye-care-island__line--stack .eye-care-island__label {
+  flex: none;
+  max-width: 100%;
+}
+
+.eye-care-island__label {
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: calc(11.5px * var(--island-font-scale, 1));
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eye-care-island__value {
+  flex: 0 0 auto;
+  color: var(--text-1);
+  font-size: calc(17px * var(--island-font-scale, 1));
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.eye-care-island__value--countdown {
+  color: var(--color-accent);
+  font-size: calc(26px * var(--island-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 30px;
+}
+
+.eye-care-island__detail {
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.eye-care-island__meter {
+  height: 4px;
+  margin-top: 7px;
+  overflow: hidden;
+  background: rgba(var(--ink-rgb), 0.14);
+  border-radius: var(--radius-pill);
+}
+
+.eye-care-island__meter span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+
+.eye-care-island__row--warning .eye-care-island__value {
+  color: var(--color-warning);
+}
+
+.eye-care-island__row--warning .eye-care-island__meter span {
+  background: var(--color-warning);
+}
+
+.eye-care-island__row--danger .eye-care-island__value {
+  color: var(--color-light-needs);
+}
+
+.eye-care-island__row--danger .eye-care-island__meter span {
+  background: var(--color-light-needs);
+}
+
+.eye-care-island__empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--text-3);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 600;
+  text-align: center;
+}
+
+.eye-care-island__actions {
+  flex-wrap: wrap;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.eye-care-island__action {
+  height: 28px;
+  padding: 0 15px;
+  color: var(--text-2);
+  background: var(--color-white-a10, rgba(255, 255, 255, 0.1));
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.eye-care-island__action:hover:not(:disabled) {
+  color: var(--text-1);
+  filter: brightness(1.12);
+}
+
+.eye-care-island__action--primary {
+  color: var(--color-inverse-ink);
+  background: var(--color-accent);
+}
+
+/* The filled button keeps its dark ink when hovered; only the surface brightens. */
+.eye-care-island__action--primary:hover:not(:disabled) {
+  color: var(--color-inverse-ink);
+}
+
+.eye-care-island__action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.eye-care-island__action:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.eye-care-island__error {
+  margin: 0;
+  color: var(--color-error-text);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eye-care-island__meter span {
+    transition: none;
+  }
+}
