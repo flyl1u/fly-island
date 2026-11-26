@@ -1,6 +1,11 @@
 //! The recent steps Antigravity records in each conversation's transcript.
 
-use std::path::Path;
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+    sync::{Mutex, PoisonError},
+    time::SystemTime,
+};
 
 use serde_json::Value;
 
@@ -14,7 +19,7 @@ use super::{
     tool_call::ToolCall,
 };
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(super) struct Transcript {
     pub(super) prompt_at: Option<i64>,
     pub(super) prompt: Option<String>,
@@ -29,6 +34,12 @@ pub(super) struct Transcript {
     pub(super) waiting: bool,
 }
 
+/// What a transcript said for a prompt step, and the file's size and change time then.
+type Cached = ((u64, Option<SystemTime>, Option<u64>), Transcript);
+static CACHE: Mutex<BTreeMap<PathBuf, Cached>> = Mutex::new(BTreeMap::new());
+/// Far more than the conversations listed at once; past it the cache starts over.
+const MAX_CACHED: usize = 64;
+
 pub(super) fn read(root: &Path, id: &str, prompt_step: Option<u64>) -> Transcript {
     if !is_session_id(id) {
         return Transcript::default();
@@ -42,7 +53,20 @@ pub(super) fn read(root: &Path, id: &str, prompt_step: Option<u64>) -> Transcrip
     if !metadata.is_file() {
         return Transcript::default();
     }
-    read_tail(&path).map_or_else(Transcript::default, |tail| parse(&tail, prompt_step))
+    let key = (metadata.len(), metadata.modified().ok(), prompt_step);
+    let mut cache = CACHE.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some((_, turn)) = cache.get(&path).filter(|(cached, _)| *cached == key) {
+        return turn.clone();
+    }
+    let Some(tail) = read_tail(&path) else {
+        return Transcript::default();
+    };
+    let turn = parse(&tail, prompt_step);
+    if cache.len() >= MAX_CACHED {
+        cache.clear();
+    }
+    cache.insert(path, (key, turn.clone()));
+    turn
 }
 
 fn parse(tail: &str, prompt_step: Option<u64>) -> Transcript {

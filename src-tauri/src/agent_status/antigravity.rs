@@ -1,11 +1,13 @@
 //! Google Antigravity's local conversations, read-only. `conversation_summaries.db` lists them
-//! with their run status; each conversation's transcript adds the latest turn's details. The
-//! quota comes from the language server instead (antigravity_quota.rs). Nothing here writes a
-//! file, and titles and replies are never logged.
+//! with their run status (read through a private copy, sqlite_snapshot.rs); each conversation's
+//! transcript adds the latest turn's details. The quota comes from the language server instead
+//! (antigravity_quota.rs). Nothing here writes to Antigravity's files, and titles and replies are
+//! never logged.
 
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
+    sync::{Mutex, PoisonError},
 };
 
 use rusqlite::{params, Connection};
@@ -17,7 +19,7 @@ use super::{
     markers::AGENT_RUNNING_STALE_AFTER_MS,
     session_host::SessionHost,
     sessions::{parse_timestamp_ms, AgentSessionSummary},
-    sqlite_read,
+    sqlite_snapshot::SnapshotCache,
     title::shorten,
     window_focus,
 };
@@ -35,20 +37,18 @@ const SUMMARIES_FILE: &str = "conversation_summaries.db";
 /// Conversations read from the summaries table before the ones outside the window are dropped.
 const MAX_ROWS: usize = 64;
 const MAX_SESSIONS: usize = 12;
-/// A summaries store far beyond this is not Antigravity's; it is left unread.
-const MAX_DB_BYTES: u64 = 512 * 1024 * 1024;
+/// The rows last read from each folder's store; read again only when its files change.
+static SUMMARIES: Mutex<SnapshotCache<Vec<Row>>> = Mutex::new(SnapshotCache::new());
 
 /// `~/.gemini/antigravity` and its siblings, each step a real folder (no junction or link).
 fn app_root(home: &Path, folder: &str) -> Option<PathBuf> {
     folder.split('/').try_fold(home.to_path_buf(), |parent, name| directory(&parent, name))
 }
 
-/// The summaries store of one folder, opened without locks or sidecar files (see sqlite_read).
-fn open_summaries(home: &Path, folder: &str) -> Option<Connection> {
+/// The conversations in one folder's store, including what still sits in its WAL.
+fn read_summaries(home: &Path, folder: &str) -> Option<Vec<Row>> {
     let root = app_root(home, folder)?;
-    let (path, metadata) = entry(&root, SUMMARIES_FILE)?;
-    (metadata.is_file() && metadata.len() <= MAX_DB_BYTES).then_some(())?;
-    sqlite_read::open_immutable(&path)
+    SUMMARIES.lock().unwrap_or_else(PoisonError::into_inner).read(&root, SUMMARIES_FILE, summaries)
 }
 
 /// The run state of a conversation: the IDE says so itself and keeps writing while it works.
@@ -100,7 +100,7 @@ fn workspace_folder(uris: &str) -> Option<String> {
 }
 
 /// One row of `conversation_summaries`, as the reader needs it.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct Row {
     id: String,
     title: Option<String>,
@@ -111,16 +111,15 @@ struct Row {
     cwd: Option<String>,
 }
 
-fn summaries(db: &Connection) -> Vec<Row> {
+/// None when the store cannot be read, which is not the same as an empty list.
+fn summaries(db: &Connection) -> Option<Vec<Row>> {
     let query = |prompt_step: &str| format!(
         "SELECT conversation_id, title, last_modified_time, workspace_uris, status, last_user_input_time, \
          {prompt_step} FROM conversation_summaries \
          WHERE COALESCE(nesting_depth, 0) <= 0 AND COALESCE(parent_conversation_id, '') = '' \
          ORDER BY last_modified_time DESC LIMIT ?1"
     );
-    let Ok(mut statement) = db.prepare(&query("last_user_input_step_index")).or_else(|_| db.prepare(&query("NULL"))) else {
-        return Vec::new();
-    };
+    let mut statement = db.prepare(&query("last_user_input_step_index")).or_else(|_| db.prepare(&query("NULL"))).ok()?;
     let rows = statement.query_map(params![MAX_ROWS as i64], |row| {
         Ok((
             row.get::<_, String>(0)?,
@@ -132,7 +131,7 @@ fn summaries(db: &Connection) -> Vec<Row> {
             row.get::<_, Option<i64>>(6)?,
         ))
     });
-    rows.map(|rows| {
+    rows.ok().map(|rows| {
         rows.flatten()
             .filter_map(|(id, title, modified, uris, status, prompt, step)| {
                 Some(Row {
@@ -148,7 +147,6 @@ fn summaries(db: &Connection) -> Vec<Row> {
             .filter(|row| !row.id.is_empty())
             .collect::<Vec<Row>>()
     })
-    .unwrap_or_default()
 }
 
 fn summary(row: Row, host: SessionHost, turn: Transcript, now: i64) -> AgentSessionSummary {
@@ -188,8 +186,8 @@ pub(super) fn list_sessions(home: &Path, now: i64, window_ms: i64) -> Vec<AgentS
     let cli_exe = cli_executable(home).map(|path| path.to_string_lossy().into_owned());
     let mut rows = APP_FOLDERS
         .into_iter()
-        .filter_map(|folder| open_summaries(home, folder).map(|db| (db, folder)))
-        .flat_map(|(db, folder)| summaries(&db).into_iter().map(move |row| (row, folder)))
+        .filter_map(|folder| read_summaries(home, folder).map(|rows| (rows, folder)))
+        .flat_map(|(rows, folder)| rows.into_iter().map(move |row| (row, folder)))
         .filter(|(row, _)| now.saturating_sub(row.modified_at) <= window_ms)
         .collect::<Vec<_>>();
     rows.sort_by_key(|(row, _)| std::cmp::Reverse(row.modified_at));
@@ -211,19 +209,12 @@ pub(super) fn list_sessions(home: &Path, now: i64, window_ms: i64) -> Vec<AgentS
 
 /// The conversation Antigravity wrote last: with its window in front, that is the one looked at.
 pub(super) fn newest_session_id(home: &Path) -> Option<String> {
-    let db = open_summaries(home, APP_FOLDER)?;
-    summaries(&db).into_iter().next().map(|row| row.id)
+    read_summaries(home, APP_FOLDER)?.into_iter().next().map(|row| row.id)
 }
 
 pub(super) fn cli_session(home: &Path, id: &str) -> bool {
     fn last_modified(home: &Path, folder: &str, id: &str) -> Option<i64> {
-        let db = open_summaries(home, folder)?;
-        let value: String = db.query_row(
-            "SELECT last_modified_time FROM conversation_summaries WHERE conversation_id = ?1",
-            [id],
-            |row| row.get(0),
-        ).ok()?;
-        parse_timestamp_ms(&value)
+        read_summaries(home, folder)?.into_iter().find(|row| row.id == id).map(|row| row.modified_at)
     }
     let Some(cli) = last_modified(home, CLI_FOLDER, id) else { return false };
     [APP_FOLDER, IDE_FOLDER].into_iter()
@@ -352,6 +343,21 @@ mod tests {
         assert_eq!((sessions[0].session_id.as_str(), sessions[0].phase), ("c1", "completed"));
         let names: Vec<_> = fs::read_dir(home.path().join(".gemini/antigravity")).unwrap().flatten().collect();
         assert_eq!(names.len(), 1, "no -wal, -shm or journal file is left behind");
+    }
+
+    #[test]
+    fn a_finished_turn_still_in_the_wal_is_listed_at_once() {
+        let home = tempdir();
+        write_summaries(home.path(), APP_FOLDER, &[("c1", "Fix it", "CASCADE_RUN_STATUS_RUNNING")]);
+        let ide = Connection::open(home.path().join(APP_FOLDER).join(SUMMARIES_FILE)).unwrap();
+        ide.execute_batch("PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0;").unwrap();
+        let now = parse_timestamp_ms("2030-01-01T00:00:20Z").unwrap();
+        assert_eq!(list_sessions(home.path(), now, 60_000)[0].phase, "running");
+        // Committed, but only into the WAL: the IDE has not merged it into the main file.
+        ide.execute("UPDATE conversation_summaries SET status = 'CASCADE_RUN_STATUS_IDLE'", []).unwrap();
+        let started = std::time::Instant::now();
+        assert_eq!(list_sessions(home.path(), now, 60_000)[0].phase, "completed");
+        println!("running to completed was read back in {:?}", started.elapsed());
     }
 
     #[test]
