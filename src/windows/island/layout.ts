@@ -1,15 +1,10 @@
 import type { TodoItem } from "../../features/todos/types";
 import type { AgentSessionView } from "../../features/appearance/types";
 import { COLLAPSED_WIDTH } from "../../features/appearance/settingsLimits.ts";
-import { clamp } from "../../utils/number.ts";
-import { getCollapsedTextUnits, getTodoTitleLineCount } from "../../utils/text.ts";
+import { getTodoTitleLineCount } from "../../utils/text.ts";
 
 /** Automatic width: the saved lower and upper limit default to these (settingsDefaults.ts). */
 export const AUTO_WIDTH_DEFAULT = { min: 280, max: COLLAPSED_WIDTH.default } as const;
-// Automatic width = chrome (side space 36, the pulse, music button and gaps) + the text at about
-// 13px per unit (a CJK glyph is one unit) + extras, kept within the saved limits.
-const AUTO_WIDTH_CHROME = 100;
-const TEXT_UNIT_PX = 13;
 // The todo page with two rows: the island's padding, header and gap (86), the notebook's padding
 // (24), its tab row (22), the add field (32), two gaps (16) and two rows (70), and 8 to spare
 // (TodoNotebook.css, TodoListItem.css). Keep in step.
@@ -34,13 +29,6 @@ const CLIPBOARD_ROW_GAP = 6;
 // One single-line row (32) and the gap below it (6).
 export const TODO_ROW_HEIGHT = 38;
 export const TODO_GROW_START_ROWS = 2;
-/** Collapsed width for the summary `text`, plus `extraWidth` px, up to the widest. */
-export function getCollapsedIslandWidth(text: string, extraWidth = 0, fontScale = 1, min: number = AUTO_WIDTH_DEFAULT.min, max: number = AUTO_WIDTH_DEFAULT.max) {
-  const textWidth = getCollapsedTextUnits(text) * fontScale * TEXT_UNIT_PX;
-  const wanted = Math.round(AUTO_WIDTH_CHROME + textWidth + Math.max(0, extraWidth));
-  return clamp(wanted, min, max);
-}
-
 // Widest nudge allowed when aligning; covers the 1.25x and 1.75x display scales.
 const MAX_ALIGNMENT_NUDGE = 4;
 
@@ -127,4 +115,3 @@ export function getAgentAlertExpandedHeight(rowHeight: number) {
 export function getClipboardExpandedHeight(rows: number) {
   return CLIPBOARD_CHROME_HEIGHT + rows * CLIPBOARD_ROW_PITCH - CLIPBOARD_ROW_GAP;
 }
-

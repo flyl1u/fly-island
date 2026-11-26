@@ -2,20 +2,45 @@ import { act } from "react";
 
 const saved = () => JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}") as { collapsedLayout?: string[]; collapsedHidden?: string[] };
 
+const frames = () => act(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+
+function checkInside(check: (condition: unknown, message: string) => void, label: string, island: HTMLElement) {
+  const box = island.getBoundingClientRect();
+  const outside = [...island.children].filter((child) => {
+    const rect = child.getBoundingClientRect();
+    return rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.top < box.top - 0.5 || rect.bottom > box.bottom + 0.5;
+  });
+  check(outside.length === 0, `${label}${outside.length ? ` (${outside.map((child) => child.className).join("; ")})` : ""}`);
+}
+
+/** The editor ignores the width settings: it is as wide as its slots, and shrinks as a whole. */
+async function checkArrangementFits(check: (condition: unknown, message: string) => void, island: () => HTMLElement, editor: HTMLElement) {
+  const text = () => island().querySelector<HTMLElement>(".collapsed-layout__slot--text")!;
+  const wholeText = () => text().offsetWidth >= 4 * parseFloat(getComputedStyle(text()).fontSize) && text().scrollWidth <= text().clientWidth;
+  const natural = island().offsetWidth;
+  // What automatic length 160–280 used to size the editor with (the midpoint).
+  editor.style.setProperty("--preview-collapsed-width", "220");
+  await frames();
+  check(island().offsetWidth === natural, `The arrangement island does not follow the width setting (${island().offsetWidth} / ${natural}px)`);
+  checkInside(check, "Every slot lies inside the arrangement island's background", island());
+  check(wholeText(), `The text slot shows at least four CJK glyphs, uncut (${text().offsetWidth}px)`);
+  editor.style.maxWidth = "220px";
+  await frames();
+  check(island().getBoundingClientRect().width <= editor.getBoundingClientRect().width + 0.5,
+    `A narrow card shrinks the arrangement island to fit (${island().getBoundingClientRect().width}px)`);
+  checkInside(check, "Shrunk, the slots stay inside the background", island());
+  check(wholeText(), "Shrunk, the sample text is still whole");
+  editor.style.removeProperty("max-width");
+  await frames();
+}
+
 export async function checkCollapsedLayout(check: (condition: unknown, message: string) => void) {
   const island = () => document.querySelector<HTMLElement>(".collapsed-layout__island")!;
   const box = () => document.querySelector<HTMLElement>(".collapsed-layout__hidden")!;
   const preview = document.querySelector<HTMLElement>("figure.island-preview")!;
   const editor = island().parentElement!;
-  const width = () => island().getBoundingClientRect().width;
-  check(Math.abs(width() - 310) <= 31, `Automatic arrangement preview draws the default 280–340 midpoint at actual size (${width()}px)`);
-  const configuredWidth = editor.style.getPropertyValue("--preview-collapsed-width");
-  editor.style.setProperty("--preview-collapsed-width", "280");
-  check(Math.abs(width() - 280) <= 28, `A 280px island previews at actual size when it fits (${width()}px)`);
-  editor.style.maxWidth = "250px";
-  check(width() < 280 && width() <= editor.getBoundingClientRect().width, "The arrangement preview shrinks only to fit a narrow card");
-  editor.style.removeProperty("max-width");
-  editor.style.setProperty("--preview-collapsed-width", configuredWidth);
+  await checkArrangementFits(check, island, editor);
+  checkInside(check, "The top collapsed drawing's background holds its contents", preview.querySelector<HTMLElement>(".island-preview__island--collapsed")!);
   for (const name of ["--preview-fill", "--preview-text", "--preview-corner-shape", "--preview-radius-collapsed-px", "--preview-font-scale", "--preview-collapsed-scale"]) {
     check(getComputedStyle(editor).getPropertyValue(name) === getComputedStyle(preview).getPropertyValue(name),
       `Layout editor shares the appearance drawing's ${name}`);

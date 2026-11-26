@@ -5,7 +5,8 @@ import type { CollapsedSlot } from "./types";
 export type SlotArrangement = { shown: CollapsedSlot[]; hidden: CollapsedSlot[] };
 type Zone = keyof SlotArrangement;
 type Press = { slot: CollapsedSlot; pointerId: number; x: number; y: number; dragging: boolean; grabX: number; grabY: number };
-export type SlotGhost = { slot: CollapsedSlot; left: number; top: number; width: number; height: number };
+/** `scale`: how much the slot picked up was drawn smaller than its layout size. */
+export type SlotGhost = { slot: CollapsedSlot; left: number; top: number; width: number; height: number; scale: number };
 
 /** How far (px) the pointer moves before a press becomes a drag. */
 const DRAG_THRESHOLD = 4;
@@ -121,6 +122,7 @@ export function useCollapsedSlotDrag(arrangement: SlotArrangement, commit: (next
         top: event.clientY - box.top - held.grabY,
         width: previous?.width ?? source?.offsetWidth ?? 0,
         height: previous?.height ?? source?.offsetHeight ?? 0,
+        scale: previous?.scale ?? (source?.offsetWidth ? source.getBoundingClientRect().width / source.offsetWidth : 1),
       }));
       const [zone, index] = dropAt(held.slot, event.clientX, event.clientY);
       setOverHidden(zone === "hidden");

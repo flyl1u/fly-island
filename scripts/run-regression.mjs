@@ -44,6 +44,7 @@ export const PAGES = [
   "island-tour.html?test=1&shoulders=1",
   "island-tour.html?test=1&update=1",
   "island-tour.html?test=1&cycle=1",
+  "island-tour.html?test=1&autoWidth=1&features=enabled",
   "island-tour.html?test=1&pageButtons=iconLabel",
   "island-tour.html?test=1&pageButtons=iconLabel&lang=en",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
@@ -82,6 +83,7 @@ export const PAGES = [
   "notice-reader.html?scale=1.4&theme=light&lang=en",
   "lyric-clock.html",
   "lyric-word-fill.html",
+  "lyric-scroll.html",
   "music-lyrics.html",
   "notification-startup.html",
   "panel-preview.html",
