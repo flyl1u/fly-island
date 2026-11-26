@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { visibleCollapsedSlots } from "../../features/appearance/collapsedLayout";
 // First: the message panels it loads bring CSS that must come before the page panels' and the shell's.
 import { useLowBatteryAlert } from "../../features/device-battery/useLowBatteryAlert";
+import { EdgePet } from "../../features/edge-pet/EdgePet";
+import { useEdgePetSettings } from "../../features/edge-pet/storage";
 import { useIslandNotices } from "./useIslandNotices";
 // The page panels; before IslandShell so their CSS keeps its place in the cascade.
 import { IslandPages } from "./IslandPages";
@@ -59,11 +61,13 @@ export function IslandApp() {
   const navigation = useIslandNavigation();
   const { mode, isTucked, page, setPage, collapseIsland, tuckIsland, revealIsland, minimizeToEdge, openIslandPage, toggleClipboardHistory } = navigation;
   const [settings, setSettings] = useIslandSettings();
+  const [petSettings] = useEdgePetSettings();
   const detachedSettings = useSettingsPresentation();
   const { openSettings, changePresentation } = useSettingsNavigation(openIslandPage, setPage);
   const { settingsContentHeight, reportSettingsHeight } = useSettingsPageHeight();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
+  const edgePetActive = isTucked && petSettings.enabled && !game.quiet;
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
   const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;
@@ -229,6 +233,7 @@ export function IslandApp() {
         material={settings.material}
         nativeGlassState={nativeGlassState}
         isTucked={isTucked}
+        edgePetActive={edgePetActive}
         tuckStyle={settings.tuckStyle}
         topEdgeShoulders={settings.topEdgeShoulders}
         islandCornerShape={settings.islandCornerShape}
@@ -299,6 +304,14 @@ export function IslandApp() {
           notebookProps={notebookProps}
         />
       </IslandShell>
+      <EdgePet
+        isTucked={isTucked}
+        activeAgentCount={activeAgentSessionCount}
+        hasMessagePreview={hasMessagePreview}
+        songPlaying={songPlaying}
+        quiet={game.quiet}
+        onReveal={hoverTucked}
+      />
     </main>
   );
 }

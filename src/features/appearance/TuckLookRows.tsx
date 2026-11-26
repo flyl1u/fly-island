@@ -1,6 +1,8 @@
 import { SettingsChoice } from "../../components/settings/SettingsChoice";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
+import { useEdgePetSettings } from "../edge-pet/storage";
 import { useTranslation } from "../../i18n";
 import { TUCK_EDGE_HEIGHT } from "./settingsLimits";
 import type { IslandSettings, TuckStyle } from "./types";
@@ -18,6 +20,7 @@ export function TuckLookRows({ settings, onSettingsChange, onPreviewTuck }: {
 }) {
   const t = useTranslation();
   const expand = t.settings.expand;
+  const [petSettings, setPetSettings] = useEdgePetSettings();
   const update = (patch: Partial<IslandSettings>) => {
     onSettingsChange({ ...settings, ...patch });
     onPreviewTuck();
@@ -46,6 +49,15 @@ export function TuckLookRows({ settings, onSettingsChange, onPreviewTuck }: {
           format={(value) => `${value}px`} commitOnRelease
           onChange={(tuckEdgeHeight) => update({ tuckEdgeHeight })} />
       )}
+      <SettingsToggleRow
+        title={t.edgePet.toggleTitle}
+        description={t.edgePet.toggleHint}
+        checked={petSettings.enabled}
+        onChange={(enabled) => {
+          setPetSettings({ enabled });
+          if (enabled) onPreviewTuck();
+        }}
+      />
     </>
   );
 }

@@ -1,0 +1,186 @@
+.island.island--tuck-pet {
+  width: calc(140px * var(--island-collapsed-scale, 1));
+  height: 22px;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.island.island--tuck-pet .island__surface,
+.island.island--tuck-pet .island__glass-shadow {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * Top-edge pixel pet track: stays inside the 140px native tucked hot zone so it remains
+ * clickable and never clips outside the top edge. Colors use tokens.css variables only.
+ */
+.edge-pet {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: calc(140px * var(--island-collapsed-scale, 1));
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 4;
+}
+
+.edge-pet__track {
+  position: relative;
+  width: 100%;
+  height: 22px;
+  overflow: visible;
+}
+
+.edge-pet__walker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 21px;
+  filter: drop-shadow(0 1px 2px var(--color-black-a32, rgba(0, 0, 0, 0.32)));
+  animation: edge-pet-patrol 10s linear infinite;
+}
+
+.edge-pet__svg {
+  display: block;
+}
+
+.edge-pet__body {
+  fill: var(--text-1);
+}
+
+.edge-pet__eye {
+  fill: var(--island-background-color);
+}
+
+.edge-pet__accent {
+  fill: var(--accent, var(--text-2));
+}
+
+.edge-pet__badge-alert {
+  fill: var(--color-unread-green, #4ade80);
+}
+
+.edge-pet__badge-work {
+  fill: var(--accent, var(--text-2));
+}
+
+.edge-pet__badge-music {
+  fill: var(--accent, var(--text-2));
+}
+
+.edge-pet__legs-a {
+  animation: edge-pet-step-a 0.6s steps(1, end) infinite;
+}
+
+.edge-pet__legs-b {
+  animation: edge-pet-step-b 0.6s steps(1, end) infinite;
+}
+
+.edge-pet__tail {
+  transform-origin: 15px 6px;
+  animation: edge-pet-tail-wag 1.4s steps(2, end) infinite;
+}
+
+.edge-pet--working .edge-pet__walker {
+  animation: edge-pet-patrol 6s linear infinite;
+}
+
+.edge-pet--alert .edge-pet__walker {
+  left: 55px;
+  animation: edge-pet-hop 0.8s steps(2, end) infinite;
+}
+
+.edge-pet--music .edge-pet__walker {
+  animation: edge-pet-patrol 9s linear infinite, edge-pet-bob 0.9s steps(2, end) infinite;
+}
+
+@keyframes edge-pet-patrol {
+  0% {
+    transform: translateX(0) scaleX(1);
+  }
+  45% {
+    transform: translateX(110px) scaleX(1);
+  }
+  50% {
+    transform: translateX(110px) scaleX(-1);
+  }
+  95% {
+    transform: translateX(0) scaleX(-1);
+  }
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes edge-pet-step-a {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes edge-pet-step-b {
+  0%, 49% {
+    opacity: 0;
+  }
+  50%, 100% {
+    opacity: 1;
+  }
+}
+
+@keyframes edge-pet-tail-wag {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes edge-pet-hop {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes edge-pet-bob {
+  0%, 100% {
+    margin-top: 0;
+  }
+  50% {
+    margin-top: 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-pet__walker,
+  .edge-pet__legs-a,
+  .edge-pet__legs-b,
+  .edge-pet__tail {
+    animation: none !important;
+  }
+
+  .edge-pet__walker {
+    left: 55px;
+    transform: none;
+  }
+}

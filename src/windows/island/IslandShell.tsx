@@ -48,6 +48,7 @@ type IslandShellProps = {
   material: Material;
   nativeGlassState: NativeGlassState;
   isTucked: boolean;
+  edgePetActive?: boolean;
   /** How the island looks while tucked: its own rim (edge), a short line, or nothing. */
   tuckStyle: TuckStyle;
   topEdgeShoulders: boolean;
@@ -127,6 +128,7 @@ export function IslandShell({
   material,
   nativeGlassState,
   isTucked,
+  edgePetActive = false,
   tuckStyle,
   topEdgeShoulders,
   positionLocked,
@@ -190,6 +192,7 @@ export function IslandShell({
     isDetached || islandShape === "capsule" ? "island--detached" : "island--docked",
     islandShape === "capsule" ? "island--capsule" : "",
     isTucked ? "island--tucked" : "",
+    isTucked && edgePetActive ? "island--tuck-pet" : "",
     tuckMorphClass,
     topEdgeShoulders && islandShape !== "capsule" ? "island--shoulders" : "",
     glass ? `island--glass-${nativeGlassState}` : "",
