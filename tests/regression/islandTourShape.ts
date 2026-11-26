@@ -2,6 +2,19 @@
 // ?capsule=1 a pill floating below it (features/appearance/islandShape.ts).
 import { CAPSULE_SHAPE_ENABLED } from "../../src/features/appearance/islandShape";
 
+export function checkIslandShapeMotion(expectedSeconds: number, interaction: Record<string, unknown>, check: ShapeTour["check"]) {
+  const island = document.querySelector<HTMLElement>(".island")!;
+  const style = getComputedStyle(island);
+  const properties = style.transitionProperty.split(",").map((value) => value.trim());
+  const durations = style.transitionDuration.split(",").map(Number.parseFloat);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  check(["width", "height", "border-radius"].every((property) => {
+    const index = properties.indexOf(property);
+    return index >= 0 && durations[index % durations.length] === (property === "width" && island.classList.contains("island--width-motion") ? 0.4 : expectedSeconds);
+  }), `岛屿形状完整过渡（reduce=${reduce}; property=${style.transitionProperty}; duration=${style.transitionDuration}）`);
+  check(interaction.animatePosition === true, `贴边收起与滑出始终请求位置动画（reduce=${reduce}）`);
+}
+
 type ShapeTour = {
   island: HTMLElement;
   expectedHeight: number;

@@ -11,6 +11,7 @@ import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/typ
 import type { MediaState } from "../../features/media/api";
 import { CollapsedLyric } from "../../features/media/CollapsedLyric";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
+import type { LyricLine } from "../../features/media/lyrics/lrc";
 import { CollapsedMessageContent } from "../../features/messages/CollapsedMessageContent";
 import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 import { MessageNoticeReader } from "../../features/messages/MessageNoticeReader";
@@ -56,6 +57,8 @@ type IslandCollapsedBarProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
+  onSwitchCollapsedItem?: () => void;
+  collapsedLyrics?: LyricLine[] | null;
   /** Where the text and each status icon sit, left to right (Settings → Appearance). */
   collapsedLayout: readonly CollapsedSlot[];
   collapsedOrder?: readonly CollapsedSlot[];
@@ -107,6 +110,8 @@ export function IslandCollapsedBar({
   todoRotation = null,
   collapsedTodoCount,
   collapsedItem,
+  onSwitchCollapsedItem,
+  collapsedLyrics = null,
   collapsedLayout,
   collapsedOrder = collapsedLayout,
   collapsedCover,
@@ -160,23 +165,25 @@ export function IslandCollapsedBar({
   };
 
   const reader = Boolean(noticeReader && preview && !isExpanded && !isTucked);
+  const contentKey = quotaAlert || batteryAlert ? "alert" : (showCollapsedText ? collapsedItem : null) ?? "idle";
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
-    // The agent light opens the Agent page (or the message being previewed); the text reopens the last page.
     pulse: (
       <button
         className="island__agent-light"
         type="button"
-        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source]) : t.island.agentPage}
+        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
+          : t.island.switchCollapsedContent(t.island.collapsedKinds[contentKey])}
+        onMouseDown={(event) => { if (!preview && event.button === 0) event.preventDefault(); }}
         onPointerDown={prepareWindowDrag}
         onPointerMove={handleWindowDragMove}
         onPointerUp={cancelWindowDrag}
         onPointerCancel={cancelWindowDrag}
         onClick={(event) => {
-          if (event.detail !== 0 && didDragRef.current) return;
+          if (event.button !== 0 || (event.detail !== 0 && didDragRef.current)) return;
           event.stopPropagation();
-          if (preview) openPreview(preview); else onOpenPage("agents");
+          if (preview) openPreview(preview); else onSwitchCollapsedItem?.();
         }}
       >
         <span className={pulseClassName} />
@@ -211,7 +218,7 @@ export function IslandCollapsedBar({
         >
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
-          <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
+          <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked} contentKey={contentKey}>
             {quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
             ) : batteryAlert ? <BatteryAlertPopup alert={batteryAlert} /> : <>
@@ -230,7 +237,7 @@ export function IslandCollapsedBar({
               </span>
             )}
             {showCollapsedText && collapsedItem === "lyrics" && (
-              <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
+              <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} lines={collapsedLyrics} active={!isExpanded} />
             )}
             {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (todoTimer && !todoRotation ? (
               <span className={`island__active-task island__active-task--timed${isTodoTimerEndingSoon(todoTimer) ? " island__active-task--ending" : ""}`} key={collapsedTaskTitle}>

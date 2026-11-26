@@ -1,18 +1,18 @@
 import { isUpdateTodo } from "../../features/todos/updateTodo";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useClockWeather, useCurrentWeather } from "../../features/weather";
 import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
 import { fitClockWeather } from "../../features/weather";
 import { idleTextDisplay } from "../../features/appearance/idleText";
 import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
-import type { IslandSettings } from "../../features/appearance/types";
+import type { CollapsedItem, IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
 import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
 import { getCollapsedTextUnits } from "../../utils/text";
 import { collapsedWidthTarget, type CollapsedWidthContent } from "./collapsedWidth";
-import { pickCollapsedItem } from "./collapsedItem";
+import { nextCollapsedItem, resolveCollapsedItem } from "./collapsedItem";
 import { selectRotatingTodos } from "../../features/todos/todoRotation";
 import type { TodoRotationDisplay } from "./CollapsedTodoContent";
 
@@ -42,8 +42,9 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers, notice = null, alertText = null }: {
+  { lyricsPlaying = false, lyricsAvailable = false, agentActive = false, coverWanted = false, timer = null, activeIds, timers, notice = null, alertText = null }: {
     lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[];
+    lyricsAvailable?: boolean; agentActive?: boolean;
     notice?: CollapsedWidthContent | null; alertText?: string | null;
   } = {},
 ) {
@@ -92,11 +93,22 @@ export function useCollapsedTodo(
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
     ? pendingTodoCount
     : null;
-  const collapsedItem = timers?.length || timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
+  const available = {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
-  }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
+  };
+  const canSwitchTo = { ...available, agent: available.agent && agentActive, lyrics: lyricsPlaying && lyricsAvailable };
+  const [choice, setChoice] = useState<CollapsedItem | null>(null);
+  const selection = resolveCollapsedItem(settings.collapsedPriority, available, canSwitchTo, choice,
+    activeTodoId !== null && pendingTodoIds.includes(activeTodoId), Boolean(timers?.length || timer));
+  if (choice !== selection.choice) setChoice(selection.choice);
+  const collapsedItem = selection.item;
+  const switchCollapsedItem = () => {
+    if (!settings.showCollapsedText) return;
+    const next = nextCollapsedItem(settings.collapsedPriority, canSwitchTo, collapsedItem);
+    if (next !== null) setChoice(next);
+  };
   const idleDisplay = idleTextDisplay(settings, {
     itemShown: collapsedItem !== null,
     pendingLine: collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null,
@@ -135,5 +147,5 @@ export function useCollapsedTodo(
     fontScale, paddingExtra: 2 * (settings.collapsedPadding - COLLAPSED_PADDING.default),
     clock: statusFit.clock, weather: statusFit.weather, statusMinimum, stageWidth: window.innerWidth, devicePixelRatio: window.devicePixelRatio,
   });
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, statusFit, idleDisplay, todoRotation, collapsedTimer };
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, switchCollapsedItem, collapsedIslandWidth, statusFit, idleDisplay, todoRotation, collapsedTimer };
 }

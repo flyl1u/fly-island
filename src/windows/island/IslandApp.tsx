@@ -17,6 +17,7 @@ import { useClipboardHistory } from "../../features/clipboard/useClipboardHistor
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
+import { useLyrics } from "../../features/media/lyrics/useLyrics";
 import type { TodoItem } from "../../features/todos/types";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
@@ -82,6 +83,7 @@ export function IslandApp() {
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
+  const { lines: collapsedLyrics } = useLyrics(media.mediaState, settings, songPlaying);
   // "Stay out while music plays" follows the media session itself, not the lyric line.
   const musicHoldsIsland = useMusicGrace(settings.musicEnabled && media.mediaState.playbackStatus === "playing");
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
@@ -109,14 +111,16 @@ export function IslandApp() {
     mode === "collapsed" && !isTucked && !game.quiet && !hasMessagePreview && quotaAlert === null,
   );
   const collapsed = mode === "collapsed" && !isTucked;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, switchCollapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       !collapsed || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
-      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
+      { lyricsPlaying: songPlaying, lyricsAvailable: Boolean(collapsedLyrics?.some((line) => line.text.trim())),
+        agentActive: activeAgentSessionCount > 0 || agentVisualState === "running" || Boolean(agentStatus.others?.some((agent) => agent.phase === "running")),
+        coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null,
         activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
         notice: collapsed && preview ? { text: collapsedMessageText(preview, t.messages), extraWidth: preview.otpCode ? 140 : 23 } : null,
         alertText: quotaAlert ? quotaAlertText(quotaAlert, t.agent.quota) : batteryAlert ? t.deviceBattery.lowAlert(batteryAlert.name, batteryAlert.percent) : null },
@@ -198,7 +202,7 @@ export function IslandApp() {
     quiet: game.quiet,
     browserOnIslandMonitor: game.browserOnIslandMonitor,
     hasMessagePreview,
-    namesAgent: Boolean(agentSession),
+    namesAgent: settings.showCollapsedText && collapsedItem === "agent" && !quotaAlert && !batteryAlert,
     openEnabledPage,
   });
 
@@ -257,6 +261,8 @@ export function IslandApp() {
         todoTimer={settings.todoEnabled ? collapsedTimer : null}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
+        onSwitchCollapsedItem={switchCollapsedItem}
+        collapsedLyrics={collapsedLyrics}
         collapsedOrder={settings.collapsedLayout}
         collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, [...settings.collapsedHidden,
           ...(statusFit.clock ? [] : ["clock" as const]), ...(statusFit.weather ? [] : ["weather" as const])])}

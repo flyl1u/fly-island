@@ -10,7 +10,8 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkIslandTourPageButtons } from "./islandTourPageButtons";
 import { checkTuckMorph } from "./islandTourTuck";
-import { checkCollapsedShape } from "./islandTourShape";
+import { checkCollapsedShape, checkIslandShapeMotion } from "./islandTourShape";
+import { checkCollapsedItemSwitch } from "./islandTourCollapsedItem";
 import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } from "./islandTourTheme";
 import { prepareTourGlassBackdrop, runShoulderFixture } from "./islandTourShoulders";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
@@ -143,18 +144,7 @@ const click = async (selector: string) => {
   await settle(700);
 };
 
-function checkShapeMotion(expectedSeconds: number) {
-  const island = document.querySelector<HTMLElement>(".island")!;
-  const style = getComputedStyle(island);
-  const properties = style.transitionProperty.split(",").map((value) => value.trim());
-  const durations = style.transitionDuration.split(",").map(Number.parseFloat);
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  check(["width", "height", "border-radius"].every((property) => {
-    const index = properties.indexOf(property);
-    return index >= 0 && durations[index % durations.length] === (property === "width" && island.classList.contains("island--width-motion") ? 0.4 : expectedSeconds);
-  }), `岛屿形状完整过渡（reduce=${reduce}; property=${style.transitionProperty}; duration=${style.transitionDuration}）`);
-  check(interaction.animatePosition === true, `贴边收起与滑出始终请求位置动画（reduce=${reduce}）`);
-}
+const checkShapeMotion = (expectedSeconds: number) => checkIslandShapeMotion(expectedSeconds, interaction, check);
 
 /** Elements of the open page that reach outside the island's box, or past its rounded bottom corners. */
 function strays() {
@@ -197,6 +187,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
   try {
     await act(async () => { mount(); });
     await settle(300); if (query.has("glassBackdrop")) prepareTourGlassBackdrop();
+    if (query.has("cycle")) await checkCollapsedItemSwitch(check, settle);
     const island = () => document.querySelector<HTMLElement>(".island")!;
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     if (query.has("clockWeather")) await checkClockWeatherIsland(check, settle);

@@ -164,7 +164,7 @@
 }
 
 /* Lit only for keyboard focus: a mouse click on one of its buttons should not leave a white line. */
-.island--collapsed:has(:focus-visible) {
+.island--collapsed:has(:focus-visible:not(.island__agent-light)) {
   box-shadow:
     inset 0 -1px 0 rgba(var(--overlay-rgb), 0.26),
     inset 0 0 18px var(--color-white-a08),
@@ -186,7 +186,7 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-[data-tone="light"] .island--collapsed:not(:has(:focus-visible)) {
+[data-tone="light"] .island--collapsed:not(:has(:focus-visible:not(.island__agent-light))) {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 
