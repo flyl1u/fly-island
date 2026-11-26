@@ -1,9 +1,7 @@
-import type { AgentProvider, AgentSessionSummary, AgentTaskStatus, ExternalAgentStatus } from "./api";
-import { hasBackgroundWork, sessionProject } from "./sessionList.ts";
+import type { AgentProvider, AgentSessionSummary, ExternalAgentStatus } from "./api";
+import { isSessionRunning, isSessionWaiting, sessionProject } from "./sessionList.ts";
+import { sessionKey } from "./unseen.ts";
 import { AGENT_PROVIDER_LABELS } from "./status.ts";
-
-/** How long a finished session's title stays on the island before the todo comes back. */
-export const COMPLETED_TITLE_HOLD_MS = 3000;
 
 export type AgentSession = {
   /** Null for a source reported by a plugin or the local API. */
@@ -13,7 +11,10 @@ export type AgentSession = {
   title: string;
 };
 
-type Candidate = { session: AgentSession; phase: AgentTaskStatus["phase"]; updatedAt: number; backgroundTasks?: number };
+type Candidate = { key: string; session: AgentSession; running: boolean; updatedAt: number; startedAt: number };
+
+/** A session that is working now. `session` is null when it has nothing to be named by. */
+export type RunningAgent = { key: string; session: AgentSession | null; startedAt: number };
 
 /**
  * Claude Code and Codex come from the session files (the Agent page's list), so the island
@@ -21,64 +22,46 @@ type Candidate = { session: AgentSession; phase: AgentTaskStatus["phase"]; updat
  * title in the status snapshot.
  */
 function candidates(sessions: AgentSessionSummary[], others: ExternalAgentStatus[] | undefined): Candidate[] {
-  const fromSessions = sessions.map((summary) => ({
+  const fromSessions = sessions.filter((summary) => isSessionRunning(summary) || isSessionWaiting(summary)).map((summary) => ({
+    key: sessionKey(summary),
+    running: isSessionRunning(summary),
+    startedAt: summary.turnStartedAt ?? summary.updatedAt,
     session: {
       provider: summary.provider,
       label: AGENT_PROVIDER_LABELS[summary.provider],
       title: (summary.title ?? sessionProject(summary.cwd) ?? "").trim(),
     },
-    phase: summary.phase,
     updatedAt: summary.updatedAt,
-    backgroundTasks: summary.backgroundTasks,
   }));
-  const fromOthers = (others ?? []).map((other) => ({
+  const fromOthers = (others ?? []).filter((other) => other.phase === "running" || other.phase === "waiting").map((other) => ({
+    key: `other:${other.id}`,
+    running: other.phase === "running",
+    startedAt: other.updatedAt,
     session: { provider: null, label: other.name, title: (other.title ?? "").trim() },
-    phase: other.phase,
     updatedAt: other.updatedAt,
   }));
-  return [...fromSessions, ...fromOthers].filter((candidate) => candidate.session.title);
-}
-
-function isVisible(candidate: Candidate, now: number) {
-  const { phase, updatedAt } = candidate;
-  return (
-    hasBackgroundWork(candidate) ||
-    phase === "running" ||
-    phase === "waiting" ||
-    phase === "failed" ||
-    phase === "stale" ||
-    (phase === "completed" && now - updatedAt < COMPLETED_TITLE_HOLD_MS)
-  );
+  return [...fromSessions, ...fromOthers];
 }
 
 /**
- * The session the collapsed island should name: a running, waiting, failed or stale one, one whose
- * background tasks still run (`hasBackgroundWork`), or one that completed less than `COMPLETED_TITLE_HOLD_MS` ago. With several, the most recently
- * updated wins.
+ * Every session working now (only `running` counts, not waiting or idle), so the island can tell
+ * when one starts. Untitled ones are listed too: gaining a title is not a new task.
  */
+export function listRunningAgents(sessions: AgentSessionSummary[], others: ExternalAgentStatus[] | undefined): RunningAgent[] {
+  return candidates(sessions, others).filter((candidate) => candidate.running)
+    .map(({ key, session, startedAt }) => ({ key, session: session.title ? session : null, startedAt }));
+}
+
+/** The newest running or waiting session with a title. */
 export function pickAgentSession(
   sessions: AgentSessionSummary[],
   others: ExternalAgentStatus[] | undefined,
-  now: number,
 ): AgentSession | null {
   let picked: Candidate | null = null;
-  for (const candidate of candidates(sessions, others)) {
-    if (isVisible(candidate, now) && (!picked || candidate.updatedAt > picked.updatedAt)) {
+  for (const candidate of candidates(sessions, others).filter((candidate) => candidate.session.title)) {
+    if (!picked || candidate.updatedAt > picked.updatedAt) {
       picked = candidate;
     }
   }
   return picked?.session ?? null;
-}
-
-/** When the next completed title stops being shown, or null when nothing expires. */
-export function agentSessionExpiresAt(
-  sessions: AgentSessionSummary[],
-  others: ExternalAgentStatus[] | undefined,
-  now: number,
-): number | null {
-  const expiries = candidates(sessions, others)
-    .filter((candidate) => candidate.phase === "completed" && !hasBackgroundWork(candidate))
-    .map((candidate) => candidate.updatedAt + COMPLETED_TITLE_HOLD_MS)
-    .filter((expiresAt) => expiresAt > now);
-  return expiries.length > 0 ? Math.min(...expiries) : null;
 }

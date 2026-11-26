@@ -107,6 +107,11 @@ export function readClipboardThumbnail(id: string) {
   return invoke<string>("read_clipboard_history_thumbnail", { id });
 }
 
+/** Explorer's icon for a file entry's first file (PNG data URL); null when it is gone or the shell has none. */
+export function readClipboardFileIcon(id: string) {
+  return invoke<string | null>("read_clipboard_history_file_icon", { id });
+}
+
 /** The main frontend calls this only when a shortcut is routed to the island. */
 export function showClipboardHistoryIsland() {
   return invoke<void>("show_clipboard_history_island");

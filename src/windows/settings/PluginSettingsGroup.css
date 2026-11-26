@@ -1,0 +1,12 @@
+.plugin-group__permissions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.plugin-group__permission {
+  color: var(--color-text-subtle);
+  font-size: calc(11px * var(--island-font-scale, 1));
+}

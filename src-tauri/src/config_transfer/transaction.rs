@@ -28,7 +28,7 @@ pub(super) fn read_limited(path: &Path, limit: usize) -> Result<Vec<u8>, String>
     Ok(bytes)
 }
 
-pub(super) fn write(path: &Path, bytes: Option<&[u8]>) -> Result<(), String> {
+pub(crate) fn write(path: &Path, bytes: Option<&[u8]>) -> Result<(), String> {
     check_path(path)?;
     if let Some(bytes) = bytes {
         let parent = path.parent().ok_or("Missing configuration directory")?;

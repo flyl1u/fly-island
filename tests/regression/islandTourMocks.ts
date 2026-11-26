@@ -84,6 +84,9 @@ export const TOUR_SESSIONS: AgentSessionSummary[] = [
   },
 ];
 
+/** Tasks a check starts while the tour runs. */
+export const TOUR_STARTED_SESSIONS: AgentSessionSummary[] = [];
+
 /** Sessions of the plugin-market agents, listed only when the island asks for them (`native`). */
 const TOUR_NATIVE_SESSIONS: AgentSessionSummary[] = [
   {
@@ -100,7 +103,7 @@ const TOUR_NATIVE_SESSIONS: AgentSessionSummary[] = [
 
 export function tourSessions(native: unknown): AgentSessionSummary[] {
   const wanted = Array.isArray(native) ? native : [];
-  return [...TOUR_SESSIONS, ...TOUR_NATIVE_SESSIONS.filter((session) => wanted.includes(session.provider))];
+  return [...TOUR_SESSIONS, ...TOUR_STARTED_SESSIONS, ...TOUR_NATIVE_SESSIONS.filter((session) => wanted.includes(session.provider))];
 }
 
 export const TOUR_KIMI_USAGE = {

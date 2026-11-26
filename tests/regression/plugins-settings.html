@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="zh-CN">
 <meta charset="UTF-8" />
+<!-- No network: remote images (author avatars) are refused, as when offline. -->
+<meta http-equiv="Content-Security-Policy" content="img-src 'self' data: blob:" />
 <title>Plugins settings regression</title>
 <style>body { margin: 24px; } #fixture { width: 300px; } #results { white-space: pre-wrap; }</style>
 <div id="fixture"></div><pre id="results" role="status">Running…</pre>

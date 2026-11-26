@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  MAX_COLLAPSED_ISLAND_WIDTH,
-  MIN_COLLAPSED_ISLAND_WIDTH,
+  AUTO_WIDTH_DEFAULT,
   alignCollapsedIslandWidth,
   getClipboardExpandedHeight,
-  getCollapsedIslandWidth,
   getTodoScrollStartRows,
   getTodoVisualRows,
 } from "../../src/windows/island/layout.ts";
@@ -23,20 +21,6 @@ function withStorage(entries, run) {
   }
 }
 
-test("the collapsed island grows with its text between the min and max widths", () => {
-  assert.equal(getCollapsedIslandWidth(""), MIN_COLLAPSED_ISLAND_WIDTH);
-  assert.equal(getCollapsedIslandWidth("x".repeat(200)), MAX_COLLAPSED_ISLAND_WIDTH);
-  const mid = getCollapsedIslandWidth("abcdefg");
-  assert.ok(mid > MIN_COLLAPSED_ISLAND_WIDTH && mid < MAX_COLLAPSED_ISLAND_WIDTH, String(mid));
-  assert.equal(Number.isInteger(mid), true);
-});
-
-test("plugin slots widen the collapsed island by the width they need, up to the max", () => {
-  assert.equal(getCollapsedIslandWidth("", 42), MIN_COLLAPSED_ISLAND_WIDTH + 42);
-  assert.equal(getCollapsedIslandWidth("", -10), MIN_COLLAPSED_ISLAND_WIDTH);
-  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), MAX_COLLAPSED_ISLAND_WIDTH);
-});
-
 test("the todo list scrolls after as many rows as fit under the max panel height", () => {
   // 490px is the default: eight of the compact 38px rows fit under it (six of the old 46px ones did).
   assert.equal(getTodoScrollStartRows(490), 8);
@@ -52,10 +36,10 @@ test("the collapsed width is nudged so the centred island starts on a whole devi
   assert.equal(alignCollapsedIslandWidth(301, 820, 1), 300);
   assert.equal(alignCollapsedIslandWidth(300, 820, 1), 300);
   for (const ratio of [1, 1.25, 1.5, 1.75, 2]) {
-    for (let width = MIN_COLLAPSED_ISLAND_WIDTH; width <= MAX_COLLAPSED_ISLAND_WIDTH; width++) {
-      const aligned = alignCollapsedIslandWidth(width, 820, ratio);
+    for (let width = AUTO_WIDTH_DEFAULT.min; width <= AUTO_WIDTH_DEFAULT.max; width++) {
+      const aligned = alignCollapsedIslandWidth(width, 820, ratio, AUTO_WIDTH_DEFAULT.min, AUTO_WIDTH_DEFAULT.max);
       assert.ok(Math.abs(aligned - width) <= 4, `${width} at ${ratio} -> ${aligned}`);
-      assert.ok(aligned >= MIN_COLLAPSED_ISLAND_WIDTH && aligned <= MAX_COLLAPSED_ISLAND_WIDTH);
+      assert.ok(aligned >= AUTO_WIDTH_DEFAULT.min && aligned <= AUTO_WIDTH_DEFAULT.max);
       assert.equal(Number.isInteger(leftEdge(aligned, ratio)), true, `${width} at ${ratio} -> ${aligned}`);
     }
   }
@@ -142,6 +126,7 @@ test("only enabled plugins that declare a page get one", async () => {
   assert.equal(progress.page, "plugin:activity-progress");
   assert.equal(progress.rows, 2, "the page fits the rows the plugin reports");
   assert.equal(progress.actions, 1);
+  assert.equal(progress.note, false, "a page with an empty note is sized without a note line");
   assert.equal(progress.attention, true, "a task needing attention puts a dot on the page's button");
   assert.equal(pages[1].rows, 0, "a plugin that has not published yet still has a page");
   assert.equal(pages[2].icon, "puzzle", "an unknown icon falls back to the host's");

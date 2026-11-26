@@ -50,6 +50,14 @@
   color: var(--text-2);
 }
 
+/* The shell's own colourful icon: no tile behind it, readable on dark and light alike. */
+.clipboard-item__text-icon--system img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .clipboard-item__thumb {
   background: var(--color-white-a04);
   border-radius: var(--corner-xs);

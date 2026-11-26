@@ -18,13 +18,13 @@ src/
 │   ├── clipboard/           # 剪贴板历史、快捷键
 │   ├── config-transfer/     # 配置备份 / 迁移：格式校验、前缀过滤、批量存储恢复、原生对话框与启动恢复
 │   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开
-│   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/ 子目录
+│   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/、telegram/ 等子目录
 │   ├── agent-status/        # AI 代理状态；sounds/ 为 Agent 音效：内置音效播放、设置 → 声音页、导入音效包
 │   ├── appearance/          # 外观设置、布局编辑器、预设；岛屿设置（fly-island-settings）的范围在 settingsLimits.ts、首次启动值在 settingsDefaults.ts、读取按领域在 normalizeLayout / Agent / BehaviorSettings.ts，新设置加在这几个文件里，settings.ts 只做入口
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
 │   ├── weather/             # 时间与天气内置插件：城市设置/缓存、Open-Meteo IPC、WMO映射、叶子时间与天气、共享低频刷新
 │   └── updater/             # 自动更新
-├── components/              # 与领域无关的通用 UI（controls/ 开关、数字输入、下拉等控件，插件页和岛上还在用；settings/ 设置窗口的分组列表：组、行、开关行、滑块行、数字行、颜色、输入框、分段选择、下拉、文字链接，设置页都用它；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
+├── components/              # 与领域无关的通用 UI（countdown/ 绝对截止时间的叶子倒计时，controls/ 开关、数字输入、下拉等控件，插件页和岛上还在用；settings/ 设置窗口的分组列表：组、行、开关行、滑块行、数字行、颜色、输入框、分段选择、下拉、文字链接，设置页都用它；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写
 ├── shared/storage/          # 入口最早执行的 localStorage 更名迁移
 ├── utils/                   # 无副作用的纯函数（文本测量、颜色、日期、数值）
@@ -112,7 +112,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
   - 只使用可擦除的 TS 语法，不用 `enum`、`namespace`、构造函数参数属性。
 - `tests/unit/updater-controller.test.mjs` 和 `tests/unit/island-automation.test.mjs` 用 `vm` 加载源码，并按 import 路径注入 mock。修改这些被测模块的 import 时，必须同步更新测试里的 mock 表。
 - 移动被测模块时，同步更新 `tests/` 中的导入路径，并确认测试通过。
-- 浏览器回归页 `tests/regression/*.html` 用于检查界面和数据兼容性：`pnpm test:regression` 自动跑全部页面（新增页面时把它和启动检查的查询参数加进 `scripts/run-regression.mjs` 的 `PAGES`，结果写成 `<html data-test-result>` 或 `#results` 中的 PASS / FAIL 行）；也可以在 `pnpm dev` 启动后打开 `/tests/regression/<name>.html` 手动查看。设置窗口在 Tauri 之外打开会是空白，看设置页用 `settings.html`（`?page=<分类>` 直接打开某一页）。设置页的 mock 在 `tests/regression/settingsMocks.ts`。回归页不经过 `main.tsx`，新增回归页时要自己导入 `src/styles/tokens.css`，否则组件样式中的变量无法解析。回归页的 `.tsx` 由 `tsconfig.tests.json` 做严格类型检查（`pnpm check` 中的 `check:tests-types`），修改组件属性或 `api.ts` 类型时要同步更新回归页中的 mock。
+- 浏览器回归页 `tests/regression/*.html` 用于检查界面和数据兼容性：`pnpm test:regression` 自动跑全部页面（新增页面时把它和启动检查的查询参数加进 `scripts/regression-pages.mjs` 的 `PAGES`，结果写成 `<html data-test-result>` 或 `#results` 中的 PASS / FAIL 行）；也可以在 `pnpm dev` 启动后打开 `/tests/regression/<name>.html` 手动查看。设置窗口在 Tauri 之外打开会是空白，看设置页用 `settings.html`（`?page=<分类>` 直接打开某一页）。设置页的 mock 在 `tests/regression/settingsMocks.ts`。回归页不经过 `main.tsx`，新增回归页时要自己导入 `src/styles/tokens.css`，否则组件样式中的变量无法解析。回归页的 `.tsx` 由 `tsconfig.tests.json` 做严格类型检查（`pnpm check` 中的 `check:tests-types`），修改组件属性或 `api.ts` 类型时要同步更新回归页中的 mock。
 
 ## 新增 Tauri 命令清单
 
@@ -121,6 +121,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 3. 如果用到插件或核心权限，更新 `src-tauri/capabilities/default.json`。
 4. 运行 `pnpm build` 和 Rust 侧要求的验证。
 
-设备电量和音频界面放在 features/device-battery，护眼休息窗口组合放在 windows/eye-care，日历标记放在 features/todos/calendar-marks。市场卡片使用 features/plugins 的安装状态。
+设备电量和音频界面放在 features/device-battery，护眼休息窗口组合放在 windows/eye-care，日历标记放在 features/todos/calendar-marks。市场卡片使用 features/plugins 的安装状态。护眼在岛内的页面放在 features/eye-care/EyeCareIslandPanel 与 islandHeight（`IslandPages` 与 `expandedHeight` 各一处分支），不要改 `features/plugins/PluginPanel` 里的通用插件页。
+
+**硬性规则：新增插件必须在 `features/plugins/native/catalog.ts` 声明设置归类（`settings`），禁止把设置堆在插件页。** 规则和图标要求见 [插件设置归类规范（长期）](../docs/design/settings.md#插件设置归类规范长期)；设置面板和侧栏只按声明渲染，不写插件 id 分支。
 
 插件 API v1：`features/plugins/` 保存协议类型与共享快照；额度/会话适配在 agent-status 中，插件消息在 messages 中；新增界面仍复用 SettingsRow 与岛屿原生组件。

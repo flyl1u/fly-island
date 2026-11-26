@@ -1,6 +1,7 @@
 //! Opens another program's SQLite store (Cursor's state.vscdb, Hermes' state.db) for reading
 //! only. The owner keeps writing it in WAL mode; a read-only connection never blocks it, and a
-//! short busy timeout gives up rather than waiting on a checkpoint.
+//! short busy timeout gives up rather than waiting on a checkpoint. A store that must not even
+//! be locked is copied instead (sqlite_snapshot.rs).
 
 use std::{path::Path, time::Duration};
 

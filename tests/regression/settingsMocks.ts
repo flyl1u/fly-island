@@ -28,9 +28,13 @@ export const translationShortcutCalls: string[] = [];
 export const mediaShortcutCalls: { enabled: boolean; shortcuts: MusicShortcuts }[] = [];
 // Kept like the native store, so a page opened again reads back what was saved.
 let clipboardSettings = { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true };
+/** A page that needs a plugin host sets `handle`; undefined falls through to the answers below. */
+export const pluginMock: { handle?: (command: string, args: Record<string, unknown>) => unknown } = {};
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
+  const handled = pluginMock.handle?.(command, args);
+  if (handled !== undefined) return handled;
   switch (command) {
     case "list_installed_fonts": return [
       { family: "Consolas", label: "Consolas" },
@@ -99,6 +103,8 @@ mockIPC((command, payload) => {
       return next;
     }
     case "get_qq_notification_state": return { revision: ++revision, enabled: false, status: "disabled", items: [], error: null };
+    case "cancel_plugin_install": return false;
+    case "get_telegram_notification_state": return { revision: ++revision, enabled: false, status: "disabled", items: [], error: null };
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
     case "get_wechat_reminder_state":
     case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: args.enabled ?? true, status: args.enabled === false ? "disabled" : "listening", pending: false, lastAttentionAt: null, error: null, previewEnabled: false, previewStatus: "off", hideMinimizedTaskbar: false, messages: [] };

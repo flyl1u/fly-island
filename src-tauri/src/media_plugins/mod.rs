@@ -45,10 +45,16 @@ pub(crate) async fn netease_plugin_status() -> Result<netease::NeteasePluginStat
 }
 /// Runs on the calling thread; the commands move it off the IPC thread first.
 fn operate_blocking(app: &tauri::AppHandle, data: &std::path::Path, remove: bool) -> Result<service::OperationResult, PluginError> {
-    let _guard = Operation::acquire()?;
-    let result = if remove { service::uninstall(app, data) }
-        else { tauri::async_runtime::block_on(service::install(app, data)) };
-    progress(app, if result.is_ok() { "done" } else { "error" });
+    let result = Operation::acquire().and_then(|_guard| {
+        let result = if remove { service::uninstall(app, data) }
+            else { tauri::async_runtime::block_on(service::install(app, data)) };
+        progress(app, if result.is_ok() { "done" } else { "error" });
+        result
+    });
+    let reason = result.as_ref().map_or_else(|error| error.kind, |_| "success");
+    crate::app_log::event(crate::app_log::Category::Plugin, "netease_operation", &[
+        ("reason", reason), ("action", if remove { "uninstall" } else { "install" }),
+    ]);
     result
 }
 async fn operate(app: tauri::AppHandle, remove: bool) -> Result<service::OperationResult, PluginError> {

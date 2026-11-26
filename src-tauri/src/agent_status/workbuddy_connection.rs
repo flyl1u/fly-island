@@ -22,11 +22,12 @@ use super::workbuddy_auth::{
     self as auth, AuthError, CookieMetadata, FailedChecks, FailureAction, Renewal,
 };
 use super::workbuddy_cookie_vault as vault;
+use super::workbuddy_official::SavedLogin;
 use super::workbuddy_usage::{self, WorkbuddyUsage, SUMMARY_URL, USAGE_PAGE};
 
-const WINDOW_LABEL: &str = "workbuddy-sign-in";
+pub(super) const WINDOW_LABEL: &str = "workbuddy-sign-in";
 const USAGE_CHANGED: &str = "workbuddy-usage-changed";
-const REFRESH_INTERVAL: Duration = Duration::from_secs(300);
+pub(super) const REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 const STARTUP_DELAY: Duration = Duration::from_secs(30);
 const WORKBUDDY_HOST: &str = "www.workbuddy.cn";
 const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
@@ -36,7 +37,7 @@ const SITE_SETTLE: Duration = Duration::from_secs(2);
 const SITE_PROBE_INTERVAL: Duration = Duration::from_millis(250);
 const SCRIPT_TIMEOUT: Duration = Duration::from_secs(3);
 static SITE_LOADED: StdMutex<Option<Sender<()>>> = StdMutex::new(None);
-static SCHEDULE_CHANGED: Notify = Notify::const_new();
+pub(super) static SCHEDULE_CHANGED: Notify = Notify::const_new();
 
 // Wry reports NavigationCompleted even for failed navigations. Check for the official
 // document and wait for the site's own account request before checking the billing session.
@@ -63,32 +64,59 @@ pub(crate) enum WorkbuddyState {
     SignedOut,
     LoginRequired,
     Ready,
-    Connected { usage: WorkbuddyUsage },
-    Unavailable,
+    Connected {
+        usage: WorkbuddyUsage,
+    },
+    Unavailable {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        reason: Option<&'static str>,
+    },
 }
 
-struct CachedUsage {
-    fingerprint: [u8; 32],
-    checked: Instant,
+impl WorkbuddyState {
+    const UNAVAILABLE: Self = Self::Unavailable { reason: None };
+}
+
+pub(super) struct CachedUsage {
+    pub(super) fingerprint: [u8; 32],
+    pub(super) checked: Instant,
 }
 
 #[derive(Default)]
-struct Connection {
-    cached: Option<CachedUsage>,
-    last_state: Option<WorkbuddyState>,
-    user_agent: Option<String>,
-    signing_in: bool,
-    finish_login: bool,
-    restored_startup: bool,
-    tried_startup_replacement: bool,
-    failures: FailedChecks,
-    retry_at: Option<Instant>,
-    renewal: Option<Renewal>,
+pub(super) struct Connection {
+    pub(super) cached: Option<CachedUsage>,
+    pub(super) last_state: Option<WorkbuddyState>,
+    pub(super) user_agent: Option<String>,
+    pub(super) signing_in: bool,
+    pub(super) finish_login: bool,
+    pub(super) restored_startup: bool,
+    pub(super) tried_startup_replacement: bool,
+    pub(super) failures: FailedChecks,
+    pub(super) retry_at: Option<Instant>,
+    pub(super) renewal: Option<Renewal>,
     /// The cookie set last written to the Credential Manager, so an unchanged one is not rewritten.
-    saved_fingerprint: Option<[u8; 32]>,
+    pub(super) saved_fingerprint: Option<[u8; 32]>,
+    /// Official-protocol Bearer credential (loaded from the vault; preferred over website cookies).
+    pub(super) login: Option<SavedLogin>,
+    /// Pending state for an in-flight official login.
+    pub(super) official_login_state: Option<String>,
+    pub(super) official_login_task: Option<tauri::async_runtime::JoinHandle<()>>,
+    failure_diagnostic: Option<(AuthError, bool)>,
 }
 
-fn connection() -> &'static Mutex<Connection> {
+fn cancel_official_login(connection: &mut Connection) {
+    connection.official_login_state = None;
+    if let Some(task) = connection.official_login_task.take() {
+        task.abort();
+    }
+}
+
+fn should_log_failure(connection: &mut Connection, error: AuthError, expired: bool) -> bool {
+    let next = Some((error, expired));
+    std::mem::replace(&mut connection.failure_diagnostic, next) != next
+}
+
+pub(super) fn connection() -> &'static Mutex<Connection> {
     static CONNECTION: OnceLock<Mutex<Connection>> = OnceLock::new();
     CONNECTION.get_or_init(|| Mutex::new(Connection::default()))
 }
@@ -100,11 +128,11 @@ fn profile_path(app: &AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| e.to_string())
 }
 
-fn marker_path(app: &AppHandle) -> Result<PathBuf, String> {
+pub(super) fn marker_path(app: &AppHandle) -> Result<PathBuf, String> {
     profile_path(app).map(|path| path.join("connected"))
 }
 
-fn publish(app: &AppHandle, state: WorkbuddyState) {
+pub(super) fn publish(app: &AppHandle, state: WorkbuddyState) {
     for label in [
         crate::island::WINDOW_LABEL,
         crate::settings_window::WINDOW_LABEL,
@@ -117,8 +145,19 @@ fn workbuddy_url(url: &Url) -> bool {
     url.scheme() == "https" && url.host_str() == Some(WORKBUDDY_HOST) && url.port().is_none()
 }
 
+/// The official plugin login is served from codebuddy.cn; allow its host and the QQ/WeChat QR
+/// callbacks but never an arbitrary lookalike.
+pub(super) fn official_login_url(url: &Url) -> bool {
+    url.scheme() == "https"
+        && url.port().is_none()
+        && url.username().is_empty()
+        && url.password().is_none()
+        && matches!(url.host_str(), Some("www.codebuddy.cn" | "codebuddy.cn"))
+}
+
 fn login_navigation(url: &Url) -> bool {
     workbuddy_url(url)
+        || official_login_url(url)
         || url.scheme() == "https"
             && url.port().is_none()
             && matches!(
@@ -136,7 +175,7 @@ fn on_usage_page(url: &Url) -> bool {
     workbuddy_url(url) && url.path().trim_end_matches('/') == "/profile/plans-usage"
 }
 
-fn login_window(app: &AppHandle) -> Result<WebviewWindow, String> {
+pub(super) fn login_window(app: &AppHandle) -> Result<WebviewWindow, String> {
     // WebView2's environment override takes precedence over the builder's data directory.
     if std::env::var_os("WEBVIEW2_USER_DATA_FOLDER").is_some_and(|folder| !folder.is_empty()) {
         return Err("WorkBuddy requires an isolated WebView2 data directory.".into());
@@ -207,6 +246,7 @@ fn login_window(app: &AppHandle) -> Result<WebviewWindow, String> {
             let window = closing.clone();
             tauri::async_runtime::spawn(async move {
                 let mut connection = connection().lock().await;
+                cancel_official_login(&mut connection);
                 if connection.signing_in {
                     if window.url().is_ok_and(|url| on_usage_page(&url)) {
                         check_login(&app, &window, &mut connection, true).await;
@@ -349,22 +389,11 @@ async fn refresh(
 }
 
 fn restore_saved(window: &WebviewWindow, replace: bool) -> Result<bool, AuthError> {
-    let saved = vault::load().map_err(|_| {
-        auth::log("restore", AuthError::CredentialRead, []);
-        AuthError::CredentialRead
-    })?;
+    let saved = vault::load().map_err(|_| AuthError::CredentialRead)?;
     if saved.is_empty() {
-        auth::log("restore", AuthError::NoCookies, []);
         return Ok(false);
     }
-    let current = window.cookies().map_err(|_| {
-        auth::log(
-            "restore",
-            AuthError::Webview,
-            saved.iter().map(CookieMetadata::from),
-        );
-        AuthError::Webview
-    })?;
+    let current = window.cookies().map_err(|_| AuthError::Webview)?;
     let now = unix_seconds();
     let wanted = vault::cookies_to_restore(&saved, &current, now, replace);
     let mut restored = false;
@@ -376,14 +405,6 @@ fn restore_saved(window: &WebviewWindow, replace: bool) -> Result<bool, AuthErro
             failed = true;
         }
     }
-    let reason = if failed {
-        "webview_error"
-    } else if restored {
-        "restored"
-    } else {
-        "present_or_expired"
-    };
-    auth::log("restore", reason, saved.iter().map(CookieMetadata::from));
     if failed {
         Err(AuthError::Webview)
     } else {
@@ -410,15 +431,13 @@ fn save_cookies(connection: &mut Connection, window: &WebviewWindow, now: i64) -
     let fingerprint = serde_json::to_vec(&snapshot)
         .ok()
         .map(|bytes| Sha256::digest(bytes).into());
-    let reason = match fingerprint {
-        Some(fingerprint) if connection.saved_fingerprint == Some(fingerprint) => "unchanged",
+    match fingerprint {
+        Some(fingerprint) if connection.saved_fingerprint == Some(fingerprint) => {}
         Some(fingerprint) if vault::save(&snapshot) => {
             connection.saved_fingerprint = Some(fingerprint);
-            "saved"
         }
-        _ => "credential_write_failed",
-    };
-    auth::log("save", reason, snapshot.iter().map(CookieMetadata::from));
+        _ => auth::log("save", "credential_write_failed", []),
+    }
     expires
 }
 
@@ -461,11 +480,8 @@ async fn read_usage(
     let url = Url::parse(SUMMARY_URL).map_err(|_| AuthError::InvalidResponse)?;
     let cookies = summary_cookies(window, &url)?;
     let cookie = summary_header(&cookies)?;
-    if cookie.is_none() {
-        auth::log("read", AuthError::NoCookies, []);
-        if !visited {
-            return Err(AuthError::NoCookies);
-        }
+    if cookie.is_none() && !visited {
+        return Err(AuthError::NoCookies);
     }
     let fingerprint = Sha256::digest(cookie.as_ref().map_or(&[][..], HeaderValue::as_bytes)).into();
     if let (Some(cache), Some(WorkbuddyState::Connected { usage })) =
@@ -482,11 +498,7 @@ async fn read_usage(
             .user_agent
             .insert(browser_user_agent(window).await?),
     };
-    let usage = workbuddy_usage::query(url, cookie, user_agent)
-        .await
-        .inspect_err(|error| {
-            auth::log("read", error, cookies.iter().map(CookieMetadata::from));
-        })?;
+    let usage = workbuddy_usage::query(url, cookie, user_agent).await?;
     let now = Instant::now();
     connection.cached = Some(CachedUsage {
         fingerprint,
@@ -516,39 +528,42 @@ fn record_failure(
     let now = Instant::now();
     let (history, action) = auth::failure_action(connection.failures, error, now);
     connection.failures = history;
-    let cookies = window
-        .and_then(|window| window.cookies().ok())
-        .unwrap_or_default();
-    let metadata = cookies
-        .iter()
-        .filter(|cookie| vault::workbuddy_cookie(cookie))
-        .map(CookieMetadata::from);
+    let expired = matches!(action, FailureAction::ClearSaved);
+    if should_log_failure(connection, error, expired) {
+        let cookies = window
+            .and_then(|window| window.cookies().ok())
+            .unwrap_or_default();
+        auth::log(
+            if expired { "expired" } else { "read" },
+            error,
+            cookies
+                .iter()
+                .filter(|cookie| vault::workbuddy_cookie(cookie))
+                .map(CookieMetadata::from),
+        );
+    }
     match action {
         FailureAction::RetryAfter(delay) => {
             connection.retry_at = Some(now + delay);
-            auth::log(
-                "retry",
-                format_args!("{error} after_s={}", delay.as_secs()),
-                metadata,
-            );
-            WorkbuddyState::Unavailable
+            WorkbuddyState::Unavailable {
+                reason: (error == AuthError::CurlUnavailable).then_some("curlUnavailable"),
+            }
         }
         FailureAction::ClearSaved => {
             connection.retry_at = None;
             connection.renewal = None;
-            let cleared = vault::clear();
-            connection.saved_fingerprint = None;
-            auth::log(
-                "expired",
-                format_args!("{error} vault_cleared={cleared}"),
-                metadata,
-            );
+            if connection.login.take().is_some() {
+                let _ = vault::clear_login();
+            } else {
+                let _ = vault::clear();
+                connection.saved_fingerprint = None;
+            }
             WorkbuddyState::LoginRequired
         }
     }
 }
 
-async fn refresh_and_publish(
+pub(super) async fn refresh_and_publish(
     app: &AppHandle,
     connection: &mut Connection,
     force: bool,
@@ -558,18 +573,25 @@ async fn refresh_and_publish(
         return WorkbuddyState::LoginRequired;
     }
     if !force && connection.retry_at.is_some_and(|at| at > Instant::now()) {
-        return previous.unwrap_or(WorkbuddyState::Unavailable);
+        return previous.unwrap_or(WorkbuddyState::UNAVAILABLE);
     }
-    let state = match login_window(app) {
-        Ok(window) => match refresh(connection, &window, force).await {
-            Ok(usage) => {
-                connection.finish_login = false;
-                WorkbuddyState::Connected { usage }
-            }
-            Err(error) => record_failure(connection, Some(&window), error),
+    let state = match super::workbuddy_official_flow::read_usage_official(connection, force).await {
+        Some(Ok(usage)) => WorkbuddyState::Connected { usage },
+        Some(Err(error)) => record_failure(connection, None, error),
+        None => match login_window(app) {
+            Ok(window) => match refresh(connection, &window, force).await {
+                Ok(usage) => {
+                    connection.finish_login = false;
+                    WorkbuddyState::Connected { usage }
+                }
+                Err(error) => record_failure(connection, Some(&window), error),
+            },
+            Err(_) => record_failure(connection, None, AuthError::Webview),
         },
-        Err(_) => record_failure(connection, None, AuthError::Webview),
     };
+    if matches!(state, WorkbuddyState::Connected { .. }) {
+        connection.failure_diagnostic = None;
+    }
     connection.last_state = Some(state);
     if force || previous != Some(state) {
         publish(app, state);
@@ -589,12 +611,18 @@ fn maintenance_at(
     {
         return None;
     }
-    Some(
-        connection
-            .retry_at
-            .or(connection.renewal.map(|renewal| renewal.at))
-            .unwrap_or(startup_at),
-    )
+    Some(refresh_deadline(connection, startup_at))
+}
+
+fn refresh_deadline(connection: &Connection, startup_at: Instant) -> Instant {
+    connection
+        .retry_at
+        .or(connection.renewal.map(|renewal| renewal.at))
+        .or(connection
+            .cached
+            .as_ref()
+            .map(|cache| cache.checked + REFRESH_INTERVAL))
+        .unwrap_or(startup_at)
 }
 
 pub(crate) fn init(app: &AppHandle) {
@@ -633,6 +661,7 @@ async fn check_login(
     // A usage page can finish loading before the signed-out redirect.
     let state = match read_usage(connection, window, force, false).await {
         Ok(usage) if marker_path(app).is_ok_and(|path| fs::write(path, b"1").is_ok()) => {
+            connection.failure_diagnostic = None;
             connection.signing_in = false;
             connection.finish_login = false;
             let _ = window.hide();
@@ -654,7 +683,7 @@ async fn check_login(
         }
         _ => {
             connection.finish_login = true;
-            WorkbuddyState::Unavailable
+            WorkbuddyState::UNAVAILABLE
         }
     };
     connection.last_state = Some(state);
@@ -670,15 +699,18 @@ pub async fn get_workbuddy_usage(
     cached_only: Option<bool>,
 ) -> Result<WorkbuddyState, String> {
     let mut connection = connection().lock().await;
-    let remembered = marker_path(&app)?.is_file();
+    let remembered = marker_path(&app)?.is_file() || connection.login.is_some();
     let force = refresh_now.unwrap_or(false);
-    if force && (connection.signing_in || connection.finish_login) {
+    if force
+        && connection.official_login_state.is_none()
+        && (connection.signing_in || connection.finish_login)
+    {
         let window = login_window(&app)?;
         return Ok(check_login(&app, &window, &mut connection, true).await);
     }
     if !remembered {
         return Ok(if connection.finish_login {
-            WorkbuddyState::Unavailable
+            WorkbuddyState::UNAVAILABLE
         } else {
             WorkbuddyState::SignedOut
         });
@@ -692,31 +724,6 @@ pub async fn get_workbuddy_usage(
 }
 
 #[tauri::command]
-pub async fn open_workbuddy_login(app: AppHandle) -> Result<(), String> {
-    let mut connection = connection().lock().await;
-    let window = login_window(&app)?;
-    if !connection.signing_in {
-        connection.cached = None;
-        connection.finish_login = false;
-        connection.failures = FailedChecks::default();
-        connection.retry_at = None;
-        connection.signing_in = true;
-        let url = Url::parse(USAGE_PAGE).map_err(|e| e.to_string())?;
-        if let Err(error) = window.navigate(url) {
-            connection.signing_in = false;
-            return Err(error.to_string());
-        }
-    }
-    if let Err(error) = window.show() {
-        connection.signing_in = false;
-        SCHEDULE_CHANGED.notify_one();
-        return Err(error.to_string());
-    }
-    SCHEDULE_CHANGED.notify_one();
-    crate::system::window_focus::focus_window(&window)
-}
-
-#[tauri::command]
 pub async fn disconnect_workbuddy(app: AppHandle) -> Result<(), String> {
     let mut connection = connection().lock().await;
     isolated_profile_path(&app)?;
@@ -727,6 +734,7 @@ pub async fn disconnect_workbuddy(app: AppHandle) -> Result<(), String> {
         None
     };
     connection.signing_in = false;
+    cancel_official_login(&mut connection);
     connection.finish_login = false;
     connection.cached = None;
     connection.last_state = None;
@@ -746,6 +754,9 @@ pub async fn disconnect_workbuddy(app: AppHandle) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     }
     let _ = vault::clear();
+    let _ = vault::clear_login();
+    connection.login = None;
+    connection.official_login_state = None;
     if let Err(error) = fs::remove_file(marker) {
         if error.kind() != std::io::ErrorKind::NotFound {
             return Err(error.to_string());
@@ -760,6 +771,52 @@ pub async fn disconnect_workbuddy(app: AppHandle) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_successful_read_anchors_the_next_check_and_a_retry_overrides_it() {
+        let now = Instant::now();
+        let startup = now - Duration::from_secs(30);
+        let mut connection = Connection::default();
+        assert_eq!(refresh_deadline(&connection, startup), startup);
+        connection.cached = Some(CachedUsage {
+            fingerprint: [0; 32],
+            checked: now,
+        });
+        assert_eq!(
+            refresh_deadline(&connection, startup),
+            now + REFRESH_INTERVAL
+        );
+        connection.retry_at = Some(now + Duration::from_secs(60));
+        assert_eq!(
+            refresh_deadline(&connection, startup),
+            now + Duration::from_secs(60)
+        );
+    }
+
+    #[test]
+    fn repeated_rejections_only_log_when_the_reason_or_expiry_changes() {
+        let mut connection = Connection::default();
+        assert!(should_log_failure(
+            &mut connection,
+            AuthError::Unauthorized,
+            false
+        ));
+        assert!(!should_log_failure(
+            &mut connection,
+            AuthError::Unauthorized,
+            false
+        ));
+        assert!(should_log_failure(
+            &mut connection,
+            AuthError::Unauthorized,
+            true
+        ));
+        assert!(should_log_failure(
+            &mut connection,
+            AuthError::Network,
+            false
+        ));
+    }
 
     #[test]
     fn only_the_workbuddy_site_can_complete_login() {

@@ -10,12 +10,19 @@ const usage = (fields) => ({ updatedAt: 1, fiveHour: null, sevenDay: null, model
 
 test("plugin-market agents default on and keep a switch of their own", () => {
   const settings = normalizeSettings(null);
-  assert.deepEqual([settings.agentShowCursor, settings.agentShowKimiCode, settings.agentShowHermes, settings.agentShowZcode], [true, true, true, true]);
+  assert.deepEqual([settings.agentShowCursor, settings.agentShowKimiCode, settings.agentShowCodeBuddy, settings.agentShowHermes, settings.agentShowZcode, settings.agentShowAntigravity], [true, true, true, true, true, true]);
   assert.equal(normalizeSettings({ agentShowCursor: false }).agentShowCursor, false);
   assert.equal(normalizeSettings({ agentShowHermes: "broken" }).agentShowHermes, true);
-  assert.deepEqual(normalizeSettings({}).agentQuotaSources, ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode"],
+  assert.deepEqual(normalizeSettings({}).agentQuotaSources, ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode", "antigravity"],
     "new users have every ring ticked, the plugin-market ones included");
-  assert.deepEqual(normalizeSettings({ agentQuotaSources: ["codex", "zcode"] }).agentQuotaSources, ["codex", "zcode"], "a saved choice is kept");
+});
+
+test("Antigravity's ring defaults on for older quota lists and keeps later opt-outs", () => {
+  const old = { agentQuotaSources: ["codex", "zcode"] };
+  const migrated = normalizeSettings(old);
+  assert.deepEqual(migrated.agentQuotaSources, ["codex", "zcode", "antigravity"]);
+  assert.deepEqual(normalizeSettings({ ...migrated, ...old }).agentQuotaSources, ["codex", "zcode"]);
+  assert.deepEqual(normalizeSettings({ ...old, agentShowAntigravity: false }).agentQuotaSources, ["codex", "zcode"]);
 });
 
 test("their sessions follow the installed-and-shown flags", () => {
@@ -45,8 +52,10 @@ test("Kimi Code and Z Code limits raise the same usage alerts as Claude and Code
   assert.deepEqual(reset.map((alert) => `${alert.kind}:${alert.agent}`), ["reset:kimi"]);
 });
 
-test("a Z Code trial balance stands in for the inner ring; other named windows do not", () => {
+test("a Z Code trial balance and Antigravity's model quota stand in for the inner ring; other named windows do not", () => {
   const trial = usage({ source: "zcode", models: [window(25, "Trial")] });
   assert.deepEqual(quotaRings(trial), { outer: null, inner: trial.models[0] });
-  assert.equal(quotaRings(usage({ source: "hud", models: [window(25, "Fable")] })), null);
+  const antigravity = usage({ source: "antigravity", models: [window(70, "Claude Sonnet 4.5"), window(5, "Gemini 4 Neon")] });
+  assert.deepEqual(quotaRings(antigravity), { outer: null, inner: antigravity.models[0] }, "the tightest model, as the reader lists it");
+  assert.deepEqual(quotaRings(usage({ source: "hud", models: [window(25, "Fable")] })), null);
 });

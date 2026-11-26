@@ -15,14 +15,14 @@ pub(crate) enum FullscreenSignal {
 }
 
 /// The state in which Windows suppresses its own toasts. `None` when it cannot be read.
-pub(crate) fn fullscreen_signal() -> FullscreenSignal {
+pub(crate) fn fullscreen_signal() -> (FullscreenSignal, &'static str) {
     // SAFETY: SHQueryUserNotificationState takes no arguments and returns the state
     // by value.
     match unsafe { SHQueryUserNotificationState() } {
-        Ok(state) if state == QUNS_BUSY || state == QUNS_RUNNING_D3D_FULL_SCREEN => {
-            FullscreenSignal::FullscreenApp
-        }
-        Ok(state) if state == QUNS_PRESENTATION_MODE => FullscreenSignal::Presentation,
-        _ => FullscreenSignal::None,
+        Ok(state) if state == QUNS_BUSY => (FullscreenSignal::FullscreenApp, "busy"),
+        Ok(state) if state == QUNS_RUNNING_D3D_FULL_SCREEN => (FullscreenSignal::FullscreenApp, "d3d_full_screen"),
+        Ok(state) if state == QUNS_PRESENTATION_MODE => (FullscreenSignal::Presentation, "presentation"),
+        Ok(_) => (FullscreenSignal::None, "none"),
+        Err(_) => (FullscreenSignal::None, "unavailable"),
     }
 }

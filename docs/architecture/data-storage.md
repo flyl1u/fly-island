@@ -33,7 +33,7 @@ English: backups cover app storage and explicitly selected user-data files, impo
 | 待办、以后的待办、每日笔记、归档、正在进行的待办、待办日期 | WebView2 的 `localStorage`（`fly-island-todos` 等 key，见 [contracts.md](contracts.md)） | `features/todos/storage.ts` |
 | 待办倒计时与各项时长 | 同一 `localStorage`：`fly-island-active-todos` 保存全部活动 ID，`fly-island-todo-timers` 保存各项 `{ todoId, endsAt, durationMinutes, notified }`；以结束时间恢复剩余秒数。新键缺失时兼容旧单任务键，并继续把主任务同步到原格式的 `fly-island-active-todo`、`fly-island-todo-timer`。`fly-island-todo-durations` 按待办 id 保存 1–240 的整数分钟（没有记录按 15 分钟；旧共用时长键不再读取）。首次到时前保存通知标记，重启不重复响；详情见 [contracts.md](contracts.md) | `features/todos/storage.ts`；计算在 `timer.ts`，生命周期在 `useTodoTimer.ts` |
 | AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`fly-island-agent-*.{cmd,ps1}`；`agent-sessions/<会话 ID>.json` 是 SessionStart / SessionEnd 钩子（`fly-island-agent-session.ps1`）记下的会话进程、启动时间、终端和结束原因，优先于 Claude Code 未公开的 `~/.claude/sessions`；`agent-codex-notification.json` 是 Codex PermissionRequest 钩子的输入，用于判断 Codex 会话是否在等待确认；`agent-sessions-seen.json` 记下见过的会话的进程、启动时间、所在程序和 Orca 终端，保留两天，用于 `/clear`、结束后的会话找回窗口；`agent-focus.log` 是点击会话切换窗口的排查日志（只有步骤和程序名）；`agent-terminals/<Orca 终端 handle>.json` 为 Claude Code SessionStart hook 的输入，只在 Orca 终端里写，用来从会话切到它的 Orca 标签；`agent-claudeCode-notification.json` 为 Claude Code 最近一次"等待授权 / 等待输入"通知的 hook 输入，只用于判断会话是否在等你，清除状态时删除；旧版保存的 `agent-*-hook-input.json` 在安装/修复时删除；`agent-remote-hosts.json` 是设置 → AI Agent → 远程电脑里打开的主机，以及在那一页添加的主机（`custom`：名称、用户名、地址、端口；岛屿不改 `~/.ssh/config`）；`remote-sessions/<Host>/` 是从这些机器读来的会话文件节选，按家目录结构存放、保留远端修改时间，离开会话时间窗口的文件在下次读取时删除） | `agent_status`（会话列表在 `sessions.rs`、`session_scan.rs`，等待判断在 `notifications.rs`，远程机器在 `remote_hosts.rs`、`remote_fetch.rs`、`remote_sessions.rs`，标题与提问文字处理在 `title.rs`） |
-| 问题排查日志（默认关闭） | 应用数据目录：`app-log.json`（`{ "enabled": bool }`，Rust 启动时读，早于任何窗口）；`logs/fly-island.log`，超过 5 MB 改名为 `logs/fly-island.1.log`（替换更早的那份）再开新文件，合计不超过约 10 MB。开启时记 Rust 的标准错误（所有 `eprintln!` 和 panic）与各窗口 console 的 error / warn、未捕获的错误，每行带本地时间和来源。WorkBuddy 登录诊断来源为 `workbuddy-auth`，记录 Cookie 名称、Unix 秒到期时间、会话标志与操作原因，无 Cookie 值；关闭时不写，开关本身也不写（版本信息每次运行只记一行），「清空」删除两个文件。只在本机，不上传 | `app_log`（`win32/std_handle.rs` 把标准错误接到管道），前端 `features/diagnostics` |
+| 问题排查日志与诊断包 | 应用数据目录：`app-log.json`（`{ "enabled": bool }`，仍默认关闭）；`logs/fly-island.log` 与 `logs/fly-island.1.log`（每份最多约 5 MiB）。运行中内存保留最近 2,000 条诊断事件，并单独保留启动摘要；关闭文件日志时不新增磁盘记录。开启后写入尚未落盘的缓冲；「清空」清除日志文件和最近事件，保留本次启动摘要。导出的 `fly-island-diagnostics-YYYY-MM-DD.zip` 只保存到用户选定的位置，内含已有日志、内存最近事件、启动摘要、插件日志的脱敏摘要及白名单设置快照，不自动上传。 | `app_log`，前端 `features/diagnostics` |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 设置窗口上次关闭时的大小与位置（位置已不在任何屏幕上时忽略） | 应用数据目录（`settings-window.json`） | `settings_window/bounds.rs` |
 | 审批端点端口与访问令牌（装进 Claude Code / Codex 的 PermissionRequest 钩子）；首选端口 47830，被占用时换端口并写回 | 应用数据目录（`agent-approval.json`） | `agent_approval` |
@@ -54,6 +54,7 @@ English: backups cover app storage and explicitly selected user-data files, impo
 | 通知、微信消息摘要、邮件正文 | 仅保存在内存中 | 各服务模块 |
 | 微信摘要和最小化时隐藏任务栏图标的偏好 | WebView2 的 `localStorage`，见 [对外契约](contracts.md) | `features/messages/wechat/storage.ts` |
 | 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
+| Telegram 通知预览 | 运行时内存。仅在用户点击时按需查询 Windows 通知数据库中的对应条目；激活 TG 成功后按通知 ID 删除原生通知 | `telegram_notifications/` |
 
 总览见 [overview.md](overview.md)。
 
@@ -92,7 +93,7 @@ WebView2 localStorage 的 `fly-island-native-plugins` 记录安装的内置插�
 前端 `features/weather/storage.ts` 通过安全读写保存 WebView2 localStorage：`fly-island-clock-weather` 存两个显示开关和用户选择的城市名/经纬度，`fly-island-weather-cache` 存一条城市坐标、摄氏温度、WMO code、观测时间与获取时间（Unix 毫秒）。安装记录沿用 `fly-island-native-plugins` 的 `clockWeather` id；卸载保留城市、显示偏好和缓存；重装只打开两个显示开关。开关与城市更新各自从最新记录合并，搜索本身不写入城市。缓存超过三小时不显示。
 
 Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；城市搜索结果质量不足时会向 `nominatim.openstreetmap.org` 补充一项。用户点击定位时才同时请求 Windows Geolocator 和 `ipwho.is` 的网络大致位置；Windows 坐标用 Nominatim 反向解析城市。坐标只发给这些地理编码/天气服务，不写应用数据文件、凭据或独立位置记录，也不在后台自动定位。前端订阅在关闭天气、关闭插件或卸载后停止刷新；同窗口共享请求和缓存。说明见 [时间与天气](../plugins/clock-weather.md)。
-护眼插件 `eye-care` 的非秘密配置复用 `plugins-state.json` 中对应插件的 settings（`period`、`rest-minutes`、`idle`、`allow-skip`、`language`）。周期、剩余时间和本轮推迟标记仅在插件内存；重启 / 保存设置后从完整用眼周期开始。不保存输入记录，不新增文件或 localStorage key。
+护眼插件 `eye-care` 的非秘密配置复用 `plugins-state.json` 中对应插件的 settings（`period`、`rest-minutes`、`idle`、`allow-skip`、`pause-fullscreen`、`language`）。周期、剩余时间和本轮推迟标记仅在插件内存；重启 / 保存设置后从完整用眼周期开始。不保存输入记录，不新增文件或 localStorage key。
 
 护眼宿主休息窗口的显示器列表、首帧状态、重试和会话令牌只在内存；不新增持久化文件或 localStorage key。`_host-eye-care-windows` 是初始化时临时注入的能力标记，不持久化。
 

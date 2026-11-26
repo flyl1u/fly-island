@@ -32,18 +32,26 @@ test("game mode stops the island taking the focus but still lets it go", () => {
   assert.equal(hoverFocusAction(state({ blocked: true, hovering: false })), "release");
 });
 
-const here = { active: true, onIslandMonitor: true };
-const elsewhere = { active: true, onIslandMonitor: false };
-const both = { gameDoNotDisturb: true, gameAutoTuck: true };
+const here = { active: true, onIslandMonitor: true, browserOnIslandMonitor: false };
+const elsewhere = { active: true, onIslandMonitor: false, browserOnIslandMonitor: false };
+const both = { gameDoNotDisturb: true, gameAutoTuck: true, browserAutoTuck: false };
 
 test("game mode only acts while a full-screen app is in front", () => {
-  assert.deepEqual(gameModeEffects({ active: false, onIslandMonitor: false }, both), { quiet: false, tuck: false });
-  assert.deepEqual(gameModeEffects(here, { gameDoNotDisturb: true, gameAutoTuck: false }), { quiet: true, tuck: false });
-  assert.deepEqual(gameModeEffects(here, { gameDoNotDisturb: false, gameAutoTuck: true }), { quiet: false, tuck: true });
+  assert.deepEqual(gameModeEffects({ active: false, onIslandMonitor: false, browserOnIslandMonitor: false }, both), { quiet: false, tuck: false, browserOnIslandMonitor: false });
+  assert.deepEqual(gameModeEffects(here, { gameDoNotDisturb: true, gameAutoTuck: false, browserAutoTuck: false }), { quiet: true, tuck: false, browserOnIslandMonitor: false });
+  assert.deepEqual(gameModeEffects(here, { gameDoNotDisturb: false, gameAutoTuck: true, browserAutoTuck: false }), { quiet: false, tuck: true, browserOnIslandMonitor: false });
 });
 
 test("a game on another monitor keeps the island quiet but not tucked", () => {
-  assert.deepEqual(gameModeEffects(elsewhere, both), { quiet: true, tuck: false });
+  assert.deepEqual(gameModeEffects(elsewhere, both), { quiet: true, tuck: false, browserOnIslandMonitor: false });
+});
+
+test("browser auto-tuck only applies while a browser is on the island monitor", () => {
+  assert.deepEqual(gameModeEffects(
+    { active: false, onIslandMonitor: false, browserOnIslandMonitor: true },
+    { gameDoNotDisturb: false, gameAutoTuck: false, browserAutoTuck: true },
+  ), { quiet: false, tuck: false, browserOnIslandMonitor: true });
+  assert.equal(gameModeEffects(here, { ...both, browserAutoTuck: true }).browserOnIslandMonitor, false);
 });
 
 test("hovering a tucked island opens it in one step only in hover mode, never in game mode", async () => {

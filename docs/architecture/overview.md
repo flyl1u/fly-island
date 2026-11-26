@@ -13,7 +13,7 @@
 ┌──────────────────────────────── Rust（Tauri 2）──────────────────────────────────────┐
 │  lib.rs 组装：插件 / setup / 托盘 / generate_handler!                                  │
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
-│           mail · qq_notifications · wechat_reminders · translation · settings_window │
+│           mail · qq_notifications · wechat_reminders · telegram_notifications · translation · settings_window │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信提醒与摘要、鼠标穿透循环          │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
              ▼
@@ -38,9 +38,13 @@ Agent 的 DSH 桌面端来源由 `agent_status/dsh_sessions.rs`（只读本地�
 
 WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析（本地会话记录与打开中的会话登记，聚焦主窗口），从现有会话命令和聚焦命令接入。WorkBuddy 的 `agent_status/workbuddy_connection.rs` 管理专用 WebView2 官网登录和后台续期，`workbuddy_auth.rs` 决定续期时间与失败退避，`workbuddy_cookie_vault.rs` 保存并恢复凭据副本，`workbuddy_usage.rs` 读取积分汇总。远程登录窗口 `workbuddy-sign-in` 使用独立浏览器配置，由本地设置页启动。岛屿和设置页共享原生余额缓存，额度环按 `agentQuotaSources` 选择。
 
+WorkBuddy 官方授权与账单解析在 `workbuddy_official.rs`，登录任务、缓存与凭据轮换由 `workbuddy_official_flow.rs` 协调；`workbuddy_curl.rs` 只用系统 curl 向固定账单域请求，凭据走 stdin。旧网页登录兼容，不要求迁移现有 Cookie。
+
 Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先读取 Windows 凭据管理器中的手动 API Key 配置（`zcode_api_key.rs`），未配置时回退到 Z Code 桌面版登录凭据；设置页只拿到 Key 是否存在与掩码。额度缓存在原生内存中，Key 或平台变更时清除。
 
 微信的进程解析、窗口归属和主窗口选择统一在 `wechat_reminders/source.rs`，供打开动作、提醒监听、摘要读取和探测程序复用；需比较完整路径时使用 `win32/process.rs` 的 canonicalize 与归一化回退。微信摘要开启时，微信提醒服务通过 `win32/caption_close.rs` 将微信关闭按钮的点击转为最小化，通过 `win32/taskbar.rs` 控制最小化窗口的任务栏按钮。
+
+Telegram Desktop 使用 Windows 通知时，`telegram_notifications` 通过 WinRT 读取摘要。用户点击后，服务从当前用户的系统通知数据库只读查询该条通知的激活参数，并交给 Telegram 的原生通知回调。目标失效或激活失败时保留仍可见的卡片，并显示错误。
 
 ## 目标结构
 
@@ -62,6 +66,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 媒体诊断与本地校准
 
+应用诊断由 `app_log` 的有界单写入线程收口；前端 `features/diagnostics/api.ts` 仅传白名单字段，Win32 探测保持在安全封装内。覆盖面、隐私和 ZIP 结构见 [诊断日志](../investigations/diagnostic-log.md)。
+
 `media_control/hotkeys.rs` 独立持有音乐全局快捷键的消息窗口，复用剪贴板组合键解析、`win32/hotkey` 注册与媒体 worker；前端 `features/media/useMusicShortcuts.ts` 在主窗口媒体 hook 中同步 localStorage，设置页只编辑与读取状态。快捷键冲突由设置窗口组合各领域配置，审批键始终预留。
 
 歌词源位于 `lyrics/`：QQ 专属接口与 QRC 解密（`qqmusic.rs` / `qrc_cipher.rs`）、酷狗原生缓存（`kugou_cache.rs`）、汽水只读 LMDB 快照和 msgpackr 解码（`soda_cache.rs` / `soda_lmdb.rs` / `soda_msgpack.rs`）、网易 YRC 与共享逐字格式转换（`word_formats.rs`），统一输出增强 LRC。来源顺序、兼容缓存与限制见 [歌词源说明](../lyrics-sources.md)。
@@ -71,7 +77,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 时间与天气及排列预览（2026-11-19）
 
-内置插件 `clockWeather` 通过 `features/plugins/native` 的安装态启用，并声明独立的时间与天气设置页。`features/weather/` 收口城市与缓存存储、IPC、WMO 纯映射及时间/天气叶子组件；`src-tauri/src/weather/` 封装 Open-Meteo 请求。主窗口 `useCollapsedTodo` 低频预留状态位宽度，`useCollapsedStatusWidth` 测量实际状态兄弟元素保护窄岛文字。时间的分钟状态留在叶子中，不驱动窗口重渲染。数据与契约见对应文档。
+插件设置放在哪一页由插件目录（`features/plugins/native/catalog.ts` 的 `settings`）声明，`features/plugins/placement.ts` 算出已启用插件的栏目与分组，设置面板、侧栏和插件卡片只读这份结果。内置插件 `clockWeather` 通过 `features/plugins/native` 的安装态启用，并声明独立的时间与天气设置页。`features/weather/` 收口城市与缓存存储、IPC、WMO 纯映射及时间/天气叶子组件；`src-tauri/src/weather/` 封装 Open-Meteo 请求。主窗口 `useCollapsedTodo` 低频预留状态位宽度，自动长度时 `useCollapsedChrome` 测量收起栏里文字以外的部分（状态位、留白、间距），`collapsedTextMeasure` 用画布按收起栏字体量文字，宽度本身由纯函数 `collapsedWidth.ts` 计算。时间的分钟状态留在叶子中，不驱动窗口重渲染。数据与契约见对应文档。
 
 排列编辑器和 `IslandPreview` 共享 `features/appearance/islandPreviewStyle.ts` 的外观变量。通用排序 hook 的 FLIP/指针跟随为可选参数，仅编辑器启用；页面入口与其它调用者保持原有交互。
 ### 护眼休息窗口（插件 0.2.0）
@@ -80,3 +86,5 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 
 市场插件日历标记由 features/todos/calendar-marks 提供。设备电量的界面和绑定在 features/device-battery，原生读取在 src-tauri/src/device_battery，仅执行宿主管理的市场包。MiniMax Code 的只读会话与额度、可选审批接入位于 plugins/minimax。
+
+倒计时显示：`components/countdown/Countdown.tsx` 与护眼休息面板复用 `lib/useCountdown.ts`，剩余秒数、下一刷新边界与格式化由 `utils/countdown.ts` 计算。按绝对截止时间刷新，隐藏时停止定时，恢复可见时校准；不新增后台 IPC 或持久化。

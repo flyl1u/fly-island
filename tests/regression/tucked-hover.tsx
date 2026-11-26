@@ -14,7 +14,11 @@ import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen"
 import { tuckedHoverOpensPanel } from "../../src/windows/island/tuckedHover";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-mockIPC(() => null, { shouldMockEvents: true });
+const diagnostics: Array<{ category: string; name: string; fields: Record<string, string> }> = [];
+mockIPC((command, args) => {
+  if (command === "record_diagnostic" && args) diagnostics.push((args as { diagnostic: (typeof diagnostics)[number] }).diagnostic);
+  return null;
+}, { shouldMockEvents: true });
 
 const RETRACT_MS = 120;
 const HOVER_DELAY_MS = 0; // The user's setting; opening still waits for the 320 ms slide-out.
@@ -22,30 +26,41 @@ const HOVER_DELAY_MS = 0; // The user's setting; opening still waits for the 320
 type Island = ReturnType<typeof useIslandNavigation>;
 let island: Island;
 let enter: () => void;
+let clickTucked: () => void;
 let setOpensPanel: (value: boolean) => void;
+let setBrowserHoverDelay: (value: number) => void;
+let setClickToOpen: (value: boolean) => void;
 let setPreview: (value: boolean) => void;
 
 function Harness() {
   const [opensPanel, changeOpensPanel] = useState(false);
+  const [browserHoverDelay, changeBrowserHoverDelay] = useState(0);
+  const [clickToOpen, changeClickToOpen] = useState(false);
   const [preview, changePreview] = useState(false);
   const navigation = useIslandNavigation();
   island = navigation;
   const tuckClass = useTuckMorph(navigation.isTucked, "line");
   setOpensPanel = changeOpensPanel;
+  setBrowserHoverDelay = changeBrowserHoverDelay;
+  setClickToOpen = changeClickToOpen;
   setPreview = changePreview;
   // As useIslandTucking wires them: a message preview reveals the island and holds the peek.
   useRevealOnMessage(preview, navigation.isTucked, navigation.revealForMessage);
   useTuckPeek(navigation.isPeeking && !preview, navigation.endPeek, navigation.peekRetractDelayMs ?? RETRACT_MS);
-  enter = useTuckedHoverOpen({
+  const handlers = useTuckedHoverOpen({
     opensPanel: tuckedHoverOpensPanel(opensPanel ? "hover" : "click", false),
     delayMs: HOVER_DELAY_MS,
+    hoverDwellDelayMs: browserHoverDelay,
+    clickToOpen,
     isPeeking: navigation.isPeeking && navigation.mode === "collapsed",
     onPeek: navigation.peekIsland,
-    onOpen: () => navigation.openIslandPage("todo"),
+    onOpen: () => navigation.openIslandPage("todo", "hover"),
     blocked: false,
     retractsAfterPeek: navigation.retractsAfterPeek,
     resumePeek: navigation.resumePeek,
   });
+  enter = handlers.handleHover;
+  clickTucked = handlers.handleClick;
   return (
     <p className={tuckClass}>
       mode {navigation.mode} · tucked {String(navigation.isTucked)} · peeking {String(navigation.isPeeking)}{" "}
@@ -119,6 +134,29 @@ async function runChecks() {
     await wait(450);
     check(state() === "collapsed/tucked", "之后移开，面板关闭、岛屿收回");
 
+    // Browser auto-tuck: quick pointer passes do not reveal the island; a full dwell does.
+    await act(async () => { setBrowserHoverDelay(2_500); island.tuckIsland(); });
+    await arrive();
+    await wait(1_000);
+    await hover(false);
+    await wait(350);
+    check(state() === "collapsed/tucked", "浏览器前台时，鼠标短暂停留后离开，岛屿保持贴边");
+    await arrive();
+    await wait(2_550);
+    check(state() === "collapsed/out", "浏览器前台时，鼠标停留达到设定时长后岛屿才露出");
+    await wait(350);
+    check(state() === "expanded/out", "达到贴边悬停时长后，岛屿按悬停设置展开");
+    await hover(false);
+    await wait(450);
+    await act(async () => { setClickToOpen(true); island.tuckIsland(); });
+    await arrive();
+    await wait(2_700);
+    check(state() === "collapsed/tucked", "点击展开模式下鼠标停留不会展开浏览器贴边岛屿");
+    await act(async () => clickTucked());
+    await wait(350);
+    check(state() === "expanded/out", "点击展开模式下单击贴边岛屿会打开面板");
+    await act(async () => { setClickToOpen(false); setBrowserHoverDelay(0); island.minimizeToEdge(); });
+
     // A draft in the panel keeps it open after the cursor leaves.
     await arrive();
     await wait(400);
@@ -149,6 +187,11 @@ async function runChecks() {
     check(document.querySelector(".island--tuck-line"), "消息、悬停和手动贴边共用细线形变状态");
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
+    const logged = (reason: string, from: string, to: string) => diagnostics.some((event) =>
+      event.category === "island" && event.name === "mode" && event.fields.reason === reason && event.fields.from === from && event.fields.to === to);
+    check(logged("minimize_button", "collapsed", "tucked") && logged("hover", "tucked", "peek"), "Diagnostics distinguish manual tuck and hover peek");
+    check(logged("hover", "peek", "expanded") && logged("message", "tucked", "peek") && logged("peek_timeout", "peek", "tucked"), "Diagnostics preserve why each peek opened or returned");
+    results.textContent = messages.join("\n");
     results.dataset.result = "passed";
   } catch (error) {
     results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`;

@@ -43,7 +43,7 @@ pub struct AgentSessionSummary {
     pub(super) reply_asks: bool,
     /// Last change of the session file, Unix milliseconds.
     pub(super) updated_at: i64,
-    /// Latest explicit Codex task completion, independent of later metadata writes.
+    /// Latest completion recorded by the agent, independent of later metadata writes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) last_completed_at: Option<i64>,
     /// The program the session runs in, when known (session_host.rs).
@@ -215,6 +215,7 @@ pub(super) fn session_phase(state: TurnState, idle_ms: i64, stale_after_ms: i64)
 /// Reads a Claude Code transcript excerpt from its end.
 pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
     let mut result = SessionTail::default();
+    let mut stopped = false;
     // Read from the end, so a subagent's result comes before the call that started it.
     let mut answered = HashSet::new();
     // Background tasks seen ending; read from the end, so before the calls that started them.
@@ -237,6 +238,18 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
         }
         if result.cwd.is_none() {
             result.cwd = string_field(&record, "cwd");
+        }
+        if record["isSidechain"] == Value::Bool(true) {
+            continue;
+        }
+        if result.state == TurnState::Unknown && !stopped && kind == "system"
+            && record["subtype"] == "stop_hook_summary"
+        {
+            match record["preventedContinuation"].as_bool() {
+                Some(false) => stopped = true,
+                Some(true) => result.state = TurnState::Working,
+                None => {}
+            }
         }
         if !matches!(kind, "user" | "assistant") || record["isMeta"] == Value::Bool(true) {
             continue;
@@ -301,6 +314,9 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
         {
             result.owner_prompt_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
         }
+    }
+    if stopped && result.state != TurnState::Failed {
+        result.state = TurnState::Done;
     }
     result.settle()
 }

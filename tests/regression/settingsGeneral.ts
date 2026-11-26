@@ -8,7 +8,7 @@ export async function checkGeneralControls(
   type: (input: HTMLInputElement, value: string) => Promise<void>,
 ) {
   await checkKeepVisible(panel, check);
-  const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
+  const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton'][aria-valuemax='600']")];
   const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
   check(timers.length === 2 && timers.every((input) => input.value === "30"),
     `general: the collapse and tuck delays are two number fields at 30 s (${timers.map((input) => input.value).join(", ")})`);

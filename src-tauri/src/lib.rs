@@ -4,6 +4,7 @@ mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
 mod config_transfer;
+mod file_icons;
 mod file_shelf;
 mod island;
 mod lyrics;
@@ -18,6 +19,7 @@ mod messenger_activation;
 mod notification_diagnostics;
 mod mail;
 mod qq_notifications;
+mod telegram_notifications;
 mod settings_window;
 mod system;
 mod translation;
@@ -102,6 +104,9 @@ pub fn run() {
             if let Err(error) = qq_notifications::init(app.handle()) {
                 eprintln!("failed to initialize QQ notifications: {error}");
             }
+            if let Err(error) = telegram_notifications::init(app.handle()) {
+                eprintln!("failed to initialize Telegram notifications: {error}");
+            }
             if let Err(error) = wechat_reminders::init(app.handle()) {
                 eprintln!("failed to initialize WeChat reminders: {error}");
             }
@@ -133,6 +138,7 @@ pub fn run() {
             if let Err(error) = plugin_host::init(app.handle()) {
                 eprintln!("failed to initialize plugins: {error}");
             }
+            app_log::record_plugins(app.handle());
             agent_status::reply_marker::init();
             agent_status::workbuddy_connection::init(app.handle());
             if !isolated {
@@ -147,6 +153,7 @@ pub fn run() {
             wechat_reminders;
             office_im;
             qq_notifications;
+            telegram_notifications;
             island;
             system;
             agent_status;

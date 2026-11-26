@@ -28,10 +28,11 @@ function remember(lookup: string, found: Found) {
 export function useLyrics(
   mediaState: MediaState,
   settings: LyricsSettings,
+  enabled = true,
 ): { lines: LyricLine[] | null; notFound: boolean; durationMs: number } {
   const key = trackKey(mediaState);
   const folder = settings.lyricsFolder.trim();
-  const active = Boolean(key) && (folder !== "" || settings.lyricsOnline || settings.lyricsChinese === true);
+  const active = enabled && Boolean(key) && (folder !== "" || settings.lyricsOnline || settings.lyricsChinese === true);
   const [found, setFound] = useState<Found | null>(null);
   // Read when the track changes, not on every poll that moves the position.
   const { title, artist, album, durationMs, trackId, sourceApp: sourceAppId } = mediaState;

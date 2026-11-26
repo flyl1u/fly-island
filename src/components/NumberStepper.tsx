@@ -14,12 +14,15 @@ type NumberStepperProps = {
   step?: number;
   variant?: "settings" | "island";
   autoFocus?: boolean;
+  disabled?: boolean;
+  formatValue?: (value: number) => string;
   onChange: (value: number) => void;
 };
 
 export function NumberStepper({ id, ariaLabel, ariaLabelledBy, value, min, max, step = 1,
-  variant = "settings", autoFocus, onChange }: NumberStepperProps) {
+  variant = "settings", autoFocus, disabled = false, formatValue, onChange }: NumberStepperProps) {
   const t = useTranslation();
+  const precision = String(step).split(".")[1]?.length ?? 0;
   const [draft, setDraft] = useState<string | null>(null);
   const repeat = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const held = useRef(false);
@@ -36,7 +39,7 @@ export function NumberStepper({ id, ariaLabel, ariaLabelledBy, value, min, max, 
 
   const change = (direction: number) => {
     const state = latest.current;
-    const base = parseStepperInput(state.draft ?? String(state.value), state.value, state.min, state.max);
+    const base = parseStepperInput(state.draft ?? String(state.value), state.value, state.min, state.max, precision);
     const next = stepStepperValue(base, direction, state.step, state.min, state.max);
     setDraft(null);
     // Keep rapid pointer repeats correct even before the parent has rendered.
@@ -46,7 +49,7 @@ export function NumberStepper({ id, ariaLabel, ariaLabelledBy, value, min, max, 
   };
   const commit = () => {
     const state = latest.current;
-    const next = parseStepperInput(state.draft ?? String(state.value), state.value, state.min, state.max);
+    const next = parseStepperInput(state.draft ?? String(state.value), state.value, state.min, state.max, precision);
     latest.current = { ...state, value: next, draft: null };
     setDraft(null);
     if (next !== state.value) state.onChange(next);
@@ -66,7 +69,7 @@ export function NumberStepper({ id, ariaLabel, ariaLabelledBy, value, min, max, 
   const button = (direction: number) => (
     <button type="button" className="number-stepper__button"
       aria-label={direction < 0 ? t.common.decrease : t.common.increase}
-      disabled={direction < 0 ? value <= min : value >= max}
+      disabled={disabled || (direction < 0 ? value <= min : value >= max)}
       onPointerDown={(event) => start(event, direction)}
       onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop} onPointerLeave={stop}
       onPointerMove={(event) => {
@@ -83,12 +86,15 @@ export function NumberStepper({ id, ariaLabel, ariaLabelledBy, value, min, max, 
   return (
     <div className={`number-stepper number-stepper--${variant}`} role="group"
       aria-label={ariaLabel} aria-labelledby={ariaLabelledBy}
-      style={{ "--number-stepper-width": `${Math.max(String(max).length, String(min).length) + 0.5}ch` } as CSSProperties}>
+      style={{ "--number-stepper-width": `${Math.max((formatValue?.(max) ?? String(max)).length, (formatValue?.(min) ?? String(min)).length) + 0.5}ch` } as CSSProperties}>
       {button(-1)}
-      <input id={id} className="number-stepper__input" type="text" inputMode="numeric" role="spinbutton"
+      <input id={id} className="number-stepper__input" type="text" inputMode={precision ? "decimal" : "numeric"} role="spinbutton"
         aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} aria-valuemin={min} aria-valuemax={max} aria-valuenow={value}
-        autoFocus={autoFocus} value={draft ?? String(value)}
-        onChange={(event) => { if (/^\d*$/.test(event.currentTarget.value)) setDraft(event.currentTarget.value); }}
+        autoFocus={autoFocus} disabled={disabled} value={draft ?? (formatValue?.(value) ?? String(value))}
+        onChange={(event) => {
+          const pattern = precision ? /^\d*(?:\.\d*)?$/ : /^\d*$/;
+          if (pattern.test(event.currentTarget.value)) setDraft(event.currentTarget.value);
+        }}
         onBlur={commit}
         onKeyDown={(event) => {
           if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setDraft(null); }

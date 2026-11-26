@@ -17,6 +17,7 @@ pub(crate) struct Settings {
     rest_minutes: u64,
     idle: Duration,
     allow_skip: bool,
+    fullscreen_pause: bool,
     hosted_windows: bool,
     english: bool,
 }
@@ -28,6 +29,7 @@ impl Settings {
             rest_minutes: rest_minutes(settings),
             idle: Duration::from_secs(number(settings, "idle", 5, 1, 120) * 60),
             allow_skip: settings["allow-skip"].as_bool().unwrap_or(true),
+            fullscreen_pause: settings["pause-fullscreen"].as_bool().unwrap_or(true),
             hosted_windows: settings["_host-eye-care-windows"]
                 .as_bool()
                 .unwrap_or(false),
@@ -109,7 +111,7 @@ impl Reminder {
         }
         let mut shared = self.shared.lock().unwrap_or_else(PoisonError::into_inner);
         shared.idle = idle::elapsed().is_some_and(|elapsed| elapsed >= shared.settings.idle);
-        shared.fullscreen = fullscreen::active() == Some(true);
+        shared.fullscreen = shared.settings.fullscreen_pause && fullscreen::active() == Some(true);
         let (idle, fullscreen) = (shared.idle, shared.fullscreen);
         shared.clock.tick(Instant::now(), idle, fullscreen);
         panel::snapshot(&shared)
@@ -182,18 +184,21 @@ mod tests {
     use super::*;
     #[test]
     fn settings_are_bounded_and_skip_is_explicit() {
-        let parsed = Settings::parse(
-            &json!({"period":" 30 ","rest":"1","idle":"8","allow-skip":false,"language":"en"}),
-        );
+        let parsed = Settings::parse(&json!({
+            "period":" 30 ", "rest":"1", "idle":"8", "allow-skip":false,
+            "pause-fullscreen":false, "language":"en"
+        }));
         assert_eq!(parsed.period_minutes, 30);
         assert_eq!(parsed.rest(), Duration::from_secs(60));
         assert_eq!(parsed.idle, Duration::from_secs(480));
         assert!(!parsed.allow_skip);
+        assert!(!parsed.fullscreen_pause);
         assert!(parsed.english);
         for input in ["0", "721", "-1", "abc", "18446744073709551616"] {
             assert_eq!(Settings::parse(&json!({"period":input})).period_minutes, 20);
         }
         assert!(Settings::parse(&json!({})).allow_skip);
+        assert!(Settings::parse(&json!({})).fullscreen_pause);
     }
 
     #[test]

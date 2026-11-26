@@ -23,7 +23,7 @@ type IslandWindowOptions = {
   collapsedIslandWidth: number;
   /** A grown message preview's size, and whether clicks pass through it (useMessageNotice). */
   notice: IslandNotice;
-  onCollapse: () => void;
+  onCollapse: (reason: "focus_lost") => void;
 };
 
 export type IslandNotice = { width: number | null; height: number | null; clickThrough: boolean };
@@ -196,7 +196,7 @@ export function useIslandWindow({
     void getCurrentWindow()
       .onFocusChanged(({ payload: focused }) => {
         if (!focused && mode === "expanded" && !isIslandPickerOpen()) {
-          onCollapse();
+          onCollapse("focus_lost");
         }
       })
       .then((nextUnlisten) => {

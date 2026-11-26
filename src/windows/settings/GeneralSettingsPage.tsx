@@ -2,6 +2,7 @@ import { useTranslation, type LocaleCode } from "../../i18n";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandRows, GameModeRow, PositionRows, TuckRows } from "../../features/appearance/IslandBehaviorRows";
+import { BrowserTuckRows } from "../../features/appearance/BrowserTuckRows";
 import { KeepVisibleRows } from "../../features/appearance/KeepVisibleRows";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
@@ -60,6 +61,7 @@ export function GeneralSettingsPage({
       >
         <TuckRows {...rows} />
         <KeepVisibleRows {...rows} />
+        <BrowserTuckRows {...rows} />
       </SettingsGroup>
       <SettingsGroup title={t.settings.layout.gameTitle}>
         <GameModeRow {...rows} />

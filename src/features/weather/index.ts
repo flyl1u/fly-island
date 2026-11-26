@@ -4,4 +4,4 @@ export { ClockWeatherSettingsGroup } from "./ClockWeatherSettingsGroup";
 export { useClockWeather, setClockWeatherSettings } from "./useClockWeather";
 export { useCurrentWeather } from "./useCurrentWeather";
 export { WeatherIcon } from "./WeatherIcon";
-export { clockWeatherWidth, formatTemperature } from "./model";
+export { fitClockWeather, formatTemperature } from "./model";

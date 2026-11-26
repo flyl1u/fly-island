@@ -3,6 +3,7 @@ import { clipboardItemKind } from "./kind";
 import { useTranslation } from "../../i18n";
 import type { ClipboardHistoryItem } from "./api";
 import { ClipboardItemNote } from "./ClipboardItemNote";
+import { useClipboardFileIcon } from "./useClipboardFileIcon";
 import { useClipboardThumbnail } from "./useClipboardThumbnail";
 import "./ClipboardHistoryItemRow.css";
 
@@ -52,6 +53,7 @@ export function ClipboardHistoryItemRow({
   const t = useTranslation();
   const itemKind = clipboardItemKind(item);
   const thumbnail = useClipboardThumbnail(item);
+  const fileIcon = useClipboardFileIcon(item);
 
   return (
     <article className={`clipboard-item${selecting ? " clipboard-item--selecting" : ""}${selected ? " clipboard-item--selected" : ""}`}
@@ -76,8 +78,9 @@ export function ClipboardHistoryItemRow({
             ) : null}
           </button>
         ) : (
-          <span className="clipboard-item__text-icon">
-            {itemKind === "file" ? <FileText size={14} strokeWidth={2} /> : <ClipboardList size={14} strokeWidth={2} />}
+          <span className={`clipboard-item__text-icon${fileIcon ? " clipboard-item__text-icon--system" : ""}`}>
+            {fileIcon ? <img src={fileIcon} alt="" draggable={false} />
+              : itemKind === "file" ? <FileText size={14} strokeWidth={2} /> : <ClipboardList size={14} strokeWidth={2} />}
           </span>
         )}
         <button className="clipboard-item__main" type="button" onClick={(event) => {

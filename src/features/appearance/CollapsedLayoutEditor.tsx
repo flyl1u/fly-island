@@ -4,12 +4,13 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { useTranslation } from "../../i18n";
 import { moveItem } from "../../utils/order.ts";
-import { WeatherIcon, clockWeatherWidth, useClockWeather } from "../weather";
+import { WeatherIcon, useClockWeather } from "../weather";
 import { placeCollapsedLayout, visibleCollapsedSlots } from "./collapsedLayout";
 import { COLLAPSED_SLOTS } from "./settingsLimits";
 import type { CollapsedSlot, IslandSettings } from "./types";
 import { islandPreviewStyle } from "./islandPreviewStyle";
 import { useCollapsedSlotDrag, type SlotArrangement } from "./useCollapsedSlotDrag";
+import { useFitScale } from "./useFitScale";
 import { useResolvedScheme } from "./useDocumentTheme";
 import "./IslandPreview.css";
 import "./CollapsedLayoutEditor.css";
@@ -116,12 +117,12 @@ export function CollapsedLayoutEditor({
       {content[slot]}
     </button>
   );
-  // The island makes room for the side space set under Collapsed island (Appearance), less the
-  // slots' own 6px padding; the time and weather widen it as on the island.
+  // The island is as wide as its slots need; a narrow card shrinks the whole drawing.
+  const fit = useFitScale(drag.rootRef, ".collapsed-layout__island", settings.collapsedScale);
+  // The side space set under Collapsed island, less the slots' own 6px padding.
   const style = {
     ...preview.style,
-    "--preview-collapsed-width": clockWeatherWidth(settings.collapsedAutoWidth ? 340 : settings.collapsedWidth,
-      clockWeather.installed && !hidden.includes("clock"), clockWeather.installed && !hidden.includes("weather"), settings.islandFontPercent / 100),
+    "--collapsed-layout-fit": fit,
     "--preview-side-space": Math.max(0, settings.collapsedPadding - 6),
   } as CSSProperties;
 
@@ -144,7 +145,7 @@ export function CollapsedLayoutEditor({
         </div>
         {drag.ghost && (
           <div className={`${slotClass(drag.ghost.slot)} collapsed-layout__ghost`} aria-hidden="true"
-            style={{ left: drag.ghost.left, top: drag.ghost.top, width: drag.ghost.width, height: drag.ghost.height }}>
+            style={{ left: drag.ghost.left, top: drag.ghost.top, width: drag.ghost.width, height: drag.ghost.height, scale: String(drag.ghost.scale) }}>
             {content[drag.ghost.slot]}
           </div>
         )}

@@ -7,18 +7,20 @@ import { usePlugins } from "../../features/plugins";
 import { PLUGIN_RUNTIME_ENABLED } from "../../features/releaseFlags.ts";
 import { islandPageFor, pluginPagesFrom, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
+import type { IslandModeReason } from "./diagnosticMode";
 
 type IslandFeatureOptions = {
   settings: IslandSettings;
   clipboardEnabled: boolean;
   qqEnabled: boolean;
   wechatEnabled: boolean;
+  telegramEnabled: boolean;
   qqMail: MailController;
   page: IslandPage;
   messageSource: MessageView;
   setPage: (page: IslandPage) => void;
   setMessageSource: (source: MessageView) => void;
-  openIslandPage: (page: IslandPage) => void;
+  openIslandPage: (page: IslandPage, reason?: IslandModeReason) => void;
 };
 
 /**
@@ -32,6 +34,7 @@ export function useIslandFeatures({
   clipboardEnabled,
   qqEnabled,
   wechatEnabled,
+  telegramEnabled,
   qqMail,
   page,
   messageSource,
@@ -57,11 +60,12 @@ export function useIslandFeatures({
     shelf: settings.shelfEnabled,
     qq: qqEnabled,
     wechat: wechatEnabled,
+    telegram: telegramEnabled,
     qqMail: settings.mailEnabled,
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
     pluginPages,
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, telegramEnabled, hasPluginMessages, pluginPages, office.dingtalk, office.feishu, office.wecom]);
 
   useEffect(() => {
     const next = islandPageFor(page, features, settings.clipboardDetached);
@@ -90,9 +94,9 @@ export function useIslandFeatures({
     lastMailSwitchRef.current = mailSwitch;
   }, [mailConfigured, mailReceiving, mailSwitch, setMailReceiving]);
 
-  const openEnabledPage = useCallback((target: IslandPage) => {
+  const openEnabledPage = useCallback((target: IslandPage, reason?: IslandModeReason) => {
     const next = resolveIslandPage(target, features);
-    if (next) openIslandPage(next);
+    if (next) openIslandPage(next, reason);
   }, [features, openIslandPage]);
 
   return { features, openEnabledPage };

@@ -6,6 +6,7 @@ mod diagnostics;
 pub(crate) mod hotkeys;
 mod service;
 mod session;
+mod session_log;
 mod timeline;
 mod watcher;
 mod worker;

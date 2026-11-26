@@ -109,7 +109,7 @@ function Fixture() {
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${notice?.width ?? width}px`, ...(notice ? { "--collapsed-island-height": `${notice.height}px` } : {}) } as CSSProperties}>
     <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} preview={preview} notice={notice}
-      mode={mode} page="todo" expandedHeight={306} isTucked={tucked} tuckStyle="edge" topEdgeShoulders={false} positionLocked={false} isDetached={true} showTitle={title}
+      mode={mode} page="todo" expandedHeight={306} isTucked={tucked} tuckStyle="edge" topEdgeShoulders={false} positionLocked={false} isDetached={true} showTitle={title} brandText={title ? "fly-island" : null} pendingText={null}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       collapsedItem={agent ? "agent" : "todo"} collapsedLayout={["pulse", "text", "mail", "shelf", "music", "agents"]} collapsedCover={null} lyricsSettings={{ lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 }}
       pageOrder={["todo", "music", "clipboard", "shelf"]} onPageOrderChange={() => {}}
@@ -120,7 +120,7 @@ function Fixture() {
       shelfCount={null}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={(source) => { openedPage = source; }}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => setMode("collapsed")}
-      onResetPosition={() => {}} minimizesToTray onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
+      onResetPosition={() => {}} minimizesToTray onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onContextTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
       <span>待办清单</span>
     </IslandShell>
   </div>;
@@ -260,7 +260,7 @@ async function runChecks() {
     check(incoming().querySelector(".agent-provider-icon--codex") && incoming().textContent?.includes("恢复 Windows 发布机环境"), "切换为 Codex 会话时更换图标和标题");
     await act(async () => changeAgent(null));
     await settle();
-    check(!summary().querySelector(".island__agent-session") && incoming().textContent?.includes("剩余2个待办"), "Agent 结束后恢复待办");
+    check(!incoming().querySelector(".island__agent-session") && incoming().textContent?.includes("剩余2个待办"), "Agent 结束后恢复待办");
     await act(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "插件市场功能" }));
     await settle();
     await act(async () => button().click());
@@ -292,7 +292,7 @@ async function runChecks() {
     await notify("qqMail", true);
     const reader = () => document.querySelector<HTMLElement>(".message-notice");
     const readerBody = () => document.querySelector<HTMLElement>(".message-notice__body");
-    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__open-button"), "长消息展开时整块换成阅读卡");
+    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__collapsed:not([inert]) .island__open-button"), "长消息展开时整块换成阅读卡");
     check(readerBody()?.textContent?.includes("下阶段设计评审安排") && getComputedStyle(readerBody()!).userSelect === "text", "阅读卡显示完整邮件主题且文字可选中");
     check(readerBody()?.dataset.windowDrag === "false" && document.querySelector(".message-notice__body--scrolls"), "正文不拖动窗口，超出上限时可滚动");
     openedPage = null;

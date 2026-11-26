@@ -10,10 +10,44 @@ $work = [IO.Path]::GetFullPath((Join-Path $tmp ('fly-battery-' + [Guid]::NewGuid
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) { throw 'The Windows x64 .NET Framework compiler is required.' }
 
+# The license texts of every crate linked into the engine (MIT where there is a choice).
+function Write-CrateNotices {
+    param($Metadata, [string]$Path)
+    $packages = @{}
+    foreach ($package in $Metadata.packages) { $packages[$package.id] = $package }
+    $nodes = @{}
+    foreach ($node in $Metadata.resolve.nodes) { $nodes[$node.id] = $node }
+    $root = @($Metadata.packages | Where-Object { $_.name -ceq 'device-battery-engine' })[0].id
+    $linked = @{}
+    $pending = New-Object System.Collections.Generic.Stack[string]
+    $pending.Push($root)
+    while ($pending.Count -gt 0) {
+        foreach ($dependency in $nodes[$pending.Pop()].deps) {
+            $id = $dependency.pkg
+            $normal = @($dependency.dep_kinds | Where-Object { $null -eq $_.kind }).Count -gt 0
+            $macro = @($packages[$id].targets | Where-Object { $_.kind -contains 'proc-macro' }).Count -gt 0
+            if ($normal -and -not $macro -and -not $linked.ContainsKey($id)) {
+                $linked[$id] = $packages[$id]
+                $pending.Push($id)
+            }
+        }
+    }
+    $text = New-Object System.Text.StringBuilder
+    foreach ($package in ($linked.Values | Sort-Object name, version)) {
+        $directory = Split-Path -Parent $package.manifest_path
+        $file = @('LICENSE-MIT', 'LICENSE.txt', 'LICENSE') | ForEach-Object { Join-Path $directory $_ } |
+            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+        if (-not $file) { throw "No license text for the crate $($package.name)." }
+        [void]$text.Append("==== $($package.name) $($package.version) ($($package.license)) ====`n$($package.repository)`n`n")
+        [void]$text.Append([IO.File]::ReadAllText($file).Replace("`r`n", "`n").TrimEnd() + "`n`n")
+    }
+    [IO.File]::WriteAllText($Path, $text.ToString(), [Text.UTF8Encoding]::new($false))
+}
+
 New-Item -ItemType Directory -Path $work | Out-Null
 try {
     $archive = Join-Path $work 'myfinder.zip'
-    Invoke-WebRequest -Uri $url -UseBasicParsing -OutFile $archive -TimeoutSec 90
+    Invoke-WebRequest -Uri $url -UseBasicParsing -OutFile $archive -TimeoutSec 600
     if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $checksum) { throw 'MyFinder source checksum mismatch.' }
     Expand-Archive -LiteralPath $archive -DestinationPath $work
     $upstream = Join-Path $work "myfinder-device-battery-$commit"
@@ -24,20 +58,27 @@ try {
     & $compiler /nologo /target:exe /platform:x64 /optimize+ /reference:System.Web.Extensions.dll "/out:$output/device-battery-bridge.exe" $sources
     if ($LASTEXITCODE -ne 0) { throw 'The headless device bridge failed to compile.' }
 
-    & (Join-Path $upstream 'scripts/Build-Backend.ps1') -OutputDirectory (Join-Path $output 'engine/runtime') | Out-Null
-    $engine = Join-Path $upstream 'engine'
-    Get-ChildItem -LiteralPath $engine -Recurse -File | Where-Object {
-        $_.FullName -notmatch '[\\/](runtime|__pycache__|research|tests)[\\/]' -and $_.Extension -ne '.pyc'
-    } | ForEach-Object {
-        $destination = Join-Path $output ('engine/' + $_.FullName.Substring($engine.Length + 1))
-        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
-        Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
-    }
-    Copy-Item -LiteralPath (Join-Path $upstream 'LICENSE'), (Join-Path $upstream 'THIRD_PARTY_NOTICES.md') -Destination $output
+    # The reader engine is Fly Island's own Rust crate. The host starts it at the path of
+    # the interpreter it replaced, with that interpreter's arguments, which it ignores.
+    $crate = Join-Path $PSScriptRoot 'engine/Cargo.toml'
+    $metadata = (& cargo metadata --format-version 1 --locked --filter-platform x86_64-pc-windows-msvc --manifest-path $crate | Out-String) | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) { throw 'Could not read the device engine dependencies.' }
+    & cargo build --locked --release --manifest-path $crate --target-dir $metadata.target_directory
+    if ($LASTEXITCODE -ne 0) { throw 'The device reader engine failed to build.' }
+    $engine = Join-Path $output 'engine/runtime/python.exe'
+    $server = Join-Path $output 'engine/server.py'
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $engine) | Out-Null
+    Copy-Item -LiteralPath (Join-Path $metadata.target_directory 'release/device-battery-engine.exe') -Destination $engine -Force
+    [IO.File]::WriteAllText($server, "# Placeholder required by the Fly Island host. runtime/python.exe is the Rust reader engine; no Python is included.`n", [Text.UTF8Encoding]::new($false))
+
+    $licenses = Join-Path $output 'licenses'
+    New-Item -ItemType Directory -Force -Path $licenses | Out-Null
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'licenses/HaloBattery-MIT.txt') -Destination $licenses
+    Write-CrateNotices -Metadata $metadata -Path (Join-Path $licenses 'rust-crates.txt')
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE'), (Join-Path $PSScriptRoot 'THIRD_PARTY_NOTICES.md') -Destination $output
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $output 'SOURCE.md')
 
-    $python = Join-Path $output 'engine/runtime/python.exe'
-    $result = & $python -I -B -u (Join-Path $output 'engine/server.py') --package-smoke --once
+    $result = & $engine -I -B $server --package-smoke --once
     if ($LASTEXITCODE -ne 0) { throw 'Packaged device engine self-test failed.' }
     $snapshot = $result | ConvertFrom-Json
     if ($snapshot.schema -ne 2 -or -not $snapshot.complete -or -not $snapshot.packageSmoke -or

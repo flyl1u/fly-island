@@ -5,7 +5,7 @@ import type { AgentEffortLabels } from "./effortLabels";
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
 export type AgentProvider = "codex" | "claudeCode" | "dsh" | "workbuddy" | "plugin" | NativeAgentProvider;
 /** Agents installed from the plugin market; Z Code has quota rings but no sessions yet. */
-export type NativeAgentProvider = "cursor" | "kimiCode" | "hermes" | "zcode";
+export type NativeAgentProvider = "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode";
 /** Only these providers install lifecycle hooks and write agent-status.json. */
 export type HookAgentProvider = Exclude<AgentProvider, "dsh" | "workbuddy" | "plugin" | NativeAgentProvider>;
 /** `waiting` (asked the user mid-turn) only comes from the session list, for Claude Code. */
@@ -71,7 +71,7 @@ export type AgentSessionSummary = {
   host: SessionHost | null;
   /** When the newest prompt was sent (Unix ms): the current or last turn runs from here. */
   turnStartedAt: number | null;
-  /** Latest explicit Codex task_complete timestamp; absent in older builds and other providers. */
+  /** Latest recorded turn completion, if the provider exposes one. */
   lastCompletedAt?: number | null;
   /**
    * When the user last typed a prompt (Unix ms), not one Claude Code wrote by itself (a background
@@ -167,8 +167,8 @@ export function getAgentHostIcon(path: string) {
 }
 
 /**
- * Recent agent sessions, running ones first. `native` names the plugin-market agents to read too
- * ("cursor", "kimiCode", "hermes"); the native side reads none of them without it.
+ * Recent agent sessions, running ones first. `native` names additional sources to read
+ * ("cursor", "kimiCode", "hermes", "antigravity").
  */
 export function listAgentSessions(windowHours?: number, native: readonly NativeAgentProvider[] = []) {
   return invoke<AgentSessionSummary[]>("list_agent_sessions", { windowHours, native });
@@ -207,7 +207,7 @@ export type AgentUsage = {
   models: UsageWindow[];
   plan: string | null;
   /** Where the windows come from. */
-  source?: "hud" | "magpie" | "codex" | "claudeDesktop" | "kimi" | "zcode";
+  source?: "hud" | "magpie" | "codex" | "claudeDesktop" | "kimi" | "zcode" | "antigravity";
 };
 
 /** Claude usage limits from a local magpie gateway, claude-hud's usage snapshot or the Claude desktop app's usage history; null when there is none. */
@@ -228,6 +228,14 @@ export function getKimiUsage() {
 /** Z Code's plan windows or trial balances, preferring the saved Coding Plan key; null when no source exists. */
 export function getZcodeUsage() {
   return invoke<AgentUsage | null>("get_zcode_usage");
+}
+
+/**
+ * Antigravity's model quotas, asked over its own local language server (its `source` is
+ * `"antigravity"`); null when it is not installed or has never reported any.
+ */
+export function getAntigravityUsage() {
+  return invoke<AgentUsage | null>("get_antigravity_usage");
 }
 
 export const ZCODE_USAGE_CHANGED = "zcode-usage-changed";
@@ -281,7 +289,8 @@ export function getDshUsage() {
 /** Mirrors WorkbuddyUsage / WorkbuddyState in the native agent-status modules. */
 export type WorkbuddyUsage = { remaining: number; total: number; updatedAt: number };
 export type WorkbuddyState =
-  | { status: "signedOut" | "loginRequired" | "ready" | "unavailable" }
+  | { status: "signedOut" | "loginRequired" | "ready" }
+  | { status: "unavailable"; reason?: "curlUnavailable" }
   | { status: "connected"; usage: WorkbuddyUsage };
 
 export function getWorkbuddyUsage(refreshNow = false, cachedOnly = false) {

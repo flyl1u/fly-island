@@ -1,7 +1,7 @@
 {
   "name": "fly-island",
   "private": true,
-  "version": "3.3.0",
+  "version": "3.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "build:web-demo": "vite build --config vite.web-demo.config.ts",
     "release": "node scripts/release/release.mjs",
+    "release:plugins": "node scripts/release/release-plugins.mjs",
     "tauri": "tauri",
     "test": "node --test \"tests/**/*.test.mjs\"",
     "check:size": "node scripts/check-file-size.mjs",

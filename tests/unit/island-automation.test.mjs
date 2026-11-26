@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { idlePlan } from "../../src/windows/island/idleCollapse.ts";
 import * as todoRotation from "../../src/features/todos/todoRotation.ts";
+import * as browserTuck from "../../src/windows/island/browserTuck.ts";
 
 const source = ts.transpileModule(
   readFileSync(new URL("../../src/windows/island/useIslandAutomation.ts", import.meta.url), "utf8"),
@@ -12,7 +13,7 @@ const source = ts.transpileModule(
 ).outputText;
 
 // A deterministic hook clock lets these checks cover long idle periods and cleanup without sleeping.
-function mount(name, initialArgs) {
+function mount(name, initialArgs, logDiagnostic = () => {}) {
   let args = initialArgs;
   let now = 0;
   let sequence = 0;
@@ -44,6 +45,11 @@ function mount(name, initialArgs) {
         if (!Object.is(updated, slots[index])) { slots[index] = updated; dirty = true; }
       }];
     },
+    useRef(initial) {
+      const index = cursor++;
+      if (!(index in slots)) slots[index] = { current: initial };
+      return slots[index];
+    },
     useEffect(effect, deps) {
       const index = cursor++;
       const previous = slots[index];
@@ -55,7 +61,9 @@ function mount(name, initialArgs) {
       }
     },
   };
-  runInNewContext(source, { exports, require: (path) => path === "react" ? react : todoRotation, window: browserWindow, document });
+  const modules = { react, "../../features/todos/todoRotation": todoRotation,
+    "../../features/diagnostics/api": { logDiagnostic }, "./browserTuck": browserTuck };
+  runInNewContext(source, { exports, require: (path) => modules[path], window: browserWindow, document });
   function render(nextArgs = args) {
     args = nextArgs;
     do {
@@ -211,4 +219,77 @@ test("ending a keep-visible activity restarts the full idle wait and never revea
   app.tick(60_000);
   assert.equal(tucks, 1);
   app.unmount();
+});
+
+function mountBrowser(overrides = {}) {
+  const decisions = [];
+  const state = {
+    enabled: true, browserOnIslandMonitor: false, isTucked: false, tuckSource: null,
+    isHovering: false, gameHolds: false, hasMessagePreview: false, isPreviewing: false, ...overrides,
+  };
+  const tuck = () => Object.assign(state, { isTucked: true, tuckSource: "browser" });
+  const reveal = () => Object.assign(state, { isTucked: false, tuckSource: null });
+  const app = mount("useBrowserAutoTuck", [{ ...state }, tuck, reveal], (_category, name, { reason }) => {
+    assert.equal(name, "browser_auto_tuck");
+    decisions.push(reason);
+  });
+  return {
+    decisions, state,
+    change(update = {}) {
+      Object.assign(state, update);
+      app.render([{ ...state }, tuck, reveal]);
+      app.render([{ ...state }, tuck, reveal]);
+    },
+  };
+}
+
+test("browser takes over idle tucks but never undoes a manual tuck or peek", () => {
+  const app = mountBrowser({ isTucked: true, tuckSource: "idle" });
+  app.change({ browserOnIslandMonitor: true });
+  assert.equal(app.state.tuckSource, "browser");
+  app.change({ browserOnIslandMonitor: false });
+  assert.equal(app.state.isTucked, false);
+
+  app.change({ isTucked: true, tuckSource: "manual", browserOnIslandMonitor: true });
+  app.change({ isTucked: false });
+  assert.equal(app.state.tuckSource, "manual");
+  app.change({ isTucked: true, browserOnIslandMonitor: false });
+  assert.equal(app.state.isTucked, true);
+  assert.deepEqual(app.decisions, ["took_over_idle_tuck", "tucked", "revealed_browser_left", "skipped_already_tucked"]);
+});
+
+test("browser retries after previews, waits through hover, and logs only changed decisions", () => {
+  const app = mountBrowser({ hasMessagePreview: true, isPreviewing: true });
+  app.change({ browserOnIslandMonitor: true });
+  app.change();
+  app.change({ isPreviewing: false });
+  assert.equal(app.state.isTucked, false);
+  app.change({ hasMessagePreview: false, isHovering: true });
+  assert.equal(app.state.isTucked, false);
+  app.change({ isHovering: false });
+  assert.equal(app.state.isTucked, true);
+  app.change({ isTucked: false, isHovering: true });
+  app.change({ isHovering: false });
+  assert.equal(app.state.isTucked, true);
+  assert.deepEqual(app.decisions, ["blocked_settings_preview", "blocked_message_preview", "waiting_hover", "tucked", "waiting_hover", "tucked"]);
+});
+
+test("browser waits out game mode, releases its own peek on disable, and honors manual takeover", () => {
+  const app = mountBrowser({ gameHolds: true });
+  app.change({ browserOnIslandMonitor: true });
+  assert.equal(app.state.isTucked, false);
+  app.change({ gameHolds: false });
+  assert.equal(app.state.isTucked, true);
+  app.change({ gameHolds: true, browserOnIslandMonitor: false });
+  assert.equal(app.state.isTucked, true);
+  app.change({ gameHolds: false });
+  assert.equal(app.state.isTucked, false);
+  app.change({ browserOnIslandMonitor: true });
+  app.change({ isTucked: false, isHovering: true, enabled: false });
+  assert.equal(app.state.tuckSource, null);
+  app.change({ enabled: true, isHovering: false });
+  app.change({ tuckSource: "manual" });
+  app.change({ enabled: false });
+  assert.equal(app.state.isTucked, true);
+  assert.equal(app.state.tuckSource, "manual");
 });
