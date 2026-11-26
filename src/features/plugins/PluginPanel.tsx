@@ -1,28 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Countdown } from "../../components/countdown/Countdown";
 import { useLocale, useTranslation } from "../../i18n";
 import { runPluginAction } from "./api";
 import { refreshPlugins, usePlugins } from "./usePlugins";
 import "./PluginPanel.css";
-
-/** A countdown the host runs itself, so a plugin keeps its polls slow. */
-function useNow(active: boolean) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [active]);
-  return now;
-}
-
-function formatRemaining(deadline: number, now: number) {
-  const totalSeconds = Math.max(0, Math.ceil((deadline - now) / 1000));
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60);
-  if (minutes < 60) return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
 
 /**
  * A plugin's page in the expanded island. The plugin sends a panel (headline, rows, action
@@ -38,8 +19,6 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
   const panel = live[pluginId]?.panel ?? null;
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const ticking = panel?.rows.some((row) => row.countdownTo !== null) ?? false;
-  const now = useNow(ticking);
   if (!installed) return null;
   const actions = (panel?.actions ?? [])
     .map((id) => installed.manifest.actions.find((action) => action.id === id))
@@ -74,7 +53,7 @@ export function PluginPanel({ pluginId }: { pluginId: string }) {
               <div className="plugin-panel__line">
                 <span className="plugin-panel__title">{row.title}</span>
                 {row.countdownTo !== null ? (
-                  <span className="plugin-panel__value plugin-panel__value--countdown">{formatRemaining(row.countdownTo, now)}</span>
+                  <span className="plugin-panel__value plugin-panel__value--countdown"><Countdown deadline={row.countdownTo} padMinutes={pluginId === "eye-care"} /></span>
                 ) : row.percent !== null ? (
                   <span className="plugin-panel__value">{Math.round(row.percent)}%</span>
                 ) : null}

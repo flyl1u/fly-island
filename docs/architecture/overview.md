@@ -80,3 +80,5 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 
 市场插件日历标记由 features/todos/calendar-marks 提供。设备电量的界面和绑定在 features/device-battery，原生读取在 src-tauri/src/device_battery，仅执行宿主管理的市场包。MiniMax Code 的只读会话与额度、可选审批接入位于 plugins/minimax。
+
+倒计时显示：`components/countdown/Countdown.tsx` 与护眼休息面板复用 `lib/useCountdown.ts`，剩余秒数、下一刷新边界与格式化由 `utils/countdown.ts` 计算。按绝对截止时间刷新，隐藏时停止定时，恢复可见时校准；不新增后台 IPC 或持久化。

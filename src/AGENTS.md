@@ -24,7 +24,7 @@ src/
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
 │   ├── weather/             # 时间与天气内置插件：城市设置/缓存、Open-Meteo IPC、WMO映射、叶子时间与天气、共享低频刷新
 │   └── updater/             # 自动更新
-├── components/              # 与领域无关的通用 UI（controls/ 开关、数字输入、下拉等控件，插件页和岛上还在用；settings/ 设置窗口的分组列表：组、行、开关行、滑块行、数字行、颜色、输入框、分段选择、下拉、文字链接，设置页都用它；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
+├── components/              # 与领域无关的通用 UI（countdown/ 绝对截止时间的叶子倒计时，controls/ 开关、数字输入、下拉等控件，插件页和岛上还在用；settings/ 设置窗口的分组列表：组、行、开关行、滑块行、数字行、颜色、输入框、分段选择、下拉、文字链接，设置页都用它；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写
 ├── shared/storage/          # 入口最早执行的 localStorage 更名迁移
 ├── utils/                   # 无副作用的纯函数（文本测量、颜色、日期、数值）

@@ -92,6 +92,8 @@ export const PAGES = [
   "plugin-panel.html?features=enabled",
   "device-battery.html",
   "device-battery.html?lang=en&theme=light",
+  "eye-care-sync.html?features=enabled",
+  "eye-care-sync.html?features=enabled&lang=en",
   "eye-care-window.html?features=enabled",
   "eye-care-window.html?features=enabled&theme=light&lang=en",
   "eye-care-window.html?features=enabled&material=liquidGlass",
