@@ -36,7 +36,8 @@ fn scalar(value: &str) -> Option<String> {
 
 /// Only the built-in reference and first-party account grant are read. No environment or
 /// arbitrary endpoint is followed, so a custom gateway's secret cannot be sent to DeepSeek.
-pub(super) fn parse(text: &str, provider: &str) -> Option<Credential> {
+/// The model provider does not gate this: a third-party session must not hide an official key.
+pub(super) fn parse(text: &str) -> Option<Credential> {
     let mut stack: Vec<(usize, String)> = Vec::new();
     let mut version = false;
     let (mut api, mut token, mut issuer, mut grant_version, mut grant_kind) = (None, None, None, false, false);
@@ -55,7 +56,7 @@ pub(super) fn parse(text: &str, provider: &str) -> Option<Credential> {
         // Ignore unrelated records, including their values.
         let relevant = match (parents.as_slice(), key.as_str()) {
             ([], "version") => { version = value.trim() == "1"; false }
-            (["refs"], "DEEPSEEK_API_KEY") if provider == "deepseek-official" => true,
+            (["refs"], "DEEPSEEK_API_KEY") => true,
             (["records", "deepseek-account-platform/default"], "kind") => true,
             (["records", "deepseek-account-platform/default", "payload"], "version" | "token" | "issuer") => true,
             _ => false,
@@ -72,23 +73,27 @@ pub(super) fn parse(text: &str, provider: &str) -> Option<Credential> {
         }
     }
     if !version { return None; }
-    let credential = match provider {
-        "deepseek-official" => Credential::ApiKey(api?),
-        "deepseek-account" if grant_kind && grant_version && issuer.as_deref() == Some("https://platform.deepseek.com") => Credential::Account(token?),
-        _ => return None,
+    // Prefer the API key: it is configured explicitly and account grants expire. Both are
+    // DeepSeek official credentials, regardless of which model the latest session used.
+    let credential = if let Some(key) = api {
+        Credential::ApiKey(key)
+    } else if grant_kind && grant_version && issuer.as_deref() == Some("https://platform.deepseek.com") {
+        Credential::Account(token?)
+    } else {
+        return None;
     };
     // HTTP header values must be visible ASCII; the parser never returns a diagnostic with them.
     credential.secret().bytes().all(|c| (0x21..=0x7e).contains(&c)).then_some(credential)
 }
 
-pub(super) fn read(root: &Path, provider: &str) -> Option<Credential> {
+pub(super) fn read(root: &Path) -> Option<Credential> {
     const MAX_BYTES: u64 = 64 * 1024;
     let file = File::open(root.join(".credentials.yaml")).ok()?;
     if file.metadata().ok()?.len() > MAX_BYTES { return None; }
     let mut text = String::new();
     file.take(MAX_BYTES + 1).read_to_string(&mut text).ok()?;
     if text.len() as u64 > MAX_BYTES { return None; }
-    parse(&text, provider)
+    parse(&text)
 }
 
 /// A conservative guard for customized built-in routes. We do not interpret configuration or
@@ -133,22 +138,34 @@ mod tests {
     #[test]
     fn reads_only_fixed_reference_and_matching_issuer() {
         let api = "version: 1\nrecords: {}\nrefs:\n  DEEPSEEK_API_KEY: 'fictional-key'\n";
-        assert!(matches!(parse(api, "deepseek-official"), Some(Credential::ApiKey(_))));
-        assert!(parse(api, "custom-provider").is_none());
-        assert!(parse(&api.replace("'fictional-key'", "*alias"), "deepseek-official").is_none());
+        assert!(matches!(parse(api), Some(Credential::ApiKey(_))));
+        assert!(parse(&api.replace("'fictional-key'", "*alias")).is_none());
         let account = "version: 1\nrecords:\n  deepseek-account-platform/default:\n    kind: grant\n    payload:\n      version: 1\n      token: fictional-grant\n      issuer: https://platform.deepseek.com\nrefs: {}\n";
-        assert!(matches!(parse(account, "deepseek-account"), Some(Credential::Account(_))));
-        assert!(parse(&account.replace("platform.deepseek.com", "example.invalid"), "deepseek-account").is_none());
-        assert!(parse(&account.replace("version: 1", "version: 99"), "deepseek-account").is_none());
+        assert!(matches!(parse(account), Some(Credential::Account(_))));
+        assert!(parse(&account.replace("platform.deepseek.com", "example.invalid")).is_none());
+        assert!(parse(&account.replace("version: 1", "version: 99")).is_none());
+        // Both present: the explicit API key wins over the expiring account grant.
+        let both = "version: 1
+records:
+  deepseek-account-platform/default:
+    kind: grant
+    payload:
+      version: 1
+      token: fictional-grant
+      issuer: https://platform.deepseek.com
+refs:
+  DEEPSEEK_API_KEY: fictional-key
+";
+        assert!(matches!(parse(both), Some(Credential::ApiKey(_))));
     }
 
     #[test]
     fn tolerates_bom_list_items_and_unreadable_neighbours() {
         let text = "\u{feff}version: 1\nrecords:\n  \"other:record\": x\n  list:\n    - one\n    - two\nrefs:\n  DEEPSEEK_API_KEY: fictional-key\n";
-        assert!(matches!(parse(text, "deepseek-official"), Some(Credential::ApiKey(_))));
+        assert!(matches!(parse(text), Some(Credential::ApiKey(_))));
         // A child of an unreadable key is not taken for a known record's field.
         let nested = "version: 1\nrecords:\n  deepseek-account-platform/default:\n    \"bad:key\":\n      kind: grant\n      payload:\n        version: 1\n        token: fictional-grant\n        issuer: https://platform.deepseek.com\n";
-        assert!(parse(nested, "deepseek-account").is_none());
+        assert!(parse(nested).is_none());
     }
 
     #[test]

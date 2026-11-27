@@ -71,7 +71,7 @@ export type AgentText = {
     fromDshApi: string;
     fromDshAccount: string;
     /** Why DSH is set up but shows no balance: a word or two beside the empty ring, then the hover detail. */
-    dshProblem: Record<"noSession" | "customProvider" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format", { short: string; detail: string }>;
+    dshProblem: Record<"noSession" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format", { short: string; detail: string }>;
     workbuddy: { label: string; credits: (value: string) => string; balance: (remaining: string, total: string) => string; percent: (value: number) => string; source: string };
     fiveHour: string;
     sevenDay: string;
@@ -197,8 +197,7 @@ export const zhCN: AgentText = {
     fromDshApi: "DeepSeek API 余额接口",
     fromDshAccount: "DSH 账户余额接口",
     dshProblem: {
-      noSession: { short: "暂无会话", detail: "DSH 还没有用过官方模型的会话，无法确定计费账户。" },
-      customProvider: { short: "第三方模型", detail: "最近的 DSH 会话使用第三方模型，没有 DeepSeek 官方余额可查。" },
+      noSession: { short: "暂无会话", detail: "没有找到 DSH 会话，无法确定当前使用的账户。" },
       customRoute: { short: "自定义接口", detail: "DSH 设置了自定义接口地址，为保护密钥，不向官方查询余额。" },
       credential: { short: "未找到凭据", detail: "没有读到 DSH 保存的 DeepSeek 凭据，请在 DSH 里重新登录或填写 API key。" },
       timeout: { short: "查询超时", detail: "查询余额超时，请检查网络或代理，稍后会自动重试。" },
@@ -331,8 +330,7 @@ export const en: AgentText = {
     fromDshApi: "DeepSeek API balance endpoint",
     fromDshAccount: "DSH account balance endpoint",
     dshProblem: {
-      noSession: { short: "No session", detail: "No DSH session with an official model yet, so the billed account is unknown." },
-      customProvider: { short: "Third-party", detail: "The latest DSH session uses a third-party model; there is no DeepSeek balance to read." },
+      noSession: { short: "No session", detail: "No DSH session was found, so the account in use is unknown." },
       customRoute: { short: "Custom API", detail: "DSH uses a custom endpoint; to protect its key, the official balance is not queried." },
       credential: { short: "No credential", detail: "DSH's saved DeepSeek credential was not found. Sign in again or add an API key in DSH." },
       timeout: { short: "Timed out", detail: "The balance request timed out. Check your network or proxy; it retries shortly." },
