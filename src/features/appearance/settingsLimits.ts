@@ -3,7 +3,7 @@ import type { AgentQuotaSource, AgentSessionGroup, AgentSessionSort, CollapsedIt
 
 export const AGENT_SESSION_SORTS: readonly AgentSessionSort[] = ["status", "recent", "firstSeen"];
 export const AGENT_SESSION_GROUPS: readonly AgentSessionGroup[] = ["computer", "project", "none"];
-export const AGENT_QUOTA_SOURCES: readonly AgentQuotaSource[] = ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode", "antigravity"];
+export const AGENT_QUOTA_SOURCES: readonly AgentQuotaSource[] = ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode", "antigravity", "relay"];
 /** Choices for how far back the Agent page lists sessions, in hours. */
 export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 /** How long a page opened for an agent alert stays, in seconds. */

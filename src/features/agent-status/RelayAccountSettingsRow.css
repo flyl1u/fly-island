@@ -1,0 +1,51 @@
+.relay-accounts__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.relay-accounts__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.1);
+}
+
+.relay-accounts__name {
+  font-weight: 600;
+}
+
+.relay-accounts__detail {
+  opacity: 0.7;
+  font-size: 0.9em;
+  word-break: break-all;
+}
+
+.relay-accounts__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.relay-accounts__form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.relay-accounts__error {
+  color: #e06c75;
+  font-size: 0.9em;
+  margin: 6px 0 0;
+}
+
+.relay-accounts__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}

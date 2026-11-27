@@ -34,6 +34,8 @@ mod magpie;
 mod markers;
 mod notifications;
 mod orca;
+pub(crate) mod relay_accounts;
+pub(crate) mod relay_usage;
 pub(crate) mod reply_marker;
 mod reply_text;
 mod focus;
@@ -556,6 +558,11 @@ macro_rules! tauri_commands {
             crate::agent_status::get_codex_usage,
             crate::agent_status::dsh_usage::get_dsh_usage,
             crate::agent_status::kimi_usage::get_kimi_usage,
+            crate::agent_status::relay_usage::get_relay_usage,
+            crate::agent_status::relay_usage::check_relay_account,
+            crate::agent_status::relay_accounts::get_relay_accounts,
+            crate::agent_status::relay_accounts::save_relay_account,
+            crate::agent_status::relay_accounts::delete_relay_account,
             crate::agent_status::zcode_usage::get_zcode_usage,
             crate::agent_status::antigravity_quota::get_antigravity_usage,
             crate::agent_status::zcode_api_key::get_zcode_api_key_settings,

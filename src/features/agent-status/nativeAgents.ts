@@ -3,7 +3,7 @@ import type { IslandSettings } from "../appearance/types";
 import { useNativePlugins } from "../plugins";
 import type { NativeAgentProvider } from "./api";
 
-export type NativeAgentSettings = Pick<IslandSettings, "agentShowCursor" | "agentShowKimiCode" | "agentShowCodeBuddy" | "agentShowHermes" | "agentShowZcode" | "agentShowAntigravity">;
+export type NativeAgentSettings = Pick<IslandSettings, "agentShowCursor" | "agentShowKimiCode" | "agentShowCodeBuddy" | "agentShowHermes" | "agentShowZcode" | "agentShowAntigravity" | "agentShowRelay">;
 
 /** The plugin-market agents and the setting that shows each, in the settings page's order. */
 export const NATIVE_AGENTS: readonly { id: NativeAgentProvider; setting: keyof NativeAgentSettings; sessions: boolean; quota: boolean }[] = [
@@ -13,12 +13,13 @@ export const NATIVE_AGENTS: readonly { id: NativeAgentProvider; setting: keyof N
   { id: "antigravity", setting: "agentShowAntigravity", sessions: true, quota: true },
   { id: "zcode", setting: "agentShowZcode", sessions: false, quota: true },
   { id: "hermes", setting: "agentShowHermes", sessions: true, quota: false },
+  { id: "relay", setting: "agentShowRelay", sessions: false, quota: true },
 ];
 
 /** Which of them the island shows: installed in the plugin market and switched on in settings. */
 export function useNativeAgents(settings: NativeAgentSettings): Record<NativeAgentProvider, boolean> {
   const installed = useNativePlugins();
-  const { agentShowCursor, agentShowKimiCode, agentShowCodeBuddy, agentShowHermes, agentShowZcode, agentShowAntigravity } = settings;
+  const { agentShowCursor, agentShowKimiCode, agentShowCodeBuddy, agentShowHermes, agentShowZcode, agentShowAntigravity, agentShowRelay } = settings;
   return useMemo(() => ({
     cursor: installed.cursor && agentShowCursor,
     kimiCode: installed.kimiCode && agentShowKimiCode,
@@ -26,8 +27,9 @@ export function useNativeAgents(settings: NativeAgentSettings): Record<NativeAge
     antigravity: installed.antigravity && agentShowAntigravity,
     hermes: installed.hermes && agentShowHermes,
     zcode: installed.zcode && agentShowZcode,
-  }), [installed.cursor, installed.kimiCode, installed.codebuddy, installed.antigravity, installed.hermes, installed.zcode,
-    agentShowCursor, agentShowKimiCode, agentShowCodeBuddy, agentShowAntigravity, agentShowHermes, agentShowZcode]);
+    relay: installed.relay && agentShowRelay,
+  }), [installed.cursor, installed.kimiCode, installed.codebuddy, installed.antigravity, installed.hermes, installed.zcode, installed.relay,
+    agentShowCursor, agentShowKimiCode, agentShowCodeBuddy, agentShowAntigravity, agentShowHermes, agentShowZcode, agentShowRelay]);
 }
 
 /** The ones whose sessions the native side should read, as `list_agent_sessions` takes them. */

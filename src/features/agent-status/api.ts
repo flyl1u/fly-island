@@ -5,7 +5,7 @@ import type { AgentEffortLabels } from "./effortLabels";
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
 export type AgentProvider = "codex" | "claudeCode" | "dsh" | "workbuddy" | "plugin" | NativeAgentProvider;
 /** Agents installed from the plugin market; Z Code has quota rings but no sessions yet. */
-export type NativeAgentProvider = "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode";
+export type NativeAgentProvider = "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode" | "relay";
 /** Only these providers install lifecycle hooks and write agent-status.json. */
 export type HookAgentProvider = Exclude<AgentProvider, "dsh" | "workbuddy" | "plugin" | NativeAgentProvider>;
 /** `waiting` (asked the user mid-turn) only comes from the session list, for Claude Code. */
@@ -245,6 +245,53 @@ export function notifyZcodeUsageChanged(usage: AgentUsage | null) {
 export function onZcodeUsageChanged(callback: (usage: AgentUsage | null) => void) {
   return listen<AgentUsage | null>(ZCODE_USAGE_CHANGED, ({ payload }) => callback(payload));
 }
+
+/** Mirrors RelayBalance / RelayUsage in relay_usage.rs. These amounts are money, not percentages. */
+export type RelayBalance = {
+  id: string;
+  name: string;
+  adapter: string;
+  currency: string;
+  remaining: number | null;
+  used: number | null;
+  total: number | null;
+  unlimited: boolean;
+  todaySpend: number | null;
+  weekSpend: number | null;
+  monthSpend: number | null;
+  allTimeSpend: number | null;
+  problem: string | null;
+};
+
+export type RelayUsage = { accounts: RelayBalance[]; updatedAt: number };
+
+export type RelayAdapter = "newapi-account" | "newapi-token" | "sub2api" | "custom";
+
+/** Mirrors RelayAccountView in relay_accounts.rs: no token or key ever crosses IPC. */
+export type RelayAccountView = {
+  id: string; name: string; adapter: RelayAdapter; baseUrl: string;
+  hasAccessToken: boolean; hasRefreshToken: boolean; hasApiKey: boolean; maskedCredential: string | null;
+  endpointPath: string | null; remainingPath: string | null; usedPath: string | null; totalPath: string | null;
+  authMode: string | null; currency: string | null; divisor: number | null;
+};
+
+/** `undefined` secrets keep the stored ones; an empty string clears them. */
+export type RelayAccountInput = {
+  id: string; name: string; adapter: RelayAdapter; baseUrl: string;
+  accessToken?: string | null; refreshToken?: string | null; apiKey?: string | null; userId?: string | null;
+  endpointPath?: string | null; remainingPath?: string | null; usedPath?: string | null; totalPath?: string | null;
+  authMode?: string | null; currency?: string | null; divisor?: number | null;
+};
+
+export function getRelayUsage() { return invoke<RelayUsage>("get_relay_usage"); }
+export function getRelayAccounts() { return invoke<RelayAccountView[]>("get_relay_accounts"); }
+export function saveRelayAccount(input: RelayAccountInput) { return invoke<RelayAccountView[]>("save_relay_account", { input }); }
+export function deleteRelayAccount(id: string) { return invoke<RelayAccountView[]>("delete_relay_account", { id }); }
+export function checkRelayAccount(input: RelayAccountInput) { return invoke<null>("check_relay_account", { input }); }
+/** Ask the island to re-read relay balances right after an account is saved or removed. */
+export const RELAY_USAGE_CHANGED = "relay-usage-changed";
+export function notifyRelayUsageChanged() { return emit(RELAY_USAGE_CHANGED); }
+export function onRelayUsageChanged(callback: () => void) { return listen(RELAY_USAGE_CHANGED, () => callback()); }
 
 export type ZcodeApiPlatform = "bigmodel" | "zai";
 

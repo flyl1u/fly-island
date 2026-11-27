@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks" | "battery";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "relay" | "clockWeather" | "calendarMarks" | "battery";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -54,6 +54,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "antigravity", kind: "agent", accent: "#6dc487", authors: contributed("lilipeng0615-cyber"), settings: AGENT_SESSIONS },
   { id: "zcode", kind: "agent", accent: "#7c8592", authors: OWN, settings: AGENT_SESSIONS },
   { id: "hermes", kind: "agent", accent: "#b9a6ff", authors: OWN, settings: AGENT_SESSIONS },
+  { id: "relay", kind: "agent", accent: "#7cc4e8", authors: contributed("yiumanlenong"), settings: AGENT_SESSIONS },
   { id: "calendarMarks", kind: "island", accent: "#f29389", authors: contributed("gyl-coding"), settings: null },
   { id: "clockWeather", kind: "island", accent: "#63b9b6", authors: OWN, settings: { placement: "standalone", category: "clockWeather" } },
   { id: "battery", kind: "island", accent: "#8fd9a8", authors: contributed("QXiaoLingShang"), settings: { placement: "standalone", category: "battery" } },

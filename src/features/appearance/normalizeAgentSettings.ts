@@ -23,9 +23,10 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentShowHermes: settings?.agentShowHermes !== false,
     agentShowZcode: settings?.agentShowZcode !== false,
     agentShowAntigravity: settings?.agentShowAntigravity !== false,
+    agentShowRelay: settings?.agentShowRelay !== false,
     agentQuotaSources: Array.isArray(quotaSources)
       ? AGENT_QUOTA_SOURCES.filter((source) => quotaSources.includes(source) || (addAntigravityRing && source === "antigravity"))
-      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy, kimiCode: true, zcode: true, antigravity: true })[source]),
+      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy, kimiCode: true, zcode: true, antigravity: true, relay: true })[source]),
     agentSessionSort: oneOf(AGENT_SESSION_SORTS, settings?.agentSessionSort, DEFAULT_SETTINGS.agentSessionSort),
     agentSessionGroup: oneOf(AGENT_SESSION_GROUPS, settings?.agentSessionGroup, DEFAULT_SETTINGS.agentSessionGroup),
     agentAlertCompleted: settings?.agentAlertCompleted !== false,

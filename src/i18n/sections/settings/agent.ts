@@ -17,7 +17,7 @@ export type SettingsAgentText = {
     /** Agents installed from the plugin market; their rows appear only once installed. */
     /** The switch in an installed Agent plugin's own group. */
     showOnIsland: string;
-    native: Record<"cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode", string>;
+    native: Record<"cursor" | "kimiCode" | "codebuddy" | "antigravity" | "hermes" | "zcode" | "relay", string>;
   };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
   zcodeApiKey: {
@@ -29,6 +29,16 @@ export type SettingsAgentText = {
       loading: string; checking: string; noQuota: string; invalidKey: string; network: string; http: (status: string) => string;
       response: string; storage: string; invalidInput: string; desktopError: string;
     };
+  };
+  relayAccounts: {
+    title: string; empty: string; count: (count: number) => string; settings: string;
+    add: string; edit: string; delete: string; confirmDelete: string; cancel: string; save: string;
+    name: string; adapter: string; adapterOptions: Record<"newapi-account" | "newapi-token" | "sub2api" | "custom", string>;
+    baseUrl: string; accessToken: string; refreshToken: string; apiKey: string; userId: string;
+    endpointPath: string; authMode: string; authModes: { bearer: string; xApiKey: string };
+    currency: string; divisor: string; remainingPath: string; usedPath: string; totalPath: string; secretHint: string;
+    status: Record<"checking" | "saved" | "unknown" | "credential" | "auth" | "unauthorized" | "network" | "response" | "http" | "storage"
+      | "adapter" | "name" | "url" | "path" | "jsonPath" | "authMode" | "currency" | "divisor" | "format", string>;
   };
   workbuddy: {
     signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string; curlUnavailable: string;
@@ -90,8 +100,9 @@ export const zhCN: SettingsAgentText = {
       antigravity: "读取 Antigravity 的会话和回复摘要，并按模型显示额度环。点击会话可切到 Antigravity。",
       hermes: "只读取 Hermes Agent 的会话记录。",
       zcode: "用 Z Code 客户端登录或 Coding Plan API Key，在 Agent 页显示套餐额度环。",
+      relay: "从你填写的第三方中转站账号读取额度，每个账号在 Agent 页显示一个金额环。",
     } },
-  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" } },
+  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity", relay: "第三方中转站" } },
   zcodeApiKey: {
     title: "Coding Plan API Key（可选）",
     empty: "未填写，使用 Z Code 桌面版登录",
@@ -120,6 +131,43 @@ export const zhCN: SettingsAgentText = {
       storage: "无法访问 Windows 凭据管理器。",
       invalidInput: "API Key 需为可打印字符，且不超过 2048 个字符。",
       desktopError: "Z Code 桌面版登录暂不可用。",
+    },
+  },
+  relayAccounts: {
+    title: "第三方中转站",
+    empty: "还没有配置中转站账号",
+    count: (count) => `已配置 ${count} 个账号`,
+    settings: "管理",
+    add: "添加账号",
+    edit: "编辑",
+    delete: "删除",
+    confirmDelete: "确认删除？",
+    cancel: "取消",
+    save: "保存并检查",
+    name: "名称",
+    adapter: "适配器",
+    adapterOptions: { "newapi-account": "New API 账户", "newapi-token": "New API 令牌", sub2api: "Sub2API", custom: "自定义接口" },
+    baseUrl: "接口地址（Base URL）",
+    accessToken: "Access Token",
+    refreshToken: "Refresh Token",
+    apiKey: "API Key",
+    userId: "用户 ID（可选）",
+    endpointPath: "余额路径",
+    authMode: "鉴权方式",
+    authModes: { bearer: "Bearer", xApiKey: "x-api-key" },
+    currency: "货币代码",
+    divisor: "额度换算单位",
+    remainingPath: "剩余额度 JSON 路径",
+    usedPath: "已用额度 JSON 路径（可选）",
+    totalPath: "总额度 JSON 路径（可选）",
+    secretHint: "留空表示保留已有凭据",
+    status: {
+      checking: "正在检查余额…", saved: "已保存并检查通过", unknown: "保存失败，请重试",
+      credential: "缺少凭据，请填写 Key 或令牌", auth: "凭据被拒绝，请检查 Key 或令牌", unauthorized: "凭据已过期，请更新令牌",
+      network: "无法连接中转站", response: "返回数据无法读取", http: "中转站返回错误",
+      storage: "无法访问 Windows 凭据管理器", adapter: "适配器无效", name: "名称不能为空", url: "接口地址格式不正确",
+      path: "余额路径格式不正确", jsonPath: "JSON 路径格式不正确", authMode: "鉴权方式无效", currency: "货币代码无效",
+      divisor: "换算单位必须大于 0", format: "余额格式无法识别",
     },
   },
   workbuddy: {
@@ -188,8 +236,9 @@ export const en: SettingsAgentText = {
       antigravity: "Reads Antigravity sessions and reply previews and shows quota rings by model, read-only. Select a session to bring Antigravity forward.",
       hermes: "Reads Hermes Agent sessions, read-only.",
       zcode: "Shows Z Code's plan quota rings on the Agent page using its desktop sign-in or a Coding Plan API key.",
+      relay: "Reads quotas from your configured third-party relays, one balance ring per account on the Agent page.",
     } },
-  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity" } },
+  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code", antigravity: "Antigravity", relay: "Third-party relays" } },
   zcodeApiKey: {
     title: "Coding Plan API Key (optional)",
     empty: "No key set. Using Z Code desktop sign-in.",
@@ -218,6 +267,43 @@ export const en: SettingsAgentText = {
       storage: "Couldn't access Windows Credential Manager.",
       invalidInput: "Use up to 2048 printable characters for the API Key.",
       desktopError: "Z Code desktop sign-in is unavailable.",
+    },
+  },
+  relayAccounts: {
+    title: "Third-party relays",
+    empty: "No relay account configured yet",
+    count: (count) => `${count} account${count === 1 ? "" : "s"} configured`,
+    settings: "Manage",
+    add: "Add account",
+    edit: "Edit",
+    delete: "Delete",
+    confirmDelete: "Delete?",
+    cancel: "Cancel",
+    save: "Save and check",
+    name: "Name",
+    adapter: "Adapter",
+    adapterOptions: { "newapi-account": "New API account", "newapi-token": "New API token", sub2api: "Sub2API", custom: "Custom endpoint" },
+    baseUrl: "Base URL",
+    accessToken: "Access Token",
+    refreshToken: "Refresh Token",
+    apiKey: "API Key",
+    userId: "User ID (optional)",
+    endpointPath: "Balance path",
+    authMode: "Authentication",
+    authModes: { bearer: "Bearer", xApiKey: "x-api-key" },
+    currency: "Currency code",
+    divisor: "Quota unit",
+    remainingPath: "Remaining JSON path",
+    usedPath: "Used JSON path (optional)",
+    totalPath: "Total JSON path (optional)",
+    secretHint: "Leave blank to keep the saved credential",
+    status: {
+      checking: "Checking balance…", saved: "Saved and verified", unknown: "Could not save; try again",
+      credential: "Missing credential; add a key or token", auth: "Credential rejected; check the key or token", unauthorized: "Credential expired; update the token",
+      network: "Cannot reach the relay", response: "Cannot read the response", http: "The relay returned an error",
+      storage: "Cannot access Windows Credential Manager", adapter: "Invalid adapter", name: "Name is required", url: "Invalid base URL",
+      path: "Invalid balance path", jsonPath: "Invalid JSON path", authMode: "Invalid authentication", currency: "Invalid currency",
+      divisor: "Quota unit must be greater than 0", format: "Unrecognized balance format",
     },
   },
   workbuddy: {

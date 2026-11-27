@@ -12,6 +12,7 @@ import antigravityIcon from "../../../assets/brands/antigravity.svg";
 import minimaxIcon from "../../../assets/brands/minimax.png";
 import calendarMarksIcon from "../../../assets/plugins/calendar-marks.svg";
 import clockWeatherIcon from "../../../assets/plugins/clock-weather.svg";
+import relayIcon from "../../../assets/plugins/relay.png";
 import deviceBatteryIcon from "../../../assets/plugins/device-battery.svg";
 import eyeCareIcon from "../../../assets/plugins/eye-care.svg";
 import type { MarketPluginId } from "./catalog";
@@ -31,6 +32,7 @@ const APP_ICONS: Readonly<Record<MarketPluginId, string>> = {
   hermes: hermesIcon,
   battery: batteryIcon,
   clockWeather: clockWeatherIcon,
+  relay: relayIcon,
   calendarMarks: calendarMarksIcon,
   minimax: minimaxIcon,
   "device-battery": deviceBatteryIcon,

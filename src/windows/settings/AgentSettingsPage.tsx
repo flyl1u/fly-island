@@ -4,6 +4,7 @@ import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettin
 import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
 import { AgentQuotaSettings } from "../../features/agent-status/AgentQuotaSettings";
 import { ZcodeApiKeySettingsRow } from "../../features/agent-status/ZcodeApiKeySettingsRow";
+import { RelayAccountSettingsRow } from "../../features/agent-status/RelayAccountSettingsRow";
 import { WorkbuddySignInRow } from "../../features/agent-status/WorkbuddySignInRow";
 import { NATIVE_AGENTS, useNativeAgents } from "../../features/agent-status/nativeAgents";
 import { AGENT_PROVIDER_LABELS } from "../../features/agent-status/status";
@@ -39,6 +40,7 @@ export function AgentSettingsPage({
       <SettingsToggleRow title={t.settings.agent.sources.showOnIsland} description={t.settings.agent.sources.native[agent.id]}
         checked={settings[agent.setting]} onChange={(checked) => onSettingsChange({ ...settings, [agent.setting]: checked })} />
       {agent.id === "zcode" && <ZcodeApiKeySettingsRow polling={settings.agentStatusEnabled && native.zcode && (settings.agentQuotaSources.includes("zcode") || settings.agentQuotaAlertPercent > 0)} />}
+      {agent.id === "relay" && <RelayAccountSettingsRow polling={settings.agentStatusEnabled && native.relay && (settings.agentQuotaSources.includes("relay") || settings.agentQuotaAlertPercent > 0)} />}
     </SettingsGroup>;
   };
 
@@ -73,7 +75,7 @@ export function AgentSettingsPage({
         />
         {settings.agentShowWorkbuddy && <WorkbuddySignInRow polling={settings.agentStatusEnabled && settings.agentQuotaSources.includes("workbuddy")} />}
       </SettingsGroup>
-      <AgentQuotaSettings sources={settings.agentQuotaSources} offered={(source) => source === "kimiCode" || source === "zcode" || source === "antigravity" ? native[source] : true}
+      <AgentQuotaSettings sources={settings.agentQuotaSources} offered={(source) => source === "kimiCode" || source === "zcode" || source === "antigravity" || source === "relay" ? native[source] : true}
         onChange={(agentQuotaSources) => onSettingsChange({ ...settings, agentQuotaSources })} />
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>
         <SettingsToggleRow
