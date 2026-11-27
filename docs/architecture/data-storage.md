@@ -118,3 +118,5 @@ Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；�
 ## 插件市场作者头像缓存（2026-11-26）
 
 插件市场作者头像从 GitHub 头像 CDN 加载，每个 URL 的并发请求合并，解码后保存为当前 WebView 内存中的 blob URL；离开、重新进入市场时直接复用。初次请求使用 HTTP 缓存且不发送凭据或 referrer，失败显示姓名首字母，下次进入可重试。不新增 localStorage key。
+
+Antigravity 额度缓存升级为版本 2，在原字段外增加 `fiveHour`、`sevenDay`（窗口对象或 null）。兼容读取版本 1 的模型数据，但不将它们转换成 5 小时／每周；成功查询后原子写入版本 2，损坏或过期缓存仍忽略。

@@ -44,7 +44,7 @@ WorkBuddy 官方授权与账单解析在 `workbuddy_official.rs`，登录任务�
 
 Z Code 的 Coding Plan 额度由 `agent_status/zcode_usage.rs` 查询，优先读取 Windows 凭据管理器中的手动 API Key 配置（`zcode_api_key.rs`），未配置时回退到 Z Code 桌面版登录凭据；设置页只拿到 Key 是否存在与掩码。额度缓存在原生内存中，Key 或平台变更时清除。
 
-Antigravity 的额度仍由 `agent_status/antigravity_quota.rs` 向本机语言服务器查询，`antigravity_quota_cache.rs` 在岛屿自己的缓存目录保存成功快照，关闭来源应用或重启岛屿后沿用原始时间与模型窗口。前端 `QuotaRings.tsx` 负责上下弧与独立悬停区域，`AgentProviderMark.tsx` 使用 `assets/brands/marks/` 的无底板品牌标志；会话列表的 `AgentProviderIcon.tsx` 继续使用原始应用磁贴。
+Antigravity 的额度仍由 `agent_status/antigravity_quota.rs` 向本机语言服务器查询，`antigravity_quota_windows.rs` 解析 `RetrieveUserQuotaSummary` 的真实 5 小时／每周窗口，`antigravity_quota_cache.rs` 在岛屿自己的缓存目录保存成功快照，关闭来源应用或重启岛屿后沿用原始时间与模型窗口。前端 `QuotaRings.tsx` 负责上下弧与独立悬停区域，`AgentProviderMark.tsx` 使用 `assets/brands/marks/` 的无底板品牌标志；会话列表的 `AgentProviderIcon.tsx` 继续使用原始应用磁贴。
 
 微信的进程解析、窗口归属和主窗口选择统一在 `wechat_reminders/source.rs`，供打开动作、提醒监听、摘要读取和探测程序复用；需比较完整路径时使用 `win32/process.rs` 的 canonicalize 与归一化回退。微信摘要开启时，微信提醒服务通过 `win32/caption_close.rs` 将微信关闭按钮的点击转为最小化，通过 `win32/taskbar.rs` 控制最小化窗口的任务栏按钮。
 

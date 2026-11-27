@@ -31,7 +31,7 @@ const usages = { claude: { updatedAt: now, fiveHour: window(20), sevenDay: windo
   ...(params.has("all") ? {
     kimi: { updatedAt: now, fiveHour: window(40), sevenDay: window(55), models: [], plan: null, source: "kimi" as const },
     zcode: { updatedAt: now, fiveHour: window(15), sevenDay: window(25), models: [], plan: null, source: "zcode" as const },
-    antigravity: { updatedAt: now, fiveHour: null, sevenDay: null, models: [{ ...window(35), name: "Gemini" }, { ...window(60), name: "Claude" }], plan: null, source: "antigravity" as const },
+    antigravity: { updatedAt: now, fiveHour: window(35), sevenDay: window(60), models: [], plan: null, source: "antigravity" as const },
     workbuddy: { updatedAt: now, remaining: 125.5, total: 500 },
   } : {}),
 };

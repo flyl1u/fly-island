@@ -287,3 +287,5 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 ### 可丢弃的 Antigravity 额度缓存
 
 `app_cache_dir()/antigravity-quota.json` 使用版本 1：`{ version: 1, updatedAt: <Unix ms>, plan: <string|null>, models: [{ name: <string>, used: <0–100>, resetsAt: <Unix ms|null> }] }`。文件不含凭据，不参与配置迁移；缺失、损坏、版本不支持或超过 7 天时忽略，成功查询后原子重建。不改变 `get_antigravity_usage` 的前端调用方式或返回格式。
+
+Antigravity 额度缓存升级为版本 2，在原字段外增加 `fiveHour`、`sevenDay`（窗口对象或 null）。兼容读取版本 1 的模型数据，但不将它们转换成 5 小时／每周；成功查询后原子写入版本 2，损坏或过期缓存仍忽略。

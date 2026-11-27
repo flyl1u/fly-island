@@ -47,7 +47,7 @@ function AgentQuota({ provider, usage, now }: { provider: AgentProvider; usage: 
         inner={rings.inner ? percentLeft(rings.inner) : null}
         stale={stale}
         label={text.rings(label, ringWindows)}
-        hints={[hint(rings.outer, provider === "antigravity" ? text.modelQuota : text.fiveHour), hint(rings.inner, provider === "antigravity" ? text.modelQuota : text.weekly)]}
+        hints={[hint(rings.outer, text.fiveHour), hint(rings.inner, text.weekly)]}
       />
   );
 }
@@ -59,7 +59,7 @@ export function QuotaRingPair({
   provider,
   outer,
   inner,
-  size = 22,
+  size = 26,
   stale = false,
   label,
   hints,

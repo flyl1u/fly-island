@@ -4,7 +4,7 @@
 
 仅当此来源安装且启用时才会读取：
 - `~/.gemini/antigravity`、`antigravity-cli`、`antigravity-ide` 下的 `conversation_summaries.db` 和各会话 `transcript.jsonl` 的末尾部分（读法见下一节）。
-- 额度：读取 `~/.gemini/antigravity/daemon/hub_*.json` 的连接信息，向 `127.0.0.1` 上的 Antigravity 语言服务器请求 `GetUserStatus`。端口必须确认由 Antigravity 进程监听，请求不走代理、不跟随重定向、最长 3 秒，失败时保留上次成功的额度；成功快照写入岛屿自己的缓存目录 `antigravity-quota.json`，不保存 token 或账号凭据。关闭 Antigravity、暂时没有对话或重启岛屿时，额度环仍在；没有成功快照或模型窗口已重置时显示暗色弧和「暂无数据」。旧快照保留原始时间，超过 7 天不从磁盘恢复。
+- 额度：读取 `~/.gemini/antigravity/daemon/hub_*.json` 的连接信息，向 `127.0.0.1` 上的 Antigravity 语言服务器请求 `RetrieveUserQuotaSummary` 读取明确命名的 5 小时／每周窗口（各窗口取启用池的最紧值），旧服务器回退 `GetUserStatus` 的模型余额仅用于原有模型信息，不冒充时间窗口。端口必须确认由 Antigravity 进程监听，请求不走代理、不跟随重定向、最长 3 秒，失败时保留上次成功的额度；成功快照写入岛屿自己的缓存目录 `antigravity-quota.json`，不保存 token 或账号凭据。关闭 Antigravity、暂时没有对话或重启岛屿时，额度环仍在；没有成功快照或模型窗口已重置时显示暗色弧和「暂无数据」。旧快照保留原始时间，超过 7 天不从磁盘恢复。
 
 
 ## 读取方式与延迟
@@ -20,3 +20,5 @@
 In **Settings → Plugins**, install Antigravity by [lilipeng0615-cyber](https://github.com/lilipeng0615-cyber). Fly Island reads Antigravity's local conversation store read-only and, for quota, asks its language server on `127.0.0.1` only after confirming that the port belongs to an Antigravity process (no proxy, no redirects, 3-second limit, silent on failure). Nothing is read or requested while the plugin is not installed and enabled.
 
 The quota indicator stays visible while installed, enabled and selected. The last successful model snapshot is cached in Fly Island’s own cache directory and survives restarts; it contains no credentials. Fresh numbers still require Antigravity’s language server. Unknown or expired windows show dim arcs instead of old percentages. Disk snapshots older than seven days are ignored.
+
+双窗口接口返回 `response.groups[].buckets[]` 的 `window`、`remainingFraction`、`resetTime`、`disabled`。禁用桶跳过；缺失的 5 小时／每周窗口显示暂无数据。旧模型余额缓存只保留模型信息。

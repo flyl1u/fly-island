@@ -183,13 +183,13 @@ fn parse_status(value: &Value, now: i64) -> Option<AgentUsage> {
     })
 }
 
-async fn fetch_status(client: &Client, hub: &Hub) -> Option<AgentUsage> {
-    let url = format!("http://127.0.0.1:{}{}", hub.port, STATUS_PATH);
+async fn fetch_reply(client: &Client, hub: &Hub, path: &str, body: Value) -> Option<Value> {
+    let url = format!("http://127.0.0.1:{}{}", hub.port, path);
     let mut response = client
         .post(url)
         .header(CSRF_HEADER, hub.token.clone())
         .header(header::CONTENT_TYPE, "application/json")
-        .body(status_body(&hub.version).to_string())
+        .body(body.to_string())
         .send()
         .await
         .ok()?;
@@ -207,7 +207,7 @@ async fn fetch_status(client: &Client, hub: &Hub) -> Option<AgentUsage> {
         }
         body.extend_from_slice(&chunk);
     }
-    parse_status(&serde_json::from_slice(&body).ok()?, current_unix_millis())
+    serde_json::from_slice(&body).ok()
 }
 
 async fn read_quota() -> Option<AgentUsage> {
@@ -224,7 +224,14 @@ async fn read_quota() -> Option<AgentUsage> {
         .ok()?;
     for hub in hubs {
         if owns_listener(&hub) {
-            if let Some(usage) = fetch_status(&client, &hub).await {
+            if let Some(usage) = fetch_reply(&client, &hub,
+                "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
+                serde_json::json!({"request":{},"forceRefresh":false})).await
+                .and_then(|reply| super::antigravity_quota_windows::parse(&reply, current_unix_millis())) {
+                return Some(usage);
+            }
+            if let Some(usage) = fetch_reply(&client, &hub, STATUS_PATH, status_body(&hub.version)).await
+                .and_then(|reply| parse_status(&reply, current_unix_millis())) {
                 return Some(usage);
             }
         }
@@ -243,7 +250,10 @@ pub async fn get_antigravity_usage(app: tauri::AppHandle) -> Result<Option<Agent
     let root = app.path().app_cache_dir().ok();
     let previous = cache.as_ref().and_then(|(_, usage)| usage.clone())
         .or_else(|| root.as_ref().and_then(|root| super::antigravity_quota_cache::read(root, current_unix_millis())));
-    let fresh = timeout(READ_TIMEOUT, read_quota()).await.ok().flatten();
+    let fresh = timeout(READ_TIMEOUT, read_quota()).await.ok().flatten().filter(|usage| {
+        usage.five_hour.is_some() || usage.seven_day.is_some()
+            || !previous.as_ref().is_some_and(|old| old.five_hour.is_some() || old.seven_day.is_some())
+    });
     if let (Some(root), Some(usage)) = (&root, &fresh) {
         super::antigravity_quota_cache::write(root, usage);
     }

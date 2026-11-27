@@ -1,9 +1,11 @@
 /* One row above the session list with each provider's quota rings. Its height is part of the Agent
    page's chrome in getAgentPageExpandedHeight (windows/island/layout.ts, AGENT_USAGE_HEIGHT:
-   22 plus 6 below): keep the two in step. */
+   32 plus 6 below, including room for lifted arcs): keep the two in step. */
 .agent-quota {
   flex: none;
-  height: 22px;
+  height: 32px;
+  box-sizing: border-box;
+  padding-block: 3px;
   margin: 0 6px 6px;
   display: flex;
   align-items: center;
@@ -69,8 +71,8 @@
 
 .quota-rings {
   position: relative;
-  width: var(--quota-size, 22px);
-  height: var(--quota-size, 22px);
+  width: var(--quota-size, 26px);
+  height: var(--quota-size, 26px);
   flex: none;
   display: block;
   overflow: visible;
@@ -101,8 +103,14 @@
   cursor: default;
 }
 .quota-rings__target:focus-visible { outline: 1px solid var(--quota-color); }
-.agent-quota__agent:has(.quota-rings__target:hover, .quota-rings__target:focus-visible) {
-  background: rgba(var(--agent-ink, 241, 240, 246), 0.08);
+.quota-rings__arc {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 140ms ease;
+}
+.quota-rings:has(.quota-rings__half--top:hover, .quota-rings__half--top .quota-rings__target:focus-visible) .quota-rings__arc--top,
+.quota-rings:has(.quota-rings__half--bottom:hover, .quota-rings__half--bottom .quota-rings__target:focus-visible) .quota-rings__arc--bottom {
+  transform: translateY(-0.8px) scale(1.055);
 }
 
 .quota-rings__track,

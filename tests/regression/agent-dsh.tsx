@@ -57,7 +57,7 @@ export async function checkWorkbuddyRing(root: Root, sessions: AgentSessionSumma
     models: [{ name: "Gemini", used: 75, resetsAt: usages.readAt - 1 }] }, usages.readAt);
   await render({ ...agyOnly, antigravity: expired });
   check(fixture.querySelector(".agent-quota__agent--antigravity") && fixture.querySelectorAll(".quota-rings__fill--unknown").length === 2
-    && [...fixture.querySelectorAll(".quota-rings__target")].every((target) => target.getAttribute("aria-label") === "模型额度 · 暂无数据"),
+    && [...fixture.querySelectorAll(".quota-rings__target")].map((target) => target.getAttribute("aria-label")).join() === "5 小时 · 暂无数据,每周 · 暂无数据",
     "AGY 缓存窗口已过重置时间时保留暗弧，不再显示旧百分比");
   fixture.style.removeProperty("--island-font-scale");
 }

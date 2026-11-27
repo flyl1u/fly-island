@@ -103,15 +103,15 @@ export function hasUsageNumbers(usage: AgentUsage | null): boolean {
 /**
  * The windows an agent's quota arcs show: 5-hour above, weekly below. A plan
  * with neither but one long window (Codex Free's 30 days, listed by its length as "30d") shows
- * that one below. Antigravity has model windows instead and shows the two tightest;
+ * that one below. Antigravity uses explicitly named 5-hour/weekly windows;
  * Z Code's trial quota stands in for the lower arc.
  * Null: no rings.
  */
 export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | null; inner: UsageWindow | null } | null {
   if (!usage) return null;
-  // Model quotas have no 5-hour/weekly split. Keep the installed source present even before
-  // its first successful read, and use the actual model names in its two hover targets.
-  if (usage.source === "antigravity") return { outer: usage.models[0] ?? null, inner: usage.models[1] ?? null };
+  // Old model-only snapshots cannot stand in for time windows. Keep the installed source
+  // present even before its first successful dual-window read.
+  if (usage.source === "antigravity") return { outer: usage.fiveHour, inner: usage.sevenDay };
   const outer = usage.fiveHour;
   const named = usage.source === "zcode";
   const fallback = named ? usage.models[0] : undefined;
