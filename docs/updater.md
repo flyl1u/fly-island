@@ -96,8 +96,6 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 
 已配置的发布机器运行 `pnpm release` 即可，无需每次复制密钥内容或设置环境变量。本机配置路径为 `%USERPROFILE%\.tauri\fly-island\release.json`，格式如下（路径应为实际绝对路径）：
 
-??????? `FLY_ISLAND_SIGNING_CONFIG` ???????????CI ???????? `TAURI_UPDATER_PUBKEY`?`TAURI_SIGNING_PRIVATE_KEY` ? `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`?????????? Fly Island ???
-
 ```json
 {
   "schemaVersion": 1,
