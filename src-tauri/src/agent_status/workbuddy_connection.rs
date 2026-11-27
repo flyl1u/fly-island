@@ -526,7 +526,14 @@ fn record_failure(
 ) -> WorkbuddyState {
     connection.cached = None;
     let now = Instant::now();
-    let (history, action) = auth::failure_action(connection.failures, error, now);
+    // A server rejection with nothing saved cannot recover by retrying: there is no cookie or
+    // credential to restore, so send the user straight to sign-in instead of the retry loop.
+    let nothing_to_restore = connection.login.is_none() && !vault::has_cookies();
+    let (history, action) = if error.server_rejected() && nothing_to_restore {
+        (connection.failures, FailureAction::ClearSaved)
+    } else {
+        auth::failure_action(connection.failures, error, now)
+    };
     connection.failures = history;
     let expired = matches!(action, FailureAction::ClearSaved);
     if should_log_failure(connection, error, expired) {
