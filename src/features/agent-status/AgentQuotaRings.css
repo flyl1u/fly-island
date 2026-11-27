@@ -59,55 +59,57 @@
   --quota-base: #6dc487;
 }
 
-.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
-  min-width: 0;
-  flex-shrink: 1;
-}
-
-.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) .agent-quota__values {
-  min-width: 0;
-  overflow: hidden;
-}
-
-.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) b {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .agent-quota__agent--stale {
   opacity: 0.6;
-}
-
-/* A DSH balance that cannot be read: an empty ring and a muted reason, not an alarm. */
-.agent-quota__agent--problem b {
-  font-weight: 500;
 }
 
 .agent-quota__agent:focus-visible {
   box-shadow: 0 0 0 2px rgba(var(--agent-ink, 241, 240, 246), 0.35);
 }
 
-.agent-quota__values {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.agent-quota__values b {
-  color: var(--quota-color);
-  font-weight: 600;
-}
-
 .quota-rings {
+  position: relative;
+  width: var(--quota-size, 22px);
+  height: var(--quota-size, 22px);
   flex: none;
   display: block;
   overflow: visible;
 }
 
+.quota-rings > svg { display: block; }
+.quota-rings__logo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.island-hover-card__anchor.quota-rings__half {
+  position: absolute;
+  inset-inline: 0;
+  height: 50%;
+}
+.quota-rings__half--top { top: 0; }
+.quota-rings__half--bottom { bottom: 0; }
+.quota-rings__target {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: default;
+}
+.quota-rings__target:focus-visible { outline: 1px solid var(--quota-color); }
+.agent-quota__agent:has(.quota-rings__target:hover, .quota-rings__target:focus-visible) {
+  background: rgba(var(--agent-ink, 241, 240, 246), 0.08);
+}
+
 .quota-rings__track,
 .quota-rings__fill {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 2.7;
+  stroke-linecap: round;
 }
 
 /* Visible enough that an empty ring still shows the ring's full size. */
@@ -132,8 +134,4 @@
   flex: none;
 }
 
-.agent-quota__hover:has(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
-  min-width: 22px;
-  flex-shrink: 1;
-}
 .agent-quota__agent--plugin { --quota-base: #43b4a5; }

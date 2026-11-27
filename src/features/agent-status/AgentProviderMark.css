@@ -1,0 +1,12 @@
+.agent-provider-mark {
+  display: block;
+  flex: none;
+  width: calc(var(--agent-mark-size) * var(--agent-mark-scale, 1));
+  height: calc(var(--agent-mark-size) * var(--agent-mark-scale, 1));
+  background: rgb(var(--agent-mark-ink, var(--island-page-ink-rgb, var(--agent-ink, 241, 240, 246))));
+  mask: var(--agent-mark) center / contain no-repeat;
+}
+
+.agent-provider-mark--claudeCode { background: var(--quota-color); }
+.agent-provider-mark--color { background: transparent; mask: none; object-fit: contain; }
+.agent-provider-mark--dsh { transform: translateY(calc(var(--agent-mark-size) * 0.06)); }

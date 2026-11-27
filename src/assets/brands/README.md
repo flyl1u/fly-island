@@ -42,4 +42,6 @@ QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人
 
 没有自己品牌的功能插件（时间与天气、日历标记、护眼提醒、设备电量与音频）用本项目手绘的 SVG 应用图标，在 `src/assets/plugins/`。插件图标规则见 [插件设置归类规范](../../../docs/design/settings.md#插件设置归类规范长期)。
 
+额度环中央使用 `marks/` 下的纯品牌标志（2026-11-26），不带 App 磁贴底板：Claude / Codex 分别取自 [LobeHub Icons 的 claude.svg](https://github.com/lobehub/lobe-icons/blob/master/packages/static-svg/icons/claude.svg) 和 [openai.svg](https://github.com/lobehub/lobe-icons/blob/master/packages/static-svg/icons/openai.svg)，MIT 许可证保存在 `marks/LICENSE-lobe-icons.txt`；Kimi Code / Z Code / Antigravity 从本目录原有 SVG 去除底板并收紧 viewBox。WorkBuddy 从 [官网 SVG](https://assets.workbuddy.cn/web/workbuddy/12e78bfff102e46c6565bcaf655f6d09f711cd97/assets/logo.svg) 移除背景与裁切，保留完整机器人标志。DeepSeek 取自 [LobeHub Icons 的 deepseek-color.svg](https://github.com/lobehub/lobe-icons/blob/master/packages/static-svg/icons/deepseek-color.svg)，MIT；保留蓝色主体，将内部中空部分填白，外部保持透明。Claude / Codex / WorkBuddy 的细笔画按小尺寸加实，Antigravity 移除模糊与半透明叠层，改用不透明渐变。纯色标志按岛屿文字颜色显示，彩色标志保留原色；不改会话列表和插件卡片的原始应用图标。
+
 钉钉、飞书、企业微信、Kimi、Z Code（智谱）、Cursor（Anysphere）、Nous Research、Telegram、CodeBuddy（腾讯）、Antigravity（Google）、MiniMax 的标识及相关权利归各自权利人所有，仅用于标识对应产品，不在运行时请求远程图片。

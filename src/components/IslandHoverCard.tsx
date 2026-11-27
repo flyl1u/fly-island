@@ -24,9 +24,12 @@ type IslandHoverCardProps = {
   portalTo?: string;
   /** Extra class on the wrapper around `children`, e.g. to make it a block. */
   anchorClassName?: string;
+  /** Compact quota hints sit beside the ring. */
+  placement?: "below" | "right";
+  compact?: boolean;
 };
 
-type Place = { top: number; center: number; root: Element };
+type Place = { top: number; center: number; right: number; middle: number; root: Element };
 
 /**
  * A small dark card under the island while the cursor rests on (or keyboard focus is in) its
@@ -41,12 +44,15 @@ export function IslandHoverCard({
   alignTo = ".island",
   portalTo = ".stage",
   anchorClassName,
+  placement = "below",
+  compact = false,
 }: IslandHoverCardProps) {
   const anchorRef = useRef<HTMLSpanElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number | undefined>(undefined);
   const [place, setPlace] = useState<Place | null>(null);
   const [left, setLeft] = useState<number | null>(null);
+  const [top, setTop] = useState(0);
   // Where the pointer is across, while it is on the trigger; null for keyboard focus.
   const pointerRef = useRef<number | null>(null);
   const [pointerX, setPointerX] = useState<number | null>(null);
@@ -57,7 +63,7 @@ export function IslandHoverCard({
     const rect = (anchor.closest(alignTo) ?? anchor).getBoundingClientRect();
     setLeft(null);
     setPointerX(pointerRef.current);
-    setPlace({ top: rect.bottom + CARD_OFFSET, center: rect.left + rect.width / 2, root: anchor.closest(portalTo) ?? document.body });
+    setPlace({ top: rect.bottom + CARD_OFFSET, center: rect.left + rect.width / 2, right: rect.right + CARD_OFFSET, middle: rect.top + rect.height / 2, root: anchor.closest(portalTo) ?? document.body });
   };
   const hide = () => {
     window.clearTimeout(timerRef.current);
@@ -92,8 +98,10 @@ export function IslandHoverCard({
   useLayoutEffect(() => {
     const card = cardRef.current;
     if (!place || !card) return;
-    setLeft(cardLeft(place.center, card.getBoundingClientRect().width, window.innerWidth, pointerX));
-  }, [place, lines, pointerX]);
+    const rect = card.getBoundingClientRect();
+    setLeft(placement === "right" ? Math.max(6, Math.min(place.right, window.innerWidth - rect.width - 6)) : cardLeft(place.center, rect.width, window.innerWidth, pointerX));
+    setTop(placement === "right" ? Math.max(6, Math.min(place.middle - rect.height / 2, window.innerHeight - rect.height - 6)) : place.top);
+  }, [place, lines, pointerX, placement]);
 
   const open = place !== null && !suppressed && lines.length > 0;
   return (
@@ -111,9 +119,9 @@ export function IslandHoverCard({
       {open && createPortal(
         <div
           ref={cardRef}
-          className="island-hover-card"
+          className={`island-hover-card${compact ? " island-hover-card--compact" : ""}`}
           role="tooltip"
-          style={{ top: place.top, left: left ?? place.center, visibility: left === null ? "hidden" : undefined }}
+          style={{ top, left: left ?? place.center, visibility: left === null ? "hidden" : undefined }}
         >
           {lines.map((line, index) => (
             <div key={index} className={`island-hover-card__line${line.muted ? " island-hover-card__line--muted" : ""}`}>

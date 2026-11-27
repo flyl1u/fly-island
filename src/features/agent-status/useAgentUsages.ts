@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
 import { dshProblem, getAgentUsage, getAntigravityUsage, getCodexUsage, getDshUsage, getKimiUsage, getZcodeUsage, onZcodeUsageChanged } from "./api";
-import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
+import { EMPTY_ANTIGRAVITY_USAGE, EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 import { usePlugins } from "../plugins";
 
 /** claude-hud refreshes its snapshot about once a minute; reading local files is cheap. */
@@ -55,7 +55,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
           dshProblem: dsh?.problem ?? null,
           kimi: withoutPastWindows(kimi ?? null, now),
           zcode: revision === zcodeRevision ? withoutPastWindows(zcode ?? null, now) : previous.zcode,
-          antigravity: withoutPastWindows(antigravity ?? null, now),
+          antigravity: withoutPastWindows(antigravity ?? previous.antigravity ?? EMPTY_ANTIGRAVITY_USAGE, now),
           readAt: now,
         }));
       });
@@ -89,7 +89,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     dshProblem: enabled && showDsh ? usages.dshProblem : null,
     kimi: enabled && showKimi ? usages.kimi : null,
     zcode: enabled && showZcode ? usages.zcode : null,
-    antigravity: enabled && showAntigravity ? usages.antigravity : null,
+    antigravity: enabled && showAntigravity ? usages.antigravity ?? EMPTY_ANTIGRAVITY_USAGE : null,
     plugins: enabled ? Object.entries(plugins.live).flatMap(([id, live]) => plugins.registry.installed[id]?.enabled && live.status === "running" ? live.quota.map((q) => ({ ...q, id: `${id}/${q.id}` })) : []) : [],
   }), [enabled, usages, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity, plugins]);
 }

@@ -78,6 +78,7 @@ export type AgentUsages = {
 };
 
 export const EMPTY_USAGES: AgentUsages = { claude: null, codex: null, dsh: null, readAt: 0 };
+export const EMPTY_ANTIGRAVITY_USAGE: AgentUsage = { updatedAt: null, fiveHour: null, sevenDay: null, models: [], plan: null, source: "antigravity" };
 
 export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQuotaSource[]): AgentUsages {
   return {
@@ -100,16 +101,19 @@ export function hasUsageNumbers(usage: AgentUsage | null): boolean {
 }
 
 /**
- * The windows an agent's quota rings show: the 5-hour one outside, the 7-day one inside. A plan
+ * The windows an agent's quota arcs show: 5-hour above, weekly below. A plan
  * with neither but one long window (Codex Free's 30 days, listed by its length as "30d") shows
- * that one inside. Per-model windows (Claude's) only appear in the ring's card; Antigravity and
- * Z Code's trial plan have nothing but those, and their tightest stands in for the inner ring.
+ * that one below. Antigravity has model windows instead and shows the two tightest;
+ * Z Code's trial quota stands in for the lower arc.
  * Null: no rings.
  */
 export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | null; inner: UsageWindow | null } | null {
   if (!usage) return null;
+  // Model quotas have no 5-hour/weekly split. Keep the installed source present even before
+  // its first successful read, and use the actual model names in its two hover targets.
+  if (usage.source === "antigravity") return { outer: usage.models[0] ?? null, inner: usage.models[1] ?? null };
   const outer = usage.fiveHour;
-  const named = usage.source === "zcode" || usage.source === "antigravity";
+  const named = usage.source === "zcode";
   const fallback = named ? usage.models[0] : undefined;
   const inner = usage.sevenDay ?? (outer ? null : usage.models.find((window) => /^\d+d$/.test(window.name)) ?? fallback ?? null);
   return outer || inner ? { outer, inner } : null;

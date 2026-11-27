@@ -3,6 +3,7 @@
 pub(crate) mod approval_hotkeys;
 mod antigravity;
 pub(crate) mod antigravity_quota;
+mod antigravity_quota_cache;
 mod antigravity_transcript;
 mod background_tasks;
 mod claude_hooks;

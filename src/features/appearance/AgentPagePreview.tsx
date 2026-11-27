@@ -109,8 +109,7 @@ export function AgentPagePreview({ pageOrder, pageButtonStyle }: { pageOrder: Pa
       <span className="agent-page-preview__usage">
         {SAMPLE_QUOTAS.map(({ agent, outer, inner }) => (
           <span key={agent} className={`agent-page-preview__quota agent-page-preview__quota--${agent}`}>
-            <QuotaRings outer={outer} inner={inner} />
-            <b>{outer}%</b> {inner}%
+            <QuotaRings outer={outer} inner={inner} provider={agent === "claude" ? "claudeCode" : "codex"} />
           </span>
         ))}
       </span>

@@ -94,6 +94,11 @@ export type AgentText = {
     left: (window: string, left: number, used: number) => string;
     /** Which ring is which, first on the card. */
     ringsLegend: string;
+    weekly: string;
+    modelQuota: string;
+    ringHint: (window: string, left: number) => string;
+    ringUnknown: (window: string) => string;
+    balanceHint: (balance: string) => string;
     /** The rings' accessible name: the agent's usage, then each window's summary. */
     rings: (label: string, windows: string[]) => string;
   };
@@ -229,6 +234,11 @@ export const zhCN: AgentText = {
     fromAntigravity: "来自 Antigravity 本机额度",
     left: (window, left, used) => `${window} 剩余 ${left}%（已用 ${used}%）`,
     ringsLegend: "外圈 5 小时 · 内圈 7 天 · 显示剩余额度",
+    weekly: "每周",
+    modelQuota: "模型额度",
+    ringHint: (window, left) => `${window} · 剩余 ${left}%`,
+    ringUnknown: (window) => `${window} · 暂无数据`,
+    balanceHint: (balance) => `余额 · ${balance}`,
     rings: (label, windows) => [label, ...windows].join("；"),
   },
   approval: {
@@ -361,6 +371,11 @@ export const en: AgentText = {
     fromAntigravity: "from Antigravity's quota on this computer",
     left: (window, left, used) => `${window} ${left}% left (${used}% used)`,
     ringsLegend: "Outer ring 5h · inner ring 7d · showing what is left",
+    weekly: "Weekly",
+    modelQuota: "Model quota",
+    ringHint: (window, left) => `${window} · ${left}% left`,
+    ringUnknown: (window) => `${window} · Unavailable`,
+    balanceHint: (balance) => `Balance · ${balance}`,
     rings: (label, windows) => [label, ...windows].join("; "),
   },
   approval: {

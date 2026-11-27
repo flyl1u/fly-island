@@ -27,7 +27,14 @@ const sessions: AgentSessionSummary[] = ["dsh", "claudeCode", "codex"].map((prov
 }));
 const window = (used: number) => ({ name: "", used, resetsAt: now + 3600000 });
 const usages = { claude: { updatedAt: now, fiveHour: window(20), sevenDay: window(50), models: [], plan: null },
-  codex: { updatedAt: now, fiveHour: window(30), sevenDay: window(60), models: [], plan: null }, dsh: DSH_USAGE, readAt: now };
+  codex: { updatedAt: now, fiveHour: window(30), sevenDay: window(60), models: [], plan: null }, dsh: DSH_USAGE, readAt: now,
+  ...(params.has("all") ? {
+    kimi: { updatedAt: now, fiveHour: window(40), sevenDay: window(55), models: [], plan: null, source: "kimi" as const },
+    zcode: { updatedAt: now, fiveHour: window(15), sevenDay: window(25), models: [], plan: null, source: "zcode" as const },
+    antigravity: { updatedAt: now, fiveHour: null, sevenDay: null, models: [{ ...window(35), name: "Gemini" }, { ...window(60), name: "Claude" }], plan: null, source: "antigravity" as const },
+    workbuddy: { updatedAt: now, remaining: 125.5, total: 500 },
+  } : {}),
+};
 const root = createRoot(document.getElementById("fixture")!);
 const results = document.getElementById("results")!;
 try {

@@ -281,3 +281,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 日历标记使用现有 fly-island-native-plugins / fly-island-native-plugins-disabled 的 calendarMarks id。
 - CodeBuddy 会话来源（插件市场可选安装，作者 yiumanlenong）：`list_agent_sessions` 的 `native` 新增 `"codebuddy"`，返回的 `provider` 新增 `codebuddy`；`focus_agent_window` 沿用现有命令，对 `codebuddy` 通过 `~/.codebuddy/sessions` 登记的进程找终端窗口。只读 `~/.codebuddy/projects`、`~/.codebuddy/sessions`，拒绝重解析点与超大文件，最多两秒读一次，未安装或开关关闭时不读取。`fly-island-settings` 兼容新增 `agentShowCodeBuddy`（缺失时为 true，仅在装了插件时生效）。无新增命令、事件或 localStorage key。
 - 剪贴板文件图标（新增只读命令）：`read_clipboard_history_file_icon({ id: string })` 返回该记录第一个文件的 Explorer 图标（PNG data URL），文件不存在、记录没有文件或系统没有图标时返回 `null`；图标不写入 `clipboard-history.json`，缓存与文件中转共用 `file_icons.rs`。无新增事件、localStorage key 或设置字段。
+
+### 可丢弃的 Antigravity 额度缓存
+
+`app_cache_dir()/antigravity-quota.json` 使用版本 1：`{ version: 1, updatedAt: <Unix ms>, plan: <string|null>, models: [{ name: <string>, used: <0–100>, resetsAt: <Unix ms|null> }] }`。文件不含凭据，不参与配置迁移；缺失、损坏、版本不支持或超过 7 天时忽略，成功查询后原子重建。不改变 `get_antigravity_usage` 的前端调用方式或返回格式。

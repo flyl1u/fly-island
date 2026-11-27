@@ -52,10 +52,14 @@ test("Kimi Code and Z Code limits raise the same usage alerts as Claude and Code
   assert.deepEqual(reset.map((alert) => `${alert.kind}:${alert.agent}`), ["reset:kimi"]);
 });
 
-test("a Z Code trial balance and Antigravity's model quota stand in for the inner ring; other named windows do not", () => {
+test("Z Code shows trial quota and Antigravity shows actual model windows, including an unknown persistent state", () => {
   const trial = usage({ source: "zcode", models: [window(25, "Trial")] });
   assert.deepEqual(quotaRings(trial), { outer: null, inner: trial.models[0] });
   const antigravity = usage({ source: "antigravity", models: [window(70, "Claude Sonnet 4.5"), window(5, "Gemini 4 Neon")] });
-  assert.deepEqual(quotaRings(antigravity), { outer: null, inner: antigravity.models[0] }, "the tightest model, as the reader lists it");
+  assert.deepEqual(quotaRings(antigravity), { outer: antigravity.models[0], inner: antigravity.models[1] });
+  const unknown = usage({ source: "antigravity" });
+  assert.deepEqual(quotaRings(unknown), { outer: null, inner: null });
+  assert.equal(usageLineCount({ claude: null, codex: null, antigravity: unknown, readAt: 1 }), 1);
+  assert.equal(usageLineCount(filterQuotaUsages({ claude: null, codex: null, antigravity: unknown, readAt: 1 }, [])), 0);
   assert.deepEqual(quotaRings(usage({ source: "hud", models: [window(25, "Fable")] })), null);
 });

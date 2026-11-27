@@ -146,6 +146,7 @@
 }
 
 .agent-page-preview__quota {
+  --agent-mark-ink: var(--preview-ink);
   --quota-color: color-mix(in srgb, var(--quota-base) 75%, rgb(var(--preview-ink)));
   display: inline-flex;
   align-items: center;
@@ -163,12 +164,12 @@
 .agent-page-preview__quota .quota-rings {
   width: calc(22 * var(--u));
   height: calc(22 * var(--u));
-  margin-right: calc(2 * var(--u));
 }
 
-.agent-page-preview__quota b {
-  color: var(--quota-color);
-  font-weight: 600;
+.agent-page-preview__quota .quota-rings > svg { width: 100%; height: 100%; }
+.agent-page-preview__quota .agent-provider-mark {
+  width: calc(13.5 * var(--u) * var(--agent-mark-scale, 1));
+  height: calc(13.5 * var(--u) * var(--agent-mark-scale, 1));
 }
 
 .agent-page-preview__list {

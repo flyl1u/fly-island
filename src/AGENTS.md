@@ -31,7 +31,7 @@ src/
 ├── utils/                   # 无副作用的纯函数（文本测量、颜色、日期、数值）
 ├── i18n/                    # 类型化多语言字典与 Provider；sections/ 按分区放文案（settings/ 再按设置页分），types.ts 与 locales/ 只做汇总
 ├── styles/                  # 全局 CSS：变量、基础样式、字体
-└── assets/                  # 品牌图标、字体及其许可证
+└── assets/                  # 品牌图标、字体及其许可证；brands/marks/ 是额度环使用的无底板品牌标志，与应用磁贴分开
 ```
 
 外观颜色模块位于 `features/appearance/`：`HexColorInput` / `hexColor.ts`（色值编辑）、`colorPalette.ts`（三色校验）、`colorRefresh.ts`（一次性刷新）、`colorPresets.ts` / `ColorPresetRow`（颜色预设逻辑与界面）；新颜色 key 的安全读写集中在同目录 `storage.ts`。

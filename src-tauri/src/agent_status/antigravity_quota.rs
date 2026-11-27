@@ -11,6 +11,7 @@ use reqwest::{
 };
 use serde_json::Value;
 use tokio::{sync::Mutex, time::timeout};
+use tauri::Manager;
 
 use super::{
     local_agent_files::{directory, entry, read_small_text},
@@ -232,14 +233,23 @@ async fn read_quota() -> Option<AgentUsage> {
 }
 
 #[tauri::command]
-pub async fn get_antigravity_usage() -> Result<Option<AgentUsage>, String> {
+pub async fn get_antigravity_usage(app: tauri::AppHandle) -> Result<Option<AgentUsage>, String> {
     let mut cache = LAST.lock().await;
     if let Some((when, result)) = &*cache {
         if when.elapsed() < KEEP_FOR {
             return Ok(result.clone());
         }
     }
-    let answer = timeout(READ_TIMEOUT, read_quota()).await.ok().flatten();
+    let root = app.path().app_cache_dir().ok();
+    let previous = cache.as_ref().and_then(|(_, usage)| usage.clone())
+        .or_else(|| root.as_ref().and_then(|root| super::antigravity_quota_cache::read(root, current_unix_millis())));
+    let fresh = timeout(READ_TIMEOUT, read_quota()).await.ok().flatten();
+    if let (Some(root), Some(usage)) = (&root, &fresh) {
+        super::antigravity_quota_cache::write(root, usage);
+    }
+    // Closing Antigravity must not erase a successful snapshot. Its original timestamp and reset
+    // times stay intact; the frontend dims old readings and removes expired model windows.
+    let answer = fresh.or(previous).or_else(|| Some(super::antigravity_quota_cache::empty()));
     *cache = Some((Instant::now(), answer.clone()));
     Ok(answer)
 }

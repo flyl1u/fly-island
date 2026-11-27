@@ -1,8 +1,6 @@
-import { IslandHoverCard } from "../../components/IslandHoverCard";
 import { useLocale, useTranslation } from "../../i18n";
 import type { WorkbuddyUsage } from "./api";
 import { QuotaRings } from "./QuotaRings";
-import { QUOTA_COLORS } from "./quotaColors";
 
 export function WorkbuddyQuotaRing({ usage, now }: { usage: WorkbuddyUsage; now: number }) {
   const text = useTranslation().agent.usage;
@@ -15,17 +13,9 @@ export function WorkbuddyQuotaRing({ usage, now }: { usage: WorkbuddyUsage; now:
   const details = [text.workbuddy.balance(remaining, total), ...(left === null ? [] : [text.workbuddy.percent(Math.round(left))])];
   const updated = text.updated(text.updatedAgo(minutes), text.workbuddy.source);
   return (
-    <IslandHoverCard alignTo=":scope" anchorClassName="agent-quota__hover" lines={[
-      { text: text.workbuddy.label, color: QUOTA_COLORS.workbuddy },
-      ...details.map((line) => ({ text: line })),
-      { text: updated, muted: true },
-    ]}>
-      <span className="agent-quota__agent agent-quota__agent--workbuddy" role="img"
-        aria-label={[text.workbuddy.label, ...details, updated].join(" · ")} tabIndex={0}>
-        {/* No second window: the inner ring repeats the outer one, so it matches the other sources. */}
-        <QuotaRings outer={left} inner={left} />
-        <span className="agent-quota__values" aria-hidden="true"><b>{text.workbuddy.credits(remaining)}</b></span>
+      <span className="agent-quota__agent agent-quota__agent--workbuddy" role="group"
+        aria-label={[text.workbuddy.label, ...details, updated].join(" · ")}>
+        <QuotaRings outer={left} inner={left} provider="workbuddy" hints={[text.workbuddy.credits(remaining), text.workbuddy.credits(remaining)]} />
       </span>
-    </IslandHoverCard>
   );
 }

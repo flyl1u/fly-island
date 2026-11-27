@@ -1,27 +1,37 @@
-/**
- * Two concentric rings in the current `--quota-color`, drawn on a 24-unit grid. Every source draws
- * both at the same size, whatever it knows: a window not known (null) is a dim whole ring rather
- * than a bare track, so a source whose app is closed (its 5-hour window has passed its reset) does
- * not shrink to its inner ring beside the others.
- */
-export function QuotaRings({ outer, inner, size = 22 }: { outer: number | null; inner: number | null; size?: number }) {
-  return (
-    <svg className="quota-rings" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <Ring radius={10} left={outer} />
-      <Ring radius={5.5} left={inner} />
+import { IslandHoverCard } from "../../components/IslandHoverCard";
+import { AgentProviderMark } from "./AgentProviderMark";
+import type { AgentProvider } from "./api";
+import type { CSSProperties } from "react";
+
+/** Two separate arcs: the short window above the app, the weekly window below it. */
+export function QuotaRings({ outer, inner, size = 22, provider, hints }: {
+  outer: number | null;
+  inner: number | null;
+  size?: number;
+  provider?: AgentProvider;
+  hints?: readonly [string, string];
+}) {
+  return <span className="quota-rings" style={{ "--quota-size": `${size}px` } as CSSProperties}>
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <Arc path="M 2.34 9.41 A 10 10 0 0 1 21.66 9.41" left={outer} />
+      <Arc path="M 21.66 14.59 A 10 10 0 0 1 2.34 14.59" left={inner} />
     </svg>
-  );
+    {provider && <span className="quota-rings__logo" aria-hidden="true"><AgentProviderMark provider={provider} size={size * 13.5 / 22} /></span>}
+    {hints?.map((hint, index) => <IslandHoverCard key={index} lines={[{ text: hint }]} placement="right" compact
+      alignTo=".quota-rings" anchorClassName={`quota-rings__half quota-rings__half--${index === 0 ? "top" : "bottom"}`}>
+      <button type="button" className="quota-rings__target" aria-label={hint} />
+    </IslandHoverCard>)}
+  </span>;
 }
 
-function Ring({ radius, left }: { radius: number; left: number | null }) {
-  // A sliver still shows that something is left; a full ring is drawn whole.
+function Arc({ path, left }: { path: string; left: number | null }) {
   const shown = left === null ? 100 : left <= 0 ? 0 : Math.min(100, Math.max(left, 3));
   return (
     <>
-      <circle className="quota-rings__track" cx={12} cy={12} r={radius} />
+      <path className="quota-rings__track" d={path} />
       {shown > 0 && (
-        <circle className={`quota-rings__fill${left === null ? " quota-rings__fill--unknown" : ""}`} cx={12} cy={12} r={radius} pathLength={100}
-          strokeDasharray={shown >= 100 ? undefined : `${shown} 100`} transform="rotate(-90 12 12)" />
+        <path className={`quota-rings__fill${left === null ? " quota-rings__fill--unknown" : ""}`} d={path} pathLength={100}
+          strokeDasharray={shown >= 100 ? undefined : `${shown} 100`} />
       )}
     </>
   );

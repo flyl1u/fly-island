@@ -34,6 +34,18 @@
   min-width: 0;
 }
 
+.island-hover-card--compact {
+  max-width: calc(100vw - 12px);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  corner-shape: round;
+  background: #2c2c2c;
+  color: #f4f4f4;
+  font-weight: 600;
+  box-shadow: none;
+}
+
 .island-hover-card__line > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
