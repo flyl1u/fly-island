@@ -26,6 +26,14 @@ function check(value: unknown, label: string) {
   messages.push(`PASS ${label}`);
 }
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-todo-id="${id}"]`)!;
+// 等行上的动画真正播完，再过一帧让 onfinish 清理跑完；固定等待在慢机器（CI 无头浏览器）上不够。
+async function settle() {
+  await act(async () => {
+    const animations = [...document.querySelectorAll("[data-todo-id]")].flatMap((item) => item.getAnimations());
+    await Promise.all(animations.map((animation) => animation.finished.catch(() => {})));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
+}
 const handle = (id: string) => row(id).querySelector<HTMLButtonElement>(".todo-drag-handle")!;
 async function pointer(id: string, type: string, y: number) {
   await act(async () => {
@@ -60,7 +68,7 @@ try {
   await pointer("a", "pointerup", y);
   check(order() === "b,c,a" && JSON.stringify(moves) === '[["a",2]]', "松手按最终 index 提交");
   check(JSON.parse(localStorage.getItem("fly-island-todos")!).map((item: { id: string }) => item.id).join(",") === "b,c,a", "松手顺序持久化");
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 220)); });
+  await settle();
   check(!row("a").style.transform && row("a").getAnimations().length === 0, "落位结束清理变换");
   moves = [];
   y = row("a").getBoundingClientRect().top + 16;
@@ -79,7 +87,7 @@ try {
   const away = async (type: string, y: number) => act(async () => {
     document.body.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, button: 0, clientX: 450, clientY: y }));
   });
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 220)); });
+  await settle();
   const startY = row("b").getBoundingClientRect().top + 4;
   await pointer("b", "pointerdown", startY);
   const bottom = row("a").getBoundingClientRect().bottom - 2;
