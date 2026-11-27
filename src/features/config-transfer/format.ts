@@ -15,6 +15,7 @@ export const APP_STORAGE_PREFIXES = ["fly-island-"] as const;
 export const DEVICE_STORAGE_KEYS = ["fly-island-position"] as const;
 export const TRANSIENT_STORAGE_KEYS = [
   "fly-island-settings-focus", "fly-island-position-reset", "fly-island-panel-preview",
+  "fly-island-first-launch-defaults-v1",
 ] as const;
 
 export function isAppStorageKey(key: string): boolean {

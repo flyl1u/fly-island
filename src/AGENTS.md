@@ -36,6 +36,8 @@ src/
 
 外观颜色模块位于 `features/appearance/`：`HexColorInput` / `hexColor.ts`（色值编辑）、`colorPalette.ts`（三色校验）、`colorRefresh.ts`（一次性刷新）、`colorPresets.ts` / `ColorPresetRow`（颜色预设逻辑与界面）；新颜色 key 的安全读写集中在同目录 `storage.ts`。
 
+新用户默认偏好由 `features/onboarding/defaults.ts` 和 `storage.ts` 保存及一次性写入；`windows/island/initializeDefaults.ts` 在配置恢复后、任何窗口读取设置前协调初始化（共享 Web Lock），原生设置只由主窗口应用。`appearance/settingsDefaults.ts` 的 `FIRST_LAUNCH_SETTINGS` 经 `appearance/index.ts` 公开；`DEFAULT_SETTINGS` 继续作为老配置缺字段与重置操作的兼容回退，不得随新用户默认值一起改动。
+
 单个 feature 目录的标准组成（按需创建，不需要的文件不建）：
 
 ```text

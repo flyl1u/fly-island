@@ -22,6 +22,8 @@
 
 各项数据存在哪里见 [data-storage.md](data-storage.md)。
 
+新用户默认偏好由 `features/onboarding/` 的静态快照与存储初始化负责；`windows/island/initializeDefaults.ts` 在配置恢复后、React 挂载及设置读取前用 Web Lock 协调各窗口，仅主窗口应用原生偏好。`features/appearance/index.ts` 公开 `FIRST_LAUNCH_SETTINGS`；老配置 normalize 继续使用独立的兼容默认值。任何现有应用键均阻止初始化，避免更新改动老用户配置。
+
 外观设置选择本机字体时，`features/appearance/api.ts` 经 `system/fonts.rs` 异步调用 `win32/fonts.rs` 枚举已安装字体。字体名称随外观设置保存，主岛和设置预览复用 `features/appearance/localFont.ts` 生成的字体栈。
 
 待办每日 Markdown 的可选反向同步由 `features/todos/todoMarkdownSync.ts` 串行协调（稳定采样、三方合并、防回环），`useTodoFileSync.ts` 负责日期/目录生命周期和低频轮询；Rust `system/todo_sync.rs` 提供受限读取及版本比较写入。默认关闭时仍走原 `todo_export.rs` 单向导出。偏好、恢复副本与数据流见 [data-storage.md](data-storage.md)，命令契约见 [contracts.md](contracts.md)。

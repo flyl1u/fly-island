@@ -22,6 +22,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## localStorage key
 
+新用户默认偏好（2026-11-27）：新增 `fly-island-first-launch-defaults-v1`，字符串 `pending` / `complete`。仅全无应用键的新配置写入；主窗口领取原生初始化时写 `complete`，以后不再套用。该运行标记不导出、不恢复。已有用户的任意应用键、缺失字段回退和已保存值均保留，不作默认值迁移。详见 [数据存放位置](data-storage.md#新用户默认偏好2026-11-27)。
+
 音乐全局快捷键（2026-11-19）：新增 `fly-island-music-shortcuts`，JSON 对象 `{ playPause: string, previous: string, next: string }`，三项缺失、非法或空值按空字符串读取（不注册），不进外观预设。主窗口启动及跨窗口修改后调用 `set_media_shortcuts({ enabled, shortcuts, target? })`，可选 target 与音乐面板当前会话一致；音乐关闭时释放全部，保存的键保留。`get_media_shortcut_errors()` 返回各动作最近的错误字符串对象（成功项省略），`media-shortcut-status` 广播同一对象。复用现有组合键格式与 Windows 注册冲突判定，另预留审批键 `Ctrl+Alt+Y` / `N` / `T`；设置页互查音乐、翻译和剪贴板快捷键。热键只控制已有 SMTC 会话，没有会话时静默跳过。
 
 时间与天气（2026-11-19）：`fly-island-settings.collapsedLayout` 的 slot 新增 `clock` / `weather`，完整默认顺序为 `text,mail,shelf,music,agents,clock,weather`。读取旧数组时保留原有合法顺序，将缺少的位追加到末尾；未知和重复项丢弃。插件未安装时隐藏这两个位，重排其余位不丢失隐藏位置。

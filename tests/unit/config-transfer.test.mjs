@@ -13,6 +13,7 @@ test("prefix discovery includes future features and language, excludes foreign/d
   assert.equal(isTransferableKey("fly-island-clipboard-window-pinned", false), true);
   assert.equal(isTransferableKey("fly-island-clipboard-history", false), false);
   assert.equal(isTransferableKey("fly-island-clipboard-history", true), true);
+  assert.equal(isTransferableKey("fly-island-first-launch-defaults-v1"), false);
 });
 
 test("format errors distinguish legacy theme files, other apps, versions and corrupt structures", () => {

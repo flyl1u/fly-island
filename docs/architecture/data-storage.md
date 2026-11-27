@@ -1,5 +1,13 @@
 # 数据存放位置
 
+## 新用户默认偏好（2026-11-27）
+
+`features/onboarding/` 保存本机确认的偏好快照；`appearance/settingsDefaults.ts` 的 `FIRST_LAUNCH_SETTINGS` 保存岛屿配置。仅在配置恢复、更名迁移完成后且 WebView 中没有任何 `fly-island-` 或尚未迁移成功的旧应用键时写入。已有任意应用键（包括损坏的设置、只有语言或待办的旧配置）即跳过，不补写旧配置的缺失字段；`DEFAULT_SETTINGS` 与 normalize 回退保持原样。
+
+新增 `fly-island-first-launch-defaults-v1`：`pending` 表示前端偏好已种入、等待主窗口，`complete` 表示已由主窗口领取原生初始化。所有窗口在读取设置前通过共享 Web Lock 串行初始化，防止常驻翻译窗口先写迁移标记误判；主窗口保留首次启动欢迎内容，并通过现有命令设置剪贴板（75 项、Alt+C、捕获图片开启）及日志（开启）。领取先于异步命令，避免下次启动重复覆盖用户选择；原生命令失败记录错误，不反复重置。标记不参与配置导出与恢复。
+
+快照包含外观、交互、模块开关、快捷键、Agent 审批与声音、内置插件安装/禁用状态、时间天气偏好（隐藏时钟，不含城市位置）、中文界面；微信“显示消息内容”固定关闭。待办、邮箱账号、凭据、历史、缓存、窗口坐标、文件路径与开发用插件索引不进入默认值；没有修改本机现存配置。老版本的兼容回退与重置动作继续使用原默认值。
+
 ## 更名迁移
 
 新安装使用 `%APPDATA%/com.flyisland.app` 与 `%LOCALAPPDATA%/com.flyisland.app`。启动时在创建 Tauri 窗口前，`legacy_migration` 对迁移前目录及可选 `.custom` 目录执行幂等的同卷改名（文件被刚退出的旧版本 WebView 占用时退避重试约 6 秒），仍失败则递归复制，复制完整后删除旧目录；不覆盖已存在的新目录。改名和复制都失败时弹窗说明并**直接退出**，不让 Tauri 建出空的新目录（否则旧数据再也不会被迁移），下一次启动重试。WebView localStorage 由前端入口第一个 import（`src/shared/storage/runLegacyMigration.ts`）同步把旧前缀键复制到 `fly-island-`，保证任何模块读取存储之前完成，新键优先，成功后删除旧键。凭据、自启值和回复标记文件也由同一迁移模块一次性转存并清理。Codex / Claude Code 配置里迁移前写入的 Hook 指向已搬走的脚本，setup 阶段 `agent_status/hook_migration.rs` 检测到旧签名时，对相应的那一家用设置页同一套安装函数重写一次（只替换岛屿自己的条目）。

@@ -1,4 +1,4 @@
-// First-launch settings, and what older versions showed for fields they did not have yet.
+// Compatibility defaults: keep older profiles' missing fields and reset behaviour stable.
 import { DEFAULT_LYRICS_SETTINGS } from "../media/lyrics/lyricsSettings.ts";
 import { DEFAULT_BATTERY_PREFERENCES } from "../battery/preferences.ts";
 import {
@@ -11,9 +11,8 @@ import {
 } from "./settingsLimits.ts";
 import type { IslandSettings } from "./types";
 
-// First-launch settings. A saved setting that lacks a newer field keeps the
-// fallback in normalizeSettings, which for behavior switches is what older
-// versions did, so upgrading never flips them.
+// normalizeSettings and reset actions keep these fallbacks. New profiles receive
+// FIRST_LAUNCH_SETTINGS once, without changing missing fields in older profiles.
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
   material: "classic",
@@ -161,4 +160,39 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   // Clipboard: a separate window is opt-in; pinning that window defaults to on.
   clipboardDetached: false,
   clipboardCloseOnBlur: false,
+};
+
+/** Owner's preferences (2026-11-27), seeded only into a completely new profile. */
+export const FIRST_LAUNCH_SETTINGS: IslandSettings = {
+  ...DEFAULT_SETTINGS,
+  localFontFamily: "KaiTi",
+  glassIntensity: 100,
+  collapsedScale: 0.92,
+  collapsedAutoWidthMin: 240,
+  collapsedAutoWidthMax: 275,
+  collapsedWidth: 280,
+  collapsedHeight: 32,
+  collapsedPadding: 15,
+  islandCornerRadius: 17,
+  collapsedCornerRadius: 11,
+  agentSessionGroup: "none",
+  agentQuotaSources: ["claudeCode", "codex", "dsh", "kimiCode", "zcode", "antigravity"],
+  todoTimerEnabled: true,
+  messageExpandMaxWidth: 560,
+  messageExpandMaxHeight: 360,
+  todoTimerReminder: true,
+  todoTimerReminderSound: true,
+  tuckDelaySeconds: 8,
+  autoCollapseSeconds: 10,
+  expandTrigger: "click",
+  keepVisibleWhileAgentRunning: true,
+  keepVisibleWhileLyrics: true,
+  keepVisibleWhileTodoRunning: true,
+  collapsedPriority: ["lyrics", "agent", "todo"],
+  collapsedLayout: ["pulse", "text", "music", "mail", "shelf", "clock", "weather", "agents", "battery"],
+  gameDoNotDisturb: false,
+  ctrlWheelPages: true,
+  clipboardVisibleRows: 6,
+  todoVisibleRows: 6,
+  clipboardCloseOnBlur: true,
 };

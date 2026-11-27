@@ -15,6 +15,7 @@ export const PAGES = [
   "battery-readout.html?forcedColors=1",
   "config-transfer.html",
   "config-transfer.html?lang=en",
+  "first-launch-defaults.html",
   "diagnostic-bundle.html",
   "diagnostic-bundle.html?lang=en",
   "agent-alert-card.html",

@@ -15,7 +15,7 @@ import { installSameWindowStorageEvents } from "./lib/sameWindowStorageEvents";
 import { shouldPreventContextMenu } from "./lib/contextMenu";
 import { applyDocumentTheme } from "./features/appearance/useDocumentTheme";
 import { loadSettings } from "./features/appearance/storage";
-import { captureFirstLaunch } from "./features/onboarding/firstLaunch";
+import { initializeFirstLaunchDefaults } from "./windows/island/initializeDefaults";
 import { installAppLogCapture } from "./features/diagnostics/appLogCapture";
 import { logStartupSettings } from "./features/diagnostics/islandSettings";
 import { restoreConfigBeforeMount } from "./features/config-transfer/bootstrap";
@@ -26,8 +26,7 @@ installAppLogCapture();
 
 async function mountApp() {
   await restoreConfigBeforeMount();
-  // Before loading the settings, which may save them on a first launch.
-  captureFirstLaunch();
+  await initializeFirstLaunchDefaults(windowKind === null);
   // Before the first paint, so no window shows a frame in the wrong colour scheme.
   const settings = loadSettings();
   applyDocumentTheme(settings);
