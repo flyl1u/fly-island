@@ -59,9 +59,8 @@ export async function checkPluginAuthors(
   check(namesShown("antigravity"), "A card with room again shows the names again");
 
   const avatars = [...document.querySelectorAll<HTMLImageElement>(".plugin-card img.plugin-author__avatar")];
-  check(avatars.every((avatar) => /^https:\/\/github\.com\/[\w-]+\.png\?size=64$/.test(avatar.src)
-    && avatar.getAttribute("loading") === "lazy" && avatar.getAttribute("referrerpolicy") === "no-referrer"),
-    "Avatars come from GitHub, lazily and without a referrer");
+  check(avatars.every((avatar) => avatar.src.startsWith("blob:") && !avatar.hasAttribute("loading")),
+    "Decoded avatars use shared local blob URLs without reloading lazily on every market visit");
   await act(async () => { avatars.forEach((avatar) => avatar.dispatchEvent(new Event("error"))); });
   const fallbacks = [...document.querySelectorAll<HTMLElement>(".plugin-card .plugin-author")];
   check(!document.querySelector(".plugin-card img.plugin-author__avatar") && fallbacks.every((link) => {

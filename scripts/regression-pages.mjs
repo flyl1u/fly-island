@@ -77,6 +77,7 @@ export const PAGES = [
   "panel-preview.html",
   "release-features.html",
   "plugins-settings.html",
+  "plugin-author-cache.html",
   "plugins-settings.html?lang=en",
   "plugins-settings.html?features=enabled",
   "plugins-settings.html?lang=en&features=enabled",

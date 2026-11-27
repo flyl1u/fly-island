@@ -1,25 +1,29 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { PluginAuthor } from "./native/catalog";
+import { cachedAuthorAvatar, githubAvatarUrl, loadAuthorAvatar } from "./authorAvatarCache";
 import "./PluginAuthors.css";
-
-/** The GitHub avatar of a `https://github.com/<login>` page, or null for any other address. */
-function githubAvatarUrl(url: string): string | null {
-  const login = /^https:\/\/github\.com\/([A-Za-z0-9-]+)\/?$/.exec(url)?.[1];
-  return login ? `https://github.com/${login}.png?size=64` : null;
-}
 
 /** A round avatar; offline or when it cannot load, the name's first letter on a neutral circle. */
 function AuthorAvatar({ author }: { author: PluginAuthor }) {
   const source = githubAvatarUrl(author.url);
+  const [loaded, setLoaded] = useState<{ source: string; url: string } | null>(null);
   const [failed, setFailed] = useState(false);
-  if (!source || failed) {
+  const url = source ? cachedAuthorAvatar(source) ?? (loaded?.source === source ? loaded.url : null) : null;
+  useEffect(() => {
+    if (!source) return;
+    let cancelled = false;
+    void loadAuthorAvatar(source).then((url) => {
+      if (!cancelled && url) setLoaded({ source, url });
+    });
+    return () => { cancelled = true; };
+  }, [source]);
+  if (!url || failed) {
     return <span className="plugin-author__avatar plugin-author__avatar--fallback" aria-hidden="true">
       {author.name.charAt(0).toUpperCase()}
     </span>;
   }
-  return <img className="plugin-author__avatar" src={source} alt="" width={20} height={20} draggable={false}
-    loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
+  return <img className="plugin-author__avatar" src={url} alt="" width={20} height={20} draggable={false} onError={() => setFailed(true)} />;
 }
 
 /**
