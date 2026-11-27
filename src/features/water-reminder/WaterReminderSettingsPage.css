@@ -1,0 +1,7 @@
+textarea.water-reminder-settings__messages {
+  display: block;
+  height: auto;
+  min-height: 100px;
+  padding: var(--space-sm) var(--space-md);
+  resize: vertical;
+}

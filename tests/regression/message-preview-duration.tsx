@@ -4,6 +4,9 @@ import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { I18nProvider } from "../../src/i18n";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
+import { setNativePluginEnabled, setNativePluginInstalled } from "../../src/features/plugins/native";
+import { updateWaterSettings } from "../../src/features/water-reminder/useWaterSettings";
+import { WaterReminderNotice } from "../../src/features/water-reminder/WaterReminderNotice";
 import { useIslandNotices } from "../../src/windows/island/useIslandNotices";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
@@ -44,7 +47,9 @@ mockIPC((command) => {
 function Fixture() {
   notice = useIslandNotices({ ...DEFAULT_SETTINGS, messagePreviewSeconds: seconds, messageAutoExpand: autoExpand,
     messageExpandSeconds: 12, gameShowNotices, gameNoticeSeconds: 2, revealOnMessage: false }, { mode: "collapsed", isTucked: tucked, quiet });
-  return <div>{notice.qqNotifications.preview?.title}{notice.wechatReminders.preview?.source}{notice.qqMail.preview?.subject}</div>;
+  return <div>{notice.qqNotifications.preview?.title}{notice.wechatReminders.preview?.source}{notice.qqMail.preview?.subject}
+    {notice.waterReminder && <WaterReminderNotice text={notice.waterReminder} />}
+  </div>;
 }
 const root = createRoot(document.getElementById("root")!);
 const render = () => act(async () => root.render(<I18nProvider><Fixture /></I18nProvider>));
@@ -110,12 +115,36 @@ try {
   check(shown().every(Boolean), "game notices work while tucked even with normal reveal disabled ");
   await advance(1);
   check(shown().every(value => !value), "game notices use their independent two-second duration");
+  await act(async () => {
+    updateWaterSettings({ intervalMinutes: 1, messages: ["第一条", "第二条"] });
+    setNativePluginInstalled("water-reminder", true);
+  });
+  await advance(60_000);
+  check(notice.waterReminder === null, "water reminders wait during game mode");
+  quiet = false; tucked = false;
+  await render();
+  const flushReminder = () => act(async () => { await new Promise<void>((resolve) => realTimeout(resolve, 0)); });
+  await flushReminder();
+  check(notice.waterReminder === "第一条" && document.querySelector(".water-reminder-notice__bell"),
+    "water reminders show the first phrase with a bell when the island is available");
+  await advance(4_999);
+  check(notice.waterReminder === "第一条", "water reminders stay for five seconds");
+  await advance(1);
+  check(notice.waterReminder === null && !document.querySelector(".water-reminder-notice"), "water reminders disappear at five seconds");
+  await advance(55_000); await flushReminder();
+  check(notice.waterReminder === "第二条", "water reminders rotate phrases at the configured interval");
+  await act(async () => { setNativePluginEnabled("water-reminder", false); });
+  check(notice.waterReminder === null, "disabling the plugin immediately removes the reminder");
+  await advance(60_000); await flushReminder();
+  check(notice.waterReminder === null, "disabling the plugin stops its timer");
   document.documentElement.dataset.testResult = "passed";
 } catch (error) {
   checks.push(`FAIL ${String(error)}`);
   document.documentElement.dataset.testResult = "failed";
 } finally {
   await act(async () => root.unmount());
+  setNativePluginInstalled("water-reminder", false);
+  localStorage.removeItem("fly-island-water-reminder");
   Date.now = realNow;
   window.setTimeout = realTimeout;
   window.clearTimeout = realClear;

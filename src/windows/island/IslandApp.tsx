@@ -71,7 +71,7 @@ export function IslandApp() {
   const game = useGameMode(settings, { mode, isTucked, tuckSource: navigation.tuckSource, collapseIsland, tuckForGame: navigation.tuckForGame, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
-  const { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview } = notices;
+  const { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview, waterReminder } = notices;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, runningAgents, agentUsages, alertUsages } =
@@ -126,7 +126,7 @@ export function IslandApp() {
         activeIds: settings.todoEnabled ? activeTodoIds : [], timers: settings.todoEnabled ? timers : [],
         // The extra is the source icon and the spacing round the sender's dot, or the code's button.
         notice: collapsed && preview ? { text: collapsedMessageText(preview, t.messages), extraWidth: preview.otpCode ? 140 : 30 } : null,
-        alertText: quotaAlert ? quotaAlertText(quotaAlert, t.agent.quota) : batteryAlert ? t.deviceBattery.lowAlert(batteryAlert.name, batteryAlert.percent) : null },
+        alertText: waterReminder ?? (quotaAlert ? quotaAlertText(quotaAlert, t.agent.quota) : batteryAlert ? t.deviceBattery.lowAlert(batteryAlert.name, batteryAlert.percent) : null) },
     );
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
   const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth: collapsedWidthTarget });
@@ -242,6 +242,7 @@ export function IslandApp() {
         telegram={telegram}
         onOpenMessages={openMessages}
         preview={preview}
+        waterReminder={waterReminder}
         notice={notice.size}
         mode={mode}
         page={page}

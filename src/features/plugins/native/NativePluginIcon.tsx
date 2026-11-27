@@ -13,6 +13,7 @@ import calendarMarksIcon from "../../../assets/plugins/calendar-marks.svg";
 import clockWeatherIcon from "../../../assets/plugins/clock-weather.svg";
 import deviceBatteryIcon from "../../../assets/plugins/device-battery.svg";
 import eyeCareIcon from "../../../assets/plugins/eye-care.svg";
+import waterReminderIcon from "../../../assets/plugins/water-reminder.svg";
 import type { MarketPluginId } from "./catalog";
 import "./NativePluginIcon.css";
 
@@ -33,6 +34,7 @@ const APP_ICONS: Readonly<Record<MarketPluginId, string>> = {
   minimax: minimaxIcon,
   "device-battery": deviceBatteryIcon,
   "eye-care": eyeCareIcon,
+  "water-reminder": waterReminderIcon,
 };
 
 /** Marks that are round themselves: no square shadow behind them on the card. */

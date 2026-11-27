@@ -1,0 +1,33 @@
+.water-reminder-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  color: var(--color-fg-strong);
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 600;
+}
+
+.water-reminder-notice__bell {
+  flex: none;
+  color: var(--color-accent);
+  transform-origin: center 25%;
+  animation: waterReminderRing 900ms ease-in-out infinite;
+}
+
+.water-reminder-notice__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes waterReminderRing {
+  0%, 55%, 100% { transform: rotate(0); }
+  10%, 30% { transform: rotate(15deg); }
+  20%, 40% { transform: rotate(-15deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .water-reminder-notice__bell { animation: none; }
+}

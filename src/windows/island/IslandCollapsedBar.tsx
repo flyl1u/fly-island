@@ -5,6 +5,7 @@ import { BatteryAlertPopup } from "../../features/device-battery/BatteryAlertPop
 import type { BatteryAlert } from "../../features/device-battery/lowBattery";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
+import { WaterReminderNotice } from "../../features/water-reminder/WaterReminderNotice";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/types";
@@ -41,6 +42,7 @@ type IslandCollapsedBarProps = {
   wechatReminders: WeChatRemindersController;
   telegram?: TelegramNotificationsController;
   preview: MessagePreview | null;
+  waterReminder?: string | null;
   /** The adaptive preview's reader (sender, then the whole text) in place of the bar, or null. */
   noticeReader?: { scrolls: boolean } | null;
   animateWidth: boolean;
@@ -96,6 +98,7 @@ export function IslandCollapsedBar({
   wechatReminders,
   telegram,
   preview,
+  waterReminder,
   noticeReader = null,
   animateWidth,
   page,
@@ -174,6 +177,7 @@ export function IslandCollapsedBar({
   };
 
   const reader = Boolean(noticeReader && preview && !isExpanded && !isTucked);
+  const showsWaterReminder = waterReminder && !isExpanded && !isTucked;
   const contentKey = quotaAlert || batteryAlert ? "alert" : (showCollapsedText ? collapsedItem : null) ?? "idle";
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
@@ -226,7 +230,8 @@ export function IslandCollapsedBar({
         >
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
-          <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked} contentKey={contentKey}>
+          {showsWaterReminder && <WaterReminderNotice text={waterReminder} />}
+          {!showsWaterReminder && <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked} contentKey={contentKey}>
             {quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
             ) : batteryAlert ? <BatteryAlertPopup alert={batteryAlert} /> : <>
@@ -265,7 +270,7 @@ export function IslandCollapsedBar({
               </span>
             )}
             </>}
-          </CollapsedMessageContent>
+          </CollapsedMessageContent>}
         </button>
         {!isExpanded && !isTucked && preview?.source === "qqMail" && preview.otpCode && <MailOtpCode
           key={preview.otpCode} code={preview.otpCode} copied={qqMail.copiedOtp === preview.otpCode} onCopy={qqMail.copyOtp} />}

@@ -43,6 +43,7 @@ type IslandShellProps = {
   onOpenMessages: (source: MessageSource) => void;
   /** The newest message preview to show on the collapsed island (useIslandNotices), or null. */
   preview: MessagePreview | null;
+  waterReminder?: string | null;
   /** The size the adaptive preview grew the island to (useMessageNotice), or null. */
   notice: NoticeSize | null;
   mode: IslandMode;
@@ -139,6 +140,7 @@ export function IslandShell({
   telegram,
   onOpenMessages,
   preview,
+  waterReminder,
   notice,
   mode,
   page,
@@ -295,6 +297,7 @@ export function IslandShell({
             wechatReminders={wechatReminders}
             telegram={telegram}
             preview={preview}
+            waterReminder={waterReminder}
             noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
             animateWidth={widthMoving}
             page={page}

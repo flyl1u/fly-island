@@ -3,6 +3,7 @@ import { act } from "react";
 /** Card name key → the GitHub logins its authors link to, in the order they must show. */
 const CONTRIBUTED: Readonly<Record<string, string>> = {
   telegram: "baiyu0111",
+  "water-reminder": "baiyu0111",
   codebuddy: "yiumanlenong",
   antigravity: "lilipeng0615-cyber",
   calendarMarks: "gyl-coding",

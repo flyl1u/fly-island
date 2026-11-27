@@ -14,4 +14,6 @@
 
 - **TG（插件市场，#134，2026-11-26 移入插件）**。默认未安装；装好后设置 → 消息出现 Telegram 分组（排在内置分组之后），接收开关默认关，需用户打开并授予 Windows 通知读取权限。图标用 Telegram 官方标志。开启接收后，消息页显示 TG 品牌标签和图标，折叠预览与消息卡片都可打开对应对话。TG 确认打开对话后，同步移除岛上卡片和 Windows 通知。空列表时显示 TG 图标以及「点击打开 TG」按钮。
 
+- **喝水提醒（内置插件）**。安装后在独立设置页调整间隔和轮换文案。到点后等收起的岛屿可用，显示摇铃和一条文案，5 秒后消失。贴边状态沿用通知唤出设置，游戏免打扰期间延后；系统减少动态效果时铃铛静止。
+
 English: Adaptive notices are opt-in. They widen before wrapping, then scroll within user limits and the scaled native stage. Mail notices fetch the visible message body on demand, offer selectable text (Ctrl+C) and a separate open action, stay while the cursor is on them, and never mark the message read. Whether a message fits one line is measured on the laid-out bar, not only estimated. Game notices have their own opt-in and duration, display without taking focus, and keep native click-through enabled.

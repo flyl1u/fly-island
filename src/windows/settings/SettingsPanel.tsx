@@ -15,6 +15,7 @@ import { usePlacedPlugins } from "../../features/plugins/usePlacedPlugins";
 import { PluginPageGroups } from "./PluginSettingsGroup";
 import { useAvailableCategory, useOpenPluginSettings } from "./usePluginPageNavigation";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
+import { WaterReminderSettingsPage } from "../../features/water-reminder/WaterReminderSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
@@ -32,6 +33,7 @@ import { useLocale } from "../../i18n";
 const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType>> = {
   clockWeather: ClockWeatherSettingsPage,
   devices: DeviceBatterySettings,
+  "plugin:water-reminder": WaterReminderSettingsPage,
 };
 
 /**

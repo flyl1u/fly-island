@@ -13,6 +13,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import type { IslandMode } from "./types";
 import { canPreviewNotice, previewSecondsFor } from "./noticeRules";
 import { useHeldPreview } from "./useHeldPreview";
+import { useWaterReminder } from "../../features/water-reminder/useWaterReminder";
 
 /** What can pop up on the collapsed island: message previews (QQ, WeChat, mail). */
 export function useIslandNotices(settings: IslandSettings, { mode, isTucked, quiet }: { mode: IslandMode; isTucked: boolean; quiet: boolean }) {
@@ -30,12 +31,15 @@ export function useIslandNotices(settings: IslandSettings, { mode, isTucked, qui
   // Kept while the cursor is on it, and counted as showing, so the island neither opens under the
   // cursor nor slides back mid-read; not in game mode, where clicks pass through it.
   const latest = useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail, office.preview, telegram.preview);
-  const preview = useHeldPreview(latest, !quiet, (held) =>
+  const messagePreview = useHeldPreview(latest, !quiet, (held) =>
     held.source !== "telegram" || telegram.snapshot.items.some(({ id }) => id === held.telegramId));
+  const reminder = useWaterReminder(canPreviewMessages && !quiet && !messagePreview);
+  const waterReminder = canPreviewMessages && !quiet ? reminder : null;
+  const preview = waterReminder ? null : messagePreview;
   const hasMessagePreview = Boolean(
-    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || office.preview || telegram.preview || preview,
+    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || office.preview || telegram.preview || preview || waterReminder,
   );
-  return { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview };
+  return { qqNotifications, wechatReminders, qqMail, telegram, preview, hasMessagePreview, waterReminder };
 }
 
 /**
