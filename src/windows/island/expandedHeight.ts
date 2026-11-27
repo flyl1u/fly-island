@@ -91,6 +91,7 @@ type ExpandedHeightInput = {
   shelfItems?: number;
   /** The open plugin page's entries, buttons and whether it carries a note line; its page fits them. */
   pluginPanel?: { rows: number; actions: number; note: boolean };
+  showBatteryHistory?: boolean;
 };
 
 /**
@@ -118,6 +119,7 @@ export function getExpandedIslandHeight({
   settingsContentHeight = null,
   shelfItems = 0,
   pluginPanel,
+  showBatteryHistory = false,
 }: ExpandedHeightInput) {
   // The upcoming list and calendar each scroll inside their fixed height.
   const isTodoArchivePage =
@@ -152,6 +154,9 @@ export function getExpandedIslandHeight({
       ? MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
       : page === "shelf"
         ? Math.min(getShelfExpandedHeight(shelfItems), maxPanelHeight)
+      : page === "battery"
+        // The summary, bar and stats (104px), plus the chart (120px); text grows with the font size.
+        ? (showBatteryHistory ? 312 : 192) + Math.round(Math.max(0, fontScale - 1) * (showBatteryHistory ? 90 : 70))
       : page === "translation"
         ? Math.min(TRANSLATION_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"

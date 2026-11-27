@@ -17,6 +17,9 @@ import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
 import { isPluginPage } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
+import type { BatteryPowerEstimate } from "../../features/battery/powerEstimate";
+import type { BatterySnapshot } from "../../features/battery/snapshot";
+import type { BatteryDisplayMode, BatteryReadoutStyle } from "../../features/battery/preferences";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
@@ -78,6 +81,10 @@ type IslandShellProps = {
   onSwitchCollapsedItem?: (direction: 1 | -1) => void;
   collapsedLyrics?: import("../../features/media/lyrics/lrc").LyricLine[] | null;
   collapsedLayout: readonly CollapsedSlot[];
+  battery?: BatterySnapshot | null;
+  batteryEstimate?: BatteryPowerEstimate | null;
+  batteryDisplay: BatteryDisplayMode;
+  batteryReadoutStyle: BatteryReadoutStyle;
   collapsedOrder?: readonly CollapsedSlot[];
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
@@ -165,6 +172,10 @@ export function IslandShell({
   onSwitchCollapsedItem,
   collapsedLyrics,
   collapsedLayout,
+  battery,
+  batteryEstimate,
+  batteryDisplay,
+  batteryReadoutStyle,
   collapsedOrder,
   collapsedCover,
   lyricsSettings,
@@ -313,6 +324,10 @@ export function IslandShell({
             collapsedItem={collapsedItem}
             collapsedLyrics={collapsedLyrics}
             collapsedLayout={collapsedLayout}
+            battery={battery}
+            batteryEstimate={batteryEstimate}
+            batteryDisplay={batteryDisplay}
+            batteryReadoutStyle={batteryReadoutStyle}
             collapsedOrder={collapsedOrder}
             collapsedCover={collapsedCover}
             lyricsSettings={lyricsSettings}

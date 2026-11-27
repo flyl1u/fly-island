@@ -2,6 +2,17 @@
 
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
+  "island-tour.html?test=1&battery=normal&batteryAuto=1",
+  "island-tour.html?test=1&battery=normal&batterySamples=1",
+  "island-tour.html?test=1&battery=normal&batteryDisplay=remaining&notch=1&font=120&lang=en&theme=light",
+  "island-tour.html?test=1&battery=limited&batteryDisplay=remaining&notch=1&font=120&lang=en&theme=light&material=frostedGlass",
+  "island-tour.html?test=1&battery=charging&batteryDisplay=remaining&batteryStyle=badge&theme=light&material=frostedGlass&lang=en",
+  "island-tour.html?test=1&battery=low&batteryDisplay=remaining&batteryStyle=badge&material=liquidGlass",
+  "island-tour.html?test=1&battery=full&batteryDisplay=remaining",
+  "island-tour.html?test=1&battery=drainingOnAc&batteryDisplay=remaining",
+  "island-tour.html?test=1&battery=absent",
+  "battery-readout.html",
+  "battery-readout.html?forcedColors=1",
   "config-transfer.html",
   "config-transfer.html?lang=en",
   "diagnostic-bundle.html",

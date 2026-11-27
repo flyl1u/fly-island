@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks" | "battery";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -24,7 +24,7 @@ export type PluginSettingsPlacementName = "standalone" | "agentSessions" | "agen
 export type PluginSettingsPlacement = {
   placement: PluginSettingsPlacementName;
   /** Standalone only: an existing page name to keep, instead of `plugin:<id>`. */
-  category?: "clockWeather" | "devices";
+  category?: "clockWeather" | "devices" | "battery";
   /** Where the action buttons go when they belong on another page than the settings. */
   actionsPlacement?: PluginSettingsPlacementName;
 };
@@ -56,6 +56,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "hermes", kind: "agent", accent: "#b9a6ff", authors: OWN, settings: AGENT_SESSIONS },
   { id: "calendarMarks", kind: "island", accent: "#f29389", authors: contributed("gyl-coding"), settings: null },
   { id: "clockWeather", kind: "island", accent: "#63b9b6", authors: OWN, settings: { placement: "standalone", category: "clockWeather" } },
+  { id: "battery", kind: "island", accent: "#8fd9a8", authors: contributed("QXiaoLingShang"), settings: { placement: "standalone", category: "battery" } },
 ];
 
 export const PACKAGED_MARKET_PLUGINS = [

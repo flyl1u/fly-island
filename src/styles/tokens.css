@@ -88,6 +88,13 @@
   --color-success: #2f8c61;
   --color-danger: #c75065;
   --color-warning: #ffd166;
+  --battery-badge-ink: #101216;
+  --battery-badge-track: rgb(204 204 204 / 63%);
+  --battery-badge-status-track: var(--battery-badge-track);
+  --battery-badge-rim: rgb(204 204 204 / 37%);
+  --battery-badge-neutral: #ccc;
+  --battery-badge-low: #eb4a38;
+  --battery-badge-charging: #78ca9f;
   --color-agent-idle: #35e985;
   --color-agent-running: #3d8bff;
   --color-agent-waiting: #ff9f43;
@@ -150,6 +157,13 @@
   --color-success: #1f8f57;
   --color-danger: #c7354b;
   --color-warning: #9a6700;
+  --battery-badge-ink: #fff;
+  --battery-badge-track: rgb(0 0 0 / 55%);
+  --battery-badge-status-track: rgb(0 0 0 / 86%);
+  --battery-badge-rim: rgb(0 0 0 / 55%);
+  --battery-badge-neutral: #000;
+  --battery-badge-low: #d33e2f;
+  --battery-badge-charging: #246c4b;
   --color-agent-idle: #1fa85b;
   --color-agent-running: #2f78ea;
   --color-agent-waiting: #e07d18;

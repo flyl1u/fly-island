@@ -143,6 +143,7 @@ export function IslandHeader({
     clipboard: t.island.clipboardHistory,
     shelf: t.island.shelf,
     translation: t.translator.title,
+    battery: t.island.pageNames.battery,
   };
   const reorderDots = useCallback(
     (next: PageDot[]) => onPageOrderChange([...next, ...pageOrder.filter((dot) => !next.includes(dot))]),

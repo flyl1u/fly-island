@@ -1,3 +1,4 @@
+import batteryIcon from "../../../assets/plugins/battery.svg";
 import dingtalkIcon from "../../../assets/brands/dingtalk.svg";
 import feishuIcon from "../../../assets/brands/feishu.svg";
 import wecomIcon from "../../../assets/brands/wecom.svg";
@@ -28,6 +29,7 @@ const APP_ICONS: Readonly<Record<MarketPluginId, string>> = {
   antigravity: antigravityIcon,
   zcode: zcodeIcon,
   hermes: hermesIcon,
+  battery: batteryIcon,
   clockWeather: clockWeatherIcon,
   calendarMarks: calendarMarksIcon,
   minimax: minimaxIcon,

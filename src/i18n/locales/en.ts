@@ -7,6 +7,7 @@ import * as wechat from "../sections/wechat.ts";
 import * as mail from "../sections/mail.ts";
 import * as translator from "../sections/translator.ts";
 import * as island from "../sections/island.ts";
+import * as battery from "../sections/battery.ts";
 import * as agent from "../sections/agent.ts";
 import * as notebook from "../sections/notebook.ts";
 import * as archive from "../sections/archive.ts";
@@ -30,6 +31,7 @@ const en: Translations = {
   translator: translator.en,
 
   island: island.en,
+  battery: battery.en,
 
   agent: agent.en,
 

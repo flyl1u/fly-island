@@ -5,6 +5,7 @@ import type { PluginPanelIcon } from "./panelTypes";
 
 const PLUGIN_LINE_ICONS: Readonly<Record<string, LucideIcon>> = {
   clockWeather: CloudSun,
+  battery: BatteryMedium,
   "eye-care": Eye,
   "device-battery": BatteryMedium,
 };

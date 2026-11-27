@@ -25,5 +25,7 @@ test("installed plugins keep only known ids", () => {
   assert.equal(normalizeInstalledNativePlugins(["clockWeather"]).clockWeather, true);
   assert.equal(installed.calendarMarks, false);
   assert.equal(normalizeInstalledNativePlugins(["calendarMarks"]).calendarMarks, true);
+  assert.equal(installed.battery, false);
+  assert.equal(normalizeInstalledNativePlugins(["battery"]).battery, true);
   assert.equal(normalizeInstalledNativePlugins("bad").cursor, false);
 });

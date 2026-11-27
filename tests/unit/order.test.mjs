@@ -33,12 +33,20 @@ test("the collapsed island's order, cover and the page dots load with defaults",
   assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo"]);
   assert.equal(settings.collapsedShowCover, true);
   assert.equal(normalizeSettings({ collapsedShowCover: false }).collapsedShowCover, false);
-  assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf", "translation"]);
+  assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf", "translation", "battery"]);
+  assert.equal(settings.batteryDisplayMode, "percent");
+  assert.equal(normalizeSettings({ batteryDisplayMode: "remaining" }).batteryDisplayMode, "remaining");
+  assert.equal(normalizeSettings({ batteryDisplayMode: "alternate" }).batteryDisplayMode, "percent", "a reading that no longer exists falls back to charge");
+  assert.equal(settings.batteryHistoryEnabled, true);
+  assert.equal(normalizeSettings({ batteryHistoryEnabled: false }).batteryHistoryEnabled, false);
+  assert.equal(normalizeSettings({ batteryHistoryEnabled: "no" }).batteryHistoryEnabled, true);
   const saved = normalizeSettings({ collapsedPriority: ["todo"], collapsedShowCover: true, pageOrder: ["shelf", "todo"] });
   assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics"]);
   assert.equal(saved.collapsedShowCover, true);
-  // Orders saved before translation had a capsule get it at the end.
-  assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation"]);
+  assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation", "battery"]);
+  const reordered = normalizeSettings({ collapsedLayout: ["battery", "text", "music"], collapsedHidden: ["battery"] });
+  assert.deepEqual(reordered.collapsedLayout, ["battery", "pulse", "text", "music", "mail", "shelf", "agents", "clock", "weather"]);
+  assert.deepEqual(reordered.collapsedHidden, ["battery"]);
 });
 
 test("page buttons keep each supported style and default to icons", () => {

@@ -6,6 +6,7 @@ const CONTRIBUTED: Readonly<Record<string, string>> = {
   codebuddy: "yiumanlenong",
   antigravity: "lilipeng0615-cyber",
   calendarMarks: "gyl-coding",
+  battery: "QXiaoLingShang",
   minimax: "YTC0408",
   "device-battery": "Anobod1119",
   "eye-care": "zloghs",

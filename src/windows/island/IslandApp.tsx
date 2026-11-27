@@ -31,6 +31,7 @@ import { useMusicGrace } from "./useMusicGrace";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useCtrlWheelPages, wheelPageOrder } from "./useCtrlWheelPages";
 import { useIslandFeatures } from "./useIslandFeatures";
+import { useIslandBattery } from "./useIslandBattery";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
 import { useQuotaAlert } from "../../features/agent-status/useQuotaAlert";
@@ -82,6 +83,7 @@ export function IslandApp() {
   });
   const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
+  const battery = useIslandBattery(settings.batteryHistoryEnabled, mode, page, isTucked);
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
   const { lines: collapsedLyrics } = useLyrics(media.mediaState, settings, songPlaying);
   // "Stay out while music plays" follows the media session itself, not the lyric line.
@@ -102,6 +104,7 @@ export function IslandApp() {
     telegramEnabled: telegram.active,
     qqMail,
     page,
+    hasBattery: battery.snapshot !== null,
     messageSource,
     setPage,
     setMessageSource,
@@ -173,6 +176,7 @@ export function IslandApp() {
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
     pluginPanel: pluginPage ? { rows: pluginPage.rows, actions: pluginPage.actions, note: pluginPage.note } : undefined,
+    showBatteryHistory: settings.batteryHistoryEnabled,
   }));
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
@@ -270,6 +274,10 @@ export function IslandApp() {
         collapsedOrder={settings.collapsedLayout}
         collapsedLayout={visibleCollapsedSlots(settings.collapsedLayout, [...settings.collapsedHidden,
           ...(statusFit.clock ? [] : ["clock" as const]), ...(statusFit.weather ? [] : ["weather" as const])])}
+        battery={battery.snapshot}
+        batteryEstimate={battery.estimate}
+        batteryDisplay={settings.batteryDisplayMode}
+        batteryReadoutStyle={settings.batteryReadoutStyle}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}
@@ -311,6 +319,9 @@ export function IslandApp() {
           onDetachedSettingsChange={(value) => void changePresentation(value)}
           onSettingsHeight={reportSettingsHeight}
           features={features}
+          battery={battery.snapshot}
+          batteryHistory={battery.history}
+          batteryEstimate={battery.estimate}
           qqMail={qqMail}
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}

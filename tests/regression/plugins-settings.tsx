@@ -108,6 +108,8 @@ try {
   localStorage.removeItem(CLOCK_WEATHER_KEY);
   localStorage.setItem(OFFICE_IM_ENABLED_KEY, JSON.stringify({ dingtalk: false, feishu: true, wecom: true }));
   await act(async () => app.render(<StrictMode><I18nProvider><Page /></I18nProvider></StrictMode>)); await wait();
+  const batterySidebar = () => document.querySelector("[data-category='battery']");
+  check(!batterySidebar() && !hostCalls.includes("get_notebook_battery"), "没装电池插件时没有它的栏目，也不读取电池");
   const cards = [...document.querySelectorAll<HTMLElement>(".plugin-card")];
   if (!PLUGIN_MARKET_ENABLED) {
     check(cards.length === 0, "正式版不显示插件市场");
@@ -173,6 +175,16 @@ try {
       && buttonBox.right <= card.getBoundingClientRect().right, "最窄卡片的开关与卸载按钮同排且不溢出");
     fixture.style.width = "";
     await act(async () => weatherRemove().click());
+    const batteryName = market.items.battery.name;
+    const batteryCard = cards.find((item) => item.querySelector(".plugin-card__name")?.textContent === batteryName)!;
+    check(batteryCard.querySelector("[data-plugin-icon='battery']") && batteryCard.querySelector(".plugin-author__name")?.textContent === "QXiaoLingShang",
+      "电池是市场里的一张卡片，带自己的图标和作者");
+    await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(batteryName)}']`)!.click());
+    const batterySwitch = document.querySelector<HTMLInputElement>(`[role=switch][aria-label='${market.enableNamed(batteryName)}']`)!;
+    check(batterySwitch.checked && batterySidebar() && !hostCalls.includes("get_notebook_battery"), "装上电池默认启用，设置在独立栏目里");
+    await act(async () => batterySwitch.click());
+    check(!batterySidebar(), "关闭电池插件隐藏它的栏目");
+    await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(batteryName)}']`)!.click());
   }
   if (!PLUGINS_ENABLED) {
     if (PLUGIN_MARKET_ENABLED) {

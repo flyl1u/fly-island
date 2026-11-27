@@ -5,6 +5,8 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { useTranslation } from "../../i18n";
 import { moveItem } from "../../utils/order.ts";
 import { WeatherIcon, useClockWeather } from "../weather";
+import { BatteryReadout } from "../battery/BatteryReadout";
+import { useNativePlugins } from "../plugins";
 import { placeCollapsedLayout, visibleCollapsedSlots } from "./collapsedLayout";
 import { COLLAPSED_SLOTS } from "./settingsLimits";
 import type { CollapsedSlot, IslandSettings } from "./types";
@@ -15,8 +17,9 @@ import { useResolvedScheme } from "./useDocumentTheme";
 import "./IslandPreview.css";
 import "./CollapsedLayoutEditor.css";
 
-const PLUGIN_SLOTS: readonly CollapsedSlot[] = ["clock", "weather"];
-const NO_SLOTS: readonly CollapsedSlot[] = [];
+const CLOCK_WEATHER_SLOTS: readonly CollapsedSlot[] = ["clock", "weather"];
+// The battery slot as the editor draws it: a sample reading, not this computer's.
+const BATTERY_SAMPLE = { percent: 72, state: "onBattery", low: false } as const;
 
 /** Whether each icon's feature is on; a switched-off one shows grey and keeps its place. */
 function slotsOn(settings: IslandSettings): Record<CollapsedSlot, boolean> {
@@ -27,6 +30,7 @@ function slotsOn(settings: IslandSettings): Record<CollapsedSlot, boolean> {
     shelf: settings.shelfEnabled && settings.shelfShowCount,
     music: settings.musicEnabled,
     agents: true, clock: false, weather: false,
+    battery: true,
   };
 }
 
@@ -50,8 +54,12 @@ export function CollapsedLayoutEditor({
   const text = useTranslation().settings.appearance.collapsedIsland.layout;
   const preview = islandPreviewStyle(settings, useResolvedScheme(settings.colorScheme));
   const clockWeather = useClockWeather();
-  // Time and weather exist once their plugin is installed; until then they keep their saved places.
-  const absent = clockWeather.installed ? NO_SLOTS : PLUGIN_SLOTS;
+  const batteryInstalled = useNativePlugins().battery;
+  // Plugin slots exist once their plugin is installed; until then they keep their saved places.
+  const absent = useMemo<readonly CollapsedSlot[]>(
+    () => [...(clockWeather.installed ? [] : CLOCK_WEATHER_SLOTS), ...(batteryInstalled ? [] : ["battery" as const])],
+    [batteryInstalled, clockWeather.installed],
+  );
   const arrangement = useMemo<SlotArrangement>(() => ({
     shown: visibleCollapsedSlots(settings.collapsedLayout, settings.collapsedHidden).filter((slot) => !absent.includes(slot)),
     hidden: settings.collapsedHidden.filter((slot) => !absent.includes(slot)),
@@ -104,6 +112,7 @@ export function CollapsedLayoutEditor({
     agents: settings.agentStatusEnabled ? "1" : null,
     clock: "12:34",
     weather: <><WeatherIcon code={2} />23°</>,
+    battery: <BatteryReadout level={BATTERY_SAMPLE} value="72%" readoutStyle={settings.batteryReadoutStyle} />,
   };
   const slotClass = (slot: CollapsedSlot) => [
     "collapsed-layout__slot",

@@ -7,7 +7,7 @@ import {
 import type { InstalledPlugin, PluginManifest } from "./api";
 
 /** The settings page a placement leads to. */
-export type PluginPageCategory = "agents" | "agentConnect" | "messages" | "clockWeather" | "devices" | `plugin:${string}`;
+export type PluginPageCategory = "agents" | "agentConnect" | "messages" | "clockWeather" | "devices" | "battery" | `plugin:${string}`;
 
 export type PlacedPlugin = {
   id: string;

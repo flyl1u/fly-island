@@ -15,6 +15,7 @@ import { usePlacedPlugins } from "../../features/plugins/usePlacedPlugins";
 import { PluginPageGroups } from "./PluginSettingsGroup";
 import { useAvailableCategory, useOpenPluginSettings } from "./usePluginPageNavigation";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
+import { BatterySettings } from "../../features/battery/BatterySettings";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
@@ -28,10 +29,17 @@ import type { WeChatRemindersController } from "../../features/messages/wechat/W
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { useLocale } from "../../i18n";
 
+type PluginSettingsPageProps = {
+  settings: IslandSettings;
+  onSettingsChange: (settings: IslandSettings | ((current: IslandSettings) => IslandSettings)) => void;
+};
+
 /** Plugin pages with controls of their own; a packaged plugin's manifest settings follow below. */
-const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType>> = {
+const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType<PluginSettingsPageProps>>> = {
   clockWeather: ClockWeatherSettingsPage,
   devices: DeviceBatterySettings,
+  battery: ({ settings, onSettingsChange }) => <BatterySettings preferences={settings}
+    onChange={(patch) => onSettingsChange((current) => ({ ...current, ...patch }))} />,
 };
 
 /**
@@ -136,7 +144,7 @@ export function SettingsPanel({
       {activeCategory === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {activeCategory === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
       {activeCategory === "agentConnect" && <AgentConnectSettingsPage />}
-      {pluginPage && CustomPage && <CustomPage />}
+      {pluginPage && CustomPage && <CustomPage settings={settings} onSettingsChange={setSettings} />}
       {pluginPage && <PluginPageGroups page={pluginPage.category} />}
       {activeCategory === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={setSettings} onOpenSettings={openPluginSettings} />}
       {activeCategory === "about" && <AboutSettingsPage />}

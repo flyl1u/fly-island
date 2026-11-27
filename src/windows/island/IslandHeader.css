@@ -182,6 +182,12 @@
   --dot-glow: rgba(255, 154, 118, 0.46);
 }
 
+.dot-button--battery {
+  /* Green, the colour a battery gauge is read in; nothing else on the header uses it. */
+  --dot-color: #8fd9a8;
+  --dot-glow: rgba(143, 217, 168, 0.46);
+}
+
 .dot-button--messages {
   --dot-color: #e58ee2;
   --dot-glow: rgba(229, 142, 226, 0.44);

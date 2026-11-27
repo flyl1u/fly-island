@@ -1,7 +1,7 @@
 export type IslandMode = "collapsed" | "expanded";
 
 /** The pages built into the island. */
-export type BuiltinPage = "todo" | "music" | "clipboard" | "shelf" | "qq" | "agents" | "translation";
+export type BuiltinPage = "todo" | "music" | "clipboard" | "shelf" | "qq" | "agents" | "translation" | "battery";
 
 /** A page an installed plugin brings, opened from its own button in the header. */
 export type PluginPage = `plugin:${string}`;

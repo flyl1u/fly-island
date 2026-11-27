@@ -19,8 +19,9 @@ test("built-in plugins go by their kind of feature", () => {
   for (const id of ["dingtalk", "feishu", "wecom"]) assert.equal(page(placed, id).category, "messages", id);
   for (const id of ["cursor", "kimiCode", "codebuddy", "antigravity", "zcode", "hermes"]) assert.equal(page(placed, id).category, "agents", id);
   assert.equal(page(placed, "clockWeather").category, "clockWeather");
+  assert.equal(page(placed, "battery").category, "battery");
   assert.equal(page(placed, "calendarMarks"), undefined);
-  assert.deepEqual(standalonePages(placed).map((item) => item.id), ["clockWeather"]);
+  assert.deepEqual(standalonePages(placed).map((item) => item.id), ["clockWeather", "battery"]);
 });
 
 test("packaged plugins get their own page or an Agent group", () => {

@@ -16,7 +16,7 @@ import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } 
 import { prepareTourGlassBackdrop, runShoulderFixture } from "./islandTourShoulders";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
 import { TOUR_CLIPBOARD, TOUR_KIMI_USAGE, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SHELF, TOUR_TODOS, tourMediaState, tourSessions, type TourMedia } from "./islandTourMocks";
-
+import { prepareBatteryTour, runBatteryTour, tourBattery } from "./islandTourBattery";
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
 const empty = query.has("empty");
@@ -50,7 +50,7 @@ localStorage.setItem("fly-island-qq-notification-access-requested", "true");
 // ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it,
 // ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.85…1.2 sets the expanded size.
 localStorage.setItem("fly-island-settings", JSON.stringify({
-  ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
+  ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}), ...prepareBatteryTour(query),
   ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
   islandFontPercent: fontPercent,
   ...(query.get("theme") ? { colorScheme: query.get("theme") } : {}),
@@ -117,7 +117,7 @@ mockIPC((command, payload) => {
     case "get_agent_hooks_state": return { claudeCode: "installed", codex: "installed" };
     case "get_reply_marker_state": return { installed: false, outdated: false, path: "", content: "" };
     case "plugin:window|is_visible": return true;
-    default: return null;
+    default: return command === "get_notebook_battery" ? tourBattery(args.includeDetails === true, query.get("battery")) : null;
   }
 }, { shouldMockEvents: true });
 mockWindows("main");
@@ -175,7 +175,6 @@ function strays() {
   }
   return out;
 }
-
 if (query.has("shoulderSweep") || query.has("shapePerf")) {
   mount(); await runShoulderFixture(query, results);
 } else if (!automated) {
@@ -183,6 +182,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
   results.remove();
 } else if (query.get("pageButtons") === "iconLabel") {
   await checkIslandTourPageButtons({ mount, click, settle, check, results, messages }).finally(restore);
+} else if (query.has("battery")) { await runBatteryTour(query, mount, click, results, restore);
 } else if (query.has("autoWidth")) {
   try { await checkIslandAutoWidth({ mount, unmount: () => root.render(null), settle, check }); results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`; results.dataset.result = "passed"; }
   catch (error) { results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`; results.dataset.result = "failed"; } finally { restore(); }
@@ -246,7 +246,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     };
     await drag(".dot-button--todo", ".dot-button--clipboard");
     const savedOrder = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").pageOrder as string[] | undefined;
-    check(dotOrder().join() === "music,clipboard,todo,shelf,translation" && savedOrder?.join() === "music,clipboard,todo,shelf,translation" && island().className === pageBefore,
+    check(dotOrder().join() === "music,clipboard,todo,shelf,translation" && savedOrder?.join() === "music,clipboard,todo,shelf,translation,battery" && island().className === pageBefore,
       `拖动页面圆点可以调整顺序并保存，拖完不切页（${dotOrder().join()}）`);
     await drag(".dot-button--todo", ".dot-button--music");
     check(dotOrder()[0] === "todo", "圆点可以拖回原来的位置");
@@ -354,7 +354,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
       });
     }
     const savedLayout = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
-    check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather" && collapsedBarOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
+    check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather,battery" && collapsedBarOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
       `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${collapsedBarOrder()}）`);
     await click(".settings-sidebar__item[data-category='general']");
     const lockSwitch = () => [...document.querySelectorAll<HTMLElement>(".settings-row")]

@@ -1,5 +1,6 @@
 // First-launch settings, and what older versions showed for fields they did not have yet.
 import { DEFAULT_LYRICS_SETTINGS } from "../media/lyrics/lyricsSettings.ts";
+import { DEFAULT_BATTERY_PREFERENCES } from "../battery/preferences.ts";
 import {
   DEFAULT_AGENT_VISIBLE_ROWS, DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS, DEFAULT_CLIPBOARD_VISIBLE_ROWS, DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
@@ -128,6 +129,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   keepVisibleWhileLyrics: false,
   keepVisibleWhileTodoRunning: false,
   todoEnabled: true,
+  ...DEFAULT_BATTERY_PREFERENCES,
   musicEnabled: true,
   agentStatusEnabled: true,
   agentTitleEnabled: true,

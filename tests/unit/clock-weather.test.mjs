@@ -46,13 +46,13 @@ test("the local clock uses padded 24-hour time and realigns to every whole minut
   assert.equal(formatTemperature(-0.1), "0°");
   assert.equal(formatTemperature(-2.6), "-3°");
 });
-test("old collapsed layouts retain their order, gain the light before the text and clock/weather at the end", () => {
+test("old collapsed layouts retain their order, gain the light before the text and new status slots at the end", () => {
   const old = ["music", "text", "agents", "shelf", "mail"];
-  assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: old }).collapsedLayout, ["music", "pulse", "text", "agents", "shelf", "mail", "clock", "weather"]);
+  assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: old }).collapsedLayout, ["music", "pulse", "text", "agents", "shelf", "mail", "clock", "weather", "battery"]);
   assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: ["clock", "text", "clock", "unknown"] }).collapsedLayout,
-    ["clock", "pulse", "text", "mail", "shelf", "music", "agents", "weather"]);
+    ["clock", "pulse", "text", "mail", "shelf", "music", "agents", "weather", "battery"]);
   assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: ["text", "agents", "pulse"] }).collapsedLayout,
-    ["text", "agents", "pulse", "mail", "shelf", "music", "clock", "weather"], "a moved light keeps its place");
+    ["text", "agents", "pulse", "mail", "shelf", "music", "clock", "weather", "battery"], "a moved light keeps its place");
   assert.deepEqual(normalizeBehaviorSettings({}).collapsedLayout[0], "pulse");
 });
 

@@ -5,6 +5,7 @@ import type { WechatText } from "./sections/wechat";
 import type { MailText } from "./sections/mail";
 import type { TranslatorText } from "./sections/translator";
 import type { IslandText } from "./sections/island";
+import type { BatteryText } from "./sections/battery";
 import type { AgentText } from "./sections/agent";
 import type { NotebookText } from "./sections/notebook";
 import type { ArchiveText } from "./sections/archive";
@@ -33,6 +34,7 @@ export type Translations = {
   translator: TranslatorText;
 
   island: IslandText;
+  battery: BatteryText;
 
   agent: AgentText;
 

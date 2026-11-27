@@ -1,5 +1,9 @@
 import { Fragment, type ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
+import type { BatteryPowerEstimate } from "../../features/battery/powerEstimate";
+import type { BatterySnapshot } from "../../features/battery/snapshot";
+import type { BatteryDisplayMode, BatteryReadoutStyle } from "../../features/battery/preferences";
+import { BatteryStatusButton } from "../../features/battery/BatteryStatusButton";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import { BatteryAlertPopup } from "../../features/device-battery/BatteryAlertPopup";
 import type { BatteryAlert } from "../../features/device-battery/lowBattery";
@@ -62,6 +66,10 @@ type IslandCollapsedBarProps = {
   collapsedLyrics?: LyricLine[] | null;
   /** Where the text and each status icon sit, left to right (Settings → Appearance). */
   collapsedLayout: readonly CollapsedSlot[];
+  battery?: BatterySnapshot | null;
+  batteryEstimate?: BatteryPowerEstimate | null;
+  batteryDisplay: BatteryDisplayMode;
+  batteryReadoutStyle: BatteryReadoutStyle;
   collapsedOrder?: readonly CollapsedSlot[];
   /** The playing song's cover, or null when it is not shown. */
   collapsedCover: string | null;
@@ -114,6 +122,10 @@ export function IslandCollapsedBar({
   collapsedItem,
   collapsedLyrics = null,
   collapsedLayout,
+  battery,
+  batteryEstimate,
+  batteryDisplay,
+  batteryReadoutStyle,
   collapsedOrder = collapsedLayout,
   collapsedCover,
   lyricsSettings,
@@ -292,6 +304,15 @@ export function IslandCollapsedBar({
         onClick={() => onOpenPage("music")}
       />
       ),
+    battery: battery && (
+      <BatteryStatusButton
+        snapshot={battery}
+        estimate={batteryEstimate}
+        displayMode={batteryDisplay}
+        readoutStyle={batteryReadoutStyle}
+        onOpen={() => onOpenPage("battery")}
+      />
+    ),
     agents: agentSessionCount === null ? (
       <button
         className="island__quiet-button"
