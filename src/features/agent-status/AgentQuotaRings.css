@@ -86,10 +86,19 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 5px 1px rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.18);
   pointer-events: none;
 }
+/* The arcs and the logo move as one piece; the shadow and the hover targets stay put. */
+.quota-rings__body {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  transition: transform 220ms ease-out;
+}
+.quota-rings__body > svg { display: block; overflow: visible; }
 .quota-rings__logo {
   position: absolute;
   inset: 0;
@@ -114,18 +123,13 @@
   cursor: default;
 }
 .quota-rings__target:focus-visible { outline: 1px solid var(--quota-color); }
-.quota-rings__arc {
-  position: absolute;
-  inset: 0;
-  display: block;
-  overflow: visible;
-  pointer-events: none;
-  transition: transform 160ms ease-out;
+/* Lifted a little and tilted in depth: the half under the pointer comes toward the viewer,
+   the upper one for the short window and the lower one for the weekly window. */
+.quota-rings:has(.quota-rings__half--top:hover, .quota-rings__half--top .quota-rings__target:focus-visible) .quota-rings__body {
+  transform: translateY(-1px) perspective(70px) rotateX(-28deg) scale(1.06);
 }
-.quota-rings:has(.quota-rings__half--top:hover, .quota-rings__half--top .quota-rings__target:focus-visible) .quota-rings__arc--top,
-.quota-rings:has(.quota-rings__half--bottom:hover, .quota-rings__half--bottom .quota-rings__target:focus-visible) .quota-rings__arc--bottom {
-  /* Growing about the ring's centre moves the arc about a pixel away from the logo. */
-  transform: scale(1.07);
+.quota-rings:has(.quota-rings__half--bottom:hover, .quota-rings__half--bottom .quota-rings__target:focus-visible) .quota-rings__body {
+  transform: translateY(-1px) perspective(70px) rotateX(28deg) scale(1.06);
 }
 
 .quota-rings__track,

@@ -12,9 +12,13 @@ export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
   hints?: readonly [string, string];
 }) {
   return <span className="quota-rings" style={{ "--quota-size": `${size}px` } as CSSProperties}>
-    <Arc position="top" path="M 2.34 9.41 A 10 10 0 0 1 21.66 9.41" left={outer} size={size} />
-    <Arc position="bottom" path="M 2.34 14.59 A 10 10 0 0 0 21.66 14.59" left={inner} size={size} />
-    {provider && <span className="quota-rings__logo" aria-hidden="true"><AgentProviderMark provider={provider} size={size * 13.5 / 22} /></span>}
+    <span className="quota-rings__body">
+      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <Arc path="M 2.34 9.41 A 10 10 0 0 1 21.66 9.41" left={outer} />
+        <Arc path="M 2.34 14.59 A 10 10 0 0 0 21.66 14.59" left={inner} />
+      </svg>
+      {provider && <span className="quota-rings__logo" aria-hidden="true"><AgentProviderMark provider={provider} size={size * 13.5 / 22} /></span>}
+    </span>
     {hints?.map((hint, index) => <IslandHoverCard key={index} lines={[{ text: hint }]} placement="right" compact
       alignTo=".quota-rings" anchorClassName={`quota-rings__half quota-rings__half--${index === 0 ? "top" : "bottom"}`}>
       <button type="button" className="quota-rings__target" aria-label={hint} />
@@ -22,16 +26,15 @@ export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
   </span>;
 }
 
-/** Each half has its own layer, so its lift and shadow work on the whole box around the ring's centre. */
-function Arc({ path, left, position, size }: { path: string; left: number | null; position: "top" | "bottom"; size: number }) {
+function Arc({ path, left }: { path: string; left: number | null }) {
   const shown = left === null ? 100 : left <= 0 ? 0 : Math.min(100, Math.max(left, 3));
   return (
-    <svg className={`quota-rings__arc quota-rings__arc--${position}`} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <>
       <path className="quota-rings__track" d={path} />
       {shown > 0 && (
         <path className={`quota-rings__fill${left === null ? " quota-rings__fill--unknown" : ""}`} d={path} pathLength={100}
           strokeDasharray={shown >= 100 ? undefined : `${shown} 100`} />
       )}
-    </svg>
+    </>
   );
 }

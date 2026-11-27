@@ -23,20 +23,24 @@ export async function checkQuotaHover(ring: HTMLElement, check: (condition: unkn
   await settle();
   check(document.querySelector(".island-hover-card")?.textContent === "每周 · 剩余 38%", "下半区切换为每周，提示不包含来源和重置说明");
   await leave(bottom);
-  const upper = ring.querySelector(".quota-rings__arc--top")!;
-  const lower = ring.querySelector(".quota-rings__arc--bottom")!;
-  const resting = [upper.getBoundingClientRect(), lower.getBoundingClientRect()];
+  const body = ring.querySelector<HTMLElement>(".quota-rings__body")!;
+  const tracks = [...body.querySelectorAll(".quota-rings__track")];
+  const logo = body.querySelector(".quota-rings__logo")!;
+  const widths = () => tracks.map((track) => track.getBoundingClientRect().width);
   const shadow = () => getComputedStyle(ring.querySelector(".quota-rings") ?? ring, "::before").boxShadow;
   const restingShadow = shadow();
+  const restingLogo = logo.getBoundingClientRect().top;
+  const restingTarget = top.getBoundingClientRect().top;
   check(restingShadow !== "none", "整个额度环常驻一层浅阴影");
   await act(async () => (top.querySelector("button") as HTMLButtonElement).focus());
   await settle();
-  check(getComputedStyle(upper).transform !== "none" && getComputedStyle(lower).transform === "none"
-    && getComputedStyle(ring).backgroundColor === "rgba(0, 0, 0, 0)", "聚焦上半环只抬起上弧，背后不铺底色");
-  check(upper.getBoundingClientRect().top < resting[0].top - 0.5 && upper.getBoundingClientRect().top > resting[0].top - 1.5
-    && lower.getBoundingClientRect().top === resting[1].top && shadow() === restingShadow, "上弧只轻微向外抬起，下弧和阴影不变");
+  const [upperNear, lowerFar] = widths();
+  check(upperNear > lowerFar + 1 && logo.getBoundingClientRect().top < restingLogo, `聚焦上半区：上沿靠近用户，图标跟着环一起抬起（${upperNear.toFixed(1)} / ${lowerFar.toFixed(1)}）`);
+  check(shadow() === restingShadow && top.getBoundingClientRect().top === restingTarget
+    && getComputedStyle(ring).backgroundColor === "rgba(0, 0, 0, 0)", "阴影和感应区不动，背后不铺底色");
   await act(async () => (bottom.querySelector("button") as HTMLButtonElement).focus());
   await settle();
-  check(getComputedStyle(lower).transform !== "none" && getComputedStyle(upper).transform === "none", "聚焦下半环只抬起下弧");
+  const [upperFar, lowerNear] = widths();
+  check(lowerNear > upperFar + 1, `聚焦下半区：下沿靠近用户（${upperFar.toFixed(1)} / ${lowerNear.toFixed(1)}）`);
   await act(async () => (document.activeElement as HTMLElement).blur());
 }
