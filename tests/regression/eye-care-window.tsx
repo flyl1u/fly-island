@@ -71,15 +71,17 @@ try {
   check(document.documentElement.dataset.theme === theme && document.documentElement.dataset.material === material,
     "The window follows the host scheme and material");
   check(revealed > 0, "The host is asked to reveal only after state and first paint");
-  check(document.querySelectorAll(".eye-care-rest__choices .settings-link-button").length === 5,
-    "All five postponements reuse host controls");
+  const pills = [...document.querySelectorAll<HTMLElement>(".eye-care-rest__choices .settings-link-button")];
+  check(pills.length === 6, "All six postponements reuse host controls");
+  check(pills.map((pill) => pill.textContent).join(",") === [5, 10, 15, 20, 25, 30].map(text.minutes).join(","),
+    "Postponements run from five to thirty minutes in order");
   check(document.querySelector(".settings-link-button--danger")?.textContent === text.skip,
     "Skipping has the localized host action style");
   const before = clock();
   await wait(1200);
   check(seconds(clock()) < seconds(before), "The displayed countdown advances locally");
-  await act(async () => document.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[3].click());
-  check(actions[actions.length - 1]?.id === "eye-care" && actions[actions.length - 1]?.action === "snooze_25", "Postponement routes to the plugin's 25-minute action");
+  await act(async () => document.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[0].click());
+  check(actions[actions.length - 1]?.id === "eye-care" && actions[actions.length - 1]?.action === "snooze_5", "Postponement routes to the plugin's 5-minute action");
   failAction = true;
   await act(async () => document.querySelector<HTMLButtonElement>(".settings-link-button--danger")!.click());
   check(document.querySelector("[role=alert]")?.textContent === text.failed, "Failed actions offer localized guidance without raw errors");

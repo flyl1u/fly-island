@@ -24,7 +24,7 @@ let panel: Panel = {
 };
 const manifest = {
   id: "eye-care", name: { "zh-CN": "护眼提醒", en: "Eye Care" },
-  description: { "zh-CN": "护眼", en: "Eye Care" }, version: "0.2.0", apiVersion: 1,
+  description: { "zh-CN": "护眼", en: "Eye Care" }, version: "1.0.0", apiVersion: 1,
   runtime: { command: "eye-care.exe" }, contributes: ["panel"], permissions: ["panel", "desktop-windows"],
   settings: [], panel: { icon: "heart-pulse" },
   actions: ["rest_now", "snooze_10", "skip"].map((id) => ({ id, label: { "zh-CN": id, en: id } })),
@@ -77,13 +77,13 @@ try {
   await showRest();
   check(islandClock() === restClock() && seconds(restClock()) === 300, "A new deadline updates both clocks immediately");
   check(!island.querySelector(".eye-care-island__actions"), "Resting island shows no duplicate postponement or skip buttons");
-  check(rest.querySelectorAll(".eye-care-rest__choices button").length === 5 && rest.querySelector(".eye-care-rest__actions button"),
-    "The break window retains all five postponements and optional skipping");
+  check(rest.querySelectorAll(".eye-care-rest__choices button").length === 6 && rest.querySelector(".eye-care-rest__actions button"),
+    "The break window retains all six postponements and optional skipping");
   check(rest.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width === "60%",
     "The break window drains the same kind of bar as the island");
-  await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[3].click());
+  await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[5].click());
   await act(async () => rest.querySelector<HTMLButtonElement>(".eye-care-rest__actions button")!.click());
-  check(windowActions.join(",") === "snooze_25,skip", "The remaining break-window actions still work");
+  check(windowActions.join(",") === "snooze_30,skip", "The remaining break-window actions still work");
 
   jump += 10_500;
   await act(async () => window.dispatchEvent(new Event("focus")));

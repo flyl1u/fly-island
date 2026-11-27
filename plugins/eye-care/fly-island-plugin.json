@@ -114,6 +114,13 @@
       }
     },
     {
+      "id": "snooze_5",
+      "label": {
+        "zh-CN": "推迟 5 分钟",
+        "en": "Postpone 5 minutes"
+      }
+    },
+    {
       "id": "snooze_10",
       "label": {
         "zh-CN": "推迟 10 分钟",
