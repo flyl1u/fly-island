@@ -42,14 +42,6 @@ export type AgentText = {
     thisComputer: string;
     /** Heading of sessions without a known folder, when grouped by project. */
     noProject: string;
-    /** The Agent page's arrange menu in the island header: the order and the headings. */
-    arrange: {
-      label: string;
-      sort: string;
-      group: string;
-      sortOptions: { status: string; recent: string; firstSeen: string };
-      groupOptions: { computer: string; project: string; none: string };
-    };
     removed: string;
     undo: string;
     /** A finished session whose reply ends on the "your turn" marker. */
@@ -177,13 +169,6 @@ export const zhCN: AgentText = {
     remoteOnly: (host) => `没找到连着 ${host} 的终端或编辑器窗口`,
     thisComputer: "本机",
     noProject: "未知项目",
-    arrange: {
-      label: "排列会话",
-      sort: "排序",
-      group: "分组",
-      sortOptions: { status: "状态优先", recent: "最近活动", firstSeen: "首次出现" },
-      groupOptions: { computer: "按电脑", project: "按项目", none: "不分组" },
-    },
     removed: "已归档",
     undo: "撤销",
     yourTurn: "等你回复",
@@ -315,13 +300,6 @@ export const en: AgentText = {
     remoteOnly: (host) => `No terminal or editor window connected to ${host}`,
     thisComputer: "This computer",
     noProject: "No project",
-    arrange: {
-      label: "Arrange sessions",
-      sort: "Sort",
-      group: "Group",
-      sortOptions: { status: "Status", recent: "Recent", firstSeen: "First seen" },
-      groupOptions: { computer: "Computer", project: "Project", none: "None" },
-    },
     removed: "Archived",
     undo: "Undo",
     yourTurn: "Your turn",

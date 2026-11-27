@@ -53,7 +53,7 @@ export async function checkIslandTourPageButtons({ mount, click, settle, check, 
       `${locale} ${message}（${row.dataset.pageLabelMode}，${row.clientWidth}px）`);
 
     check(document.querySelector<HTMLElement>(".island")!.offsetWidth === 560 && panel.offsetWidth === 560
-      && actions.querySelectorAll(".icon-button").length === 3, "560px 默认展开岛的 Agent 顶栏含三个操作按钮");
+      && actions.querySelectorAll(".icon-button").length === 2, "560px 默认展开岛的 Agent 顶栏含两个操作按钮");
     verifyFullRow("默认宽度下七个页名全部显示，文字和整行均不溢出");
 
     await click(".dot-button--clipboard");
@@ -70,7 +70,7 @@ export async function checkIslandTourPageButtons({ mount, click, settle, check, 
     await settle(100);
     check(row.dataset.pageLabelMode === "current" && visibleNames(row).map((text) => text.textContent).join() === t.island.agentPage
       && rowFits(row, actions), `${locale} 大字号和极窄顶栏仅保留当前 Agent 页名`);
-    panel.style.width = "290px";
+    panel.style.width = "250px";
     await settle(100);
     check(row.dataset.pageLabelMode === "icons" && visibleNames(row).length === 0 && rowFits(row, actions)
       && row.querySelectorAll("[data-page-button] svg").length === 7,

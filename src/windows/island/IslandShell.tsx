@@ -125,8 +125,6 @@ type IslandShellProps = {
   clickTuckedToOpen?: boolean;
   onClickTucked?: () => void;
   onPageChange: (page: IslandPage) => void;
-  /** Buttons of the open page, first among the window actions. */
-  pageActions?: ReactNode;
   children: ReactNode;
 };
 
@@ -205,7 +203,6 @@ export function IslandShell({
   clickTuckedToOpen = false,
   onClickTucked,
   onPageChange,
-  pageActions,
   children,
 }: IslandShellProps) {
   const t = useTranslation();
@@ -375,7 +372,6 @@ export function IslandShell({
               onResetPosition={onResetPosition}
               minimizesToTray={minimizesToTray}
               onMinimize={onMinimize}
-              pageActions={pageActions}
             />
             <div ref={contentRef} className="island__content">{children}</div>
           </div>

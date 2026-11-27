@@ -12,6 +12,14 @@ export type SettingsAgentText = {
   sessionTitleSection: string;
   sessionTitle: string;
   sessionTitleHint: string;
+  /** The Agent page's list: its order and its headings. */
+  sessionList: {
+    title: string;
+    sort: string;
+    group: string;
+    sortOptions: { status: string; recent: string; firstSeen: string };
+    groupOptions: { computer: string; project: string; none: string };
+  };
   sources: {
     title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string;
     /** Agents installed from the plugin market; their rows appear only once installed. */
@@ -72,6 +80,13 @@ export const zhCN: SettingsAgentText = {
   sessionTitleSection: "小岛显示",
   sessionTitle: "运行时在小岛显示会话标题",
   sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex、DSH、WorkBuddy 和插件市场里装上的 Agent 的本地会话记录，不需要安装钩子。",
+  sessionList: {
+    title: "会话列表",
+    sort: "排序",
+    group: "分组",
+    sortOptions: { status: "状态优先", recent: "最近活动", firstSeen: "首次出现" },
+    groupOptions: { computer: "按电脑", project: "按项目", none: "不分组" },
+  },
   sources: {
     title: "会话来源",
     claudeCode: "Claude Code",
@@ -170,6 +185,13 @@ export const en: SettingsAgentText = {
   sessionTitleSection: "On the island",
   sessionTitle: "Show the session title while running",
   sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from the local session records of Claude Code, Codex, DSH, WorkBuddy and the agents installed from the plugin market, so no hooks are needed.",
+  sessionList: {
+    title: "Session list",
+    sort: "Sort",
+    group: "Group",
+    sortOptions: { status: "Status", recent: "Recent", firstSeen: "First seen" },
+    groupOptions: { computer: "Computer", project: "Project", none: "None" },
+  },
   sources: {
     title: "Session sources",
     claudeCode: "Claude Code",

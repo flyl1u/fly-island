@@ -39,6 +39,17 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
     "Switching the WorkBuddy source off hides its sign-in and saves the choice");
   await act(async () => source?.querySelector<HTMLInputElement>("input[role=switch]")?.click());
 
+  // The Agent page's order and headings (once a menu in the island header) save from here.
+  const choice = (title: string, label: string) => [...document.querySelectorAll<HTMLButtonElement>(`[role="group"][aria-label="${title}"] button`)]
+    .find((item) => item.textContent === label);
+  await act(async () => choice("排序", "状态优先")?.click());
+  await act(async () => choice("分组", "按项目")?.click());
+  const arranged = JSON.parse(localStorage.getItem("fly-island-settings")!);
+  check(arranged.agentSessionSort === "status" && arranged.agentSessionGroup === "project" && choice("排序", "状态优先")?.getAttribute("aria-pressed") === "true",
+    "The session list's sort and grouping save from Settings");
+  await act(async () => choice("排序", "最近活动")?.click());
+  await act(async () => choice("分组", "按电脑")?.click());
+
   await openPage("agentConnect");
   check(!document.querySelector(".workbuddy-sign-in__status") && !document.querySelector(".editor-panel")?.textContent?.includes("WorkBuddy"),
     "The Connect AI tools page has no WorkBuddy section");

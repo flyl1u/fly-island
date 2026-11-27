@@ -35,7 +35,6 @@ import { useIslandBattery } from "./useIslandBattery";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
 import { useQuotaAlert } from "../../features/agent-status/useQuotaAlert";
-import { AgentArrangeButton } from "../../features/agent-status/AgentArrangeButton";
 import { useAgentIndicator } from "./useAgentIndicator";
 import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
@@ -306,9 +305,6 @@ export function IslandApp() {
         clickTuckedToOpen={game.browserOnIslandMonitor && settings.browserAutoTuckClickToOpen}
         onClickTucked={tuckedHover.clickTucked}
         onPageChange={setPage}
-        pageActions={page === "agents" && (
-          <AgentArrangeButton sort={settings.agentSessionSort} group={settings.agentSessionGroup} onChange={(patch) => setSettings({ ...settings, ...patch })} />
-        )}
       >
         <IslandPages
           page={page}

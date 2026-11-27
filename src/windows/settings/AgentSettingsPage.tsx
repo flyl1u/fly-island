@@ -12,12 +12,13 @@ import type { NativePluginId } from "../../features/plugins/native/catalog";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
+import { AgentSessionListSettings } from "./AgentSessionListSettings";
 import { PluginPageGroups } from "./PluginSettingsGroup";
 
 /**
  * Settings → AI Agent → AI sessions: the module switch, the title on the collapsed island,
- * pop-ups, sounds and approving on the island. The hooks are on the Connect AI tools page; what the
- * Agent page lists and how its cards look keep their defaults. Agent plugins follow, one group each.
+ * the Agent page's order and headings, pop-ups, sounds and approving on the island. The hooks are on
+ * the Connect AI tools page; how the page's cards look keeps its defaults. Agent plugins follow, one group each.
  */
 export function AgentSettingsPage({
   settings,
@@ -83,6 +84,7 @@ export function AgentSettingsPage({
           onChange={(agentTitleEnabled) => onSettingsChange({ ...settings, agentTitleEnabled })}
         />
       </SettingsGroup>
+      <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentAlertSettings settings={settings} onSettingsChange={onSettingsChange} />
       <PluginPageGroups page="agents" renderNative={agentPluginGroup} />
     </>
