@@ -77,8 +77,11 @@ refs:
     assert_eq!(locate_in(vec![old.clone(), new.clone()]).err(), Some(NO_CREDENTIAL));
     fs::write(new.join(".credentials.yaml"), key).unwrap();
     assert!(matches!(locate_in(vec![old.clone(), new.clone()]), Ok(Some(Credential::ApiKey(_)))));
+    // A third-party model selection no longer hides the balance: the official key still works.
     let custom = store("custom", "openrouter", 200, Some(key));
-    assert_eq!(locate_in(vec![old.clone(), new.clone(), custom.clone()]).err(), Some(CUSTOM_PROVIDER));
+    assert!(matches!(locate_in(vec![old.clone(), new.clone(), custom.clone()]), Ok(Some(Credential::ApiKey(_)))));
+    let custom_no_key = store("custom-no-key", "openrouter", 200, None);
+    assert_eq!(locate_in(vec![old.clone(), new.clone(), custom_no_key.clone()]).err(), Some(NO_CREDENTIAL));
     fs::write(new.join("settings.yaml"), "baseURL: https://example.invalid
 ").unwrap();
     assert_eq!(locate_in(vec![new.clone()]).err(), Some(CUSTOM_ROUTE));
@@ -86,7 +89,7 @@ refs:
     let empty = std::env::temp_dir().join(format!("fly-island-dsh-store-{}-empty", std::process::id()));
     fs::create_dir_all(empty.join("storages/session_projcache/sessions")).unwrap();
     assert_eq!(locate_in(vec![empty.clone()]).err(), Some(NO_SESSION));
-    for root in [old, new, custom, empty] { let _ = fs::remove_dir_all(root); }
+    for root in [old, new, custom, custom_no_key, empty] { let _ = fs::remove_dir_all(root); }
 }
 
 #[test]

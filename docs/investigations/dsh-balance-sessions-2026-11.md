@@ -28,7 +28,7 @@
 | 投影版本 | `row()` 接受已知版本及更新版本；需要的字段逐个校验类型，形状变了的行跳过而不是猜（`turnBoundary` 必须有 `lastTurn`，`sessionListMetadata.blank` 必须是布尔）。顶层 `version >= 3`、`formatVersion >= 3` |
 | 源日志 | 任意 `session.v<N>.jsonl*` 都算；分片目录每个根只列一次 |
 | 凭据解析 | 去 BOM；看不懂的行跳过，看不懂的键仍占一层缩进，其下内容不会被误认成已知记录的字段 |
-| 失败原因 | `get_dsh_usage` 返回 `Err("dsh:<code>")`：`noSession` / `customProvider` / `customRoute` / `credential` / `timeout` / `network` / `auth` / `http` / `format`；没装 DSH 仍是 `Ok(None)`，保持安静。前端在余额环的位置显示空环和简短原因，悬停给出处理建议。上次成功的余额在刷新失败时继续显示（按已有规则标记过期） |
+| 失败原因 | `get_dsh_usage` 返回 `Err("dsh:<code>")`：`noSession` / `customProvider` / `customRoute` / `credential` / `timeout` / `network` / `auth` / `http` / `format`；没装 DSH 仍是 `Ok(None)`，保持安静。前端在余额环的位置显示空环和简短原因，悬停给出处理建议。上次成功的余额在刷新失败时继续显示（按已有规则标记过期）。2026-11-27 起 `customProvider` 已取消：第三方模型不再拦截余额查询 |
 | 扫描开销 | 不存在会话目录的根直接跳过；顶层窗口每次扫描只枚举一次；计费来源最多看最新 64 个检查点 |
 
 命令名、参数、事件名都没有变；`get_dsh_usage` 的成功返回结构不变，只是失败时由 `Ok(None)` 改为带原因码的 `Err`。旧前端会把它当作读取失败、不显示余额，和以前的表现一致。

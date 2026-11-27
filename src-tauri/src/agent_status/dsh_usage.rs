@@ -38,7 +38,6 @@ pub struct DshUsage {
 /// leaving the ring out silently; never carries a path, key, response body or network error text.
 pub(super) type Problem = &'static str;
 pub(super) const NO_SESSION: Problem = "noSession";
-pub(super) const CUSTOM_PROVIDER: Problem = "customProvider";
 pub(super) const CUSTOM_ROUTE: Problem = "customRoute";
 pub(super) const NO_CREDENTIAL: Problem = "credential";
 const TIMEOUT: Problem = "timeout";
@@ -126,9 +125,9 @@ pub(super) fn parse_account(value: &Value, now: i64) -> Option<DshUsage> {
     Some(DshUsage { updated_at: now, available, wallets, source: "dshAccount" })
 }
 
-/// The newest checkpoint that names a billing route: its time and the route, `None` for a
-/// custom provider. Checkpoints without a selection (blank sessions) are passed over.
-fn latest_route(root: &Path) -> Option<(i64, Option<String>)> {
+/// The newest checkpoint that names a model provider: its time. Blank sessions are passed over.
+/// The provider value only identifies the store in use; it no longer gates balance lookup.
+fn latest_route(root: &Path) -> Option<i64> {
     let mut checkpoints: Vec<_> = fs::read_dir(root.join("storages/session_projcache/sessions"))
         .into_iter().flatten().flatten().filter_map(|entry| {
             let modified = entry.metadata().ok()?.modified().ok().and_then(system_time_to_unix_millis)?;
@@ -141,9 +140,8 @@ fn latest_route(root: &Path) -> Option<(i64, Option<String>)> {
         if !dsh_sessions::known_envelope(&value) { continue; }
         let selection = &value["record"]["rows"]["modelSelection"];
         if !selection["ver"].as_u64().is_some_and(|ver| ver >= 2) { continue; }
-        let Some(provider) = selection["val"]["lastUsed"]["provider"].as_str() else { continue; };
-        let known = matches!(provider, "deepseek-official" | "deepseek-account").then(|| provider.to_string());
-        return Some((modified, known));
+        if !selection["val"]["lastUsed"]["provider"].is_string() { continue; }
+        return Some(modified);
     }
     None
 }
@@ -166,14 +164,13 @@ pub(super) fn locate(home: &Path) -> Result<Option<Credential>, Problem> {
 
 fn locate_in(stores: Vec<PathBuf>) -> Result<Option<Credential>, Problem> {
     if stores.is_empty() { return Ok(None); }
-    let (root, provider) = stores.into_iter()
-        .filter_map(|root| latest_route(&root).map(|(time, provider)| (time, root, provider)))
-        .max_by_key(|(time, _, _)| *time)
-        .map(|(_, root, provider)| (root, provider))
+    let root = stores.into_iter()
+        .filter_map(|root| latest_route(&root).map(|time| (time, root)))
+        .max_by_key(|(time, _)| *time)
+        .map(|(_, root)| root)
         .ok_or(NO_SESSION)?;
-    let provider = provider.ok_or(CUSTOM_PROVIDER)?;
     if !dsh_credentials::official_route(&root) { return Err(CUSTOM_ROUTE); }
-    dsh_credentials::read(&root, &provider).map(Some).ok_or(NO_CREDENTIAL)
+    dsh_credentials::read(&root).map(Some).ok_or(NO_CREDENTIAL)
 }
 
 fn request_problem(error: &reqwest::Error) -> Problem {

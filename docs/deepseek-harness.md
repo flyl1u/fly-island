@@ -14,7 +14,7 @@ DSH 会话、宿主标识、余额环和来源开关接入 Agent 页。会话完
 | [DataElement](https://github.com/dataelement/dsh-desktop) | 18,424 | DSH Desktop.exe | %APPDATA%/dsh-desktop/harness |
 | [anywhere-labs Stable/Beta/NEXT](https://github.com/anywhere-labs/dsh-desktop) | 35,860 | DSH Desktop.exe / DSH Desktop Beta.exe / DSH NEXT.exe | ~/.dsh / ~/.dsh-beta；支持已保存绝对目录选择 |
 
-余额从所有有会话的目录里，选最新带计费来源的检查点所在的目录（正在用的那个 DSH）读取路由和凭据（2026-11-14 起，见[排查记录](investigations/dsh-balance-sessions-2026-11.md)）。仅通过其他进程环境变量配置的任意目录不自动发现。完整源码依据、凭据、窗口和限制见 [调研记录](investigations/deepseek-harness-integration.md)。
+余额从所有有会话的目录里，选最新有模型选择的检查点所在的目录（正在用的那个 DSH）读取凭据（2026-11-14 起，见[排查记录](investigations/dsh-balance-sessions-2026-11.md)）。仅通过其他进程环境变量配置的任意目录不自动发现。完整源码依据、凭据、窗口和限制见 [调研记录](investigations/deepseek-harness-integration.md)。
 
 | 文件 | 用途 |
 |---|---|
@@ -43,14 +43,14 @@ DSH 会话、宿主标识、余额环和来源开关接入 Agent 页。会话完
 
 DSH 官方账户采用充值与赠送钱包；没有查到本地持久化的余额快照，也没有固定 5 小时/7 天订阅额度分母。会话里的 `tokenUsage` 是 token 统计，不能换算成账户剩余额度。
 
-依据最新有模型选择的检查点选取计费来源，两个来源不相加：
+优先使用 DSH 保存的 DeepSeek API key，没有合法 key 时再用官方账户 grant；两者不相加：
 
 | DSH 路由 | 官方只读请求 | 凭据 |
 |---|---|---|
 | `deepseek-official` | `GET https://api.deepseek.com/user/balance` | DSH `refs.DEEPSEEK_API_KEY`，只作为 Authorization 请求头 |
 | `deepseek-account` | `GET https://platform.deepseek.com/api/v0/users/get_user_summary` | DSH `records[deepseek-account-platform/default]` 的 grant，只接受官方 issuer，只作为 `x-dsh-auth-token` 请求头 |
 
-只读取 DSH 默认凭据布局中所需的标量，不解析任意 YAML、执行引用或跟随自定义 endpoint。已知本地设置/patch 出现自定义地址或 credential reference 时禁用自动余额查询；复杂 YAML、环境变量凭据、自定义提供商、其他 profile 的自定义凭据不会自动接管。没有可识别的计费来源或凭据时，余额环位置显示空环和原因（未找到凭据、第三方模型、自定义接口等），不显示金额。
+只读取 DSH 默认凭据布局中所需的标量，不解析任意 YAML、执行引用或跟随自定义 endpoint。已知本地设置/patch 出现自定义地址或 credential reference 时禁用自动余额查询；复杂 YAML、环境变量凭据、其他 profile 的自定义凭据不会自动接管。最近一次会话用第三方模型不影响余额查询——只要本地留有官方 API key 或账户 grant 就能查到余额。没有可用凭据时，余额环位置显示空环和原因（未找到凭据、自定义接口等），不显示金额。
 
 凭据只在请求期间保存在 Rust 进程内，不发送到前端，不复制到岛屿数据目录，不写入日志、测试或报告。网络只访问以上固定 HTTPS 地址，不跟随重定向；连接超时 4 秒、总超时 8 秒，连接失败或超时重试一次，响应最多 64 KiB。成功结果只在内存缓存 5 分钟；失败至少隔 1 分钟再试，暂保留同一凭据的旧结果并按现有规则标记过期；更换或删除凭据会清除上一身份的缓存。离线或接口失败不会当作余额为零，也不会刷错误日志。
 

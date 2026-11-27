@@ -272,8 +272,8 @@ export type DshUsage = {
 };
 
 /** Why DSH is set up but shows no balance; the native side rejects with `dsh:<code>`. */
-export type DshProblem = "noSession" | "customProvider" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format";
-const DSH_PROBLEMS: readonly DshProblem[] = ["noSession", "customProvider", "customRoute", "credential", "timeout", "network", "auth", "http", "format"];
+export type DshProblem = "noSession" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format";
+const DSH_PROBLEMS: readonly DshProblem[] = ["noSession", "customRoute", "credential", "timeout", "network", "auth", "http", "format"];
 
 /** The reason in a rejected `get_dsh_usage`, or null for anything else (an older build, an IPC error). */
 export function dshProblem(error: unknown): DshProblem | null {
