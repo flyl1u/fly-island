@@ -82,7 +82,7 @@ impl TuckStyle {
     pub(super) fn hot_zone_size(self) -> Option<(f64, f64)> {
         match self {
             Self::Edge => None,
-            Self::Line => Some((140.0, 14.0)),
+            Self::Line => Some((112.0, 10.0)),
             Self::Hidden => Some((160.0, 6.0)),
         }
     }

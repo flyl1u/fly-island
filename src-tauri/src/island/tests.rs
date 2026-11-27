@@ -265,7 +265,7 @@ fn tucked_styles_keep_their_visible_height_and_only_capture_their_hot_zone() {
     assert_eq!(TuckStyle::from_value(Some("invalid")), TuckStyle::Edge);
     for (name, style, zone_width, zone_height) in [
         ("edge", TuckStyle::Edge, 340.0, 10.0),
-        ("line", TuckStyle::Line, 140.0, 14.0),
+        ("line", TuckStyle::Line, 112.0, 10.0),
         ("hidden", TuckStyle::Hidden, 160.0, 6.0),
     ] {
         assert_eq!(TuckStyle::from_value(Some(name)), style);
@@ -286,6 +286,11 @@ fn tucked_styles_keep_their_visible_height_and_only_capture_their_hot_zone() {
                     assert!(hit(center, top + visible * dpi / 2.0));
                     assert!(!hit(center + zone_width * scale * dpi / 2.0 + 1.0, top + 1.0));
                     assert!(!hit(center, top + visible * dpi + 1.0));
+                    if style == TuckStyle::Line {
+                        assert!(!hit(center + 60.0 * scale * dpi, top + 2.0 * scale * dpi));
+                        assert!(!hit(center, top + 12.0 * scale * dpi));
+                        assert!(hit(center + 52.0 * scale * dpi, top + 8.0 * scale * dpi));
+                    }
                     if style != TuckStyle::Edge {
                         assert!(hit(center, top));
                         assert!(!hit(center, top - 1.0));

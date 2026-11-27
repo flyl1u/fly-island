@@ -52,8 +52,8 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
       && style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.transform === "none"
     : style.opacity === "0";
   const zone = getComputedStyle(island(), "::before");
-  const zoneOk = Math.abs(Number.parseFloat(zone.width) - (tuckStyle === "line" ? 140 : 160) * scale) < 0.5
-    && Math.abs(Number.parseFloat(zone.height) - (tuckStyle === "line" ? 14 : 6) * scale) < 0.5;
+  const zoneOk = Math.abs(Number.parseFloat(zone.width) - (tuckStyle === "line" ? 112 : 160) * scale) < 0.5
+    && Math.abs(Number.parseFloat(zone.height) - (tuckStyle === "line" ? 10 : 6) * scale) < 0.5;
   check(interaction().tuckStyle === tuckStyle && endOk && zoneOk && island().classList.contains(`island--tuck-${tuckStyle}`),
     `贴边样式 ${tuckStyle}：传给原生窗口，${tuckStyle === "line" ? "岛屿缩成短横线" : "岛屿完全透明"}，命中区与原生热区一致（${style.width}×${style.height} / ${style.opacity} / ${zone.width}×${zone.height}）`);
 
