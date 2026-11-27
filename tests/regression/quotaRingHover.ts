@@ -25,10 +25,14 @@ export async function checkQuotaHover(ring: HTMLElement, check: (condition: unkn
   await leave(bottom);
   const upper = ring.querySelector(".quota-rings__arc--top")!;
   const lower = ring.querySelector(".quota-rings__arc--bottom")!;
+  const resting = [upper.getBoundingClientRect(), lower.getBoundingClientRect()];
+  check([upper, lower, ring.querySelector(".quota-rings__logo")!].every((layer) => getComputedStyle(layer).filter.includes("drop-shadow")), "两段弧和 Logo 常驻投影");
   await act(async () => (top.querySelector("button") as HTMLButtonElement).focus());
   await settle();
   check(getComputedStyle(upper).transform !== "none" && getComputedStyle(lower).transform === "none"
     && getComputedStyle(ring).backgroundColor === "rgba(0, 0, 0, 0)", "聚焦上半环只抬起上弧，背后不铺底色");
+  check(upper.getBoundingClientRect().top < resting[0].top - 1
+    && lower.getBoundingClientRect().top === resting[1].top, "上弧向外抬起，下弧不动");
   await act(async () => (bottom.querySelector("button") as HTMLButtonElement).focus());
   await settle();
   check(getComputedStyle(lower).transform !== "none" && getComputedStyle(upper).transform === "none", "聚焦下半环只抬起下弧");

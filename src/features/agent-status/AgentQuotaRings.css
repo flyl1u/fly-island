@@ -1,12 +1,14 @@
 /* One row above the session list with each provider's quota rings. Its height is part of the Agent
    page's chrome in getAgentPageExpandedHeight (windows/island/layout.ts, AGENT_USAGE_HEIGHT:
-   32 plus 6 below, including room for lifted arcs): keep the two in step. */
+   26 plus 6 below): keep the two in step. The row scrolls, so it clips: its padding leaves room
+   for the shadows and a lifted arc, and the margins take the same amount back so the rings sit
+   where they would without it. */
 .agent-quota {
   flex: none;
-  height: 32px;
+  height: 34px;
   box-sizing: border-box;
-  padding-block: 3px;
-  margin: 0 6px 6px;
+  padding: 4px;
+  margin: -4px 2px 2px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -78,8 +80,8 @@
   overflow: visible;
 }
 
-.quota-rings > svg { display: block; }
 .quota-rings__logo {
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.4));
   position: absolute;
   inset: 0;
   display: grid;
@@ -104,13 +106,19 @@
 }
 .quota-rings__target:focus-visible { outline: 1px solid var(--quota-color); }
 .quota-rings__arc {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 140ms ease;
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.5));
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 180ms ease;
 }
 .quota-rings:has(.quota-rings__half--top:hover, .quota-rings__half--top .quota-rings__target:focus-visible) .quota-rings__arc--top,
 .quota-rings:has(.quota-rings__half--bottom:hover, .quota-rings__half--bottom .quota-rings__target:focus-visible) .quota-rings__arc--bottom {
-  transform: translateY(-0.8px) scale(1.055);
+  /* Growing about the ring's centre moves the arc away from the logo; the deeper shadow lifts it. */
+  transform: scale(1.14);
+  filter: drop-shadow(0 2px 2.5px rgba(0, 0, 0, 0.65));
 }
 
 .quota-rings__track,
