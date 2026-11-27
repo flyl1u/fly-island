@@ -88,10 +88,25 @@ impl Bank {
             Self::Alternate => format!("cookies-alt-{index}"),
         }
     }
+
+    fn login_entry_name(self, index: usize) -> String {
+        match self {
+            Self::Primary => format!("oauth-login-{index}"),
+            Self::Alternate => format!("oauth-login-alt-{index}"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 struct Index {
+    bank: Bank,
+    chunks: usize,
+}
+
+/// Index for the chunked official-credential bank. Kept separate from the cookie index so the
+/// two never invalidate each other.
+#[derive(Serialize, Deserialize, Clone, Copy)]
+struct LoginIndex {
     bank: Bank,
     chunks: usize,
 }
@@ -280,6 +295,12 @@ pub(super) fn load() -> Result<Vec<SavedCookie>, ()> {
     }
 }
 
+/// Whether a persisted website session exists. Used to decide between "retry" and "sign in"
+/// when the server rejects us: with nothing saved, retrying can never succeed.
+pub(super) fn has_cookies() -> bool {
+    load().is_ok_and(|cookies| !cookies.is_empty())
+}
+
 pub(super) fn clear() -> bool {
     // Keep the index if clearing either bank failed. The remaining inactive chunks must not
     // be mistaken for a legacy snapshot on the next start.
@@ -291,25 +312,97 @@ pub(super) fn clear() -> bool {
 // Stored under its own keyring entry so adding the official login never disturbs a saved
 // website session. A separate clear path is used on sign-out.
 
+/// Legacy single-blob entry. A full credential is ~3.2 KB, above the 2560-byte Credential
+/// Manager blob limit, so it is only read for compatibility and never written any more.
 const OAUTH_ENTRY: &str = "oauth-login";
+const OAUTH_ACTIVE_ENTRY: &str = "oauth-login-active";
+
+fn split_chunks(bytes: &[u8]) -> Option<Vec<Vec<u8>>> {
+    let chunks: Vec<Vec<u8>> = bytes.chunks(CHUNK_BYTES).map(<[u8]>::to_vec).collect();
+    (!chunks.is_empty() && chunks.len() <= MAX_CHUNKS).then_some(chunks)
+}
+
+fn login_index() -> Result<Option<LoginIndex>, ()> {
+    let Some(bytes) = read_secret(OAUTH_ACTIVE_ENTRY)? else {
+        return Ok(None);
+    };
+    let index: LoginIndex = serde_json::from_slice(&bytes).map_err(|_| ())?;
+    if !(1..=MAX_CHUNKS).contains(&index.chunks) {
+        return Err(());
+    }
+    Ok(Some(index))
+}
+
+fn login_chunks(index: LoginIndex) -> Result<Vec<u8>, ()> {
+    let mut chunks = Vec::new();
+    for chunk in 0..index.chunks {
+        match read_secret(&index.bank.login_entry_name(chunk))? {
+            Some(bytes) => chunks.push(bytes),
+            None => return Err(()),
+        }
+    }
+    Ok(chunks.concat())
+}
 
 /// Persist the official Bearer credential + identity. Fails closed.
+///
+/// The credential is larger than one Credential Manager blob (2560 bytes), so it is split across
+/// chunk entries and committed by flipping an index, exactly like the cookie bank. Without this,
+/// the write silently failed and the login only survived until the next restart.
 pub(super) fn save_login(login: &super::workbuddy_official::SavedLogin) -> bool {
     let Ok(bytes) = serde_json::to_vec(login) else {
         return false;
     };
-    write_secret(OAUTH_ENTRY, &bytes).is_ok()
+    let Some(chunks) = split_chunks(&bytes) else {
+        return false;
+    };
+    let Ok(active) = login_index() else {
+        return false;
+    };
+    let bank = active.map_or(Bank::Primary, |index| index.bank.other());
+    for (chunk, bytes) in chunks.iter().enumerate() {
+        if write_secret(&bank.login_entry_name(chunk), bytes).is_err() {
+            return false;
+        }
+    }
+    let index = LoginIndex {
+        bank,
+        chunks: chunks.len(),
+    };
+    let Ok(index_bytes) = serde_json::to_vec(&index) else {
+        return false;
+    };
+    if write_secret(OAUTH_ACTIVE_ENTRY, &index_bytes).is_err() {
+        return false;
+    }
+    if let Some(previous) = active {
+        for chunk in 0..MAX_CHUNKS {
+            let _ = delete_secret(&previous.bank.login_entry_name(chunk));
+        }
+    }
+    let _ = delete_secret(OAUTH_ENTRY);
+    true
 }
 
 /// Load the persisted official credential, if any and well-formed.
 pub(super) fn load_login() -> Option<super::workbuddy_official::SavedLogin> {
-    let bytes = read_secret(OAUTH_ENTRY).ok().flatten()?;
+    let bytes = login_index()
+        .ok()
+        .flatten()
+        .and_then(|index| login_chunks(index).ok())
+        .or_else(|| read_secret(OAUTH_ENTRY).ok().flatten())?;
     serde_json::from_slice(&bytes).ok()
 }
 
 /// Remove only the official credential; the website cookie bank is left intact.
 pub(super) fn clear_login() -> bool {
-    delete_secret(OAUTH_ENTRY)
+    let mut cleared = delete_secret(OAUTH_ACTIVE_ENTRY) & delete_secret(OAUTH_ENTRY);
+    for bank in [Bank::Primary, Bank::Alternate] {
+        for chunk in 0..MAX_CHUNKS {
+            cleared &= delete_secret(&bank.login_entry_name(chunk));
+        }
+    }
+    cleared
 }
 
 #[cfg(test)]
@@ -409,6 +502,19 @@ mod tests {
             })
             .collect();
         assert!(encode(&huge).is_none());
+    }
+
+    #[test]
+    fn a_full_credential_fits_the_chunked_bank() {
+        // A real login carries two ~1.5 KB JWTs, so the JSON is larger than one 2560-byte blob.
+        let payload = "x".repeat(3253).into_bytes();
+        let chunks = split_chunks(&payload).unwrap();
+        assert!(chunks.len() > 1);
+        assert!(chunks.iter().all(|chunk| chunk.len() <= CHUNK_BYTES));
+        assert_eq!(chunks.concat(), payload);
+        assert!(split_chunks(&vec![0; CHUNK_BYTES * MAX_CHUNKS + 1]).is_none());
+        assert_eq!(Bank::Primary.login_entry_name(1), "oauth-login-1");
+        assert_eq!(Bank::Alternate.login_entry_name(1), "oauth-login-alt-1");
     }
 
     #[test]
