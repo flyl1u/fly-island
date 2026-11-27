@@ -7,21 +7,27 @@ import "./SettingsGroup.css";
  */
 export function SettingsGroup({
   title,
+  icon,
+  anchor,
   action,
   footer,
   children,
 }: {
   title?: string;
+  /** Shown before the title, such as a plugin's tile. */
+  icon?: ReactNode;
+  /** The plugin this group belongs to, so a link can scroll to it. */
+  anchor?: string;
   /** A small control at the right end of the title line, such as a text link. */
   action?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="settings-group">
+    <section className="settings-group" data-plugin-group={anchor}>
       {title || action ? (
         <div className="settings-group__header">
-          {title ? <h2 className="settings-group__title">{title}</h2> : <span />}
+          {title ? <h2 className="settings-group__title">{icon}{title}</h2> : <span />}
           {action}
         </div>
       ) : null}

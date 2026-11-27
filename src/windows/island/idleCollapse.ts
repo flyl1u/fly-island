@@ -1,11 +1,12 @@
 import type { IslandSettings } from "../../features/appearance/types";
 import type { IslandMode } from "./types";
+import { canAutoTuck } from "./tuckRules.ts";
 
 /** What the idle timer does when it runs out: collapse the open island, or tuck the collapsed one into a line. */
 export type IdleAction = "tuck" | "collapse";
 export type IdlePlan = { seconds: number; action: IdleAction };
 
-type IdleSettings = Pick<IslandSettings, "autoTuck" | "tuckDelaySeconds" | "autoCollapseSeconds">;
+type IdleSettings = Pick<IslandSettings, "autoTuck" | "neverAutoTuck" | "gameAutoTuck" | "tuckDelaySeconds" | "autoCollapseSeconds">;
 
 /**
  * The idle timer for the island as it is now, or null when it has none. Two separate timers:
@@ -25,6 +26,6 @@ export function idlePlan(
     if (seconds <= 0 || isHovering) return null;
     return { seconds, action: "collapse" };
   }
-  if (!settings.autoTuck || hasMessagePreview || keepVisible) return null;
+  if (!canAutoTuck(settings, "idle_timer") || hasMessagePreview || keepVisible) return null;
   return { seconds: settings.tuckDelaySeconds, action: "tuck" };
 }

@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   countActiveSessions,
+  isSessionWaiting,
   minutesAgo,
   modelLabel,
   sameAgentSessions,
   sessionProject,
   uniqueSessions,
 } from "../../src/features/agent-status/sessionList.ts";
+import { getAgentVisualState } from "../../src/features/agent-status/status.ts";
 import { resolveIslandPage } from "../../src/windows/island/features.ts";
 import { shownEffort } from "../../src/features/agent-status/effortLabels.ts";
 
@@ -24,15 +26,23 @@ const session = (overrides = {}) => ({
   ...overrides,
 });
 
-test("running, waiting and stale sessions count as active", () => {
+test("only live running phases count and turn the island's light blue", () => {
   const sessions = [
-    session(),
     session({ sessionId: "s2", phase: "stale" }),
-    session({ sessionId: "s3", phase: "completed" }),
+    session({ sessionId: "s3", phase: "completed", closed: false }),
     session({ sessionId: "s4", phase: "failed" }),
     session({ sessionId: "s5", phase: "waiting" }),
+    session({ sessionId: "s6", phase: "idle", closed: false }),
+    session({ sessionId: "s7", phase: "running", closed: true }),
   ];
-  assert.equal(countActiveSessions(sessions), 3);
+  const completed = { phase: "completed", updatedAt: 0 };
+  const snapshot = { claudeCode: completed, codex: completed };
+  assert.equal(countActiveSessions(sessions), 0);
+  assert.equal(getAgentVisualState(snapshot, countActiveSessions(sessions), sessions.some(isSessionWaiting)), "waiting");
+  const providers = ["claudeCode", "codex", "codebuddy", "workbuddy", "antigravity", "cursor", "kimiCode", "dsh", "hermes", "plugin"];
+  const running = providers.map((provider) => session({ provider, closed: false }));
+  assert.equal(countActiveSessions([...sessions, ...running]), providers.length);
+  assert.equal(getAgentVisualState(snapshot, countActiveSessions(running)), "running");
   assert.equal(countActiveSessions([]), 0);
 });
 
@@ -156,11 +166,11 @@ test("a session listed twice (a Codex thread over several rollout pages) keeps o
   assert.equal(uniqueSessions(distinct), distinct);
 });
 
-test("a finished session with background tasks running counts as active", async () => {
+test("a finished session with background tasks stays in the expanded list but is not counted", async () => {
   const { isSessionActive } = await import("../../src/features/agent-status/sessionList.ts");
   const done = session({ phase: "completed" });
   assert.equal(countActiveSessions([done]), 0);
-  assert.equal(countActiveSessions([{ ...done, backgroundTasks: 1 }]), 1);
+  assert.equal(countActiveSessions([{ ...done, backgroundTasks: 1 }]), 0);
   assert.equal(isSessionActive({ phase: "completed", backgroundTasks: 1 }), true);
   assert.equal(isSessionActive({ phase: "failed", backgroundTasks: 1 }), false);
 });

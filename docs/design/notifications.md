@@ -12,4 +12,6 @@
 - **钉钉 / 飞书 / 企业微信（插件市场）**（用户要求 2026-11-18）：在设置 → 插件安装后，消息页多出对应标签（品牌磁贴图标 + 名称），页面与微信无预览时一致：有提醒时一张「钉钉 · 有新提醒」卡片，否则是大图标与「暂无新提醒 / 点击打开」；工具栏同样是「全部已读并清空」和接收开关。收起的岛上预览为「钉钉 · 收到一条新消息」，点一下回到钉钉。只根据任务栏闪动判断，不读消息内容；连续闪动 4 秒内算一条。设置 → 消息新增「办公消息」组，每个已安装的客户端一行开关。参照 xiaotang-daozai（MIT）的窗口识别与唤起方式：飞书关到托盘时再启动一次飞书由它自己显示，其余客户端照参考实现显示主窗口。（页面与文案为 Agent 设计）
 - **长按拖动标签排序**（用户要求 2026-11-18）：消息页的来源标签按住约 0.45 秒后左右拖动即可换位置，松手保存（`fly-island-message-source-order`）；拖动期间标签样式不变，只有顺序跟着变，松手那一下不切换标签。按住期间移动超过 6px 视为普通点击或滑动。关掉的来源保留原位置。有 6 个及以上标签时，面板窄于 470px 只显示图标。
 
+- **TG（插件市场，#134，2026-11-26 移入插件）**。默认未安装；装好后设置 → 消息出现 Telegram 分组（排在内置分组之后），接收开关默认关，需用户打开并授予 Windows 通知读取权限。图标用 Telegram 官方标志。开启接收后，消息页显示 TG 品牌标签和图标，折叠预览与消息卡片都可打开对应对话。TG 确认打开对话后，同步移除岛上卡片和 Windows 通知。空列表时显示 TG 图标以及「点击打开 TG」按钮。
+
 English: Adaptive notices are opt-in. They widen before wrapping, then scroll within user limits and the scaled native stage. Mail notices fetch the visible message body on demand, offer selectable text (Ctrl+C) and a separate open action, stay while the cursor is on them, and never mark the message read. Whether a message fits one line is measured on the laid-out bar, not only estimated. Game notices have their own opt-in and duration, display without taking focus, and keep native click-through enabled.

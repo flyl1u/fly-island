@@ -1,4 +1,4 @@
-//! One eye-rest cycle. Idle resets the interval; full-screen pauses it in place.
+//! One eye-rest cycle. An idle desk or a paused full-screen window restarts the interval and holds it.
 
 use std::time::{Duration, Instant};
 
@@ -39,6 +39,19 @@ impl Clock {
             .unwrap_or_else(|| self.deadline.saturating_duration_since(now))
     }
 
+    /// How much of the current phase is left, 0–100, for the island's bar.
+    pub fn percent_remaining(&self, now: Instant) -> f64 {
+        let span = match self.phase {
+            Phase::Working => self.period,
+            Phase::Resting => self.rest,
+        };
+        let total = span.as_secs_f64();
+        if total <= 0.0 {
+            return 0.0;
+        }
+        (self.remaining(now).as_secs_f64() / total * 100.0).clamp(0.0, 100.0)
+    }
+
     pub fn can_snooze(&self) -> bool {
         self.phase == Phase::Resting && !self.snooze_used
     }
@@ -53,15 +66,12 @@ impl Clock {
 
     pub fn tick(&mut self, now: Instant, idle: bool, fullscreen: bool) {
         match self.phase {
-            Phase::Working if idle => {
-                // An idle desk starts a completely fresh eye-use interval.
+            Phase::Working if idle || fullscreen => {
+                // An idle desk, or a full-screen window when that setting is on, starts a
+                // completely fresh eye-use interval and holds it until input or the window
+                // view returns.
                 self.deadline = now + self.period;
                 self.fullscreen_remaining = Some(self.period);
-            }
-            Phase::Working if fullscreen => {
-                if self.fullscreen_remaining.is_none() {
-                    self.fullscreen_remaining = Some(self.deadline.saturating_duration_since(now));
-                }
             }
             Phase::Working => {
                 if let Some(remaining) = self.fullscreen_remaining.take() {

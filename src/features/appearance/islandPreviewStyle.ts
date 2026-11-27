@@ -3,7 +3,7 @@ import { inkOn } from "../../utils/color";
 import { cornerShapeCss } from "./cornerShape";
 import { shapedSettings } from "./islandShape";
 import { localIslandFontStyle } from "./localFont";
-import { COLLAPSED_WIDTH, glassTintAlpha, hexToRgba, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
+import { glassTintAlpha, hexToRgba, isGlass, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
 import { resolveSchemeColors, type ResolvedScheme } from "./theme";
 
@@ -26,9 +26,8 @@ export function islandPreviewStyle(settings: IslandSettings, scheme: ResolvedSch
     "--preview-text": colors.taskTextColor,
     "--preview-ink": inkOn(colors.islandBackgroundColor),
     "--preview-collapsed-scale": settings.collapsedScale,
-    "--preview-collapsed-width": settings.collapsedAutoWidth ? COLLAPSED_WIDTH.default : settings.collapsedWidth,
+    "--preview-collapsed-width": settings.collapsedAutoWidth ? Math.round((settings.collapsedAutoWidthMin + settings.collapsedAutoWidthMax) / 2) : settings.collapsedWidth,
     "--preview-collapsed-height": settings.collapsedHeight,
-    "--preview-collapsed-limit": COLLAPSED_WIDTH.max * MAX_COLLAPSED_SCALE,
     "--preview-expanded-scale": settings.expandedScale,
     "--preview-expanded-max-scale": MAX_EXPANDED_SCALE,
     "--preview-font-scale": settings.islandFontPercent / 100,

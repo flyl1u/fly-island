@@ -16,7 +16,9 @@ const ALL_SETTINGS_CATEGORIES = [
   "about",
 ] as const;
 
-export type SettingsCategory = (typeof ALL_SETTINGS_CATEGORIES)[number];
+/** A page with a fixed name; plugins with a page of their own add `plugin:<id>` ones. */
+export type StaticSettingsCategory = (typeof ALL_SETTINGS_CATEGORIES)[number];
+export type SettingsCategory = StaticSettingsCategory | `plugin:${string}`;
 export const SETTINGS_CATEGORIES = ALL_SETTINGS_CATEGORIES;
 
 export type SettingsGroup = "basics" | "features" | "agents";
@@ -28,7 +30,8 @@ export type SettingsGroup = "basics" | "features" | "agents";
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance"] },
-  { label: "features", categories: ["todos", "music", "devices", "translation", "clipboard", "messages", "clockWeather", "battery"] },
+  // Installed plugins with a page of their own follow at the end of Features (features/plugins/placement.ts).
+  { label: "features", categories: ["todos", "music", "translation", "clipboard", "messages"] },
   { label: "agents", categories: ["agents", "agentConnect"] },
   { label: null, categories: ["plugins", "about"] },
 ];
@@ -51,5 +54,6 @@ const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
 /** The page a category name opens, old names included; null when there is no such page. */
 export function settingsCategoryFor(name: string): SettingsCategory | null {
   if ((SETTINGS_CATEGORIES as readonly string[]).includes(name)) return name as SettingsCategory;
+  if (/^plugin:[a-z0-9-]+$/.test(name)) return name as SettingsCategory;
   return MERGED_CATEGORIES[name] ?? null;
 }

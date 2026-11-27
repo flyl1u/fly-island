@@ -24,6 +24,7 @@ pub(super) enum AuthError {
     SiteTimeout,
     Webview,
     CredentialRead,
+    CurlUnavailable,
     HttpStatus(u16),
     InvalidResponse,
 }
@@ -50,6 +51,7 @@ impl Display for AuthError {
             Self::SiteTimeout => "site_load_timeout",
             Self::Webview => "webview_error",
             Self::CredentialRead => "credential_read_failed",
+            Self::CurlUnavailable => "system_curl_unavailable",
             Self::HttpStatus(status) => return write!(formatter, "http_{status}"),
             Self::InvalidResponse => "invalid_response",
         };
@@ -168,21 +170,9 @@ fn diagnostic_line<'a>(
     cookies: impl IntoIterator<Item = CookieMetadata<'a>>,
 ) -> String {
     let mut line = format!("operation={operation} reason={reason}");
-    let mut cookies = cookies.into_iter().peekable();
-    if cookies.peek().is_none() {
-        line.push_str(" cookies=none");
-    }
-    for cookie in cookies {
-        let expires = cookie
-            .expires
-            .map_or_else(|| "none".into(), |at| at.to_string());
-        let _ = write!(
-            line,
-            " [name={:?} expires_unix_s={expires} session={}]",
-            cookie.name,
-            cookie.expires.is_none(),
-        );
-    }
+    let names: std::collections::BTreeSet<_> =
+        cookies.into_iter().map(|cookie| cookie.name).collect();
+    let _ = write!(line, " cookie_names={} {:?}", names.len(), names);
     line
 }
 
@@ -313,7 +303,7 @@ mod tests {
         );
         assert_eq!(
             line,
-            "operation=retry reason=http_401 [name=\"session\" expires_unix_s=none session=true] [name=\"session_2\" expires_unix_s=123456 session=false]",
+            "operation=retry reason=http_401 cookie_names=2 {\"session\", \"session_2\"}",
         );
         assert!(!line.contains("synthetic-private"));
     }

@@ -55,6 +55,10 @@
   --quota-base: #e0a43a;
 }
 
+.agent-quota__agent--antigravity {
+  --quota-base: #6dc487;
+}
+
 .agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
   min-width: 0;
   flex-shrink: 1;

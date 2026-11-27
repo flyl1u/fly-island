@@ -43,9 +43,41 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     await act(async () => quiet.click());
     check(game().length === 1, "General: game-mode notifications hide while game mode is off");
     await act(async () => quiet.click());
+    check(titles(rowsOf(panel, "贴边隐藏")).join().endsWith("待办计时时不贴边,浏览器打开时自动贴边"), "General: browser tuck is off by default and its dwell rows are hidden");
+    const browserSwitch = rowsOf(panel, "贴边隐藏")[6].querySelector<HTMLInputElement>("[role='switch']")!;
+    check(!browserSwitch.checked, "General: browser auto-tuck defaults off");
+    await act(async () => browserSwitch.click());
     const tuck = rowsOf(panel, "贴边隐藏");
-    check(titles(tuck).join() === "闲置时贴边隐藏,收起后贴边,Agent 运行时不贴边,显示歌词时不贴边,待办计时时不贴边"
-      && tuck.slice(1).every((row) => row.classList.contains("settings-row--indent")), "General: auto-tuck with its delay and when not to tuck, all indented under it");
+    check(titles(tuck).join() === "永远不自动贴边,闲置时贴边隐藏,收起后贴边,Agent 运行时不贴边,播放音乐时不贴边,待办计时时不贴边,浏览器打开时自动贴边,鼠标停留后展开,点击贴边岛屿展开"
+      && !tuck[1]?.classList.contains("settings-row--indent")
+      && tuck.slice(2, 6).every((row) => row.classList.contains("settings-row--indent"))
+      && !tuck[6]?.classList.contains("settings-row--indent")
+      && tuck.slice(7).every((row) => row.classList.contains("settings-row--indent")), "General: never-tuck, idle tuck with its keep-visible rows, then browser tuck with its dwell and click-to-open");
+    const slider = tuck[7].querySelector<HTMLInputElement>("input[type='range']")!;
+    const number = tuck[7].querySelector<HTMLInputElement>("[role='spinbutton']")!;
+    check(slider.min === "0" && slider.max === "10" && slider.step === "0.01"
+      && slider.value === "0.65" && number.value === "0.65"
+      && tuck[7].querySelectorAll(".number-stepper__button").length === 2,
+      "General: browser dwell slider and number stepper both show 0.65 s at hundredth-second precision");
+    const setInput = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => number.focus());
+    await act(async () => { setInput.call(number, "3.47"); number.dispatchEvent(new Event("input", { bubbles: true })); });
+    await act(async () => number.blur());
+    const savedDelay = JSON.parse(localStorage.getItem("fly-island-settings")!).browserAutoTuckDelaySeconds;
+    check(number.value === "3.47", `General: typed dwell is committed to the number field (${number.value})`);
+    check(slider.value === "3.47", `General: typed dwell updates the slider (${slider.value})`);
+    check(savedDelay === 3.47, `General: typed dwell is saved (${savedDelay})`);
+    const reset = tuck[7].querySelector<HTMLButtonElement>(".settings-slider__reset")!;
+    await act(async () => reset.click());
+    check(slider.value === "0.65" && number.value === "0.65"
+      && JSON.parse(localStorage.getItem("fly-island-settings")!).browserAutoTuckDelaySeconds === 0.65,
+      "General: browser dwell reset saves exactly 0.65 s");
+    const clickToOpen = tuck[8].querySelector<HTMLInputElement>("[role='switch']")!;
+    await act(async () => clickToOpen.click());
+    check(slider.disabled && number.disabled
+      && JSON.parse(localStorage.getItem("fly-island-settings")!).browserAutoTuckClickToOpen === true,
+      "General: click-to-open saves on and disables the dwell controls");
+    await act(async () => clickToOpen.click());
     check(titles(rowsOf(panel, "位置")).join() === "回到默认位置,锁定小岛位置", "General: the position rows come last");
   } else if (category === "todos") {
     check(titles(rowsOf(panel, "任务")).join() === "自动将未完成任务写入下一天,拖动调整顺序,一次显示几条", "Todos: the list options share a group");
@@ -60,7 +92,7 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     check(titles(rowsOf(panel, "圆角")).join() === "展开圆角,收起圆角,圆角形状,贴边圆角", "Appearance: every corner setting is in one group");
     check(titles(rowsOf(panel, "岛上的排列")).includes("页面按钮"), "Appearance: page buttons sit with the island's arrangement");
     const size = () => rowsOf(panel, "大小");
-    check(titles(size()).join() === "收起时的大小,展开后的大小,自动宽度,高度,两侧留白", "Appearance: every size is in one group; manual width hidden while automatic");
+    check(titles(size()).join() === "收起时的大小,展开后的大小,根据内容自动调整长度,最短,最长,高度,两侧留白", "Appearance: every size is in one group; manual width hidden while automatic");
     const auto = size()[2].querySelector<HTMLInputElement>("[role='switch']")!;
     await act(async () => auto.click());
     const width = size().find((row) => row.querySelector(".settings-row__title")?.textContent === "宽度");

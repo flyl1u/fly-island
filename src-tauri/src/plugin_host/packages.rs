@@ -1,6 +1,5 @@
 use std::{io::{Cursor, Read}, path::Path};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use super::manifest::{valid_id, relative_path, Localized, Manifest};
 
 const MAX_PACKAGE: u64 = 100 * 1024 * 1024;
@@ -18,10 +17,17 @@ pub struct IndexEntry {
     pub min_app_version: String,
 }
 
+impl IndexEntry {
+    pub fn compatible(&self) -> bool {
+        let app = semver::Version::parse(env!("CARGO_PKG_VERSION"));
+        let required = semver::Version::parse(&self.min_app_version);
+        matches!((app, required), (Ok(app), Ok(required)) if required <= app)
+    }
+}
+
 pub fn parse_index(bytes: &[u8]) -> Result<Vec<IndexEntry>, String> {
-    let mut entries: Vec<IndexEntry> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let entries: Vec<IndexEntry> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     let mut ids = std::collections::HashSet::new();
-    let app = semver::Version::parse(env!("CARGO_PKG_VERSION")).map_err(|e| e.to_string())?;
     if entries.len() > 200 { return Err("Plugin index too large".into()); }
     for e in &entries {
         if !valid_id(&e.id) || !ids.insert(&e.id) || e.api_version != 1
@@ -32,62 +38,10 @@ pub fn parse_index(bytes: &[u8]) -> Result<Vec<IndexEntry>, String> {
             return Err("Invalid or incompatible plugin index entry".into());
         }
     }
-    entries.retain(|entry| semver::Version::parse(&entry.min_app_version).is_ok_and(|minimum| minimum <= app));
     Ok(entries)
 }
 
-pub async fn download(url: &str, local: bool, limit: u64) -> Result<Vec<u8>, String> {
-    if local && Path::new(url).is_absolute() {
-        return read_local(Path::new(url), limit);
-    }
-    let parsed = reqwest::Url::parse(url).map_err(|e| e.to_string())?;
-    if parsed.scheme() == "file" && local {
-        let path = parsed.to_file_path().map_err(|_| "Invalid local plugin URL")?;
-        return read_local(&path, limit);
-    }
-    if !network_source_allowed(&parsed, local) {
-        return Err("Plugin downloads require HTTPS (local sources need developer mode)".into());
-    }
-    let redirects = reqwest::redirect::Policy::custom(move |attempt| {
-        if attempt.previous().len() >= 5 { attempt.error("Too many plugin redirects") }
-        else if !network_source_allowed(attempt.url(), local) { attempt.error("Unsupported plugin redirect") }
-        else { attempt.follow() }
-    });
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).redirect(redirects).build().map_err(|e| e.to_string())?;
-    let mut response = client.get(parsed).send().await.map_err(|e| e.without_url().to_string())?.error_for_status().map_err(|e| e.without_url().to_string())?;
-    let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await.map_err(|e| e.without_url().to_string())? {
-        if bytes.len() as u64 + chunk.len() as u64 > limit { return Err("Plugin download too large".into()); }
-        bytes.extend_from_slice(&chunk);
-    }
-    Ok(bytes)
-}
-
-pub(super) fn network_source_allowed(url: &reqwest::Url, local: bool) -> bool {
-    url.username().is_empty() && url.password().is_none() && url.host_str().is_some()
-        && (url.scheme() == "https" || (local && url.scheme() == "http"
-            && matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"))))
-}
-
-fn read_local(path: &Path, limit: u64) -> Result<Vec<u8>, String> {
-    let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
-    let metadata = file.metadata().map_err(|e| e.to_string())?;
-    if !metadata.is_file() || metadata.len() > limit { return Err("Invalid or oversized plugin file".into()); }
-    let mut bytes = Vec::new();
-    file.take(limit.saturating_add(1)).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
-    if bytes.len() as u64 > limit { return Err("Plugin file too large".into()); }
-    Ok(bytes)
-}
-
-pub fn verify(bytes: &[u8], entry: &IndexEntry) -> Result<(), String> {
-    if bytes.len() as u64 != entry.size || format!("{:x}", Sha256::digest(bytes)) != entry.sha256.to_lowercase() {
-        return Err("Plugin SHA-256 or size mismatch".into());
-    }
-    Ok(())
-}
-
 pub fn extract(bytes: &[u8], destination: &Path, entry: &IndexEntry) -> Result<Manifest, String> {
-    verify(bytes, entry)?;
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
     if zip.len() > 256 { return Err("Too many plugin files".into()); }
     let mut total = 0u64;
@@ -114,7 +68,7 @@ pub fn extract(bytes: &[u8], destination: &Path, entry: &IndexEntry) -> Result<M
         return Err("Plugin archive does not match index".into());
     }
     let executable = destination.join(&manifest.runtime.command).canonicalize().map_err(|e| e.to_string())?;
-    if !executable.starts_with(destination.canonicalize().map_err(|e| e.to_string())?) { return Err("Unsafe plugin executable".into()); }
+    if !executable.is_file() || !executable.starts_with(destination.canonicalize().map_err(|e| e.to_string())?) { return Err("Unsafe plugin executable".into()); }
     Ok(manifest)
 }
 

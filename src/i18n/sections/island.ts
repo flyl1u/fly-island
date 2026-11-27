@@ -20,8 +20,9 @@ export type IslandText = {
   shelf: string;
   /** Short page names in the tips above the header dots. */
   pageNames: { todo: string; music: string; clipboard: string; shelf: string; translation: string; battery: string };
-  /** The tip on the status light, which opens the Agent page. */
   agentPage: string;
+  /** The collapsed island's accessible name while it shows the lyric line. */
+  collapsedLyricsLabel: string;
   calendar: string;
   shelfCount: (count: number) => string;
   layoutEditor: string;
@@ -48,6 +49,7 @@ export const zhCN: IslandText = {
   shelf: "文件中转",
   pageNames: { todo: "待办", music: "音乐", clipboard: "剪贴板", shelf: "文件中转", translation: "翻译", battery: "电池" },
   agentPage: "AI Agent",
+  collapsedLyricsLabel: "歌词",
   calendar: "日历",
   shelfCount: (count) => `文件中转里有 ${count} 个文件`,
   layoutEditor: "布局编辑",
@@ -74,6 +76,7 @@ export const en: IslandText = {
   shelf: "File shelf",
   pageNames: { todo: "Todo", music: "Music", clipboard: "Clipboard", shelf: "File shelf", translation: "Translate", battery: "Battery" },
   agentPage: "AI Agent",
+  collapsedLyricsLabel: "Lyrics",
   calendar: "Calendar",
   shelfCount: (count) => (count === 1 ? "1 file on the shelf" : `${count} files on the shelf`),
   layoutEditor: "Layout editor",

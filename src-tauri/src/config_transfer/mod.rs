@@ -9,6 +9,8 @@ use std::{collections::BTreeMap, path::PathBuf, sync::{Mutex, PoisonError}};
 use serde::Serialize;
 use tauri::Manager;
 use format::{Backup, MAX_BACKUP_BYTES};
+use crate::win32::file_dialog::{self, FileType};
+pub(crate) use transaction::write as write_export;
 
 const PENDING: &str = "config-transfer-pending.json";
 const RESULT: &str = "config-transfer-result.json";
@@ -56,10 +58,10 @@ fn try_prepare(app: &tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-async fn dialog(window: &tauri::WebviewWindow, name: Option<String>, title: String) -> Result<Option<String>, String> {
+pub(crate) async fn dialog(window: &tauri::WebviewWindow, name: Option<String>, title: String, file_type: FileType) -> Result<Option<String>, String> {
     let owner = window.hwnd().map_err(|e| e.to_string())?.0 as isize;
     let thread = std::thread::Builder::new().name("config-file-picker".into())
-        .spawn(move || crate::win32::file_dialog::choose_json(owner, name.as_deref(), &title).map_err(|e| e.to_string()))
+        .spawn(move || file_dialog::choose(owner, name.as_deref(), &title, file_type).map_err(|e| e.to_string()))
         .map_err(|e| e.to_string())?;
     tauri::async_runtime::spawn_blocking(move || thread.join()).await.map_err(|e| e.to_string())?
         .map_err(|_| "File picker stopped unexpectedly".to_string())?
@@ -71,7 +73,7 @@ pub async fn export_config(window: tauri::WebviewWindow, app: tauri::AppHandle,
 ) -> Result<bool, String> {
     let date = exported_at.get(..10).filter(|date| date.bytes().all(|b| b.is_ascii_digit() || b == b'-')).ok_or("Invalid export date")?;
     let name = format!("fly-island-config-{date}.json");
-    let Some(path) = dialog(&window, Some(name), title).await? else { return Ok(false); };
+    let Some(path) = dialog(&window, Some(name), title, FileType::Json).await? else { return Ok(false); };
     let backup = Backup { app: "fly-island".into(), format_version: 1, exported_at,
         app_version: app.package_info().version.to_string(),
         local_storage: local_storage.into_iter().filter(|(key, _)| format::storage_key(key)).collect(),
@@ -85,7 +87,7 @@ pub async fn export_config(window: tauri::WebviewWindow, app: tauri::AppHandle,
 
 #[tauri::command]
 pub async fn read_config_import(window: tauri::WebviewWindow, title: String) -> Result<Option<Backup>, String> {
-    let Some(path) = dialog(&window, None, title).await? else { return Ok(None); };
+    let Some(path) = dialog(&window, None, title, FileType::Json).await? else { return Ok(None); };
     tauri::async_runtime::spawn_blocking(move || Backup::parse(&transaction::read_limited(std::path::Path::new(&path), MAX_BACKUP_BYTES)?)).await.map_err(|e| e.to_string())?.map(Some)
 }
 

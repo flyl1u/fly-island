@@ -4,6 +4,7 @@ import { ReorderList } from "../../components/reorder/ReorderList";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
+import { CollapsedIdleTextRows } from "./CollapsedIdleTextRows";
 import type { CollapsedItem, IslandSettings } from "./types";
 
 const ICONS = { agent: Bot, lyrics: MicVocal, todo: ListTodo } as const;
@@ -47,6 +48,7 @@ export function CollapsedIslandSection({
         checked={settings.collapsedShowCover}
         onChange={(collapsedShowCover) => onSettingsChange({ ...settings, collapsedShowCover })}
       />
+      <CollapsedIdleTextRows settings={settings} onChange={onSettingsChange} />
     </SettingsGroup>
   );
 }

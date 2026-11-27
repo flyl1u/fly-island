@@ -6,26 +6,7 @@
   corner-shape: var(--corner-shape);
 }
 
-.native-plugin-icon--weather,
-.native-plugin-icon--battery {
-  display: grid;
-  place-items: center;
-}
-
-.native-plugin-icon--battery {
-  /* A filled tile like the brand icons beside it; the same in both colour schemes, as they are. */
-  color: #fff;
-  background: linear-gradient(150deg, #63d68f, #1f9a62);
-}
-
-.native-plugin-icon--weather {
-  color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-white-a06));
-}
-
-.native-plugin-icon--calendar {
-  display: grid;
-  place-items: center;
-  color: var(--color-danger);
-  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white-a06));
+.native-plugin-icon--round {
+  border-radius: var(--radius-circle);
+  corner-shape: round;
 }

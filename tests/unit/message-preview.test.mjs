@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { latestMessagePreview, mailBadgeCount, messagePreviewText } from "../../src/features/messages/messagePreview.ts";
+import { collapsedMessageText, latestMessagePreview, mailBadgeCount, messagePreviewText } from "../../src/features/messages/messagePreview.ts";
+import zhCN from "../../src/i18n/locales/zh-CN.ts";
 
 test("collapsed previews use source-specific copy and blank-content fallbacks", () => {
   assert.equal(messagePreviewText({ source: "wechat", title: "", body: "", receivedAt: 0 }), "你收到了一条消息");
@@ -20,6 +21,14 @@ test("QQ, WeChat and mail share the preview by most recent arrival", () => {
   assert.equal(latestMessagePreview([qq, mail, { ...wechat, receivedAt: 500 }]).source, "wechat");
   assert.equal(latestMessagePreview([null, qq, null]), qq);
   assert.equal(latestMessagePreview([null, null, null]), null);
+});
+
+test("width uses the visible sender and body, measuring the mail OTP pill separately", () => {
+  const shown = (source, title, body, otpCode) => collapsedMessageText({ source, title, body, receivedAt: 0, otpCode }, zhCN.messages);
+  assert.equal(shown("wechat", " 群聊 ", "下午见"), "群聊 · 下午见");
+  assert.equal(shown("qq", "", "下午见"), "QQ · 下午见");
+  assert.equal(shown("dingtalk", "", "提醒"), `${zhCN.messages.sourceLabels.dingtalk} · 提醒`);
+  assert.equal(shown("qqMail", "发件人", "验证码邮件标题", "123456"), "发件人");
 });
 
 test("mail badges bound the width without changing actual unread counts", () => {

@@ -75,8 +75,7 @@
 }
 
 .island-preview__island--collapsed {
-  /* Keep room for the widest notch at the largest overall scale. */
-  --c: min(1px, calc(92cqw / var(--preview-collapsed-limit)));
+  --c: min(1px, calc(100cqw / var(--preview-collapsed-width) / var(--preview-collapsed-scale)));
   --preview-radius-collapsed: calc(var(--preview-radius-collapsed-px) * var(--c));
   width: calc(var(--preview-collapsed-width) * var(--c));
   height: calc(var(--preview-collapsed-height) * var(--c));

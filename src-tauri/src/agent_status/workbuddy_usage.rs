@@ -20,6 +20,26 @@ pub(crate) struct WorkbuddyUsage {
     updated_at: i64,
 }
 
+impl WorkbuddyUsage {
+    pub(super) fn new(remaining: f64, total: f64, updated_at: i64) -> Self {
+        Self {
+            remaining,
+            total,
+            updated_at,
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn total(&self) -> f64 {
+        self.total
+    }
+
+    #[cfg(test)]
+    pub(super) fn remaining(&self) -> f64 {
+        self.remaining
+    }
+}
+
 #[derive(Deserialize)]
 struct Summary {
     code: Option<i64>,

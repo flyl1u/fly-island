@@ -1,11 +1,11 @@
-use std::{collections::BTreeMap, path::PathBuf, sync::{Arc, Mutex, PoisonError}};
+use std::{collections::BTreeMap, path::{Path, PathBuf}, sync::{Arc, Mutex, PoisonError}};
 use serde::Serialize;
 use serde_json::{json, Value};
 use tauri::Emitter;
-use super::{manifest::Manifest, packages::IndexEntry, process::Worker, protocol::Contributions, storage::{self, Installed, Registry}};
+use super::{download, jobs::{self, Job, Jobs, Phase}, manifest::Manifest, packages::{self, IndexEntry}, process::{self, Worker}, protocol::Contributions, storage::{self, Installed, Registry}};
 
 pub const EVENT: &str = "plugins-changed";
-const DEFAULT_INDEX: &str = "https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json";
+const DEFAULT_INDEX: &str = "https://github.com/flyl1u/fly-island/releases/download/plugins-channel/plugins-index.json";
 
 #[derive(Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -24,6 +24,8 @@ pub struct Host {
     pub workers: Mutex<BTreeMap<String, Worker>>,
     pub live: Arc<Mutex<BTreeMap<String, Live>>>,
     pub operation: tokio::sync::Mutex<()>,
+    pub jobs: Jobs,
+    pub limits: download::Limits,
     app: Option<tauri::AppHandle>,
 }
 
@@ -34,7 +36,7 @@ impl Host {
             std::fs::create_dir_all(root.join("plugin-logs")).map_err(|e| e.to_string())?;
             storage::load(&root)
         } else { Registry::default() };
-        Ok(Self { enabled, approved: None, device_battery: Mutex::new(None), root, registry: Mutex::new(registry), workers: Mutex::new(Default::default()), live: Arc::new(Mutex::new(Default::default())), operation: tokio::sync::Mutex::new(()), app })
+        Ok(Self { enabled, approved: None, device_battery: Mutex::new(None), root, registry: Mutex::new(registry), workers: Mutex::new(Default::default()), live: Arc::new(Mutex::new(Default::default())), operation: tokio::sync::Mutex::new(()), jobs: Jobs::new(app.clone()), limits: Default::default(), app })
     }
 
     pub fn market(root: PathBuf, app: Option<tauri::AppHandle>) -> Result<Self, String> {
@@ -185,44 +187,100 @@ impl Host {
         if r.developer_mode && !r.index_url.is_empty() { (r.index_url.clone(), true) } else { (DEFAULT_INDEX.into(), false) }
     }
 
+    fn failure(&self, id: Option<&str>, code: &str, detail: &str) -> String {
+        let scope = id.filter(|id| super::manifest::valid_id(id)).unwrap_or("index");
+        process::log_catalog(&self.root.join("plugin-logs/catalog.log"), scope, code, detail, &[]);
+        code.into()
+    }
+
+    async fn catalog_entries(&self, url: &str, local: bool) -> Result<Vec<IndexEntry>, String> {
+        let bytes = download::fetch(url, local, packages::INDEX_LIMIT, self.limits).await
+            .map_err(|error| self.failure(None, "plugin_index_unavailable", &error.detail))?;
+        packages::parse_index(&bytes).map_err(|error| self.failure(None, "plugin_index_incompatible", &error))
+    }
+
     pub async fn catalog(&self) -> Result<Vec<IndexEntry>, String> {
         if !self.enabled { return Ok(Vec::new()); }
         let (url, local) = self.source();
-        let result = async { super::packages::parse_index(&super::packages::download(&url, local, super::packages::INDEX_LIMIT).await?) }.await;
-        if let Err(error) = &result {
-            let detail = format!("plugin index: {error}\n");
-            eprint!("{detail}");
-            super::process::log_stderr(detail.as_bytes(), &self.root.join("plugin-logs/catalog.log"), &[]);
-        }
-        result.map(|mut entries| {
-            entries.retain(|entry| self.allows(&entry.id));
-            entries
-        }).map_err(|_| "plugin_index_unavailable".into())
+        Ok(self.catalog_entries(&url, local).await?.into_iter()
+            .filter(|entry| self.allows(&entry.id) && entry.compatible()).collect())
     }
 
-    pub async fn install(&self, id: &str) -> Result<(), String> {
+    /// Downloads, checks and installs one package. A second call for the same plugin returns
+    /// at once; the download does not hold `operation`, so other plugins stay usable.
+    pub async fn install(&self, id: &str, enable: bool) -> Result<(), String> {
         if !self.enabled { return Ok(()); }
         if !self.allows(id) { return Err("Plugin is unavailable in this build".into()); }
-        let entry = self.catalog().await?.into_iter().find(|e| e.id == id).ok_or("Plugin is not in the index")?;
-        let bytes = super::packages::download(&entry.url, self.source().1, super::packages::PACKAGE_LIMIT).await?;
+        let job = self.jobs.begin(id, Phase::Downloading)?;
+        let archive = self.root.join("plugins").join(format!(".download-{id}.zip"));
+        let token = job.token();
+        // Cancelling drops this future wherever it is waiting: the index, a stalled read, the
+        // pause before a retry, or another plugin's operation.
+        let ready = tokio::select! {
+            biased;
+            () = token.cancelled() => Err(jobs::CANCELLED.to_owned()),
+            ready = async {
+                let entry = self.fetch_package(id, &archive, &job).await?;
+                let guard = self.operation.lock().await;
+                job.begin_install()?;
+                Ok((entry, guard))
+            } => ready,
+        };
+        let result = match ready {
+            Ok((entry, _guard)) => {
+                let applied = self.apply_package(id, &archive, &entry);
+                if enable { applied.and_then(|()| self.enable(id, true)) } else { applied }
+            }
+            Err(error) => Err(error),
+        };
+        let _ = std::fs::remove_file(&archive);
+        job.finish(&result);
+        result
+    }
+
+    async fn fetch_package(&self, id: &str, archive: &Path, job: &Job<'_>) -> Result<IndexEntry, String> {
+        let (url, local) = self.source();
+        let entry = self.catalog_entries(&url, local).await?.into_iter().find(|entry| entry.id == id)
+            .ok_or_else(|| self.failure(Some(id), "plugin_not_listed", "Package is missing from the index"))?;
+        if !entry.compatible() {
+            return Err(self.failure(Some(id), "plugin_index_incompatible", &format!("Requires Fly Island {}", entry.min_app_version)));
+        }
+        job.size(entry.size);
+        download::package(&entry, local, archive, self.limits, &job.token(), &|received| job.downloaded(received), &|| job.phase(Phase::Verifying)).await
+            .map_err(|error| {
+                let code = if error.code == download::REFUSED { download::FAILED } else { error.code };
+                self.failure(Some(id), code, &error.detail)
+            })?;
+        Ok(entry)
+    }
+
+    fn apply_package(&self, id: &str, archive: &Path, entry: &IndexEntry) -> Result<(), String> {
+        let bytes = std::fs::read(archive)
+            .map_err(|error| self.failure(Some(id), download::Failure::io(&error).code, &error.to_string()))?;
         let staging = self.root.join("plugins").join(format!(".staging-{id}"));
-        if staging.exists() { std::fs::remove_dir_all(&staging).map_err(|e| e.to_string())?; }
-        std::fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
-        let manifest = match super::packages::extract(&bytes, &staging, &entry) {
+        let extracted = (|| {
+            if staging.exists() { std::fs::remove_dir_all(&staging).map_err(|error| error.to_string())?; }
+            std::fs::create_dir_all(&staging).map_err(|error| error.to_string())?;
+            packages::extract(&bytes, &staging, entry)
+        })();
+        let manifest = match extracted {
             Ok(m) => m,
-            Err(e) => { let _ = std::fs::remove_dir_all(&staging); return Err(e); }
+            Err(error) => {
+                let _ = std::fs::remove_dir_all(&staging);
+                return Err(self.failure(Some(id), download::storage_code(&error, "plugin_package_invalid"), &error));
+            }
         };
         let mut next = self.snapshot().registry;
         let old = next.installed.get(id).cloned();
         let enabled = old.as_ref().is_some_and(|p| p.enabled);
         let directory = self.root.join("plugins").join(id);
         let backup = self.root.join("plugins").join(format!(".backup-{id}"));
-        if backup.exists() { std::fs::remove_dir_all(&backup).map_err(|e| e.to_string())?; }
+        if backup.exists() { std::fs::remove_dir_all(&backup).map_err(|error| self.failure(Some(id), "plugin_install_failed", &error.to_string()))?; }
         self.stop(id);
         if directory.exists() {
             if let Err(error) = std::fs::rename(&directory, &backup) {
                 if enabled { let _ = self.start(id); }
-                return Err(error.to_string());
+                return Err(self.failure(Some(id), "plugin_install_failed", &error.to_string()));
             }
         }
         let apply = (|| {
@@ -237,10 +295,12 @@ impl Host {
             let _ = std::fs::remove_dir_all(&directory);
             if backup.exists() { let _ = std::fs::rename(&backup, &directory); }
             if enabled { let _ = self.start(id); }
-            return Err(error);
+            return Err(self.failure(Some(id), download::storage_code(&error, "plugin_install_failed"), &error));
         }
         if backup.exists() { let _ = std::fs::remove_dir_all(backup); }
-        if self.snapshot().registry.installed.get(id).is_some_and(|p| p.enabled) { self.start(id)?; }
+        if self.snapshot().registry.installed.get(id).is_some_and(|p| p.enabled) {
+            self.start(id).map_err(|error| self.failure(Some(id), "plugin_start_failed", &error))?;
+        }
         Ok(())
     }
 
@@ -258,10 +318,23 @@ impl Host {
                 let mut rollback = self.snapshot().registry;
                 if let Some(p) = rollback.installed.get_mut(id) { p.enabled = false; }
                 self.persist(rollback)?;
-                return Err(error);
+                return Err(self.failure(Some(id), "plugin_start_failed", &error));
             }
         }
         Ok(())
+    }
+
+    /// `uninstall` as a job, so a second click returns at once and the page can follow it.
+    pub async fn remove(&self, id: &str) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
+        if !self.allows(id) { return Err("Plugin is unavailable in this build".into()); }
+        let job = self.jobs.begin(id, Phase::Uninstalling)?;
+        let result = {
+            let _guard = self.operation.lock().await;
+            self.uninstall(id)
+        };
+        job.finish(&result.as_ref().map(|_| ()).map_err(|_| "plugin_uninstall_failed".to_owned()));
+        result
     }
 
     pub fn uninstall(&self, id: &str) -> Result<(), String> {

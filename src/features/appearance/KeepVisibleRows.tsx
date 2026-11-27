@@ -11,5 +11,5 @@ export function KeepVisibleRows({ settings, onSettingsChange }: {
   if (!settings.autoTuck) return null;
   const fields = ["keepVisibleWhileAgentRunning", "keepVisibleWhileLyrics", "keepVisibleWhileTodoRunning"] as const;
   return fields.map((field) => <SettingsToggleRow key={field} indent title={text[field]} checked={settings[field]}
-    onChange={(value) => onSettingsChange({ ...settings, [field]: value })} />);
+    disabled={settings.neverAutoTuck} onChange={(value) => onSettingsChange({ ...settings, [field]: value })} />);
 }

@@ -24,7 +24,7 @@ test("the WorkBuddy session source defaults on and its sessions follow it", () =
   assert.equal(normalizeSettings(null).agentShowWorkbuddy, true);
   assert.equal(normalizeSettings({ agentShowWorkbuddy: false }).agentShowWorkbuddy, false);
   assert.equal(normalizeSettings({ agentShowWorkbuddy: "broken" }).agentShowWorkbuddy, true);
-  assert.deepEqual(normalizeSettings({ agentShowWorkbuddy: false }).agentQuotaSources, ["claudeCode", "codex", "dsh", "kimiCode", "zcode"], "old data migrates the ring with the source");
+  assert.deepEqual(normalizeSettings({ agentShowWorkbuddy: false }).agentQuotaSources, ["claudeCode", "codex", "dsh", "kimiCode", "zcode", "antigravity"], "old data migrates the ring with the source");
   const sessions = ["claudeCode", "workbuddy"].map((provider) => ({ provider }));
   assert.deepEqual(filterSessions(sessions, { claudeCode: true, codex: true, workbuddy: false }), sessions.slice(0, 1));
   assert.equal(filterSessions(sessions, { claudeCode: true, codex: true }), sessions, "callers without the flag still show WorkBuddy");

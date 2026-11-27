@@ -1,3 +1,5 @@
+mod download;
+mod jobs;
 mod manifest;
 mod packages;
 mod process;
@@ -43,19 +45,26 @@ pub async fn get_plugins(host: tauri::State<'_, PluginHost>) -> Result<Snapshot,
 #[tauri::command]
 pub async fn get_plugins_index(host: tauri::State<'_, PluginHost>) -> Result<Vec<packages::IndexEntry>, String> { host.catalog().await }
 #[tauri::command]
-pub async fn install_plugin(id: String, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
-    let _guard = host.operation.lock().await;
-    host.install(&id).await
+pub async fn install_plugin(id: String, enable: Option<bool>, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
+    host.install(&id, enable.unwrap_or(false)).await
 }
+/// True when the running download will stop; false once there is nothing left to cancel.
+#[tauri::command]
+pub async fn cancel_plugin_install(id: String, host: tauri::State<'_, PluginHost>) -> Result<bool, String> {
+    Ok(host.jobs.cancel(&id))
+}
+#[tauri::command]
+pub async fn get_plugin_installs(host: tauri::State<'_, PluginHost>) -> Result<Vec<jobs::Progress>, String> { Ok(host.jobs.list()) }
 #[tauri::command]
 pub async fn set_plugin_enabled(id: String, enabled: bool, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
     let _guard = host.operation.lock().await;
-    host.enable(&id, enabled)
+    host.enable(&id, enabled)?;
+    host.jobs.forget_failure(&id);
+    Ok(())
 }
 #[tauri::command]
 pub async fn uninstall_plugin(id: String, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
-    let _guard = host.operation.lock().await;
-    host.uninstall(&id)
+    host.remove(&id).await
 }
 #[tauri::command]
 pub async fn set_plugin_setting(id: String, key: String, value: Value, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
@@ -105,6 +114,8 @@ macro_rules! tauri_commands {
             crate::plugin_host::uninstall_plugin, crate::plugin_host::set_plugin_setting,
             crate::plugin_host::run_plugin_action, crate::plugin_host::configure_plugins,
             crate::plugin_host::load_development_plugin,
+            crate::plugin_host::get_plugin_installs,
+            crate::plugin_host::cancel_plugin_install,
         ] $($rest)*)
     };
 }

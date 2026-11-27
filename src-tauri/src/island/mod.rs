@@ -3,6 +3,8 @@
 
 pub(crate) mod glass_capture;
 pub(crate) mod focus;
+mod corridor;
+mod diagnostics;
 mod follow;
 mod geometry;
 mod glass;
@@ -181,6 +183,7 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
     let current_state = read_window_state();
 
     if !current_state.can_start_drag() {
+        crate::app_log::event(crate::app_log::Category::Island, "drag_blocked", &[("reason", "drag_not_allowed")]);
         return Ok(());
     }
 
@@ -205,6 +208,7 @@ fn drag_island(window: WebviewWindow, current_state: IslandWindowState) -> Resul
     top_edge::set_attached(&window, false);
 
     if let Err(error) = window.start_dragging() {
+        crate::app_log::event(crate::app_log::Category::Island, "drag_blocked", &[("reason", "native_drag_failed")]);
         mutate_window_state(|state| {
             state.is_dragging = false;
             state.custom_position = current_state.custom_position;
@@ -212,6 +216,7 @@ fn drag_island(window: WebviewWindow, current_state: IslandWindowState) -> Resul
         });
         return Err(error.to_string());
     }
+    crate::app_log::event(crate::app_log::Category::Island, "drag_start", &[("reason", "pointer"), ("position", &format!("{},{}", position.x, position.y))]);
 
     thread::spawn(move || {
         while win32::input::is_left_button_down() {
@@ -243,7 +248,13 @@ fn drag_island(window: WebviewWindow, current_state: IslandWindowState) -> Resul
 
         if did_finish_drag {
             if let Some(position) = final_position {
+                let attached = read_window_state().top_attached;
+                crate::app_log::event(crate::app_log::Category::Island, "drag_end", &[
+                    ("reason", if attached { "drag_to_edge" } else { "pointer_release" }), ("position", &format!("{},{}", position.x, position.y)),
+                ]);
                 let _ = window.emit("island-position-changed", position);
+            } else {
+                crate::app_log::event(crate::app_log::Category::Island, "drag_end", &[("reason", "position_unavailable")]);
             }
         }
     });
@@ -265,6 +276,7 @@ pub fn reset_island_position(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn minimize_island(app: AppHandle) -> Result<(), String> {
+    crate::app_log::event(crate::app_log::Category::Island, "tray_hide", &[("reason", "minimize_button")]);
     hide_island(&app);
     Ok(())
 }
@@ -282,6 +294,8 @@ pub(crate) fn main_window(app: &AppHandle) -> Result<WebviewWindow, String> {
 }
 
 pub(crate) fn show_island(app: &AppHandle) -> Result<(), String> {
+    // A summon ends game mode's hold on the island; the full-screen check restores it if needed.
+    crate::system::fullscreen::end_for_summon(app);
     show_island_window(app, true)
 }
 

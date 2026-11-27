@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import type { MediaState } from "./api";
-import { songOffsetKey, wordFill, type LyricWord } from "./lyrics/lrc";
+import { songOffsetKey, wordFill, type LyricLine, type LyricWord } from "./lyrics/lrc";
 import { lyricClockAt } from "./lyrics/lyricClock";
 import { useLyricClock } from "./lyrics/useLyricClock";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
@@ -29,13 +29,16 @@ function CollapsedSungWords({ words, mediaState, offsetMs, playing }: {
 export function CollapsedLyric({
   mediaState,
   lyricsSettings,
+  lines: suppliedLines,
   active,
 }: {
   mediaState: MediaState;
   lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
+  lines?: LyricLine[] | null;
   active: boolean;
 }) {
-  const { lines } = useLyrics(mediaState, lyricsSettings);
+  const loaded = useLyrics(mediaState, lyricsSettings, suppliedLines === undefined);
+  const lines = suppliedLines === undefined ? loaded.lines : suppliedLines;
   const [songOffsetMs] = useSongOffset(lines ? songOffsetKey(mediaState) : null);
   const offsetMs = lyricsSettings.lyricsOffsetMs + songOffsetMs;
   const { index, playing } = useLyricClock(lines, mediaState, offsetMs, active);

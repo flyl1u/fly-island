@@ -81,7 +81,7 @@ fn scan(
             let ended = mid_turn && summary.closed;
             // Compacting writes nothing to the transcript until it is done, for up to minutes;
             // the session works meanwhile, whether the turn or `/compact` started it.
-            summary.compacting = compacting.contains_key(&summary.session_id) && !ended;
+            summary.compacting = compacting.contains_key(&summary.session_id) && !summary.closed;
             summary.phase = if ended {
                 // Quit mid-turn (often while a question was open): nothing left to wait for.
                 "completed"
@@ -421,7 +421,7 @@ fn read_first_line(path: &Path) -> Option<String> {
 }
 
 /// The last `TAIL_BYTES` of a file, starting at a whole line.
-fn read_tail(path: &Path) -> Option<String> {
+pub(super) fn read_tail(path: &Path) -> Option<String> {
     let mut file = File::open(path).ok()?;
     let len = file.metadata().ok()?.len();
     let start = len.saturating_sub(TAIL_BYTES);

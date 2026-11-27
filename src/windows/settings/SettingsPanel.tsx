@@ -10,7 +10,10 @@ import { MusicSettingsPage } from "./MusicSettingsPage";
 import { MessagesSettingsPage } from "./MessagesSettingsPage";
 import { PluginsSettingsPage } from "./PluginsSettingsPage";
 import { DeviceBatterySettings } from "../../features/device-battery/DeviceBatterySettings";
-import { usePlugins } from "../../features/plugins/usePlugins";
+import { standalonePages } from "../../features/plugins/placement.ts";
+import { usePlacedPlugins } from "../../features/plugins/usePlacedPlugins";
+import { PluginPageGroups } from "./PluginSettingsGroup";
+import { useAvailableCategory, useOpenPluginSettings } from "./usePluginPageNavigation";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
 import { BatterySettings } from "../../features/battery/BatterySettings";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
@@ -25,11 +28,18 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { useLocale } from "../../i18n";
-import { NATIVE_PLUGINS, useNativePlugins } from "../../features/plugins/native";
 
-const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType>> = {
+type PluginSettingsPageProps = {
+  settings: IslandSettings;
+  onSettingsChange: (settings: IslandSettings | ((current: IslandSettings) => IslandSettings)) => void;
+};
+
+/** Plugin pages with controls of their own; a packaged plugin's manifest settings follow below. */
+const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType<PluginSettingsPageProps>>> = {
   clockWeather: ClockWeatherSettingsPage,
   devices: DeviceBatterySettings,
+  battery: ({ settings, onSettingsChange }) => <BatterySettings preferences={settings}
+    onChange={(patch) => onSettingsChange((current) => ({ ...current, ...patch }))} />,
 };
 
 /**
@@ -59,21 +69,12 @@ export function SettingsPanel({
   const setSettings = onSettingsChange;
   const saveDirectory = useSaveDirectorySetting();
   const [category, setCategory] = useState<SettingsCategory>(DEFAULT_SETTINGS_CATEGORY);
-  const nativePlugins = useNativePlugins();
-  const showDevices = usePlugins().registry.installed["device-battery"]?.enabled === true;
-  const standaloneCategories = new Set(
-    NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone).map((plugin) => plugin.settings?.category),
-  );
-  const installedStandaloneCategories = new Set(
-    NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone && nativePlugins[plugin.id]).map((plugin) => plugin.settings?.category),
-  );
-  const activeCategory = category === "devices" && !showDevices ? "plugins" : standaloneCategories.has(category) && !installedStandaloneCategories.has(category) ? "plugins" : category;
+  const placed = usePlacedPlugins();
+  const activeCategory = useAvailableCategory(category, placed, setCategory);
+  const openPluginSettings = useOpenPluginSettings(setCategory);
+  const pluginPage = standalonePages(placed).find((plugin) => plugin.category === activeCategory);
+  const CustomPage = STANDALONE_SETTINGS_PAGES[activeCategory];
   const highlightSaveDirectory = saveDirectory.highlight;
-
-  useEffect(() => {
-    // A settings window can receive the Devices link before the first plugin snapshot arrives.
-    if (category !== "devices" && activeCategory !== category) setCategory(activeCategory);
-  }, [activeCategory, category]);
 
   // The island asks for the save path when an export has nowhere to go; it lives on the todos page.
   const focusSavePath = useCallback(() => {
@@ -143,14 +144,9 @@ export function SettingsPanel({
       {activeCategory === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {activeCategory === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
       {activeCategory === "agentConnect" && <AgentConnectSettingsPage />}
-      {(() => {
-        const Page = STANDALONE_SETTINGS_PAGES[activeCategory];
-        return Page ? <Page /> : null;
-      })()}
-      {activeCategory === "battery" && (
-        <BatterySettings preferences={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
-      )}
-      {activeCategory === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={setSettings} />}
+      {pluginPage && CustomPage && <CustomPage settings={settings} onSettingsChange={setSettings} />}
+      {pluginPage && <PluginPageGroups page={pluginPage.category} />}
+      {activeCategory === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={setSettings} onOpenSettings={openPluginSettings} />}
       {activeCategory === "about" && <AboutSettingsPage />}
     </LayoutEditor>
   );

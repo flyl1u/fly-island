@@ -17,6 +17,7 @@ import { applyDocumentTheme } from "./features/appearance/useDocumentTheme";
 import { loadSettings } from "./features/appearance/storage";
 import { captureFirstLaunch } from "./features/onboarding/firstLaunch";
 import { installAppLogCapture } from "./features/diagnostics/appLogCapture";
+import { logStartupSettings } from "./features/diagnostics/islandSettings";
 import { restoreConfigBeforeMount } from "./features/config-transfer/bootstrap";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
@@ -28,7 +29,8 @@ async function mountApp() {
   // Before loading the settings, which may save them on a first launch.
   captureFirstLaunch();
   // Before the first paint, so no window shows a frame in the wrong colour scheme.
-  applyDocumentTheme(loadSettings());
+  const settings = loadSettings();
+  applyDocumentTheme(settings);
 
   window.addEventListener("contextmenu", (event) => {
     const target = event.target instanceof Element ? event.target
@@ -37,6 +39,7 @@ async function mountApp() {
   }, true);
 
   if (windowKind === null) {
+    logStartupSettings(settings);
     trackIslandTopEdge();
     // Settings can be shown inside the island, which then shares this window with it.
     installSameWindowStorageEvents();

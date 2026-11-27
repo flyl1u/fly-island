@@ -2,7 +2,7 @@ export type SettingsAppearanceText = {
   font: string;
   fontLabel: string;
   fontSize: string;
-  collapsedDimensions: { autoWidth: string; width: string; height: string; padding: string; unit: string; hint: string };
+  collapsedDimensions: { autoWidth: string; autoMin: string; autoMax: string; width: string; height: string; padding: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
   loadingLocalFonts: string;
@@ -72,6 +72,7 @@ export type SettingsAppearanceText = {
     moveLabel: (name: string) => string;
     showCover: string;
     showCoverHint: string;
+    idleText: { title: string; hint: string; placeholder: string; pendingTitle: string; pendingHint: string; pendingCount: string; pendingIdleText: string };
     layout: {
       title: string;
       footer: string;
@@ -91,7 +92,7 @@ export const zhCN: SettingsAppearanceText = {
   font: "字体",
   fontLabel: "岛屿字体",
   fontSize: "字号",
-  collapsedDimensions: { autoWidth: "自动宽度", width: "宽度", height: "高度", padding: "两侧留白", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
+  collapsedDimensions: { autoWidth: "根据内容自动调整长度", autoMin: "最短", autoMax: "最长", width: "宽度", height: "高度", padding: "两侧留白", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
   loadingLocalFonts: "正在读取本机字体…",
@@ -150,12 +151,14 @@ export const zhCN: SettingsAppearanceText = {
     moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
     showCover: "显示歌曲封面",
     showCoverHint: "显示歌词时，在歌词前面放这首歌的封面",
+    idleText: { title: "空闲时显示的文字", hint: "没有别的内容时岛上显示这段文字（最多 40 个字），留空则按“显示标题”的设置显示 fly-island。", placeholder: "fly-island",
+      pendingTitle: "有待办但没开始时显示", pendingHint: "有待办、但还没开始做任何一项时，岛上显示什么。", pendingCount: "剩余数量", pendingIdleText: "空闲文字" },
     layout: {
       title: "岛上的排列",
       footer: "按住图标左右拖动，放在文字左边的会显示在岛的左侧；拖进下面的盒子就不在岛上显示。灰色的是还没打开的功能，位置会保留。",
       reset: "恢复默认",
       slots: { pulse: "状态灯", text: "文字", mail: "新邮件", shelf: "置物架文件数", music: "音乐波形", agents: "Agent 会话数", clock: "时间", weather: "天气", battery: "电池" },
-      textSample: "收起时的文字",
+      textSample: "示例待办",
       moveLabel: (name) => `移动"${name}"，可以拖动或按左右方向键；按下方向键放进下面的盒子，不在岛上显示`,
       hidden: "不在岛上显示",
       hiddenEmpty: "把图标拖到这里，就不在岛上显示",
@@ -168,7 +171,7 @@ export const en: SettingsAppearanceText = {
   font: "Font",
   fontLabel: "Island font",
   fontSize: "Font size",
-  collapsedDimensions: { autoWidth: "Automatic width", width: "Width", height: "Height", padding: "Side space", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
+  collapsedDimensions: { autoWidth: "Adjust length to the content", autoMin: "Shortest", autoMax: "Longest", width: "Width", height: "Height", padding: "Side space", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
   loadingLocalFonts: "Loading installed fonts…",
@@ -227,12 +230,14 @@ export const en: SettingsAppearanceText = {
     moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
     showCover: "Show the song's cover",
     showCoverHint: "The song's cover in front of the lyric line",
+    idleText: { title: "Idle text", hint: "Shown when nothing else is (up to 40 characters). Empty keeps fly-island, as the Show title setting decides.", placeholder: "fly-island",
+      pendingTitle: "When todos are pending but none started", pendingHint: "What the island shows when there are todos but you have not started one.", pendingCount: "Count left", pendingIdleText: "Idle text" },
     layout: {
       title: "On the island",
       footer: "Hold an icon and drag it left or right; icons left of the text sit on the island's left. Drop one in the box below to take it off the island. Grey ones are switched off and keep their place.",
       reset: "Reset",
       slots: { pulse: "Status light", text: "Text", mail: "New mail", shelf: "Shelf files", music: "Music waveform", agents: "Agent sessions", clock: "Time", weather: "Weather", battery: "Battery" },
-      textSample: "Collapsed text",
+      textSample: "Sample task",
       moveLabel: (name) => `Move "${name}": drag, or press the left and right arrow keys; the down arrow takes it off the island`,
       hidden: "Not on the island",
       hiddenEmpty: "Drag an icon here to take it off the island",

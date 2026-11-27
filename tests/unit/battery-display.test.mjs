@@ -4,7 +4,6 @@ import { batteryHealth, summarizeBattery } from "../../src/features/battery/disp
 import { formatBatteryReadout } from "../../src/features/battery/readout.ts";
 import { formatBatteryDetails } from "../../src/features/battery/details.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
-import { batteryIslandWidth } from "../../src/features/battery/slotWidth.ts";
 import { en, zhCN } from "../../src/i18n/sections/battery.ts";
 
 const snapshot = { percent: 71, pluggedIn: false, charging: false, secondsRemaining: 7801, details: null };
@@ -103,12 +102,4 @@ test("the details say each thing once: where it is heading, how fast, and what t
   const bare = formatBatteryDetails({ ...snapshot, pluggedIn: true, secondsRemaining: null }, null, "en", en);
   assert.deepEqual([bare.runtime, bare.power, bare.stats.length], [null, null, 0], "missing readings leave no placeholder rows");
   assert.deepEqual(formatBatteryDetails({ ...snapshot, details: { ...details, designMwh: null } }, null, "en", en).stats.map(({ key }) => key), ["current", "full"]);
-});
-
-test("the collapsed island makes room for the battery slot", () => {
-  assert.equal(batteryIslandWidth(317, false), 317);
-  assert.equal(batteryIslandWidth(317, true), 373);
-  assert.equal(batteryIslandWidth(317, true, 1.2), 381, "the readout grows with the island's font size");
-  assert.equal(batteryIslandWidth(240, true, 1, 310), 310, "at least what the status items measure");
-  assert.equal(batteryIslandWidth(470, true), 480, "never past the widest island");
 });

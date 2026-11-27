@@ -10,14 +10,10 @@ export type SettingsCategoriesText = {
   shortcuts: string;
   /** QQ, WeChat and Mail on one page. */
   messages: string;
-  /** The standalone Clock & Weather island plugin page. */
-  clockWeather: string;
-  battery: string;
   /** Mail's group on the Messages page. */
   mail: string;
   todos: string;
   music: string;
-  devices: string;
   clipboard: string;
   translation: string;
   /** The file shelf's group on the Clipboard page. */
@@ -40,12 +36,9 @@ export const zhCN: SettingsCategoriesText = {
   appearance: "外观",
   shortcuts: "快捷键",
   messages: "消息",
-  clockWeather: "时间与天气",
-  battery: "电池",
   mail: "邮箱",
   todos: "待办",
   music: "音乐",
-  devices: "设备",
   clipboard: "剪贴板与文件",
   translation: "翻译",
   shelf: "文件中转",
@@ -66,12 +59,9 @@ export const en: SettingsCategoriesText = {
   appearance: "Appearance",
   shortcuts: "Shortcuts",
   messages: "Messages",
-  clockWeather: "Time & weather",
-  battery: "Battery",
   mail: "Mail",
   todos: "Todos",
   music: "Music",
-  devices: "Devices",
   clipboard: "Clipboard & files",
   translation: "Translation",
   shelf: "File shelf",

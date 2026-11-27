@@ -58,6 +58,8 @@ pub enum UsageSource {
     Kimi,
     /// Z Code's plan service (zcode_usage.rs).
     Zcode,
+    /// Antigravity's own model list, asked over its local language server (antigravity.rs).
+    Antigravity,
 }
 
 /// The snapshot claude-hud reads or writes, from its config in `claude_dir`

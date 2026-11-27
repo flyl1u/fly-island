@@ -1,5 +1,5 @@
 import type { BatteryPreferences } from "../battery/preferences";
-
+import type { TodoPendingDisplay } from "./idleText.ts";
 export type TranslationTarget = "window" | "island";
 
 /**
@@ -40,8 +40,8 @@ export type AgentSessionGroup = "computer" | "project" | "none";
 export type AgentArchiveMotion = "slide" | "dissolve";
 /** Light effects on the Agent page's cards and compact rows: none, the sparkle band, or a gradient wash. */
 export type AgentCardEffects = "off" | "sparkle" | "gradient";
-/** Kimi Code and Z Code come from the plugin market and are offered only once installed. */
-export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode";
+/** Kimi Code and Z Code are offered after their plugins are installed. */
+export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode" | "antigravity";
 /** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
@@ -72,7 +72,10 @@ export type IslandSettings = BatteryPreferences & {
   glassBlur: number;
   opacity: number;
   collapsedScale: number;
+  /** The switch: the width follows the shown text, between the two limits below (B3-3). */
   collapsedAutoWidth: boolean;
+  collapsedAutoWidthMin: number;
+  collapsedAutoWidthMax: number;
   collapsedWidth: number;
   collapsedHeight: number;
   /** Space (px) between the collapsed island's sides and its first and last items. */
@@ -110,8 +113,10 @@ export type IslandSettings = BatteryPreferences & {
   /** Agents from the plugin market: shown only once installed there, and while switched on here. */
   agentShowCursor: boolean;
   agentShowKimiCode: boolean;
+  agentShowCodeBuddy: boolean;
   agentShowHermes: boolean;
   agentShowZcode: boolean;
+  agentShowAntigravity: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
   /** Show how long a session's current (or last) turn has run. */
@@ -144,6 +149,10 @@ export type IslandSettings = BatteryPreferences & {
   showTitle: boolean;
   showCollapsedText: boolean;
   showIdleTodoCount: boolean;
+  /** Custom text for the idle collapsed island; empty keeps "fly-island" (idleText.ts). */
+  idleText: string;
+  /** What shows when todos are pending but none is started. */
+  todoPendingDisplay: TodoPendingDisplay;
   carryOverIncompleteTodos: boolean;
   enableTodoReorder: boolean;
   todoReorderVersion: 1;
@@ -168,6 +177,14 @@ export type IslandSettings = BatteryPreferences & {
   todoTimerReminder: boolean;
   todoTimerReminderSound: boolean;
   autoTuck: boolean;
+  /** Only the minus button or a right click tucks the island: no automatic tucking of any kind. */
+  neverAutoTuck: boolean;
+  /** Tuck to the edge while a browser is foregrounded on the island's monitor. */
+  browserAutoTuck: boolean;
+  /** Seconds the pointer must stay on the tucked island while a browser is foregrounded. */
+  browserAutoTuckDelaySeconds: number;
+  /** While a browser is foregrounded, click the tucked island to open it instead of hovering. */
+  browserAutoTuckClickToOpen: boolean;
   tuckStyle: TuckStyle;
   /** Px of the island left on screen by the "edge" tuck (TUCK_EDGE_HEIGHT). */
   tuckEdgeHeight: number;

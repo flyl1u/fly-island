@@ -8,7 +8,7 @@
     "zh-CN": "在小岛和多屏休息窗口显示护眼倒计时，复用宿主主题，支持一次推迟与可选跳过",
     "en": "Eye-break countdowns with host-themed multi-monitor windows, one postponement and optional skipping"
   },
-  "version": "0.2.0",
+  "version": "0.3.0",
   "apiVersion": 1,
   "runtime": {
     "command": "eye-care.exe"
@@ -49,8 +49,12 @@
     {
       "key": "idle",
       "label": {
-        "zh-CN": "空闲阈值（1–120 分钟）",
-        "en": "Idle threshold (1–120 minutes)"
+        "zh-CN": "空闲时长（1–120 分钟）",
+        "en": "Idle duration (1–120 minutes)"
+      },
+      "description": {
+        "zh-CN": "连续无键盘和鼠标操作到达空闲时长，暂停并重置用眼计时，恢复操作后开始计时。",
+        "en": "No keyboard or mouse input for this long pauses and resets the screen-time timer; timing starts when input resumes."
       },
       "type": "number",
       "min": 1,
@@ -60,8 +64,17 @@
     {
       "key": "allow-skip",
       "label": {
-        "zh-CN": "是否允许跳过休息",
+        "zh-CN": "允许跳过休息",
         "en": "Allow skipping a break"
+      },
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "pause-fullscreen",
+      "label": {
+        "zh-CN": "全屏模式下暂停并重置计时",
+        "en": "Pause and reset the timer in full screen"
       },
       "type": "toggle",
       "default": true

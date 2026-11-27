@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { nextTodoRotationIndex } from "../../features/todos/todoRotation";
+import { logDiagnostic } from "../../features/diagnostics/api";
+import { browserTuckDecision, type BrowserTuckState } from "./browserTuck";
 
 export function useTodoRotation(
   todoIds: string[],
@@ -80,4 +82,27 @@ export function useRevealOnMessage(hasPreview: boolean, isTucked: boolean, onRev
   useEffect(() => {
     if (hasPreview && isTucked) onReveal();
   }, [hasPreview, isTucked, onReveal]);
+}
+
+/** Tucks as soon as a browser reaches the island's monitor, then restores when it leaves. */
+export function useBrowserAutoTuck(
+  state: BrowserTuckState,
+  tuck: () => void,
+  reveal: () => void,
+) {
+  const decision = browserTuckDecision(state);
+  const lastDecision = useRef<typeof decision>(null);
+  const shouldTuck = decision === "took_over_idle_tuck" || (decision === "tucked" && !state.isTucked);
+
+  useEffect(() => {
+    if (decision !== lastDecision.current) {
+      if (decision) logDiagnostic("island", "browser_auto_tuck", { reason: decision });
+      lastDecision.current = decision;
+    }
+  }, [decision]);
+
+  useEffect(() => {
+    if (shouldTuck) tuck();
+    else if (decision === "revealed_browser_left" || decision === "revealed_disabled") reveal();
+  }, [decision, reveal, shouldTuck, tuck]);
 }

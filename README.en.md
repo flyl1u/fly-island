@@ -178,6 +178,15 @@ Test your plugin locally, then open a PR with a demo recording, the author's nam
 
 Thanks to these past contributors: [TixXin](https://github.com/TixXin) and [ShengLin1001](https://github.com/ShengLin1001).
 
+Thanks to these plugin contributors:
+
+- Eye Care: [zloghs](https://github.com/zloghs) ([#92](https://github.com/flyl1u/fly-island/pull/92))
+- Telegram: [baiyu0111 (云奇)](https://github.com/baiyu0111) ([#134](https://github.com/flyl1u/fly-island/pull/134))
+- CodeBuddy: [yiumanlenong](https://github.com/yiumanlenong) ([#125](https://github.com/flyl1u/fly-island/pull/125))
+- Antigravity: [lilipeng0615-cyber](https://github.com/lilipeng0615-cyber) ([#120](https://github.com/flyl1u/fly-island/pull/120))
+- MiniMax Code: [YTC0408](https://github.com/YTC0408) ([#110](https://github.com/flyl1u/fly-island/pull/110))
+- Device Battery & Audio: [Anobod1119](https://github.com/Anobod1119) ([#106](https://github.com/flyl1u/fly-island/pull/106))
+
 ## Star History
 
 <a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">

@@ -30,6 +30,7 @@ type IslandHeaderProps = {
   agentStatusLabel: string;
   qqNotificationCount: number;
   wechatPending: boolean;
+  telegramPending?: boolean;
   /** The first switched-on office client (DingTalk, Feishu, WeCom) with a new reminder. */
   officePending: OfficeSource | null;
   onPageChange: (page: IslandPage) => void;
@@ -110,6 +111,7 @@ export function IslandHeader({
   agentStatusLabel,
   qqNotificationCount,
   wechatPending,
+  telegramPending,
   officePending,
   onPageChange,
   onCollapse,
@@ -130,7 +132,8 @@ export function IslandHeader({
   const showIcons = pageButtonStyle !== "capsule";
   const labeled = pageButtonStyle === "iconLabel";
   const dotStyle = labeled ? "dot-button--icon dot-button--icon-label" : showIcons ? "dot-button--icon" : "dot-button--capsule";
-  const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending, officePending && t.messages.sourceLabels[officePending]);
+  const reminderNames = [telegramPending ? t.messages.sourceLabels.telegram : null, officePending && t.messages.sourceLabels[officePending]].filter(Boolean);
+  const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending, reminderNames.join(", "));
   // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
   // Translation has one while it is on, also when it opens in its own window.
   const dots = pageOrder.filter((dot) => (dot === "translation" ? onOpenTranslator !== null : features[dot]));
@@ -268,14 +271,14 @@ export function IslandHeader({
             data-page-button-current={labeled && page === "qq" ? "" : undefined}
             onClick={(event) => {
               event.stopPropagation();
-              onOpenMessages(wechatPending ? "wechat" : officePending ?? "qq");
+              onOpenMessages(wechatPending ? "wechat" : telegramPending ? "telegram" : officePending ?? "qq");
             }}
           >
             {showIcons && <PageButtonContent
               icon={<Bell size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
               label={labeled ? t.messages.title : undefined}
             />}
-            {(qqNotificationCount > 0 || wechatPending || officePending) && <span className="island-message-button__dot" aria-hidden="true" />}
+            {(qqNotificationCount > 0 || wechatPending || telegramPending || officePending) && <span className="island-message-button__dot" aria-hidden="true" />}
           </button>
         )}
         {labeled && collapseTarget}

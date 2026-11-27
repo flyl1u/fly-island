@@ -1,6 +1,7 @@
+import { rightClickTucks } from "./tuckRules";
 import { shoulderedShapeCss } from "../../features/appearance/cornerShape";
 import { isGlass } from "../../features/appearance/settings";
-import type { CSSProperties, ReactNode, TransitionEvent } from "react";
+import { useRef, type CSSProperties, type ReactNode, type TransitionEvent } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { BatteryAlert } from "../../features/device-battery/lowBattery";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
@@ -11,6 +12,7 @@ import type { MessagePreview, MessageSource } from "../../features/messages/mess
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import type { TelegramNotificationsController } from "../../features/messages/telegram/useTelegramNotifications";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
 import { isPluginPage } from "./features";
@@ -23,6 +25,7 @@ import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
 import { useMotionLayer } from "./useMotionLayer";
+import { useCollapsedWheelSwitch } from "./useCollapsedWheelSwitch";
 import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
@@ -39,6 +42,7 @@ type IslandShellProps = {
   qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
+  telegram?: TelegramNotificationsController;
   onOpenMessages: (source: MessageSource) => void;
   /** The newest message preview to show on the collapsed island (useIslandNotices), or null. */
   preview: MessagePreview | null;
@@ -60,6 +64,12 @@ type IslandShellProps = {
   islandShape?: IslandShape;
   islandCornerShape?: IslandCornerShape;
   showTitle: boolean;
+  /** The collapsed bar's title text (idleText.ts), or null for none. */
+  /** The collapsed width changed while collapsed: the shape glides to it (IslandShell.css). */
+  widthMoving?: boolean;
+  brandText: string | null;
+  /** Replaces the "N todos left" line, or null to show the count. */
+  pendingText: string | null;
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
@@ -67,11 +77,15 @@ type IslandShellProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
+  /** Scrolling over the collapsed island: the next (1) or previous (-1) item for its text. */
+  onSwitchCollapsedItem?: (direction: 1 | -1) => void;
+  collapsedLyrics?: import("../../features/media/lyrics/lrc").LyricLine[] | null;
   collapsedLayout: readonly CollapsedSlot[];
   battery?: BatterySnapshot | null;
   batteryEstimate?: BatteryPowerEstimate | null;
   batteryDisplay: BatteryDisplayMode;
   batteryReadoutStyle: BatteryReadoutStyle;
+  collapsedOrder?: readonly CollapsedSlot[];
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
   /** Where the collapsed island's lyric line comes from. */
@@ -105,7 +119,11 @@ type IslandShellProps = {
   /** One line from the selection shortcut, shown on the collapsed island, or null. */
   onOpenSettings: () => void;
   onTuck: () => void;
+  /** Right click on the collapsed island: tucks it to the edge like the minus button (tuckRules.ts). */
+  onContextTuck: () => void;
   onReveal: () => void;
+  clickTuckedToOpen?: boolean;
+  onClickTucked?: () => void;
   onPageChange: (page: IslandPage) => void;
   /** Buttons of the open page, first among the window actions. */
   pageActions?: ReactNode;
@@ -125,6 +143,7 @@ export function IslandShell({
   qqMail,
   qqNotifications,
   wechatReminders,
+  telegram,
   onOpenMessages,
   preview,
   notice,
@@ -141,17 +160,23 @@ export function IslandShell({
   islandShape = "notch",
   islandCornerShape = "squircle",
   showTitle,
+  widthMoving = false,
+  brandText,
+  pendingText,
   showCollapsedText,
   collapsedTaskTitle,
   todoTimer = null,
   todoRotation = null,
   collapsedTodoCount,
   collapsedItem,
+  onSwitchCollapsedItem,
+  collapsedLyrics,
   collapsedLayout,
   battery,
   batteryEstimate,
   batteryDisplay,
   batteryReadoutStyle,
+  collapsedOrder,
   collapsedCover,
   lyricsSettings,
   pageOrder,
@@ -175,7 +200,10 @@ export function IslandShell({
   onOpenTranslator,
   onOpenSettings,
   onTuck,
+  onContextTuck,
   onReveal,
+  clickTuckedToOpen = false,
+  onClickTucked,
   onPageChange,
   pageActions,
   children,
@@ -186,6 +214,9 @@ export function IslandShell({
   const isLiquidGlass = material === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
+  const islandRef = useRef<HTMLElement>(null);
+  const wheelSwitches = !isExpanded && !isTucked && !preview && !quotaAlert && !batteryAlert;
+  useCollapsedWheelSwitch(islandRef, wheelSwitches ? onSwitchCollapsedItem ?? null : null);
   const tuckMorphClass = useTuckMorph(isTucked, tuckStyle);
   const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
   const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
@@ -206,29 +237,38 @@ export function IslandShell({
     glass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
     notice && !isExpanded ? "island--notice" : "",
+    widthMoving && !isExpanded ? "island--width-motion" : "",
   ]
     .filter(Boolean)
     .join(" ");
-  const collapsedLabel = showCollapsedText
-    ? todoTimer
-      ? t.todo.actionOnTask(todoTimer.notified ? t.todo.timeUp : t.todo.countdown, collapsedTaskTitle ?? "")
-      : agentSession
-      ? t.island.agentSession(agentSession.label, agentSession.title)
-      : collapsedTaskTitle
-      ? t.messages.collapsedTask(collapsedTaskTitle)
-      : collapsedTodoCount !== null
-        ? t.island.pendingTodos(collapsedTodoCount)
-        : "fly-island"
-    : "fly-island";
+  let collapsedLabel = t.island.appName;
+  if (showCollapsedText && collapsedItem === "todo") {
+    if (todoTimer) collapsedLabel = t.todo.actionOnTask(todoTimer.notified ? t.todo.timeUp : t.todo.countdown, collapsedTaskTitle ?? "");
+    else if (collapsedTaskTitle) collapsedLabel = t.messages.collapsedTask(collapsedTaskTitle);
+    else if (collapsedTodoCount !== null) collapsedLabel = t.island.pendingTodos(collapsedTodoCount);
+  } else if (showCollapsedText && collapsedItem === "agent" && agentSession) {
+    collapsedLabel = t.island.agentSession(agentSession.label, agentSession.title);
+  } else if (showCollapsedText && collapsedItem === "lyrics") {
+    collapsedLabel = t.island.collapsedLyricsLabel;
+  }
 
   return (
     <section
+      ref={islandRef}
       className={className}
       aria-label={collapsedLabel}
       onClick={(event) => {
+        if (isTucked && clickTuckedToOpen) {
+          onClickTucked?.();
+          return;
+        }
         if (!isExpanded && event.target === event.currentTarget) {
           onOpenPage(page);
         }
+      }}
+      onContextMenu={() => {
+        // The native menu is already suppressed (main.tsx); here it tucks the collapsed island.
+        if (rightClickTucks(mode, isTucked)) onContextTuck();
       }}
       onPointerMove={handleGlassPointerMove}
       onPointerLeave={resetGlassPointer}
@@ -264,13 +304,17 @@ export function IslandShell({
             qqMail={qqMail}
             qqNotifications={qqNotifications}
             wechatReminders={wechatReminders}
+            telegram={telegram}
             preview={preview}
             noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
+            animateWidth={widthMoving}
             page={page}
             isExpanded={isExpanded}
             isTucked={isTucked}
             positionLocked={positionLocked}
             showTitle={showTitle}
+            brandText={brandText}
+            pendingText={pendingText}
             showCollapsedText={showCollapsedText}
             collapsedLabel={collapsedLabel}
             collapsedTaskTitle={collapsedTaskTitle}
@@ -278,11 +322,13 @@ export function IslandShell({
             todoRotation={todoRotation}
             collapsedTodoCount={collapsedTodoCount}
             collapsedItem={collapsedItem}
+            collapsedLyrics={collapsedLyrics}
             collapsedLayout={collapsedLayout}
             battery={battery}
             batteryEstimate={batteryEstimate}
             batteryDisplay={batteryDisplay}
             batteryReadoutStyle={batteryReadoutStyle}
+            collapsedOrder={collapsedOrder}
             collapsedCover={collapsedCover}
             lyricsSettings={lyricsSettings}
             agentSession={agentSession}
@@ -319,6 +365,7 @@ export function IslandShell({
               agentStatusLabel={agentStatusLabel}
               qqNotificationCount={qqNotificationCount}
               wechatPending={wechatPending}
+              telegramPending={Boolean(telegram?.active && telegram.snapshot.items.length)}
               officePending={officePending}
               onPageChange={onPageChange}
               onCollapse={onCollapse}

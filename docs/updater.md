@@ -202,4 +202,9 @@ gh release edit v0.3.2 --repo flyl1u/fly-island --prerelease --latest=false   # 
 
 ## 可下载功能插件
 
-根目录 `release-features.json` 的 `plugins` 开启时，`pnpm release` 运行 `scripts/release/build-plugins.ps1` 构建外部插件包。仅开启 `pluginMarket` 时，发布脚本按 `plugins/market-packages.json` 构建并上传已获准上架的 ZIP 和索引；清单为空时跳过构建和上传，也不读取以前留下的插件产物。客户端从 `releases/latest/download/plugins-index.json` 获取索引，索引内的包地址固定到对应版本的 Release。插件不编入主程序；`latest.json` 的格式与端点不变。单独本地构建见 [插件快速开始](plugins/quickstart.md)；不传 BaseUrl 时索引指向本地 file URL，发布流程传 GitHub Release HTTPS URL。
+应用发布 `pnpm release` 不构建或上传插件，不改 `latest.json` 的格式或更新端点。插件使用独立的 `plugins-channel` 预发布，创建时设为非 latest；不要把它转为正式版本或标为 latest。v3.3.0 及以前的正式版不受影响。
+
+1. 收录时先改 `plugins/market-packages.json`；更新已收录插件的内容时提升该插件的 manifest 版本，不需要改应用版本。市场索引最低宿主默认 `3.3.0`；插件如果需要更新的宿主 API，可在其目录下增加 `min-app-version.txt`。
+2. 先运行 `pnpm release:plugins --no-upload`：构建市场 ZIP、生成索引、核对文件大小和 SHA-256、打印资产清单。不运行 GitHub 上传命令。用本地产物验证安装链路后，由维护者运行 `pnpm release:plugins`。
+3. 脚本只上传新版本 ZIP，校验远端 ZIP 再更新 `plugins-index.json`，下载并核对远端索引。已存在的同名 ZIP 不覆盖：能用上一份索引验证的原样保留，不能验证则中止。不要同时运行两次发布，不要清理仍可能被缓存索引引用的 ZIP。GitHub 替换索引期间可能短暂不可达，稍后重试。
+4. 下一个应用版本带上新市场清单；已收录插件可以单独维护，不必同步发应用。单独本地构建见 [插件快速开始](plugins/quickstart.md)。

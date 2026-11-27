@@ -1,24 +1,24 @@
 import { useEffect, useRef } from "react";
-import { ArrowUpRight, BatteryMedium, ClipboardList, CloudSun, Headphones, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, SlidersHorizontal, UserRound, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ClipboardList, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, SlidersHorizontal, UserRound, type LucideIcon } from "lucide-react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { PROJECT_AUTHOR_URL } from "../../features/updater/projectLinks";
 import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
-import { usePlugins } from "../../features/plugins/usePlugins";
-import { NATIVE_PLUGINS, useNativePlugins } from "../../features/plugins/native";
+import { standalonePages } from "../../features/plugins/placement.ts";
+import { pluginLineIcon } from "../../features/plugins/pluginLineIcons";
+import { usePlacedPlugins } from "../../features/plugins/usePlacedPlugins";
 import { useTranslation } from "../../i18n";
-import { SETTINGS_GROUPS, type SettingsCategory } from "./categories";
+import { SETTINGS_GROUPS, type SettingsCategory, type StaticSettingsCategory } from "./categories";
+import { useCategoryTitle } from "./useCategoryTitle";
 import "./SettingsSidebar.css";
 
-const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
+/** The fixed pages; a plugin's own page takes the plugin's line icon. */
+const CATEGORY_ICONS: Record<Exclude<StaticSettingsCategory, "devices" | "clockWeather" | "battery">, LucideIcon> & Partial<Record<SettingsCategory, LucideIcon>> = {
   general: SlidersHorizontal,
   appearance: Palette,
   messages: MessageCircle,
-  clockWeather: CloudSun,
-  battery: BatteryMedium,
   todos: ListTodo,
   music: Music,
-  devices: Headphones,
   clipboard: ClipboardList,
   translation: Languages,
   agents: MessagesSquare,
@@ -41,17 +41,12 @@ export function SettingsSidebar({
 }) {
   const t = useTranslation();
   const text = t.settings.categories;
-  const installed = useNativePlugins();
-  const showDevices = usePlugins().registry.installed["device-battery"]?.enabled === true;
-  const standaloneCategories = new Set(
-    NATIVE_PLUGINS.filter((plugin) => plugin.settings?.standalone).map((plugin) => plugin.settings?.category),
-  );
-  const installedCategories = new Set(
-    NATIVE_PLUGINS.filter((plugin) => plugin.settings?.category && installed[plugin.id]).map((plugin) => plugin.settings?.category),
-  );
-  const groups = SETTINGS_GROUPS
-    .map((group) => ({ ...group, categories: group.categories.filter((entry) => entry === "devices" ? showDevices : !standaloneCategories.has(entry) || installedCategories.has(entry)) }))
-    .filter((group) => group.categories.length > 0);
+  const categoryTitle = useCategoryTitle();
+  // Plugins with a page of their own follow at the end of Features, as their catalog entry declares.
+  const pluginPages = standalonePages(usePlacedPlugins());
+  const groups = SETTINGS_GROUPS.map((group) => group.label === "features"
+    ? { ...group, categories: [...group.categories, ...pluginPages.map((plugin) => plugin.category as SettingsCategory)] }
+    : group);
   const listRef = useRef<HTMLDivElement>(null);
   // About keeps a red dot until the community group on it has been opened.
   const community = useCommunityInvite();
@@ -61,7 +56,9 @@ export function SettingsSidebar({
   }, [category]);
 
   const item = (entry: SettingsCategory) => {
-    const Icon = CATEGORY_ICONS[entry];
+    const plugin = pluginPages.find((item) => item.category === entry);
+    const Icon = plugin ? pluginLineIcon(plugin.id, plugin.external?.manifest.panel?.icon) : CATEGORY_ICONS[entry] ?? Puzzle;
+    const label = categoryTitle(entry);
     const isActive = entry === category;
     return (
       <li key={entry}>
@@ -77,7 +74,7 @@ export function SettingsSidebar({
           }}
         >
           <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-          <span>{text[entry]}</span>
+          <span>{label}</span>
           {entry === "about" && community.pending && <span className="settings-sidebar__dot" role="img" aria-label={t.settings.project.communityNew} />}
         </button>
       </li>

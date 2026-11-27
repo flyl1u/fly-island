@@ -8,7 +8,8 @@ export function prepareBatteryTour(query: URLSearchParams) {
   if (!query.has("battery")) return {};
   const installed: unknown = JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]");
   localStorage.setItem(NATIVE_PLUGINS_KEY, JSON.stringify([...(Array.isArray(installed) ? installed : []), "battery"]));
-  return { batteryDisplayMode: query.get("batteryDisplay"), batteryReadoutStyle: query.get("batteryStyle") };
+  return { batteryDisplayMode: query.get("batteryDisplay"), batteryReadoutStyle: query.get("batteryStyle"),
+    ...(query.has("batteryAuto") ? { collapsedAutoWidth: true, collapsedAutoWidthMin: 160, collapsedAutoWidthMax: 720 } : {}) };
 }
 
 const FULL_MWH = 50_400;
@@ -124,16 +125,30 @@ export async function runBatteryTour(
       && !readout().hasAttribute("data-runtime-flow"),
     "Only a low battery changes colour; an ordinary discharge keeps the island's text colour");
 
+    // Let native-width motion and status-slot presence settle before reading their geometry.
+    const settleWidth = async () => {
+      for (let index = 0, stable = 0, previous = -1; index < 30; index++) {
+        await settle(80);
+        const width = island().getBoundingClientRect().width;
+        stable = Math.abs(width - previous) < 0.1 ? stable + 1 : 0;
+        if (stable >= 3) return;
+        previous = width;
+      }
+    };
+    await settleWidth();
     // The island's width with the slot and without it.
     const withSlot = { island: island().getBoundingClientRect().width, text: textWidth() };
     await act(async () => setNativePluginInstalled("battery", false));
-    await settle(600);
+    await settleWidth();
     const without = { island: island().getBoundingClientRect().width, text: textWidth() };
     await act(async () => setNativePluginInstalled("battery", true));
-    await settle(600);
-    check(!!slot() && withSlot.island > without.island && withSlot.text >= without.text - 4
-      && slot()!.getBoundingClientRect().right <= island().getBoundingClientRect().right,
-    `The island grows for the slot (${without.island} to ${withSlot.island}px) and the text keeps its room (${without.text} to ${withSlot.text}px)`);
+    await settleWidth();
+    const manual = query.has("notch");
+    check(!!slot() && (manual ? Math.abs(withSlot.island - without.island) < 2 : withSlot.island >= without.island - 2)
+      && withSlot.text > 0 && slot()!.getBoundingClientRect().right <= island().getBoundingClientRect().right,
+    `The slot fits the ${manual ? "fixed" : "automatic"} island (${without.island} to ${withSlot.island}px)`);
+    if (query.has("batteryAuto")) check(withSlot.island > without.island + 20 && withSlot.text >= without.text - 4,
+      "Automatic width measures the battery slot and keeps room for the text");
 
     if (charging || draining) {
       check(readout().hasAttribute("data-charging") && layers().every((layer) => layer.querySelector("svg")),

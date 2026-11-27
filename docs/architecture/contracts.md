@@ -32,6 +32,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 `fly-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
 
+`fly-island-settings` 的空闲文字字段（2026-11）：`idleText` 默认 `""`（去首尾空白、换行变空格、最多 40 个字符，非字符串视为空；空则沿用 `fly-island`），`todoPendingDisplay` 默认 `pendingCount`（`pendingCount` / `idleText`，其余值回退）。旧记录无这两个字段时行为不变：`showTitle` 仍控制 `fly-island` 标题，`showIdleTodoCount` 仍控制剩余数量；自定义 `idleText` 非空时，只在岛上没有别的内容时显示（不依赖 `showTitle`）；`todoPendingDisplay=idleText` 时，"有待办但没开始"一行显示空闲文字（空则 `fly-island`）而不是剩余数量。
+
+
 待办并行状态保存到 `fly-island-active-todos`（去重的字符串 ID 数组，首项为主任务）和 `fly-island-todo-timers`（独立计时对象数组 `{ todoId, endsAt, durationMinutes, notified }[]`，每项 ID 唯一）。首次读取若新键缺失、JSON 损坏或根类型错误，则从旧 `fly-island-active-todo` 字符串和 `fly-island-todo-timer` 单对象兼容读取。新键中的空数组表示已停止。非法数组项忽略，通知标记缺失按 false。
 
 旧 `fly-island-active-todo` 同步主任务 ID，旧 `fly-island-todo-timer` 同步主任务的计时对象。轮换开启时，新增活动任务按开始顺序追加，岛屿保持展开。轮换关闭时，保留主任务和其他有计时的任务。开始任务或再来一轮时，该任务成为主任务，岛屿收起。停止、完成或删除只清除对应任务的计时。关闭番茄钟清空全部计时，活动任务仍遵循轮换设置。每轮首次提示前写入 `notified: true`，同一次检查中多项到时一起标记、合响一次。跨天保留所有计时中或已到时待处理任务的 ID 与结束时间。
@@ -75,10 +78,11 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `fly-island-qq-mail-remote-images`（2026-11-11 起不再读写：邮件里的远程图片总是加载，已存的值留在原处不删） | 无 |
 | `fly-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `fly-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
+| `fly-island-telegram-notifications-enabled`（`boolean`：Telegram 插件的接收开关，缺省为关；只在插件已安装且启用时生效，主窗口据此启停原生监听，卸载不清除此偏好） | `features/messages/telegram/storage.ts` |
 | `fly-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `fly-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
 | `fly-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
-| `fly-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
+| `fly-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `telegram` / `cursor` / `kimiCode` / `codebuddy` / `zcode` / `hermes` / `clockWeather`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
 | `fly-island-native-plugins-disabled`（`string[]`：手动关闭的已安装内置插件 id；缺失或损坏时按空数组处理，未知和未安装 id 不生效；卸载或重装时清除对应标记） | `features/plugins/native/storage.ts` |
 | `fly-island-clock-weather`（`{ showClock, showWeather, location: { name, latitude, longitude } | null }`；两个开关缺省为 true，非法位置为 null，坐标必须为有限数且在地理范围内；重装打开两个显示开关，设置更新从最新记录合并，选中有效城市或主动定位才更新城市） | `features/weather/storage.ts` |
 | `fly-island-weather-cache`（`{ latitude, longitude, temperature, code, observedAt, fetchedAt }`；temperature 为摄氏数值，code 为 WMO 整数，时间均为 Unix 毫秒；只显示坐标匹配且观测/获取均未超过三小时的数据） | `features/weather/storage.ts` |
@@ -133,13 +137,14 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `island-top-attachment-changed`（载荷为 `bool`：岛屿是否贴住所在显示器顶边） | `island/top_edge.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-hover-changed`（载荷为 `bool`：光标是否在岛屿形状内，供悬停展开使用） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-cursor-moved`（载荷 `{ x, y }`：光标在主窗口 CSS 像素中的位置，窗口外也有；只在 `set_island_cursor_tracking(true)` 后、光标移动时发，约 28 次/秒，供中心图案的眼睛跟随） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
-| `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
+| `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor, browserOnIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器、前台是否是浏览器且在岛所在的显示器，供游戏模式和浏览器自动贴边使用） | `system/fullscreen.rs` | 广播 |
 | `media-session-changed`（无载荷：某个媒体会话的时间线、播放状态或歌曲变了，或会话增减；主窗口收到后立即重读 `get_media_state`。2026-11-11 起） | `media_control/watcher.rs` | 广播 |
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
 | `clipboard-history-shortcut-status`（载荷为字符串或 `null`：剪贴板快捷键注册失败的原因，成功或关闭时为 `null`；最近一次结果也可用 `get_clipboard_shortcut_error` 读取） | `clipboard_history/hotkey.rs` | 广播 |
 | `qq-mail-changed` | `mail/service.rs`（常量在 `mod.rs`） | 广播 |
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
+| `telegram-notifications-changed` | `telegram_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
 | `office-im-changed`（载荷 `OfficeImSnapshot`：`revision` 与 `dingtalk` / `feishu` / `wecom` 各自的 `enabled`、`status`、`pending`、`lastAttentionAt`、`error`） | `office_im/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
@@ -151,6 +156,11 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `agent-approval-closed`（载荷 `{ id, reason }`，`reason` 为 `decided` / `timeout` / `disconnected` / `handedBack` / `shutdown`） | `agent_approval/mod.rs` | 广播 |
 
 ## 其他
+
+- 诊断包（2026-11-25）：`export_diagnostic_bundle({ title, settings })` 先打开 Windows 原生 ZIP 保存对话框；成功返回所选路径，取消返回 `null`。开启/关闭文件日志均可导出，不修改日志开关或应用设置。
+
+- 结构化诊断（2026-11-25）：新增 `record_diagnostic({ diagnostic: { category, name, fields } })`；仅记录允许的事件名及字段，关闭文件日志时只保留在内存。既有日志命令、事件、设置及磁盘路径不变。内置命令不需要新增插件 ACL。
+- 浏览器贴边诊断：`island / browser_auto_tuck` 只在决策变化时记录稳定的 `reason`，包括贴边、接管、阻止、等待悬停、恢复与禁用；`fullscreen / foreground` 增加布尔字段 `browser` 和 `browser_on_island_monitor`。不记录注册路径或用户内容，无新增 IPC 或设置字段。
 
 - 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `fly-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。
 - 新增原生命令 `read_todo_markdown({ directory, date })`，返回 `{ filePath, version, modifiedAt, content }`：缺失文件后三项为 null；时间为 Unix 毫秒，version 为内容 SHA-256 与文件修改时间组成的不透明字符串。只允许绝对目录与真实 `YYYY-MM-DD`，只读取 UTF-8 且不超过 4 MiB 的每日文件。
@@ -164,6 +174,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - DSH（issue #51）：新增只读命令 `get_dsh_usage()`，返回 `null` 或 `{ updatedAt, available, wallets: [{ currency, total, granted, toppedUp }], source: "dshApi" | "dshAccount" }`，金额为十进制字符串。`list_agent_sessions` 的 `provider` 新增 `dsh`；`focus_agent_window`、`agent_sessions_in_front` 接受 `dsh`，既有参数和返回结构不变。无新增事件，无新增 localStorage key；`fly-island-settings` 兼容新增 `agentShowDsh`（缺失时为 true）。`agent-status.json`、钩子安装状态仍只含 Claude/Codex。该命令是自有 Rust 命令，不增加 Tauri 插件/核心权限；现有 capabilities 足够。
 - WorkBuddy 使用 `open_workbuddy_login()`、`get_workbuddy_usage({ refreshNow?, cachedOnly? })` 和 `disconnect_workbuddy()`。读命令及 `workbuddy-usage-changed` 事件的状态为 `signedOut`、`loginRequired`、`ready`、`unavailable` 或 `connected`。只有 `connected` 带 `usage: { remaining, total, updatedAt }`，金额为数值，时间为 Unix 毫秒。事件发到 `main` 和 `settings`。远程 `workbuddy-sign-in` 窗口在本地 capability 之外。
+- WorkBuddy 官方登录凭据另存在 Windows 凭据管理器 `com.flyisland.app.workbuddy-web` 的 `oauth-login`，与原 Cookie 条目并存；主动断开清理两套凭据。`unavailable` 可带 `reason: "curlUnavailable"`，原有状态、参数和存储不变。
 
 - 展开岛屿的按钮样式保存在 `fly-island-settings.pageButtonStyle`，支持 `capsule`（胶囊）、`icon`（图标）和 `iconLabel`（图标加文字）。缺失或未知值使用默认值 `icon`。旧版本读取 `iconLabel` 时也使用默认图标样式。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
@@ -172,6 +183,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - `clear_wechat_reminders()`（2026-11-13）清除岛内微信镜像：`pending=false`、清空 `messages`、`revision+1`，返回 `ReminderSnapshot` 并沿用 `wechat-reminder-changed` 推送；发给 settings 的快照仍剥除消息。不会操作微信客户端的已读状态或偏好。为本应用命令，不使用额外插件/核心权限；现有 `capabilities/default.json` 的本地窗口范围足够。
 - `dismiss_wechat_conversation(messageId)`（2026-11-14）清掉 `messageId` 所在会话（按会话 key）的全部摘要，保留其他会话；最新一次提醒属于该会话时同时 `pending=false`，`lastAttentionAt` 不变。返回 `ReminderSnapshot`，沿用 `wechat-reminder-changed` 推送；找不到 ID 时原样返回。前端在打开会话成功后调用。
 - `dismiss_qq_contact(title)`（2026-11-14）清掉通知标题等于 `title`（联系人或群名）的全部 QQ 通知，保留其他人，返回 `QQNotificationSnapshot` 并沿用 `qq-notifications-changed` 推送。两条命令都只改内存中的镜像，不新增 localStorage key 或事件，不需要额外权限。
+- `get_telegram_notification_state()`、`set_telegram_notifications_enabled(enabled)` 和 `open_telegram_notification(id)` 返回 Telegram 快照。消息行包含 `id`、`title`、`body`、`createdAt`。打开命令使用应用内的消息 ID。TG 确认收到对话激活请求后，`open_telegram_notification` 按 Windows 通知 ID 移除原始通知，之后才从岛内移除对应消息。`open_telegram()` 打开 TG 桌面应用。`request_telegram_notification_access()` 和 `open_telegram_notification_settings()` 分别请求 Windows 通知读取权限和打开该权限的系统设置。Telegram 是插件市场内置插件（id `telegram`）：没装时消息页没有标签、原生监听保持关闭；主窗口按「已安装且启用且接收开关打开」调用 `set_telegram_notifications_enabled`，原生默认关闭。事件 `telegram-notifications-changed` 的载荷为 `{ snapshot, newestId }`。
 - `open_wechat` / `open_wechat_conversation` 失败时返回错误码 `wechat-open:not-installed`、`wechat-open:no-main-window`、`wechat-open:restore-failed`、`wechat-open:launch-failed`，由前端翻译成中英文提示；微信未运行时这两个命令会尝试启动它（会话命令随后返回 `false`）。
 - 应用数据目录的 `wechat-accessibility.json` 记录 `{ pid, started_at }`，用于重新校验进程并恢复岛屿临时开启的微信辅助功能标志。
 
@@ -204,6 +216,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - Agent 页显示方式（2026-11-07 起）：设置项 `agentSessionView`（`list` / `cards` / `compact`，默认 `list`）、`agentArchiveMotion`（`slide` / `dissolve`，默认 `slide`）、`agentCardEffects`（`off` / `sparkle` / `gradient`，默认 `off`）；`AgentSessionSummary.contextTokens`（最近一次模型调用的上下文 tokens，Claude Code 取 usage 的输入、缓存读写与输出之和，Codex 取 `token_count` 的 `last_token_usage.total_tokens`；不知道时为 null）。
 - 回复状态标记（2026-11-08 起换位置）：写在 Claude 配置目录（`CLAUDE_CONFIG_DIR`，默认 `~/.claude`）下的 `rules/fly-island-reply-marker.md`，块标记 `<!-- fly-island: reply marker v2 -->`；关掉时只删除含这个标记的文件。v1 写在 `CLAUDE.md` 里的块在打开或关掉时移除，`CLAUDE.md` 的其他内容不动；软链文件一律不写。
 - Agent 页排列（2026-11-08 起）：设置项 `agentSessionSort`（`status` / `recent` / `firstSeen`，默认 `status`；旧数据没有这个字段时按 `status`，会改变升级前的顺序）、`agentSessionGroup`（`computer` / `project` / `none`，默认 `computer`）；`agentHostDisplay` 的默认值改为 `icon`（已保存的值不变）。
+- Antigravity 会话与额度（插件市场可选安装，作者 lilipeng0615-cyber）：`list_agent_sessions` 的 `native` 接受 `"antigravity"`，返回的 `provider` 为 `antigravity`；会话摘要来自 `~/.gemini/antigravity`、`antigravity-cli`、`antigravity-ide` 的 `conversation_summaries.db`（主库和 `-wal` 复制到系统临时目录下本进程新建的 `fly-island-sqlite-*` 文件夹后读副本、读完即删，原文件不加锁、不写入、目录里不建 sidecar；大小和修改时间未变时不重读；2026-11-26 前用 `immutable=1`，看不到 WAL 中的新写入），`brain/<id>/.system_generated/logs/transcript.jsonl` 只读末尾 256 KB。新增只读命令 `get_antigravity_usage()`：只连 `127.0.0.1`，端口须由 Antigravity 语言服务器进程监听，禁用代理和重定向，3 秒超时，失败返回 `null`；返回 `AgentUsage`，`source` 为 `"antigravity"`，额度按模型放在 `models`，`five_hour`/`seven_day` 为 `null`。`fly-island-native-plugins` 取值新增 `antigravity`；`fly-island-settings` 兼容新增 `agentShowAntigravity`（缺失时为 true，仅在装了插件时生效），`agentQuotaSources` 可选 `antigravity`。未安装或开关关闭时不读文件、不发请求。
 
 - 待办设置（2026-11-12）：现有 `fly-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `fly-island-todo-timer`，保留进行中 ID 和各项时长。
 - 待办各项时长（2026-11-12）：新增 `fly-island-todo-durations`（`{ [todoId]: 分钟 }`），取代所有待办共用的 `fly-island-todo-duration`。不迁移旧值：用户明确要求每项待办独立，新待办都从 15 分钟起；旧 key 留在原处不读取。直接点“开始”不再启动倒计时，只有怀表设置里的开始才计时。
@@ -240,9 +253,12 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - 新目录：`src-tauri/src/plugin_host/`、`src/features/plugins/`、`plugins/<id>/`（独立 crate）、`plugins/sdk/`、`docs/plugins/`。
 - 命令：`get_plugins()`、`get_plugins_index()`、`install_plugin(id)`、`set_plugin_enabled(id, enabled)`、`uninstall_plugin(id)`、`set_plugin_setting(id, key, value)`、`run_plugin_action(id, action)`、`configure_plugins(developerMode, indexUrl)`、`load_development_plugin(directory)`。
+- 安装进度（2026-11-26）：`install_plugin` 新增可选参数 `enable: boolean`（缺省 false，与旧版一样安装后保持停用或原状态；true 时在同一个任务里启用）。新增命令 `get_plugin_installs()`，返回进行中和失败未重试的任务 `{ id, phase, downloaded, total, error }[]`；新增事件 `plugin-install-progress`（广播，载荷为同一结构）。`phase` 为 `downloading` / `verifying` / `installing` / `uninstalling` / `done` / `failed`；`total` 为索引里的包大小（读到索引前为 0）；下载阶段最多每 200ms 推一次；`error` 仅 failed 时为错误码。没有沿用 `plugins-changed`：岛屿窗口也监听它并重读快照，高频进度会带着整个岛屿重渲染。同一插件已有安装或卸载任务时，`install_plugin` / `uninstall_plugin` 立即返回错误 `plugin_install_in_progress`。下载临时文件为应用数据目录 `plugins/.download-<id>.zip`，结束即删。
+- 取消安装（2026-11-26）：新增命令 `cancel_plugin_install(id) -> bool`。只在 `downloading` / `verifying` 阶段接受并返回 `true`；进入 `installing`、正在卸载或没有任务时返回 `false`（解压和替换很短且可回滚，不中途打断）。接受后 `install_plugin` 返回错误码 `plugin_install_cancelled`，删除下载临时文件，不建 staging 目录，已安装的旧版本不动。`plugin-install-progress` 新增 `phase: "cancelled"`：发一次后任务从列表移除，不算失败、可以马上重装。单列一个 phase 而不沿用 `done`，是为了别的窗口不把它当成装好了。
 - 事件：`plugins-changed`（无敏感数据；前端重新 get_plugins）。stdio RPC：`initialize`、`action`、`publish`，停止时可发送无 id 的可选 `shutdown` 通知；旧 v1 插件仍由宿主限时结束，完整 schema 见 `docs/plugins/api.md`。
-- 面板页（2026-11-16 新增，向后兼容）：manifest 可声明 `permissions/contributes` 的 `panel` 与 `panel.icon`（`battery`、`heart-pulse`、`activity`、`timer`、`gauge`、`puzzle`）；`publish` 多一个可缺省的 `panel`（`headline`、`note`、最多 16 行 `rows`、最多 4 个 manifest 已声明动作 id、`attention`），行含 `percent`（0–100）与 `countdownTo`（Unix 毫秒，宿主本地倒数）。`get_plugins()` 的 `live.<id>` 相应多 `panel`（可为 null）。没有声明的旧插件不受影响；不认识的 `panel` 字段或动作会让该次 publish 被拒。宿主只在快照确实变化时发 `plugins-changed`，重复 publish 不再触发前端重读。
+- 面板页（2026-11-16 新增，向后兼容）：manifest 可声明 `permissions/contributes` 的 `panel` 与 `panel.icon`（`battery`、`heart-pulse`、`activity`、`timer`、`gauge`、`puzzle`）；`publish` 多一个可缺省的 `panel`（`headline`、`note`、最多 16 行 `rows`、最多 4 个 manifest 已声明动作 id、可选的 `islandActions`（`actions` 子集，岛内页面只显示这些，省略或 null 显示全部）、`attention`），行含 `percent`（0–100）与 `countdownTo`（Unix 毫秒，宿主本地倒数），两者可同时给出（期限配一条剩余比例）。`get_plugins()` 的 `live.<id>` 相应多 `panel`（可为 null）。没有声明的旧插件不受影响；不认识的 `panel` 字段或动作会让该次 publish 被拒。宿主只在快照确实变化时发 `plugins-changed`，重复 publish 不再触发前端重读。
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
+- 官方索引移至 `releases/download/plugins-channel/plugins-index.json`。`get_plugins_index`、`install_plugin` 和 `set_plugin_enabled` 的参数及返回类型不变；插件市场识别错误字符串 `plugin_index_unavailable`、`plugin_index_incompatible`、`plugin_not_listed`、`plugin_package_download_failed`、`plugin_package_integrity_failed`、`plugin_package_invalid`、`plugin_install_failed`、`plugin_start_failed`，不显示原始诊断。2026-11-26 起下载与卸载细分新增 `plugin_download_timeout`、`plugin_download_interrupted`、`plugin_download_http_client`、`plugin_download_http_server`、`plugin_disk_full`、`plugin_install_in_progress`、`plugin_uninstall_failed`；`plugin_package_download_failed` 保留给其他下载失败（如连不上）。卸载失败时 `uninstall_plugin` 的返回值仍是原始原因，进度事件里的 `error` 为 `plugin_uninstall_failed`。
 - v3.2.6（2026-11-18，第三轮手测后）：`fly-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `fly-island-todos`。
 
 ## 时间与天气命令（2026-11-20）
@@ -251,15 +267,17 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - `locate_weather({ language }) → { location: { name, latitude, longitude }, source: "windows" | "ip" }`：只在用户点击时同时请求 Windows Geolocator 和 `ipwho.is` 网络粗定位；Windows 有坐标时用 Nominatim 反向解析城市，否则用 `ipwho.is` 返回的本地化城市名。坐标不写入 Rust 文件或独立位置记录，错误由前端显示可操作提示。
 - `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。天气与地理编码命令异步请求固定 HTTPS 服务，不新增事件、Tauri 权限或原生持久化文件。
 
-- 护眼插件（2026-11-17）：id `eye-care`，runtime `eye-care.exe`，permissions `panel` / `desktop-windows`，panel icon `heart-pulse`；设置 key `period`（分钟字符串）、`rest-minutes`（整数分钟字符串，1–60）、`idle`（分钟字符串）、`allow-skip`（布尔）、`language`（`zh-CN` / `en`）；动作 `rest_now`。升级时将旧 `rest` 秒数（包括旧清单默认值）换算为分钟后向上取整，旧小数分钟同样向上取整为至少 1 分钟；插件兼容读取旧 key，新 key 优先。三个时长以 manifest 的 `number` 类型（必填 min / max，保存值仍是字符串）声明并自动保存，其他设置类型不变。复用 API v1；既有宿主命令、事件和 Tauri 窗口 label 保持兼容，0.2.0 的新增窗口契约见下文。
+- 护眼插件（2026-11-17）：id `eye-care`，runtime `eye-care.exe`，permissions `panel` / `desktop-windows`，panel icon `heart-pulse`；设置 key `period`（分钟字符串）、`rest-minutes`（整数分钟字符串，1–60）、`idle`（分钟字符串）、`allow-skip`（布尔）、`pause-fullscreen`（布尔，默认 true，2026-11-26 新增）、`language`（`zh-CN` / `en`）；动作 `rest_now`。升级时将旧 `rest` 秒数（包括旧清单默认值）换算为分钟后向上取整，旧小数分钟同样向上取整为至少 1 分钟；插件兼容读取旧 key，新 key 优先。三个时长以 manifest 的 `number` 类型（必填 min / max，保存值仍是字符串）声明并自动保存，其他设置类型不变。复用 API v1；既有宿主命令、事件和 Tauri 窗口 label 保持兼容，0.2.0 的新增窗口契约见下文。
 
 ## 护眼宿主窗口（0.2.0，2026-11-19）
 
 - 新增按需窗口标签 `eye-care-rest-<serial>-<screen>` 与页面入口 `?window=eye-care`；不改旧的四个窗口。
-- 新增命令 `get_eye_care_break()`、`show_eye_care_break_window()`，仅操作已登记的休息窗口；事件 `eye-care-break-changed` 为可空的 `{deadline, canSnooze, canSkip, language}`。独立 capability 只允许休息窗口监听/取消监听事件，不授予 opener/updater。
+- 新增命令 `get_eye_care_break()`、`show_eye_care_break_window()`，仅操作已登记的休息窗口；事件 `eye-care-break-changed` 为可空的 `{deadline, canSnooze, canSkip, percent, language}`（`percent` 为 0–100 的剩余比例，取自面板 timer 行，插件未上报时为 `null`，2026-11-26 新增）。独立 capability 只允许休息窗口监听/取消监听事件，不授予 opener/updater。
 - 插件 id、既有设置 key 与计时迁移不变，manifest 新增 `snooze_10/15/20/25/30` 和 `skip` 动作；状态机仍校验阶段、一次推迟和跳过权限。`rest_now` 保留。
 - 新宿主仅为该受支持清单的初始化 settings 注入保留键 `_host-eye-care-windows: true`；该键不写入注册文件，也不是用户设置。旧宿主缺少标记时，0.2.0 显示升级说明，不假装已覆盖显示器；旧插件清单不会触发宿主窗口，避免双重遮罩。
 
 
-- 设备电量与音频使用固定插件 id device-battery。命令 device_battery_read(progress?)、device_battery_audio(speakerId, headsetId, target?) 仅对已启用的市场包生效，调用端不提供可执行文件路径。音频绑定存放于 fly-island-device-battery 的 speakerId / headsetId。
+- 设备电量与音频使用固定插件 id device-battery。命令 device_battery_read(progress?)、device_battery_audio(speakerId, headsetId, target?) 仅对已启用的市场包生效，调用端不提供可执行文件路径。音频绑定存放于 fly-island-device-battery 的 speakerId / headsetId。宿主要求包内有 device-battery-bridge.exe、engine/runtime/python.exe、engine/server.py；0.2.0 起 python.exe 是 Rust 引擎、server.py 是占位文件。宿主以 `-I -B <server.py>` 启动引擎（引擎忽略这些参数），向标准输入写一行 poll 命令，读取至多 96 行 complete:false 与一行 complete:true 的 schema 2 JSON。
 - 日历标记使用现有 fly-island-native-plugins / fly-island-native-plugins-disabled 的 calendarMarks id。
+- CodeBuddy 会话来源（插件市场可选安装，作者 yiumanlenong）：`list_agent_sessions` 的 `native` 新增 `"codebuddy"`，返回的 `provider` 新增 `codebuddy`；`focus_agent_window` 沿用现有命令，对 `codebuddy` 通过 `~/.codebuddy/sessions` 登记的进程找终端窗口。只读 `~/.codebuddy/projects`、`~/.codebuddy/sessions`，拒绝重解析点与超大文件，最多两秒读一次，未安装或开关关闭时不读取。`fly-island-settings` 兼容新增 `agentShowCodeBuddy`（缺失时为 true，仅在装了插件时生效）。无新增命令、事件或 localStorage key。
+- 剪贴板文件图标（新增只读命令）：`read_clipboard_history_file_icon({ id: string })` 返回该记录第一个文件的 Explorer 图标（PNG data URL），文件不存在、记录没有文件或系统没有图标时返回 `null`；图标不写入 `clipboard-history.json`，缓存与文件中转共用 `file_icons.rs`。无新增事件、localStorage key 或设置字段。

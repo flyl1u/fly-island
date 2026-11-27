@@ -1,18 +1,20 @@
 import { isUpdateTodo } from "../../features/todos/updateTodo";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useClockWeather, useCurrentWeather } from "../../features/weather";
-import { useCollapsedStatusWidth } from "./useCollapsedStatusWidth";
-import { clockWeatherWidth } from "../../features/weather";
-import { batteryIslandWidth } from "../../features/battery/slotWidth";
-import { COLLAPSED_PADDING } from "../../features/appearance/settingsLimits";
-import type { IslandSettings } from "../../features/appearance/types";
+import { useCollapsedChrome } from "./useCollapsedChrome";
+import { fitClockWeather } from "../../features/weather";
+import { idleTextDisplay } from "../../features/appearance/idleText";
+import type { CollapsedItem, IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
 import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
-import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
-import { pickCollapsedItem } from "./collapsedItem";
+import { getCollapsedTextUnits } from "../../utils/text";
+import { collapsedWidthTarget, type CollapsedWidthContent } from "./collapsedWidth";
+import { nextCollapsedItem, resolveCollapsedItem } from "./collapsedItem";
 import { selectRotatingTodos } from "../../features/todos/todoRotation";
+import type { RunningAgent } from "../../features/agent-status/session";
+import { useAgentPeek } from "./useAgentPeek";
 import type { TodoRotationDisplay } from "./CollapsedTodoContent";
 
 // Stands in for the agent icon (16px plus gap) when sizing the island for a session title.
@@ -20,8 +22,11 @@ const AGENT_ICON_TEXT = "MM";
 // Lyric lines come and go every few seconds; the island keeps its widest size for them rather
 // than resizing with each line.
 const LYRICS_WIDTH_TEXT = "♪".repeat(24);
+const NO_RUNNING_AGENTS: readonly RunningAgent[] = [];
 // The song's cover (22px) and the gap after it.
 const COVER_WIDTH = 30;
+// An alert's icon and the spacing round its parts.
+const ALERT_CHROME = 30;
 // A countdown pill beside the todo title: gap, padding and about 7px a digit (12px a CJK glyph).
 function timerPillWidth(text: string, fontScale: number) {
   return 20 + fontScale * [...text].reduce((width, char) => width + (/[\u2E80-\uFFFF]/.test(char) ? 12 : 7), 0);
@@ -32,7 +37,8 @@ function timerPillWidth(text: string, fontScale: number) {
  * line while a song plays (`lyricsPlaying`), or for todos the active (or rotating) todo title,
  * otherwise the pending count; whichever comes first in Settings → Appearance → Collapsed island
  * of those that have something to show (`collapsedItem`); a todo only claims its rank once one is
- * started (pickCollapsedItem). Also the width that needs, with room
+ * started (pickCollapsedItem). The wheel can choose another; an agent task that starts then shows
+ * for a moment over that choice (`peekedAgent`, useAgentPeek). Also the width that needs, with room
  * for the song's cover beside the lyric line when `coverWanted`.
  */
 export function useCollapsedTodo(
@@ -41,7 +47,12 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers, hasBattery = false }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[]; hasBattery?: boolean } = {},
+  { lyricsPlaying = false, lyricsAvailable = false, agentActive = false, coverWanted = false, timer = null, activeIds, timers, notice = null, alertText = null, runningAgents = NO_RUNNING_AGENTS, agentPeekAllowed = false }: {
+    lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[];
+    lyricsAvailable?: boolean; agentActive?: boolean;
+    notice?: CollapsedWidthContent | null; alertText?: string | null;
+    runningAgents?: readonly RunningAgent[]; agentPeekAllowed?: boolean;
+  } = {},
 ) {
   const t = useTranslation();
   const clockWeather = useClockWeather();
@@ -49,8 +60,9 @@ export function useCollapsedTodo(
   const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
-  const batteryOn = hasBattery && !settings.collapsedHidden.includes("battery");
-  const statusMinimum = useCollapsedStatusWidth(clockOn || weather !== null || batteryOn, settings.islandFontPercent / 100);
+  // Only the automatic width is measured; a manual width is the whole island.
+  const chrome = useCollapsedChrome(settings.collapsedAutoWidth, settings.islandFontPercent / 100,
+    `${settings.fontFamily}:${settings.localFontFamily}`);
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -88,14 +100,35 @@ export function useCollapsedTodo(
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
     ? pendingTodoCount
     : null;
-  const collapsedItem = timers?.length || timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
+  const available = {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
-  }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
-  const baseIslandWidth = useMemo(() => {
-    if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
-    const fontScale = settings.islandFontPercent / 100;
+  };
+  const canSwitchTo = { ...available, agent: available.agent && agentActive, lyrics: lyricsPlaying && lyricsAvailable };
+  const [choice, setChoice] = useState<CollapsedItem | null>(null);
+  const selection = resolveCollapsedItem(settings.collapsedPriority, available, canSwitchTo, choice,
+    activeTodoId !== null && pendingTodoIds.includes(activeTodoId), Boolean(timers?.length || timer));
+  if (choice !== selection.choice) setChoice(selection.choice);
+  const { peekedAgent, cancelAgentPeek } = useAgentPeek(runningAgents, {
+    allowed: agentPeekAllowed && settings.showCollapsedText && alertText === null,
+    overChoice: selection.choice !== null && selection.choice !== "agent",
+  });
+  const collapsedItem = peekedAgent ? "agent" : selection.item;
+  const shownAgentTitle = peekedAgent?.title ?? agentTitle;
+  const switchCollapsedItem = (direction: 1 | -1) => {
+    if (!settings.showCollapsedText) return;
+    // The wheel ends a peek and goes on from the user's own choice.
+    cancelAgentPeek();
+    const next = nextCollapsedItem(settings.collapsedPriority, canSwitchTo, selection.item, direction);
+    if (next !== null) setChoice(next);
+  };
+  const idleDisplay = idleTextDisplay(settings, {
+    itemShown: collapsedItem !== null,
+    pendingLine: collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null,
+  });
+  const fontScale = settings.islandFontPercent / 100;
+  const content = useMemo(() => {
     // A fixed width for the whole round; ticking digits never resize the native window.
     const visibleTimers = rotating && timers ? timers : collapsedTimer ? [collapsedTimer] : [];
     const widestTimer = visibleTimers.reduce<string | null>((widest, round) => {
@@ -103,25 +136,31 @@ export function useCollapsedTodo(
       return !widest || text.length > widest.length ? text : widest;
     }, null);
     const todoText = rotating && rotationTodos.length
-      ? rotationTodos.reduce((widest, todo) => getCollapsedIslandWidth(todo.title, 0, fontScale) > getCollapsedIslandWidth(widest, 0, fontScale) ? todo.title : widest, "")
-      : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
+      ? rotationTodos.reduce((widest, todo) => getCollapsedTextUnits(todo.title) > getCollapsedTextUnits(widest) ? todo.title : widest, "")
+      : collapsedTaskTitle ?? (collapsedTodoCount !== null ? idleDisplay.pending ?? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
-      ? AGENT_ICON_TEXT + agentTitle
+      ? AGENT_ICON_TEXT + shownAgentTitle
       : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
-    const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
-    // The automatic widths were set with 18px each side: more side space adds to the width, less
-    // keeps it and gives the text the room.
-    const sides = 2 * (settings.collapsedPadding - COLLAPSED_PADDING.default);
-    return alignCollapsedIslandWidth(
-      getCollapsedIslandWidth(text, sides + (coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
-        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0), fontScale),
-      window.innerWidth,
-      window.devicePixelRatio,
-    );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedPadding, settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, collapsedTimer, timers, rotating, rotationTodos]);
+    return {
+      text: settings.showCollapsedText ? itemText ?? "" : "",
+      brand: settings.showCollapsedText ? idleDisplay.brand : null,
+      fixedText: collapsedItem === "lyrics",
+      extraWidth: widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0,
+    };
+  }, [shownAgentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, fontScale, settings.showCollapsedText,
+    idleDisplay.brand, idleDisplay.pending, t, collapsedTimer, timers, rotating, rotationTodos]);
 
-  const fontScale = settings.islandFontPercent / 100;
-  const collapsedIslandWidth = clockWeatherWidth(batteryIslandWidth(baseIslandWidth, batteryOn, fontScale, statusMinimum), clockOn, weather !== null, fontScale, statusMinimum);
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
+  const statusFit = fitClockWeather(settings.collapsedAutoWidth ? settings.collapsedAutoWidthMax : settings.collapsedWidth,
+    clockOn, weather !== null, fontScale);
+  const coverWidth = coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH : 0;
+  const replacement = notice ?? (alertText === null ? null : { text: alertText, extraWidth: ALERT_CHROME });
+  const collapsedIslandWidth = collapsedWidthTarget({
+    manual: settings.collapsedWidth,
+    range: settings.collapsedAutoWidth ? { min: settings.collapsedAutoWidthMin, max: settings.collapsedAutoWidthMax } : null,
+    content: { ...content, extraWidth: content.extraWidth + coverWidth },
+    preview: replacement && { ...replacement, extraWidth: replacement.extraWidth + coverWidth },
+    fontScale, chrome: chrome.width, measure: chrome.measure,
+    stageWidth: window.innerWidth, devicePixelRatio: window.devicePixelRatio,
+  });
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, peekedAgent, switchCollapsedItem, collapsedIslandWidth, statusFit, idleDisplay, todoRotation, collapsedTimer };
 }

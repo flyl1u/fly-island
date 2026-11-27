@@ -1,10 +1,15 @@
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import { emit } from "@tauri-apps/api/event";
 import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
 import { SettingsSidebar } from "../../src/windows/settings/SettingsSidebar";
+import { PluginPageGroups } from "../../src/windows/settings/PluginSettingsGroup";
+import type { PlacedPlugin } from "../../src/features/plugins/placement";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
-import type { InstalledPlugin, PluginIndexEntry, PluginManifest } from "../../src/features/plugins/api";
+import { PLUGIN_PROGRESS_EVENT, type InstalledPlugin, type PluginIndexEntry, type PluginInstallProgress, type PluginManifest } from "../../src/features/plugins/api";
+import { checkInstallCancel, checkInstallProgress } from "./pluginInstallProgress";
+import { checkPluginAuthors } from "./pluginAuthors";
 import { PLUGIN_MARKET_ENABLED, PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { DISABLED_NATIVE_PLUGINS_KEY, NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
 import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
@@ -35,6 +40,11 @@ const requests: { resolve: (items: PluginIndexEntry[]) => void; reject: (reason:
 let resolveRegistry: (() => void) | undefined;
 let opened = "";
 let failOpen = false;
+let installFailure = "";
+let holdInstall = false;
+let finishInstall: (() => void) | undefined;
+let rejectInstall: ((reason: string) => void) | undefined;
+let hostJobs: PluginInstallProgress[] = [];
 const hostCalls: string[] = [];
 mockIPC((command, payload) => {
   hostCalls.push(command);
@@ -43,9 +53,17 @@ mockIPC((command, payload) => {
     ? snapshot()
     : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
   if (command === "install_plugin") {
-    registry.installed["eye-care"] = { ...eyeCare, enabled: false };
+    if (installFailure) throw installFailure;
+    const apply = () => { registry.installed["eye-care"] = { ...eyeCare, enabled: args.enable === true }; };
+    if (holdInstall) return new Promise((resolve, reject) => {
+      finishInstall = () => { apply(); hostJobs = []; resolve(null); };
+      rejectInstall = (reason) => { hostJobs = []; reject(reason); };
+    });
+    apply();
     return null;
   }
+  if (command === "get_plugin_installs") return structuredClone(hostJobs);
+  if (command === "cancel_plugin_install") { rejectInstall?.("plugin_install_cancelled"); return true; }
   if (command === "set_plugin_enabled") {
     registry.installed["eye-care"].enabled = Boolean(args.enabled);
     return null;
@@ -65,12 +83,16 @@ mockIPC((command, payload) => {
   return null;
 }, { shouldMockEvents: true });
 const messages: string[] = [];
+const openedSettings: PlacedPlugin[] = [];
 let latestSettings: IslandSettings = { ...DEFAULT_SETTINGS, agentShowCursor: false, agentShowZcode: false, agentQuotaSources: ["claudeCode"] };
 function Page() {
   const [settings, setSettings] = useState(latestSettings);
   return <>
     <SettingsSidebar category="plugins" onCategoryChange={() => {}} />
-    <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }} />
+    <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }}
+      onOpenSettings={(plugin) => { openedSettings.push(plugin); }} />
+    {/* The developer build also checks the number settings, on the page eye care declared. */}
+    {PLUGINS_ENABLED && <PluginPageGroups page="plugin:eye-care" />}
   </>;
 }
 function check(condition: unknown, label: string) {
@@ -94,6 +116,7 @@ try {
   } else {
     const market = TRANSLATIONS[locale].settings.plugins.market;
     check(cards.length === NATIVE_PLUGINS.length + PACKAGED_MARKET_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
+    await checkPluginAuthors(cards, market.items, market.authors, check);
     const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
     await act(async () => get.click());
     check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
@@ -115,6 +138,10 @@ try {
     await act(async () => weatherInstall().click());
     const toggle = weatherSwitch()!;
     const card = toggle.closest<HTMLElement>(".plugin-card")!;
+    const shownCards = () => [...document.querySelectorAll<HTMLElement>(".plugin-card")];
+    check(shownCards()[0] === card && shownCards().every((item, index, all) => index === 0
+      || !item.classList.contains("plugin-card--installed") || all[index - 1].classList.contains("plugin-card--installed")),
+      "Installed cards come first in the market");
     const visuals = [card.querySelector(".plugin-card__tile")!, card.querySelector(".plugin-card__check")!];
     check(toggle.checked && weatherSidebar() && !document.querySelector(`input[aria-label='${t.clockWeather.city}']`),
       "安装默认启用，天气设置只出现在独立栏目");
@@ -139,6 +166,7 @@ try {
 
     const fixture = document.getElementById("fixture")!;
     fixture.style.width = "168px";
+    await wait();
     const fixtureBox = fixture.getBoundingClientRect();
     const switchBox = weatherSwitch()!.getBoundingClientRect();
     const buttonBox = weatherRemove().getBoundingClientRect();
@@ -149,7 +177,7 @@ try {
     await act(async () => weatherRemove().click());
     const batteryName = market.items.battery.name;
     const batteryCard = cards.find((item) => item.querySelector(".plugin-card__name")?.textContent === batteryName)!;
-    check(batteryCard.querySelector(".native-plugin-icon--battery") && batteryCard.querySelector(".plugin-card__author-link")?.textContent === "@QXiaoLingShang",
+    check(batteryCard.querySelector("[data-plugin-icon='battery']") && batteryCard.querySelector(".plugin-author__name")?.textContent === "QXiaoLingShang",
       "电池是市场里的一张卡片，带自己的图标和作者");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(batteryName)}']`)!.click());
     const batterySwitch = document.querySelector<HTMLInputElement>(`[role=switch][aria-label='${market.enableNamed(batteryName)}']`)!;
@@ -160,6 +188,7 @@ try {
   }
   if (!PLUGINS_ENABLED) {
     if (PLUGIN_MARKET_ENABLED) {
+      check(MARKET_PACKAGES.length === PACKAGED_MARKET_PLUGINS.length, "三个正式包都已开放安装");
       for (const { id } of PACKAGED_MARKET_PLUGINS) {
         if (MARKET_PACKAGES.some((entry) => entry.id === id)) continue;
         const name = t.market.items[id].name;
@@ -175,19 +204,85 @@ try {
       const name = market.items["eye-care"].name;
       const install = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.installNamed(name)}"]`)!;
       const remove = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.uninstallNamed(name)}"]`)!;
+      const fixture = document.getElementById("fixture")!;
+      fixture.style.width = "168px";
+      installFailure = "plugin_index_unavailable";
       await act(async () => { install().click(); });
       await wait();
-      check(hostCalls.includes("install_plugin") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
-        "市场包使用宿主安装和启用，保留卡片入口");
-      check(document.querySelector<HTMLInputElement>(`[aria-label="${manifest.settings[0].label[locale]}"]`),
-        "安装后显示护眼设置");
+      const alert = install().closest("li")?.querySelector("[role='alert']");
+      check(alert?.textContent === market.failure.plugin_index_unavailable + market.retry && alert.scrollWidth <= alert.clientWidth
+        && alert.getBoundingClientRect().bottom <= install().getBoundingClientRect().top, "目录未发布时在窄卡片内显示本地化原因并保留重试");
+      installFailure = "https://user:secret@example.com/D:/private";
+      await act(async () => { install().click(); });
+      await wait();
+      check(install().closest("li")?.querySelector("[role='alert']")?.textContent === market.operationFailed(name) + market.retry
+        && !document.body.textContent?.includes("user:secret"), "未知错误不泄露路径或凭据");
+      fixture.style.width = "";
+      installFailure = "";
+      holdInstall = true;
+      const progress = async (phase: PluginInstallProgress["phase"], downloaded: number, total: number) => {
+        hostJobs = [{ id: "eye-care", phase, downloaded, total, error: null }];
+        await act(async () => { await emit(PLUGIN_PROGRESS_EVENT, hostJobs[0]); });
+      };
+      await checkInstallProgress({
+        t: market, name, check, wait, progress, install,
+        installCalls: () => hostCalls.filter((command) => command === "install_plugin").length,
+        remount: async () => {
+          await act(async () => app.render(<StrictMode><I18nProvider><span /></I18nProvider></StrictMode>));
+          await act(async () => app.render(<StrictMode><I18nProvider><Page /></I18nProvider></StrictMode>));
+          await wait();
+        },
+        finish: async () => { await act(async () => finishInstall?.()); await wait(); },
+      });
       await act(async () => { remove().click(); });
       await wait();
-      check(!registry.installed["eye-care"] && Boolean(install()), "市场卸载与宿主安装状态同步");
+      await checkInstallCancel({
+        t: market, name, check, wait, progress, install,
+        cancelCalls: () => hostCalls.filter((command) => command === "cancel_plugin_install").length,
+      });
+      await act(async () => { install().click(); });
+      await act(async () => finishInstall?.()); await wait();
+      holdInstall = false;
+      check(hostCalls.includes("install_plugin") && !hostCalls.includes("set_plugin_enabled") && registry.installed["eye-care"]?.enabled && Boolean(remove()),
+        "市场包由宿主在同一个任务里安装并启用，保留卡片入口");
+      await act(async () => { remove().click(); });
+      await wait();
+      installFailure = "plugin_download_timeout";
+      await act(async () => { install().click(); });
+      await wait();
+      const failedCard = install().closest("li")!;
+      const retry = [...failedCard.querySelectorAll("button")].find((item) => item.textContent === market.retry);
+      check(failedCard.querySelector("[role='alert']")?.textContent?.startsWith(market.failure.plugin_download_timeout) && retry,
+        "下载失败时卡片内显示原因和重试链接");
+      installFailure = "";
+      await act(async () => { retry!.click(); });
+      await wait();
+      check(registry.installed["eye-care"]?.enabled && Boolean(remove()), "点重试后装上");
+      const gear = () => document.querySelector<HTMLButtonElement>(`[aria-label="${market.openSettingsNamed(name)}"]`);
+      check(!document.querySelector(`[aria-label="${manifest.settings[0].label[locale]}"]`)
+        && document.querySelector("[data-category='plugin:eye-care']"), "安装后护眼设置进独立栏目，插件页不显示设置行");
+      await act(async () => { gear()!.click(); });
+      check(openedSettings[openedSettings.length - 1]?.category === "plugin:eye-care", "打开设置指向护眼提醒的栏目");
+      fixture.style.width = "168px";
+      const installedCard = gear()!.closest<HTMLElement>(".plugin-card")!;
+      check(installedCard.scrollWidth <= installedCard.clientWidth
+        && gear()!.getBoundingClientRect().right < remove().getBoundingClientRect().left, "最窄卡片的开关、打开设置和卸载按钮不重叠");
+      fixture.style.width = "";
+      const noRequestYet = requests.length === 0;
+      const updates = () => document.querySelector<HTMLElement>(".plugin-market__updates")!;
+      await act(async () => { updates().querySelector("button")!.click(); });
+      await act(async () => requests[requests.length - 1].resolve([{ id: "eye-care", version: "9.0.0" } as PluginIndexEntry])); await wait();
+      check(noRequestYet && requests.length === 1 && document.querySelector(".plugin-card__update")?.textContent?.includes(market.updateAvailable("9.0.0")),
+        "只有点检查更新才请求索引，有新版本时卡片提示更新");
+      await act(async () => { remove().click(); });
+      await wait();
+      check(!registry.installed["eye-care"] && Boolean(install()) && !gear() && !document.querySelector("[data-category='plugin:eye-care']"),
+        "市场卸载与宿主安装状态同步，设置入口一起消失");
     }
     const guide = document.querySelector<HTMLElement>(".plugin-development")!;
     check(guide?.textContent?.includes(t.guide) && guide.textContent.includes(t.guideHint) && !guide.querySelector("h2, h3, .settings-group__title"), "市场下方只保留本地化的开发规范入口，没有开发计划标题");
-    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select") && !hostCalls.includes("get_plugins_index") && !hostCalls.includes("configure_plugins"),
+    check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select")
+      && hostCalls.filter((command) => command === "get_plugins_index").length === 1 && !hostCalls.includes("configure_plugins"),
       "正式市场不会自行请求索引或开放开发者配置");
     const link = button(t.readGuide);
     await act(async () => { failOpen = true; link.click(); });
@@ -207,7 +302,7 @@ try {
     check(input.value === stored, "异步恢复后显示已保存的 Windows 索引路径");
     check(!button(t.save).disabled, "网络请求未完成时仍可设置本地索引");
     await act(async () => requests[requests.length - 1].reject("HTTP 404 https://github.com/releases/missing")); await wait();
-    check(document.body.textContent?.includes(t.unavailable) && !document.body.textContent?.includes("HTTP 404"), "索引失败只显示翻译后的简短状态");
+    check(document.body.textContent?.includes(t.market.failure.plugin_index_unavailable) && !document.body.textContent?.includes("HTTP 404"), "索引失败只显示翻译后的简短状态");
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     const next = "D:\\Fly Island\\artifacts\\plugins\\plugins-index.json";
     await act(async () => { setter.call(input, next); input.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -217,11 +312,24 @@ try {
     const newest = requests[requests.length - 1];
     await act(async () => newest.resolve([])); await wait();
     await act(async () => requests[0].reject("old request failed")); await wait();
-    check(!document.body.textContent?.includes(t.unavailable), "已失效的旧请求不能覆盖新索引结果");
+    check(!document.body.textContent?.includes(t.market.failure.plugin_index_unavailable), "已失效的旧请求不能覆盖新索引结果");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${t.develop}']`)!.click());
     check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md", "开发指引使用既有外链 opener");
     check(input.getBoundingClientRect().right <= document.getElementById("fixture")!.getBoundingClientRect().right + 1, "中英文窄布局的路径输入框不溢出");
     const field = (key: string) => document.querySelector<HTMLInputElement>(`input[aria-label='${manifest.settings.find((s) => s.key === key)!.label[locale]}']`)!;
+    check(field("idle").getAttribute("aria-label") === (locale === "en" ? "Idle duration (1–120 minutes)" : "空闲时长（1–120 分钟）"), "空闲时长使用当前语言的标签");
+    check(field("idle").closest(".settings-row")?.querySelector(".settings-row__description")?.textContent
+      === manifest.settings.find((s) => s.key === "idle")!.description?.[locale], "空闲时长显示清单里当前语言的暂停、重置与恢复说明");
+    const settingRow = (key: string) => [...document.querySelectorAll<HTMLElement>(".settings-row")]
+      .find((item) => item.querySelector(".settings-row__title")?.textContent === manifest.settings.find((s) => s.key === key)!.label[locale]);
+    const fullscreenSwitch = () => settingRow("pause-fullscreen")?.querySelector<HTMLInputElement>("input[role='switch']")!;
+    check(fullscreenSwitch().checked && !settingRow("pause-fullscreen")?.querySelector(".settings-row__description"),
+      "全屏暂停开关默认开启，只有一行文案");
+    await act(async () => fullscreenSwitch().click());
+    await wait();
+    check(eyeCare.settings["pause-fullscreen"] === "false", "关闭全屏暂停立即保存");
+    await act(async () => fullscreenSwitch().click());
+    await wait();
     const edit = async (input: HTMLInputElement, value: string) => act(async () => {
       setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
     });

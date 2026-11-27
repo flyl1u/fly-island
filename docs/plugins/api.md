@@ -175,6 +175,7 @@ manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一�
 | rows | 最多 16 行 / At most 16 rows |
 | row | id、title；detail 可空；percent 为 null 或 0–100；countdownTo 为 null 或正 Unix 毫秒；tone 为 normal / warning / danger |
 | actions | 最多 4 个唯一的 manifest 已声明 id，只显示当前有效的阶段性动作 / At most 4 unique declared IDs for currently available actions |
+| islandActions | `actions` 的子集（最多 4 个唯一 id），岛内页面只显示这些；省略或 null 表示全部显示。给自家窗口用的动作留在 `actions` / Subset of `actions` shown on the island page (at most 4 unique IDs); omitted or null shows all. Keep window-only actions in `actions` |
 | attention | bool；点亮页按钮提示点，不弹通知 / Page-button indicator, no notification |
 
 每次 publish 替换整个 panel；省略或 null 清空。文本最多 4096 UTF-8 字节且无 NUL，行 id 非空唯一。倒计时由宿主本地按秒更新，插件只提供期限与状态。主进程只在快照变化时发送 plugins-changed；panel 的错误字段或动作使该 publish 被拒绝。无 panel 的旧适配器不受影响。

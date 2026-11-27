@@ -26,6 +26,11 @@
   color: var(--color-agent-running);
 }
 
+.island__agent-status-icon--waiting,
+.island__title .island__agent-status-icon--waiting {
+  color: var(--color-light-needs);
+}
+
 .island__title .island__agent-status-icon--attention {
   color: var(--color-warning);
 }

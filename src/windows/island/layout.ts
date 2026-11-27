@@ -1,13 +1,10 @@
 import type { TodoItem } from "../../features/todos/types";
 import type { AgentSessionView } from "../../features/appearance/types";
 import { COLLAPSED_WIDTH } from "../../features/appearance/settingsLimits.ts";
-import { clamp } from "../../utils/number.ts";
-import { getCollapsedTextUnits, getTodoTitleLineCount } from "../../utils/text.ts";
+import { getTodoTitleLineCount } from "../../utils/text.ts";
 
-export const MIN_COLLAPSED_ISLAND_WIDTH = 280;
-export const MAX_COLLAPSED_ISLAND_WIDTH = COLLAPSED_WIDTH.default;
-export const MIN_COLLAPSED_TEXT_UNITS = 2;
-export const MAX_COLLAPSED_TEXT_UNITS = 12;
+/** Automatic width: the saved lower and upper limit default to these (settingsDefaults.ts). */
+export const AUTO_WIDTH_DEFAULT = { min: 280, max: COLLAPSED_WIDTH.default } as const;
 // The todo page with two rows: the island's padding, header and gap (86), the notebook's padding
 // (24), its tab row (22), the add field (32), two gaps (16) and two rows (70), and 8 to spare
 // (TodoNotebook.css, TodoListItem.css). Keep in step.
@@ -32,28 +29,6 @@ const CLIPBOARD_ROW_GAP = 6;
 // One single-line row (32) and the gap below it (6).
 export const TODO_ROW_HEIGHT = 38;
 export const TODO_GROW_START_ROWS = 2;
-/** Collapsed width for the summary `text`, plus `extraWidth` px, up to the widest. */
-export function getCollapsedIslandWidth(text: string, extraWidth = 0, fontScale = 1) {
-  const visualUnits = getCollapsedTextUnits(text) * fontScale;
-  const widthProgress =
-    (clamp(
-      visualUnits,
-      MIN_COLLAPSED_TEXT_UNITS,
-      MAX_COLLAPSED_TEXT_UNITS,
-    ) -
-      MIN_COLLAPSED_TEXT_UNITS) /
-    (MAX_COLLAPSED_TEXT_UNITS - MIN_COLLAPSED_TEXT_UNITS);
-
-  return Math.min(
-    MAX_COLLAPSED_ISLAND_WIDTH,
-    Math.round(
-      MIN_COLLAPSED_ISLAND_WIDTH +
-        widthProgress * (MAX_COLLAPSED_ISLAND_WIDTH - MIN_COLLAPSED_ISLAND_WIDTH) +
-        Math.max(0, extraWidth),
-    ),
-  );
-}
-
 // Widest nudge allowed when aligning; covers the 1.25x and 1.75x display scales.
 const MAX_ALIGNMENT_NUDGE = 4;
 
@@ -67,6 +42,8 @@ export function alignCollapsedIslandWidth(
   width: number,
   stageWidth: number,
   devicePixelRatio: number,
+  min: number = COLLAPSED_WIDTH.min,
+  max: number = COLLAPSED_WIDTH.max,
 ) {
   const isAligned = (candidate: number) => {
     const left = ((stageWidth - candidate) / 2) * devicePixelRatio;
@@ -76,8 +53,8 @@ export function alignCollapsedIslandWidth(
   for (let nudge = 0; nudge <= MAX_ALIGNMENT_NUDGE; nudge++) {
     for (const candidate of [width - nudge, width + nudge]) {
       if (
-        candidate >= MIN_COLLAPSED_ISLAND_WIDTH &&
-        candidate <= MAX_COLLAPSED_ISLAND_WIDTH &&
+        candidate >= min &&
+        candidate <= max &&
         isAligned(candidate)
       ) {
         return candidate;
@@ -138,4 +115,3 @@ export function getAgentAlertExpandedHeight(rowHeight: number) {
 export function getClipboardExpandedHeight(rows: number) {
   return CLIPBOARD_CHROME_HEIGHT + rows * CLIPBOARD_ROW_PITCH - CLIPBOARD_ROW_GAP;
 }
-

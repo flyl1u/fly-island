@@ -2,7 +2,6 @@
 //! so they can be dragged out, copied, opened or shown in Explorer later.
 
 mod availability;
-mod icon;
 mod store;
 #[cfg(test)]
 mod tests;
@@ -23,7 +22,8 @@ use tauri::{AppHandle, Manager, WebviewWindow};
 use crate::win32;
 use availability::{Availability, Presence};
 use store::*;
-use icon::FileIcons;
+use crate::file_icons::FileIcons;
+pub(crate) use thumbnail::png_data_url;
 use thumbnail::Thumbnails;
 
 

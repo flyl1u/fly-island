@@ -13,10 +13,12 @@ export function PluginSettingRow({ setting, value, disabled, onSave }: { setting
   const t = useTranslation().settings.plugins;
   const [draft, setDraft] = useState(setting.type === "secret" ? "" : String(value));
   const title = setting.label[locale];
-  if (setting.type === "number") return <PluginNumberSettingRow title={title} value={String(value)} min={setting.min ?? 0} max={setting.max ?? 0} disabled={disabled} onSave={onSave} />;
-  if (setting.type === "toggle") return <SettingsToggleRow title={title} checked={value === true} disabled={disabled} onChange={onSave} />;
-  if (setting.type === "select") return <SettingsRow title={title} control={<SettingsSelect value={String(value)} options={setting.options.map((o) => ({ value: o.value, label: o.label[locale] }))} ariaLabel={title} disabled={disabled} onChange={onSave} />} />;
-  return <SettingsRow title={title} control={<SettingsLinkButton disabled={disabled || (setting.type !== "secret" && draft === String(value))} onClick={() => { onSave(draft); if (setting.type === "secret") setDraft(""); }}>{t.save}</SettingsLinkButton>}>
+  // The manifest explains its own settings; the host reads that line instead of a per-plugin string.
+  const description = setting.description?.[locale];
+  if (setting.type === "number") return <PluginNumberSettingRow title={title} description={description} value={String(value)} min={setting.min ?? 0} max={setting.max ?? 0} disabled={disabled} onSave={onSave} />;
+  if (setting.type === "toggle") return <SettingsToggleRow title={title} description={description} checked={value === true} disabled={disabled} onChange={onSave} />;
+  if (setting.type === "select") return <SettingsRow title={title} description={description} control={<SettingsSelect value={String(value)} options={setting.options.map((o) => ({ value: o.value, label: o.label[locale] }))} ariaLabel={title} disabled={disabled} onChange={onSave} />} />;
+  return <SettingsRow title={title} description={description} control={<SettingsLinkButton disabled={disabled || (setting.type !== "secret" && draft === String(value))} onClick={() => { onSave(draft); if (setting.type === "secret") setDraft(""); }}>{t.save}</SettingsLinkButton>}>
     <SettingsInput aria-label={title} type={setting.type === "secret" ? "password" : "text"} autoComplete="off" value={draft} disabled={disabled} placeholder={setting.type === "secret" ? t.secret : undefined} onChange={(event) => setDraft(event.target.value)} />
   </SettingsRow>;
 }

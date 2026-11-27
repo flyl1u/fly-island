@@ -13,6 +13,8 @@ pub struct BreakState {
     pub deadline: i64,
     pub can_snooze: bool,
     pub can_skip: bool,
+    /// 0–100 share of the break still ahead, as the plugin measured it; absent when it cannot.
+    pub percent: Option<f64>,
     pub language: &'static str,
 }
 
@@ -72,15 +74,13 @@ pub(crate) fn from_publish(
     if status != "running" || !panel.attention {
         return None;
     }
-    let deadline = panel
-        .rows
-        .iter()
-        .find(|row| row.id == "timer")?
-        .countdown_to?;
+    let row = panel.rows.iter().find(|row| row.id == "timer")?;
+    let deadline = row.countdown_to?;
     (deadline > 0).then(|| BreakState {
         deadline,
         can_snooze: panel.actions.iter().any(|id| id == "snooze_10"),
         can_skip: panel.actions.iter().any(|id| id == "skip"),
+        percent: row.percent,
         language: if english { "en" } else { "zh-CN" },
     })
 }
@@ -94,12 +94,13 @@ mod tests {
     fn rest_is_driven_by_typed_state_and_current_actions() {
         let mut data: PluginContributions = serde_json::from_value(json!({"panel": {
             "headline":"任意文案", "note":null, "attention":true,
-            "rows":[{"id":"timer","title":"timer","countdownTo":1234}],
+            "rows":[{"id":"timer","title":"timer","countdownTo":1234,"percent":62.5}],
             "actions":["snooze_10","skip"]
         }}))
         .unwrap();
         let state = from_publish(&data, "running", true).unwrap();
         assert_eq!(state.deadline, 1234);
+        assert_eq!(state.percent, Some(62.5));
         assert!(state.can_snooze && state.can_skip);
         assert_eq!(state.language, "en");
         for status in ["starting", "restarting", "failed", "stopped"] {
@@ -131,6 +132,7 @@ mod tests {
             deadline: 10_000,
             can_snooze: true,
             can_skip: false,
+            percent: None,
             language: "en",
         };
         assert!(pending.queue(1, Some(rest.clone())));

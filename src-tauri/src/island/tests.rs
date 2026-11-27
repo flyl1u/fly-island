@@ -524,3 +524,96 @@ fn collapsed_bar_takes_clicks_in_its_corners_and_just_beside_it() {
         assert!(!point_in_island(island, dpi, left + width * dpi / 2.0, bottom + 1.0));
     }
 }
+
+#[test]
+fn only_the_current_generations_slide_counts_as_animating() {
+    // The cursor loop holds hover-leave while the stage slides out from under a still cursor;
+    // a superseded slide (older generation) must not hold it forever.
+    assert!(!slide_in_progress(None, 3));
+    assert!(slide_in_progress(Some((3, (10, 0))), 3));
+    assert!(!slide_in_progress(Some((2, (10, 0))), 3));
+}
+
+mod corridor_tests {
+    use super::super::corridor::*;
+    use super::super::state::*;
+
+    fn line_state(scale: f64) -> IslandWindowState {
+        IslandWindowState { is_tucked: true, tuck_style: TuckStyle::Line, collapsed_scale: scale, ..IslandWindowState::default() }
+    }
+
+    /// Window left/top in physical px for a stage of `STAGE_WINDOW_WIDTH` at `dpi`.
+    fn untucked(state: IslandWindowState) -> IslandWindowState {
+        IslandWindowState { is_tucked: false, ..state }
+    }
+
+    #[test]
+    fn corridor_spans_both_widths_and_the_gap_at_any_dpi() {
+        for dpi in [1.0, 1.25, 1.5, 2.0] {
+            let tucked = line_state(1.0);
+            let hot = tucked_hot_rect(tucked, 0.0, 0.0, dpi);
+            let island = island_rect(untucked(tucked), 0.0, 200.0 * dpi, dpi);
+            let corridor = corridor_rect(hot, island).expect("island is far below the line");
+            assert_eq!(corridor.top, hot.top);
+            assert!(corridor.bottom >= island.top);
+            assert_eq!(corridor.left, hot.left.min(island.left));
+            assert_eq!(corridor.right, hot.right.max(island.right));
+        }
+    }
+
+    #[test]
+    fn no_corridor_when_the_island_is_at_the_top() {
+        let tucked = line_state(1.0);
+        let hot = tucked_hot_rect(tucked, 0.0, 0.0, 1.0);
+        let island = island_rect(untucked(tucked), 0.0, 0.0, 1.0);
+        assert!(corridor_rect(hot, island).is_none());
+    }
+
+    #[test]
+    fn negative_monitor_coordinates_work_the_same() {
+        // A monitor left of and above the primary one.
+        let tucked = line_state(1.0);
+        let (left, top) = (-2000.0, -1080.0);
+        let hot = tucked_hot_rect(tucked, left, top, 1.0);
+        let island = island_rect(untucked(tucked), left + 40.0, top + 300.0, 1.0);
+        let corridor = corridor_rect(hot, island).expect("gap");
+        let middle_y = (hot.bottom + island.top) / 2.0;
+        assert!(corridor.contains((hot.left + hot.right) / 2.0, middle_y));
+        assert!(!corridor.contains(corridor.right + 5.0, middle_y));
+    }
+
+    #[test]
+    fn corridor_lives_from_hover_on_the_line_until_the_island_is_entered() {
+        let tucked = line_state(1.0);
+        let mut tracker = PeekCorridor::default();
+        let hot = tucked_hot_rect(tucked, 0.0, 0.0, 1.0);
+        let cursor = ((hot.left + hot.right) / 2.0, hot.top + 2.0);
+        // On the line, tucked: arms.
+        assert_eq!(tracker.observe(tucked, (0.0, 0.0), 1.0, cursor, true), (false, CorridorChange::None));
+        // The island slid to y=200; the cursor is over neither, but in the corridor.
+        let out = untucked(tucked);
+        assert_eq!(tracker.observe(out, (0.0, 200.0), 1.0, cursor, false), (true, CorridorChange::Started));
+        assert_eq!(tracker.observe(out, (0.0, 200.0), 1.0, cursor, false), (true, CorridorChange::None));
+        // The cursor enters the island: the corridor ends and the normal test applies.
+        let inside = (cursor.0, 215.0);
+        assert_eq!(tracker.observe(out, (0.0, 200.0), 1.0, inside, true), (false, CorridorChange::EndedEntered));
+        // Back in the gap now: no corridor any more, so the island is left.
+        assert_eq!(tracker.observe(out, (0.0, 200.0), 1.0, cursor, false), (false, CorridorChange::None));
+    }
+
+    #[test]
+    fn leaving_the_corridor_sideways_ends_it_and_tucking_clears_it() {
+        let tucked = line_state(1.0);
+        let mut tracker = PeekCorridor::default();
+        let hot = tucked_hot_rect(tucked, 0.0, 0.0, 1.0);
+        let cursor = ((hot.left + hot.right) / 2.0, hot.top + 2.0);
+        tracker.observe(tucked, (0.0, 0.0), 1.0, cursor, true);
+        let out = untucked(tucked);
+        tracker.observe(out, (0.0, 200.0), 1.0, cursor, false);
+        assert_eq!(tracker.observe(out, (0.0, 200.0), 1.0, (-500.0, 100.0), false), (false, CorridorChange::EndedLeft));
+        // A peek that did not start on the line (message) never gets a corridor.
+        let mut tracker = PeekCorridor::default();
+        tracker.observe(tucked, (0.0, 0.0), 1.0, (-500.0, 100.0), false);
+        assert_eq!(tracker.observe(out, (0.0, 200.0), 1.0, cursor, false), (false, CorridorChange::None));
+    }
+}

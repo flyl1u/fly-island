@@ -1,6 +1,6 @@
 // Run pnpm dev and open /tests/regression/island-tour.html for the island against a mock desktop.
 // ?media=playing|paused|nocover|long|nolyrics|none, ?lyrics=0, ?empty=1, ?lang=en, ?detached=1, ?capsule=1 and ?test=1 configure the tour.
-import { checkClockWeatherIsland, clockWeatherMock } from "./clockWeatherIsland";
+import { checkClockWeatherIsland, clockWeatherMock, collapsedBarOrder } from "./clockWeatherIsland";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
@@ -10,7 +10,8 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkIslandTourPageButtons } from "./islandTourPageButtons";
 import { checkTuckMorph } from "./islandTourTuck";
-import { checkCollapsedShape } from "./islandTourShape";
+import { checkCollapsedShape, checkIslandShapeMotion } from "./islandTourShape";
+import { checkCollapsedItemSwitch } from "./islandTourCollapsedItem"; import { checkIslandAutoWidth } from "./islandTourAutoWidth";
 import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone } from "./islandTourTheme";
 import { prepareTourGlassBackdrop, runShoulderFixture } from "./islandTourShoulders";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
@@ -87,7 +88,7 @@ mockIPC((command, payload) => {
     case "delete_clipboard_history_items": return { ...TOUR_CLIPBOARD, items: TOUR_CLIPBOARD.items.filter((item) => !(args.ids as string[]).includes(item.id)) };
     case "read_clipboard_history_image": return TOUR_CLIPBOARD.items.find((item) => item.id === args.id)?.image?.thumbnailDataUrl ?? "";
     case "get_file_shelf": return { items: empty ? [] : TOUR_SHELF };
-    case "list_agent_sessions": return empty ? [] : tourSessions(args.native);
+    case "list_agent_sessions": return empty || query.has("autoWidth") ? [] : tourSessions(args.native);
     case "get_kimi_usage": return empty ? null : TOUR_KIMI_USAGE; case "get_zcode_usage": return null;
     case "agent_sessions_in_front": return [];
     case "agent_approval_pending": return [];
@@ -143,17 +144,7 @@ const click = async (selector: string) => {
   await settle(700);
 };
 
-function checkShapeMotion(expectedSeconds: number) {
-  const style = getComputedStyle(document.querySelector<HTMLElement>(".island")!);
-  const properties = style.transitionProperty.split(",").map((value) => value.trim());
-  const durations = style.transitionDuration.split(",").map(Number.parseFloat);
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  check(["width", "height", "border-radius"].every((property) => {
-    const index = properties.indexOf(property);
-    return index >= 0 && durations[index % durations.length] > 0 && durations[index % durations.length] === expectedSeconds;
-  }), `岛屿形状完整过渡（reduce=${reduce}; property=${style.transitionProperty}; duration=${style.transitionDuration}）`);
-  check(interaction.animatePosition === true, `贴边收起与滑出始终请求位置动画（reduce=${reduce}）`);
-}
+const checkShapeMotion = (expectedSeconds: number) => checkIslandShapeMotion(expectedSeconds, interaction, check);
 
 /** Elements of the open page that reach outside the island's box, or past its rounded bottom corners. */
 function strays() {
@@ -192,10 +183,14 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
 } else if (query.get("pageButtons") === "iconLabel") {
   await checkIslandTourPageButtons({ mount, click, settle, check, results, messages }).finally(restore);
 } else if (query.has("battery")) { await runBatteryTour(query, mount, click, results, restore);
+} else if (query.has("autoWidth")) {
+  try { await checkIslandAutoWidth({ mount, unmount: () => root.render(null), settle, check }); results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`; results.dataset.result = "passed"; }
+  catch (error) { results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`; results.dataset.result = "failed"; } finally { restore(); }
 } else {
   try {
     await act(async () => { mount(); });
     await settle(300); if (query.has("glassBackdrop")) prepareTourGlassBackdrop();
+    if (query.has("cycle")) await checkCollapsedItemSwitch(check, settle);
     const island = () => document.querySelector<HTMLElement>(".island")!;
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     if (query.has("clockWeather")) await checkClockWeatherIsland(check, settle);
@@ -221,6 +216,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     }
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "点击后展开");
+    check(panel().dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: 100 })), "展开态的滚轮不被岛拦下");
     if (query.has("update")) {
       await click(".dot-button--todo");
       check(document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot"),
@@ -288,10 +284,12 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
       .reduce((sum, value) => sum + parseFloat(value), 0);
     const panelScale = panel().getBoundingClientRect().width / panel().offsetWidth;
     const tipTop = dotBox.bottom - (parseFloat(tip.bottom) + tipHeight) * panelScale;
-    check(dock.a > 1.3 && dock.f < -2 && getComputedStyle(dots[1]).transform === "none"
+    const reduceDockMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dockMotionFitsPreference = reduceDockMotion ? dock.a === 1 && dock.f === 0 : dock.a > 1.3 && dock.f < -2;
+    check(dockMotionFitsPreference && getComputedStyle(dots[1]).transform === "none"
       && dots[1].getBoundingClientRect().width === dotBox.width && tip.opacity === "1"
       && tipTop >= island().getBoundingClientRect().top,
-      `键盘聚焦也会放大上浮并显示名称，命中区域不动，名称不会被屏幕顶边裁切（${dock.a}, ${dock.f}, ${tipTop.toFixed(1)}px）`);
+      `键盘聚焦显示名称且遵循减少动画（${reduceDockMotion}）；命中区不动、名称不裁切（${dock.a}, ${dock.f}, ${tipTop.toFixed(1)}px）`);
     dots[1].blur();
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     const list = document.querySelector<HTMLElement>(".shelf-list")!;
@@ -350,15 +348,14 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
     // Appearance → On the island: the music waveform moved left of the light and the text sits on
     // the collapsed island's left.
-    const barOrder = () => [...document.querySelectorAll<HTMLElement>(".island__collapsed > *")].map((element) => element.classList[0]).join();
     for (let step = 0; step < 4; step++) {
       await act(async () => {
         document.querySelector<HTMLElement>(".collapsed-layout__slot--music")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       });
     }
     const savedLayout = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
-    check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather,battery" && barOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
-      `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${barOrder()}）`);
+    check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather,battery" && collapsedBarOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
+      `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${collapsedBarOrder()}）`);
     await click(".settings-sidebar__item[data-category='general']");
     const lockSwitch = () => [...document.querySelectorAll<HTMLElement>(".settings-row")]
       .find((row) => row.querySelector(".settings-row__title")?.textContent === "锁定小岛位置")!.querySelector<HTMLInputElement>("[role='switch']")!;

@@ -11,6 +11,10 @@
   padding-left: 32px;
 }
 
+.settings-row--disabled {
+  opacity: 0.48;
+}
+
 .settings-row__main {
   min-width: 0;
   display: flex;

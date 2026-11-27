@@ -10,6 +10,18 @@
   white-space: nowrap;
 }
 
+.settings-slider__number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-slider__unit {
+  color: var(--color-text-muted);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  white-space: nowrap;
+}
+
 .settings-slider__reset {
   width: 24px;
   height: 24px;
@@ -49,6 +61,10 @@
   border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
+}
+
+.settings-slider:disabled {
+  cursor: default;
 }
 
 .settings-slider::-webkit-slider-thumb {
