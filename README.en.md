@@ -14,7 +14,7 @@
     ·
     <a href="#community">Community</a>
     ·
-    English · <a href="README.md">中文</a>
+    English · <a href="README.md">中文</a> · <a href="README.tr.md">Türkçe</a>
   </p>
 
   <p>
