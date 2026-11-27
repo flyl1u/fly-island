@@ -181,6 +181,8 @@ pnpm tauri dev
 - Antigravity：[lilipeng0615-cyber](https://github.com/lilipeng0615-cyber)（[#120](https://github.com/flyl1u/fly-island/pull/120)）
 - MiniMax Code：[YTC0408](https://github.com/YTC0408)（[#110](https://github.com/flyl1u/fly-island/pull/110)）
 - 设备电量与音频：[Anobod1119](https://github.com/Anobod1119)（[#106](https://github.com/flyl1u/fly-island/pull/106)）
+- Apple Music 官方歌词与折叠态歌词改进：[YTC0408](https://github.com/YTC0408)（[#98](https://github.com/flyl1u/fly-island/pull/98)，审查中）
+- 截图标注、OCR 与贴图：[Philipfanw](https://github.com/Philipfanw)（[#128](https://github.com/flyl1u/fly-island/pull/128)，审查中）
 
 ## Star History
 
