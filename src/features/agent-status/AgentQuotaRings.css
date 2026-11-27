@@ -80,14 +80,14 @@
   overflow: visible;
 }
 
-/* One soft round shadow under the whole indicator, arcs and logo together. */
+/* One soft round shadow under the whole indicator, arcs and logo together. No fill, so it is not
+   a disc behind the ring, and it ends inside the row's 4px padding, so the row does not cut it. */
 .quota-rings::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
   pointer-events: none;
 }
 /* The arcs and the logo move as one piece; the shadow and the hover targets stay put. */
@@ -106,30 +106,23 @@
   place-items: center;
   pointer-events: none;
 }
-.island-hover-card__anchor.quota-rings__half {
+.island-hover-card__anchor.quota-rings__hover {
   position: absolute;
-  inset-inline: 0;
-  height: 50%;
+  inset: 0;
 }
-.quota-rings__half--top { top: 0; }
-.quota-rings__half--bottom { bottom: 0; }
 .quota-rings__target {
   width: 100%;
   height: 100%;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: 50%;
   background: transparent;
   cursor: default;
 }
 .quota-rings__target:focus-visible { outline: 1px solid var(--quota-color); }
-/* Lifted a little and tilted in depth: the half under the pointer comes toward the viewer,
-   the upper one for the short window and the lower one for the weekly window. */
-.quota-rings:has(.quota-rings__half--top:hover, .quota-rings__half--top .quota-rings__target:focus-visible) .quota-rings__body {
-  transform: translateY(-1px) perspective(70px) rotateX(-28deg) scale(1.06);
-}
-.quota-rings:has(.quota-rings__half--bottom:hover, .quota-rings__half--bottom .quota-rings__target:focus-visible) .quota-rings__body {
-  transform: translateY(-1px) perspective(70px) rotateX(28deg) scale(1.06);
+/* Under the pointer or keyboard focus the ring and logo lift a little, flat and as one piece. */
+.quota-rings:has(.quota-rings__hover:hover, .quota-rings__target:focus-visible) .quota-rings__body {
+  transform: translateY(-1px) scale(1.06);
 }
 
 .quota-rings__track,

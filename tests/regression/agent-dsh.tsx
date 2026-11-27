@@ -57,7 +57,7 @@ export async function checkWorkbuddyRing(root: Root, sessions: AgentSessionSumma
     models: [{ name: "Gemini", used: 75, resetsAt: usages.readAt - 1 }] }, usages.readAt);
   await render({ ...agyOnly, antigravity: expired });
   check(fixture.querySelector(".agent-quota__agent--antigravity") && fixture.querySelectorAll(".quota-rings__fill--unknown").length === 2
-    && [...fixture.querySelectorAll(".quota-rings__target")].map((target) => target.getAttribute("aria-label")).join() === "5 小时 · 暂无数据,每周 · 暂无数据",
+    && [...fixture.querySelectorAll(".quota-rings__target")].map((target) => target.getAttribute("aria-label")).join() === "5 小时 · 暂无数据, 每周 · 暂无数据",
     "AGY 缓存窗口已过重置时间时保留暗弧，不再显示旧百分比");
   fixture.style.removeProperty("--island-font-scale");
 }
@@ -76,7 +76,7 @@ export async function checkDsh(root: Root, sessions: AgentSessionSummary[], usag
   const dshRing = document.querySelector<HTMLElement>(".agent-quota__agent--dsh");
   check(rings.length === 3 && rings.every((ring) => ring.getBoundingClientRect().top === rings[0].getBoundingClientRect().top), "DSH 与 Claude、Codex 的额度环同排显示");
   check(dshRing?.querySelector("button")?.getAttribute("aria-label") === "余额 · ¥12.35" && dshRing.getAttribute("aria-label")?.includes("不代表百分比"), "DSH 悬停显示真实余额，读屏保留可用性语义");
-  check(dshRing?.getAttribute("role") === "group" && dshRing.querySelectorAll("button").length === 2 && dshRing.querySelectorAll(".quota-rings__fill").length === 2, "DSH 上下两弧都可聚焦，表示余额可用");
+  check(dshRing?.getAttribute("role") === "group" && dshRing.querySelectorAll("button").length === 1 && dshRing.querySelectorAll(".quota-rings__fill").length === 2, "DSH 整环一个可聚焦目标，上下两弧表示余额可用，余额只说一次");
   const row = document.querySelector<HTMLButtonElement>(".agent-session");
   check(row?.querySelectorAll(".agent-provider-icon--dsh").length === 2 && row.querySelector(".agent-session__host")?.getAttribute("title") === "DeepSeek Harness", "DSH 会话和宿主都有独立标识");
   await act(async () => { row?.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });

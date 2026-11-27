@@ -257,7 +257,7 @@ async function runChecks() {
     });
     const claudeRings = document.querySelector<HTMLElement>(".agent-quota__agent--claudeCode");
     const claudeLabel = claudeRings?.getAttribute("aria-label") ?? "";
-    check(claudeRings?.getAttribute("role") === "group" && claudeRings.querySelectorAll("button").length === 2 && claudeLabel.startsWith("Claude 用量")
+    check(claudeRings?.getAttribute("role") === "group" && claudeRings.querySelectorAll("button").length === 1 && claudeLabel.startsWith("Claude 用量")
       && claudeLabel.includes("5 小时 剩余 73%（已用 27%）") && claudeLabel.includes("7 天 剩余 38%（已用 62%）") && claudeLabel.includes("后重置"), `额度环是带读屏名称的图像，读出两个窗口的剩余、已用和重置时间：${claudeLabel}`);
     const fills = [...(claudeRings?.querySelectorAll<SVGPathElement>(".quota-rings__fill") ?? [])];
     check(fills.length === 2 && fills[0].getAttribute("d")?.startsWith("M 2.34 9.41") && fills[0].getAttribute("stroke-dasharray") === "73 100"
@@ -285,7 +285,7 @@ async function runChecks() {
     check(usageLineCount(usages) === 1 && document.querySelectorAll(".agent-quota").length === 1 && pair.length === 2
       && pair[0].getBoundingClientRect().top === pair[1].getBoundingClientRect().top, "两个 agent 的额度环在同一行");
     check(pair[1].getAttribute("aria-label") === "Codex 用量；5 小时 剩余 91%（已用 9%）；7 天 剩余 9%（已用 91%） · 2 天 0 小时后重置", `Codex 的环读出剩余、已用和重置时间：${pair[1].getAttribute("aria-label")}`);
-    check(pair[0].querySelectorAll(".quota-rings__fill--unknown").length === 1 && pair[0].querySelector(".quota-rings__half--bottom button")?.getAttribute("aria-label") === "每周 · 暂无数据", "每周未知时下弧保持暗色，提示明确无数据");
+    check(pair[0].querySelectorAll(".quota-rings__fill--unknown").length === 1 && pair[0].querySelector(".quota-rings__target")?.getAttribute("aria-label")?.endsWith("每周 · 暂无数据"), "每周未知时下弧保持暗色，提示明确无数据");
     const stroke = (element: HTMLElement) => getComputedStyle(element.querySelector(".quota-rings__fill")!).stroke;
     const [[cr, , cb], [xr, , xb]] = pair.map((element) => (stroke(element).match(/[\d.]+/g) ?? []).map(Number));
     check(cr > cb && xb > xr, `Claude 的环是橙色，Codex 的是蓝色：${stroke(pair[0])} / ${stroke(pair[1])}`);

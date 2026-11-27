@@ -3,7 +3,8 @@ import { AgentProviderMark } from "./AgentProviderMark";
 import type { AgentProvider } from "./api";
 import type { CSSProperties } from "react";
 
-/** Two separate arcs: the short window above the app, the weekly window below it. */
+/** Two separate arcs: the short window above the app, the weekly window below it. Hovering
+    anywhere on the ring shows both. */
 export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
   outer: number | null;
   inner: number | null;
@@ -11,6 +12,8 @@ export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
   provider?: AgentProvider;
   hints?: readonly [string, string];
 }) {
+  // A balance has no separate windows, so both arcs carry the same line: say it once.
+  const lines = [...new Set(hints)];
   return <span className="quota-rings" style={{ "--quota-size": `${size}px` } as CSSProperties}>
     <span className="quota-rings__body">
       <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -19,10 +22,10 @@ export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
       </svg>
       {provider && <span className="quota-rings__logo" aria-hidden="true"><AgentProviderMark provider={provider} size={size * 13.5 / 22} /></span>}
     </span>
-    {hints?.map((hint, index) => <IslandHoverCard key={index} lines={[{ text: hint }]} placement="right" compact
-      alignTo=".quota-rings" anchorClassName={`quota-rings__half quota-rings__half--${index === 0 ? "top" : "bottom"}`}>
-      <button type="button" className="quota-rings__target" aria-label={hint} />
-    </IslandHoverCard>)}
+    {lines.length > 0 && <IslandHoverCard lines={lines.map((text) => ({ text }))} placement="right" compact
+      alignTo=".quota-rings" anchorClassName="quota-rings__hover">
+      <button type="button" className="quota-rings__target" aria-label={lines.join(", ")} />
+    </IslandHoverCard>}
   </span>;
 }
 
