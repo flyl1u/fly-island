@@ -22,7 +22,7 @@ use windows::{
             },
             Dxgi::{
                 Common::{DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_MODE_ROTATION_IDENTITY, DXGI_MODE_ROTATION_UNSPECIFIED, DXGI_SAMPLE_DESC},
-                CreateDXGIFactory1, IDXGIFactory1, IDXGIOutput1, IDXGIOutputDuplication, IDXGIResource,
+                CreateDXGIFactory1, IDXGIAdapter1, IDXGIFactory1, IDXGIOutput, IDXGIOutput1, IDXGIOutputDuplication, IDXGIResource,
                 DXGI_ERROR_WAIT_TIMEOUT, DXGI_OUTDUPL_FRAME_INFO, DXGI_OUTDUPL_MOVE_RECT,
             },
         },
@@ -95,47 +95,68 @@ fn from_rect(rect: RECT) -> ScreenRect {
 
 impl Duplication {
     /// Duplicates the monitor that holds `point`, on the adapter that drives it.
+    ///
+    /// Every adapter/output candidate is tried before giving up. Hybrid laptops enumerate the
+    /// same screen under a render adapter that cannot duplicate it, and virtual display adapters
+    /// (remote-play tools) report outputs whose D3D device or duplication fails with E_INVALIDARG;
+    /// aborting on the first such candidate left the real adapter untried and screenshots gray.
     pub(crate) fn open(point: (i32, i32)) -> windows::core::Result<Self> {
         // SAFETY: plain DXGI / D3D11 factory and device calls; every out pointer is a live local.
         unsafe {
             let factory: IDXGIFactory1 = CreateDXGIFactory1()?;
+            let mut last_error = windows::core::Error::from_hresult(windows::Win32::Graphics::Dxgi::DXGI_ERROR_NOT_FOUND);
             let mut adapter_index = 0;
             while let Ok(adapter) = factory.EnumAdapters1(adapter_index) {
                 adapter_index += 1;
                 let mut output_index = 0;
                 while let Ok(output) = adapter.EnumOutputs(output_index) {
                     output_index += 1;
-                    let description = output.GetDesc()?;
+                    let description = match output.GetDesc() {
+                        Ok(description) => description,
+                        Err(error) => { last_error = error; continue; }
+                    };
                     let monitor = from_rect(description.DesktopCoordinates);
                     if !contains(monitor, point) {
                         continue;
                     }
-                    let mut device = None;
-                    let mut context = None;
-                    D3D11CreateDevice(
-                        &adapter,
-                        D3D_DRIVER_TYPE_UNKNOWN,
-                        HMODULE::default(),
-                        D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-                        None,
-                        D3D11_SDK_VERSION,
-                        Some(&mut device),
-                        None,
-                        Some(&mut context),
-                    )?;
-                    let (Some(device), Some(context)) = (device, context) else {
-                        return Err(windows::core::Error::from_hresult(windows::Win32::Foundation::E_FAIL));
-                    };
-                    let duplication = output.cast::<IDXGIOutput1>()?.DuplicateOutput(&device)?;
-                    let rotation = duplication.GetDesc().Rotation;
-                    if rotation != DXGI_MODE_ROTATION_IDENTITY && rotation != DXGI_MODE_ROTATION_UNSPECIFIED {
-                        // A rotated screen comes unrotated; not worth turning back for a backdrop.
-                        return Err(windows::core::Error::from_hresult(windows::Win32::Foundation::E_NOTIMPL));
+                    match Self::try_output(&adapter, &output, monitor) {
+                        Ok(duplication) => return Ok(duplication),
+                        Err(error) => last_error = error,
                     }
-                    return Ok(Self { device, context, duplication, monitor, desktop: None, region: None, metadata: Vec::new() });
                 }
             }
-            Err(windows::core::Error::from_hresult(windows::Win32::Graphics::Dxgi::DXGI_ERROR_NOT_FOUND))
+            Err(last_error)
+        }
+    }
+
+    /// One adapter/output candidate: a D3D device on the adapter, then its duplication session.
+    fn try_output(adapter: &IDXGIAdapter1, output: &IDXGIOutput, monitor: ScreenRect) -> windows::core::Result<Self> {
+        // SAFETY: D3D11CreateDevice writes into live locals; adapter and output are valid COM
+        // references the caller holds for the whole call.
+        unsafe {
+            let mut device = None;
+            let mut context = None;
+            D3D11CreateDevice(
+                adapter,
+                D3D_DRIVER_TYPE_UNKNOWN,
+                HMODULE::default(),
+                D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                None,
+                D3D11_SDK_VERSION,
+                Some(&mut device),
+                None,
+                Some(&mut context),
+            )?;
+            let (Some(device), Some(context)) = (device, context) else {
+                return Err(windows::core::Error::from_hresult(windows::Win32::Foundation::E_FAIL));
+            };
+            let duplication = output.cast::<IDXGIOutput1>()?.DuplicateOutput(&device)?;
+            let rotation = duplication.GetDesc().Rotation;
+            if rotation != DXGI_MODE_ROTATION_IDENTITY && rotation != DXGI_MODE_ROTATION_UNSPECIFIED {
+                // A rotated screen comes unrotated; not worth turning back for a backdrop.
+                return Err(windows::core::Error::from_hresult(windows::Win32::Foundation::E_NOTIMPL));
+            }
+            Ok(Self { device, context, duplication, monitor, desktop: None, region: None, metadata: Vec::new() })
         }
     }
 

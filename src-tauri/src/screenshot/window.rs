@@ -82,7 +82,29 @@ fn dispatch_overlay(app: &AppHandle) -> Result<(), String> {
         if let Err(error) = show_overlay_inner(&handle) {
             SESSION.cancel(); eprintln!("failed to prepare screenshot window: {error}");
         }
-    }).map_err(|error| { SESSION.cancel(); error.to_string() })
+    }).map_err(|error| { SESSION.cancel(); error.to_string() })?;
+    arm_watchdog(app);
+    Ok(())
+}
+
+/// A dispatched overlay must report ready soon; a WebView that never loads would otherwise hold
+/// the session open and swallow every later hotkey press until the app restarts.
+fn arm_watchdog(app: &AppHandle) {
+    let revision = IDLE_REVISION.load(Ordering::Acquire);
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+        if IDLE_REVISION.load(Ordering::Acquire) != revision || !SESSION.active() || READY.load(Ordering::Acquire) {
+            return;
+        }
+        SESSION.cancel();
+        let inner = handle.clone();
+        let _ = handle.run_on_main_thread(move || {
+            if let Some(window) = inner.get_webview_window(WINDOW_LABEL) {
+                let _ = window.destroy();
+            }
+        });
+    });
 }
 
 fn show_overlay_inner(app: &AppHandle) -> Result<(), String> {
@@ -232,8 +254,13 @@ pub async fn screenshot_activate(window: WebviewWindow) -> Result<(), String> {
 /// 收起覆盖层并恢复小岛本体。
 #[tauri::command]
 pub async fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
-    if !SESSION.begin_close() { return Ok(()); }
-    if let Err(error) = hide_and_settle(window.clone()).await { SESSION.cancel(); return Err(error); }
+    let was_active = SESSION.begin_close();
+    // 无论会话处于什么状态都要收起：激活失败时会话已被复位，若再按会话状态做门槛，
+    // 全屏覆盖层就再也关不掉（用户看到的「卡死」）。
+    if let Err(error) = hide_and_settle(window.clone()).await {
+        if was_active { SESSION.cancel(); }
+        return Err(error);
+    }
     let restore = app.clone();
     let (sender, receiver) = std::sync::mpsc::channel();
     let dispatched = window.run_on_main_thread(move || {
@@ -242,10 +269,16 @@ pub async fn screenshot_dismiss(app: AppHandle, window: WebviewWindow) -> Result
         }
         let _ = sender.send(());
     });
-    if let Err(error) = dispatched { SESSION.cancel(); return Err(error.to_string()); }
+    if let Err(error) = dispatched {
+        if was_active { SESSION.cancel(); }
+        return Err(error.to_string());
+    }
     let restored = tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(std::time::Duration::from_secs(2))).await;
-    if !matches!(restored, Ok(Ok(()))) { SESSION.cancel(); return Err("恢复截图窗口状态失败，请重试。".into()); }
-    if SESSION.finish_close() {
+    if !matches!(restored, Ok(Ok(()))) {
+        if was_active { SESSION.cancel(); }
+        return Err("恢复截图窗口状态失败，请重试。".into());
+    }
+    if was_active && SESSION.finish_close() {
         dispatch_overlay(&app)?;
     } else { release_when_idle(app); }
     Ok(())

@@ -97,7 +97,22 @@ fn grab(slot: &mut Option<((i32, i32), Duplication)>, region: ScreenRect) -> Sho
         }
     }
 
-    Err(last_error.unwrap_or_else(|| "抓屏失败".to_string()))
+    // Desktop Duplication can be unavailable: virtual display adapters, or another application
+    // (a screenshot tool) holding the output's duplication slot. GDI reads the composed desktop
+    // instead, so the screenshot still comes out.
+    match crate::win32::gdi_capture::capture_region(region) {
+        Ok((width, height, bgra)) => {
+            let mut rgba = bgra;
+            for pixel in rgba.as_chunks_mut::<4>().0 {
+                pixel.swap(0, 2);
+            }
+            Ok((width, height, rgba))
+        }
+        Err(fallback_error) => Err(format!(
+            "{}；GDI 兜底也失败：{fallback_error}",
+            last_error.unwrap_or_else(|| "抓屏失败".to_string())
+        )),
+    }
 }
 pub(crate) fn capture_rgba(region: ScreenRect) -> Result<(u32, u32, Vec<u8>), String> {
     request(region, false)
