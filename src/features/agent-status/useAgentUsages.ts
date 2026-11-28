@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
-import { dshProblem, getAgentUsage, getAntigravityUsage, getCodexUsage, getDshUsage, getKimiUsage, getZcodeUsage, onZcodeUsageChanged } from "./api";
+import { dshProblem, getAgentUsage, getAntigravityUsage, getCodexUsage, getDshUsage, getKimiUsage, getRelayUsage, getZcodeUsage, onRelayUsageChanged, onZcodeUsageChanged } from "./api";
 import { EMPTY_ANTIGRAVITY_USAGE, EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 import { usePlugins } from "../plugins";
 
@@ -23,6 +23,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
   const showKimi = show.kimiCode === true;
   const showZcode = show.zcode === true;
   const showAntigravity = show.antigravity === true;
+  const showRelay = show.relay === true;
 
   useEffect(() => {
     if (!enabled) {
@@ -32,6 +33,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     let cancelled = false;
     let zcodeRevision = 0;
     let unlisten: (() => void) | undefined;
+    let relayUnlisten: (() => void) | undefined;
     const refresh = () => {
       const revision = zcodeRevision;
       const log = (what: string) => (error: unknown) => {
@@ -45,7 +47,8 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
         showKimi ? getKimiUsage().catch(log("Kimi Code")) : Promise.resolve(null),
         showZcode ? getZcodeUsage().catch(log("Z Code")) : Promise.resolve(null),
         showAntigravity ? getAntigravityUsage().catch(log("Antigravity")) : Promise.resolve(null),
-      ]).then(([claude, codex, dsh, kimi, zcode, antigravity]) => {
+        showRelay ? getRelayUsage().catch(log("Relay")) : Promise.resolve(null),
+      ]).then(([claude, codex, dsh, kimi, zcode, antigravity, relay]) => {
         if (cancelled) return;
         const now = Date.now();
         setUsages((previous) => ({
@@ -56,6 +59,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
           kimi: withoutPastWindows(kimi ?? null, now),
           zcode: revision === zcodeRevision ? withoutPastWindows(zcode ?? null, now) : previous.zcode,
           antigravity: withoutPastWindows(antigravity ?? previous.antigravity ?? EMPTY_ANTIGRAVITY_USAGE, now),
+          relay: relay ?? null,
           readAt: now,
         }));
       });
@@ -72,14 +76,21 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
         else unlisten = stop;
       }).catch(() => undefined);
     }
+    if (showRelay) {
+      void onRelayUsageChanged(() => { if (!cancelled) refresh(); }).then((stop) => {
+        if (cancelled) stop();
+        else relayUnlisten = stop;
+      }).catch(() => undefined);
+    }
     refresh();
     const timer = window.setInterval(refresh, REFRESH_MS);
     return () => {
       cancelled = true;
       unlisten?.();
+      relayUnlisten?.();
       window.clearInterval(timer);
     };
-  }, [enabled, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity]);
+  }, [enabled, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity, showRelay]);
 
   return useMemo(() => ({
     ...usages,
@@ -90,6 +101,7 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     kimi: enabled && showKimi ? usages.kimi : null,
     zcode: enabled && showZcode ? usages.zcode : null,
     antigravity: enabled && showAntigravity ? usages.antigravity ?? EMPTY_ANTIGRAVITY_USAGE : null,
+    relay: enabled && showRelay ? usages.relay : null,
     plugins: enabled ? Object.entries(plugins.live).flatMap(([id, live]) => plugins.registry.installed[id]?.enabled && live.status === "running" ? live.quota.map((q) => ({ ...q, id: `${id}/${q.id}` })) : []) : [],
-  }), [enabled, usages, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity, plugins]);
+  }), [enabled, usages, showClaude, showCodex, showDsh, showKimi, showZcode, showAntigravity, showRelay, plugins]);
 }

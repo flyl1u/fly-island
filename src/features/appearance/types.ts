@@ -41,13 +41,13 @@ export type AgentArchiveMotion = "slide" | "dissolve";
 /** Light effects on the Agent page's cards and compact rows: none, the sparkle band, or a gradient wash. */
 export type AgentCardEffects = "off" | "sparkle" | "gradient";
 /** Kimi Code and Z Code are offered after their plugins are installed. */
-export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode" | "antigravity";
+export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode" | "antigravity" | "relay";
 /** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
 /** What the collapsed island can show in its text: a running agent, the lyric line, a todo. */
-export type CollapsedItem = "agent" | "lyrics" | "todo";
+export type CollapsedItem = "agent" | "lyrics" | "todo" | "centeredClock";
 /**
  * What sits on the collapsed island, in the order the user arranged it (Appearance → Collapsed
  * island): the text (pulse, cover and the agent, lyric or todo line) and the status icons —
@@ -117,6 +117,7 @@ export type IslandSettings = BatteryPreferences & {
   agentShowHermes: boolean;
   agentShowZcode: boolean;
   agentShowAntigravity: boolean;
+  agentShowRelay: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
   /** Show how long a session's current (or last) turn has run. */
@@ -244,6 +245,8 @@ export type IslandSettings = BatteryPreferences & {
   lyricsChinese: boolean;
   /** Fill word-timed lyrics as they are sung, in both island states. */
   lyricWordFill: boolean;
+  /** With online lyrics, also ask Apple Music for its own word-timed lyrics. */
+  lyricsAppleMusic: boolean;
   /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
   lyricsOffsetMs: number;
   mailEnabled: boolean;

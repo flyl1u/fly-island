@@ -62,6 +62,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentShowHermes: true,
   agentShowZcode: true,
   agentShowAntigravity: true,
+  agentShowRelay: true,
   agentHideFinished: false,
   // Off unless asked for: the age alone keeps finished rows short.
   agentShowElapsed: false,

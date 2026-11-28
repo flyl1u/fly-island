@@ -1,3 +1,7 @@
+import centeredClockIcon from "../../../assets/plugins/centered-clock.svg";
+import relayIcon from "../../../assets/plugins/relay.svg";
+import appleMusicLyricsIcon from "../../../assets/plugins/apple-music-lyrics.svg";
+import screenshotIcon from "../../../assets/plugins/screenshot.svg";
 import batteryIcon from "../../../assets/plugins/battery.svg";
 import dingtalkIcon from "../../../assets/brands/dingtalk.svg";
 import feishuIcon from "../../../assets/brands/feishu.svg";
@@ -19,6 +23,10 @@ import "./NativePluginIcon.css";
 
 // Every market plugin has a full-colour app icon: the brand's own mark, or one drawn here (assets/plugins).
 const APP_ICONS: Readonly<Record<MarketPluginId, string>> = {
+  centeredClock: centeredClockIcon,
+  relay: relayIcon,
+  appleMusicLyrics: appleMusicLyricsIcon,
+  screenshot: screenshotIcon,
   dingtalk: dingtalkIcon,
   feishu: feishuIcon,
   wecom: wecomIcon,

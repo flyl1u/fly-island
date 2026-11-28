@@ -30,7 +30,7 @@ test("crossing the target midpoint keeps unequal widths from swapping back on th
 
 test("the collapsed island's order, cover and the page dots load with defaults", () => {
   const settings = normalizeSettings({});
-  assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo"]);
+  assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo", "centeredClock"]);
   assert.equal(settings.collapsedShowCover, true);
   assert.equal(normalizeSettings({ collapsedShowCover: false }).collapsedShowCover, false);
   assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf", "translation", "battery"]);
@@ -41,7 +41,7 @@ test("the collapsed island's order, cover and the page dots load with defaults",
   assert.equal(normalizeSettings({ batteryHistoryEnabled: false }).batteryHistoryEnabled, false);
   assert.equal(normalizeSettings({ batteryHistoryEnabled: "no" }).batteryHistoryEnabled, true);
   const saved = normalizeSettings({ collapsedPriority: ["todo"], collapsedShowCover: true, pageOrder: ["shelf", "todo"] });
-  assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics"]);
+  assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics", "centeredClock"]);
   assert.equal(saved.collapsedShowCover, true);
   assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation", "battery"]);
   const reordered = normalizeSettings({ collapsedLayout: ["battery", "text", "music"], collapsedHidden: ["battery"] });

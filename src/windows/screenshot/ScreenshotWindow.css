@@ -1,0 +1,500 @@
+/* 截图覆盖层：全屏半透明遮罩 + 可调整的选区 + 选区旁的工具栏。 */
+
+.screenshot-overlay {
+  position: fixed;
+  inset: 0;
+  cursor: crosshair;
+  background: rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+.screenshot-selection {
+  position: fixed;
+  pointer-events: none;
+  border: 1px solid #4d96ff;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  background: transparent;
+  cursor: move;
+}
+
+.screenshot-size {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #4d96ff;
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.screenshot-handle {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 7;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #4d96ff;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.screenshot-handle-nw { left: -4px; top: -4px; cursor: nwse-resize; }
+.screenshot-handle-n { left: calc(50% - 4px); top: -4px; cursor: ns-resize; }
+.screenshot-handle-ne { right: -4px; top: -4px; cursor: nesw-resize; }
+.screenshot-handle-e { right: -4px; top: calc(50% - 4px); cursor: ew-resize; }
+.screenshot-handle-se { right: -4px; bottom: -4px; cursor: nwse-resize; }
+.screenshot-handle-s { left: calc(50% - 4px); bottom: -4px; cursor: ns-resize; }
+.screenshot-handle-sw { left: -4px; bottom: -4px; cursor: nesw-resize; }
+.screenshot-handle-w { left: -4px; top: calc(50% - 4px); cursor: ew-resize; }
+
+.screenshot-toolbar {
+  position: fixed;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 16px;
+  background: #fffdf7;
+  border: 2px solid #ffe08a;
+  box-shadow: 0 10px 28px rgba(255, 94, 91, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
+  z-index: 10;
+}
+
+.screenshot-tool {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 10px;
+  background: #fff3d6;
+  color: #3a2f2a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.screenshot-tool:hover {
+  background: #ffe8b8;
+  transform: translateY(-1px);
+}
+
+.screenshot-tool:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.screenshot-tool:focus-visible {
+  outline: 2px solid #4d96ff;
+  outline-offset: 1px;
+}
+
+.screenshot-tool-active {
+  background: #ff5e5b !important;
+  color: #fff;
+  box-shadow: 0 3px 0 #d84846;
+}
+
+.screenshot-tool-primary {
+  background: #4d96ff;
+  color: #fff;
+  box-shadow: 0 3px 0 #2f6fd0;
+}
+
+.screenshot-tool-primary:hover {
+  background: #6aa8ff;
+}
+
+.screenshot-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+}
+
+.screenshot-canvas {
+  position: fixed;
+  cursor: crosshair;
+  z-index: 5;
+}
+
+/* 选区四条边：拖动这里 = 整体移动（画布在上面，所以边条要高一层） */
+.screenshot-move-strip {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 7;
+  cursor: move;
+}
+
+.screenshot-strip-top { left: 0; right: 0; top: -4px; height: 8px; }
+.screenshot-strip-bottom { left: 0; right: 0; bottom: -4px; height: 8px; }
+.screenshot-strip-left { top: 0; bottom: 0; left: -4px; width: 8px; }
+.screenshot-strip-right { top: 0; bottom: 0; right: -4px; width: 8px; }
+
+.screenshot-toolbar {
+  flex-wrap: wrap;
+  max-width: 520px;
+}
+
+.screenshot-colors {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.screenshot-color {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+.screenshot-color:hover {
+  transform: scale(1.15);
+}
+
+.screenshot-color-active {
+  outline: 2px solid #ff5e5b;
+  outline-offset: 2px;
+}
+/* 冻结的屏幕底图 + 灰度遮罩；选区处用阴影挖洞露出原图。 */
+.screenshot-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* 不动底图本身：压暗交给遮罩层，这样选区"挖洞"后才能露出原色。 */
+  pointer-events: none;
+}
+
+.screenshot-overlay {
+  background: transparent;
+}
+
+.screenshot-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 1;
+}
+.screenshot-node.screenshot-node-arrow { border-radius: 50%; }
+.screenshot-text-input {
+    font-synthesis: weight style;
+  position: fixed;
+  min-width: 20px;
+  min-height: 20px;
+  max-width: none;
+  padding: 2px 4px;
+  border: 1px dashed rgba(51, 136, 255, 0.9);
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  z-index: 20;
+  outline: none;
+  white-space: pre-wrap;
+}
+
+.screenshot-select,
+.screenshot-number {
+  height: 26px;
+  min-width: 74px;
+  padding: 0 6px;
+  border: 1px solid #ffd98a;
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #3a2f2a;
+  font-size: 12px;
+}
+
+.screenshot-select:focus-visible,
+.screenshot-number:focus-visible {
+  outline: 2px solid #4d96ff;
+  outline-offset: 1px;
+}
+
+.screenshot-number {
+  width: 56px;
+  min-width: 56px;
+  padding: 0 4px;
+}
+
+/* 三行式工具栏：选项行 / 工具行 / 操作行 */
+/* 工具栏贴在选区右下角：right/bottom 由 JS 按选区算好，最少留 8px 不出屏。 */
+.screenshot-rows {
+  position: fixed;
+  right: var(--pin-right, 16px);
+  bottom: var(--pin-bottom, 16px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  z-index: 10;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+}
+
+.screenshot-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  width: fit-content;
+  padding: 6px;
+  border-radius: 16px;
+  background: #fffdf7;
+  border: 2px solid #ffe08a;
+  box-shadow: 0 10px 28px rgba(255, 94, 91, 0.22), 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+
+.screenshot-row-options {
+  background: #fff8ec;
+  border-color: #ffd166;
+}
+
+.screenshot-row-actions {
+  background: #fff6f5;
+  border-color: #ffb3b1;
+}
+
+.screenshot-chip {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  background: #fff3d6;
+  color: #3a2f2a;
+  cursor: pointer;
+}
+
+.screenshot-chip:hover {
+  background: #ffe8b8;
+}
+
+.screenshot-chip-active {
+  background: #4d96ff;
+  color: #fff;
+  box-shadow: 0 2px 0 #2f6fd0;
+}
+
+.screenshot-chip-dash {
+  width: 42px;
+  color: #3a2f2a;
+}
+
+.screenshot-chip-active.screenshot-chip-dash {
+  color: #fff;
+}
+
+.screenshot-dash-line {
+  display: block;
+  width: 24px;
+  border-top: 2px solid currentColor;
+}
+
+.screenshot-dash-dashed {
+  border-top-style: dashed;
+}
+
+.screenshot-dash-dotted {
+  border-top-style: dotted;
+  border-top-width: 3px;
+}
+
+.screenshot-range {
+  width: 88px;
+  accent-color: #ff5e5b;
+  cursor: pointer;
+}
+
+.screenshot-row-ocr {
+  flex-direction: column;
+  align-items: stretch;
+  width: 340px;
+  gap: 4px;
+}
+
+.screenshot-ocr-text {
+  width: 100%;
+  height: 108px;
+  padding: 6px 8px;
+  border: 1px solid #ffd166;
+  border-radius: 10px;
+  background: #fffdf7;
+  color: #2b2b2b;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.screenshot-ocr-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.screenshot-hover {
+  position: fixed;
+  border: 2px solid #4d96ff;
+  /* 候选窗口只描边；整屏变灰由独立遮罩负责。 */
+  pointer-events: none;
+  z-index: 4;
+}
+
+.screenshot-magnifier {
+  position: fixed;
+  width: 132px;
+  height: 96px;
+  border: 1px solid #ff3ea5;
+  border-radius: 6px;
+  background: #111;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 30;
+  image-rendering: pixelated;
+}
+.screenshot-build {
+  display: grid;
+  place-items: center;
+  padding: 0 6px;
+  font-size: 10px;
+  color: #b0733a;
+  letter-spacing: 0.02em;
+}
+
+.screenshot-failure {
+  position: fixed;
+  left: 50%;
+  top: 12%;
+  transform: translateX(-50%);
+  max-width: 70vw;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff1f0;
+  border: 1px solid #ffb3b1;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 40;
+}
+
+
+/* 文字旋转手柄：拖动它绕文字中心旋转 */
+.screenshot-rotate {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: #2f6fd0;
+  border: 2px solid #4d96ff;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+  z-index: 25;
+}
+
+.screenshot-rotate:active {
+  cursor: grabbing;
+  background: #e8f1ff;
+}
+
+/* 选中标注后的缩放手柄 */
+.screenshot-node {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #4d96ff;
+  border-radius: 3px;
+  background: #fff;
+  cursor: crosshair;
+  z-index: 26;
+}
+/* Office 风格文本框：虚线框 + 八个控制点 + 顶部旋转按钮 */
+.screenshot-textbox {
+  position: fixed;
+  border: 1px dashed #4d96ff;
+  z-index: 24;
+  /* 框线本身可点：拖框线=移动文字；四角控制点=缩放；顶部手柄=旋转。 */
+  pointer-events: auto;
+  cursor: move;
+}
+
+.screenshot-textbox-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid #4d96ff;
+  border-radius: 50%;
+  background: #fff;
+  pointer-events: auto;
+  z-index: 26;
+}
+
+.screenshot-textbox-handle-nw { left: -5px; top: -5px; cursor: nwse-resize; }
+.screenshot-textbox-handle-n { left: 50%; top: -5px; margin-left: -4.5px; cursor: ns-resize; }
+.screenshot-textbox-handle-ne { right: -5px; top: -5px; cursor: nesw-resize; }
+.screenshot-textbox-handle-e { right: -5px; top: 50%; margin-top: -4.5px; cursor: ew-resize; }
+.screenshot-textbox-handle-se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+.screenshot-textbox-handle-s { left: 50%; bottom: -5px; margin-left: -4.5px; cursor: ns-resize; }
+.screenshot-textbox-handle-sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
+.screenshot-textbox-handle-w { left: -5px; top: 50%; margin-top: -4.5px; cursor: ew-resize; }
+
+.screenshot-rotate {
+  position: absolute;
+  left: 50%;
+  top: -26px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #4d96ff;
+  border-radius: 50%;
+  background: #fff;
+  color: #2f6fd0;
+  font-size: 12px;
+  line-height: 1;
+  cursor: grab;
+  pointer-events: auto;
+  z-index: 27;
+}
+
+/* 旋转按钮与文本框之间的连接线 */
+.screenshot-rotate::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: 1px;
+  height: 8px;
+  background: #4d96ff;
+}
+
+.screenshot-rotate:active {
+  cursor: grabbing;
+  background: #e8f1ff;
+}
+/* 全屏框选：任何框线/控制点/边缘条/尺寸条都没意义，隐藏只留画面与工具栏。 */
+.screenshot-selection-fullscreen { border: none !important; outline: none !important; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45) !important; }
+.screenshot-selection-fullscreen .screenshot-handle,
+.screenshot-selection-fullscreen .screenshot-move-strip,
+.screenshot-selection-fullscreen .screenshot-size { display: none; }

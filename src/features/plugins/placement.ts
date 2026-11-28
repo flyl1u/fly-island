@@ -7,7 +7,7 @@ import {
 import type { InstalledPlugin, PluginManifest } from "./api";
 
 /** The settings page a placement leads to. */
-export type PluginPageCategory = "agents" | "agentConnect" | "messages" | "clockWeather" | "devices" | "battery" | `plugin:${string}`;
+export type PluginPageCategory = "agents" | "agentConnect" | "messages" | "clockWeather" | "devices" | "battery" | "music" | "centeredClock" | "screenshot" | `plugin:${string}`;
 
 export type PlacedPlugin = {
   id: string;
@@ -37,6 +37,7 @@ function pageFor(id: string, placement: PluginSettingsPlacementName, settings: P
   if (placement === "agentSessions") return "agents";
   if (placement === "agentConnect") return "agentConnect";
   if (placement === "messages") return "messages";
+  if (placement === "music") return "music";
   return settings.category ?? `plugin:${id}`;
 }
 

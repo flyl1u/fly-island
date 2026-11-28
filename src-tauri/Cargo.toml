@@ -19,6 +19,8 @@ serde_json = "1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+ndarray = "0.16"
+ort = { version = "=2.0.0-rc.10", default-features = false, features = ["load-dynamic", "ndarray"] }
 arboard = "3"
 base64 = "0.22"
 flate2 = "1"
@@ -42,14 +44,15 @@ sha2 = "0.10"
 semver = "1"
 zip = { version = "7", default-features = false, features = ["deflate"] }
 tokio = { version = "1", features = ["sync", "time", "process", "io-util", "macros"] }
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
 tauri-plugin-single-instance = "2"
 # No `zip`: it only unpacks v1-style .zip updates, and releases ship the bare
 # installer (createUpdaterArtifacts: true). Leaves out its old zip 4.x crate.
 tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 window-vibrancy = "0.6"
-windows = { version = "0.61", features = ["ApplicationModel", "Data_Xml_Dom", "Devices_Geolocation", "Devices_Power", "Foundation", "Foundation_Collections", "Graphics_Imaging", "Media", "Media_Control", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_DirectWrite", "Win32_Graphics_Dwm", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_NetworkManagement_IpHelper", "Win32_Networking_WinSock", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Console", "Win32_System_DataExchange", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_ToolHelp", "Win32_System_JobObjects", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_System_Power", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Accessibility", "Win32_UI_Controls", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Notifications", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Wdk_System_Threading"] }
+windows = { version = "0.61", features = ["ApplicationModel", "Data_Xml_Dom", "Devices_Geolocation", "Devices_Power", "Foundation", "Foundation_Collections", "Graphics_Imaging", "Media", "Media_Control", "Media_Ocr", "Globalization", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_DirectWrite", "Win32_Graphics_Dwm", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_NetworkManagement_IpHelper", "Win32_Networking_WinSock", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Console", "Win32_System_DataExchange", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_ToolHelp", "Win32_System_JobObjects", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_System_Power", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Accessibility", "Win32_UI_Controls", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Notifications", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Wdk_System_Threading"] }
 windows-future = { version = "0.2", features = ["std"] }
 zstd = { version = "0.13", default-features = false }
 
@@ -61,4 +64,4 @@ expect_used = "deny"
 
 [dev-dependencies]
 keyring-core = "1"
-windows = { version = "0.61", features = ["ApplicationModel", "Data_Xml_Dom", "Devices_Geolocation", "Devices_Power", "Foundation", "Foundation_Collections", "Graphics_Imaging", "Media", "Media_Control", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_DirectWrite", "Win32_Graphics_Dwm", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_NetworkManagement_IpHelper", "Win32_Networking_WinSock", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Console", "Win32_System_DataExchange", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_ToolHelp", "Win32_System_JobObjects", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_System_Power", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Accessibility", "Win32_UI_Controls", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Notifications", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Wdk_System_Threading"] }
+windows = { version = "0.61", features = ["ApplicationModel", "Data_Xml_Dom", "Devices_Geolocation", "Devices_Power", "Foundation", "Foundation_Collections", "Graphics_Imaging", "Media", "Media_Control", "Media_Ocr", "Globalization", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_DirectWrite", "Win32_Graphics_Dwm", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_NetworkManagement_IpHelper", "Win32_Networking_WinSock", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Console", "Win32_System_DataExchange", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_ToolHelp", "Win32_System_JobObjects", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_System_Power", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Accessibility", "Win32_UI_Controls", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Notifications", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Wdk_System_Threading"] }

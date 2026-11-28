@@ -529,6 +529,7 @@ pub(super) fn read_metadata(session: &MediaSession, source_app: Option<&str>) ->
     let title = non_empty(properties.Title().ok().map(|value| value.to_string()));
     let artist = non_empty(properties.Artist().ok().map(|value| value.to_string()));
     let album = non_empty(properties.AlbumTitle().ok().map(|value| value.to_string()));
+    let (artist, album) = resolve_artist_album(source_app, artist, album);
     let thumbnail = cached_thumbnail(source_app, title.as_deref(), artist.as_deref(), || {
         properties.Thumbnail().ok()
     });
@@ -539,6 +540,59 @@ pub(super) fn read_metadata(session: &MediaSession, source_app: Option<&str>) ->
         .and_then(|genres| player_track_id(genres.into_iter().map(|genre| genre.to_string())));
 
     Metadata { title, artist, album, thumbnail, track_id }
+}
+
+/// Apple Music reports the album inside the artist field, so the artist has to be split back
+/// before the track can be matched against the lyrics sources. Other players keep their
+/// metadata exactly as reported.
+fn resolve_artist_album(
+    source_app: Option<&str>,
+    artist: Option<String>,
+    album: Option<String>,
+) -> (Option<String>, Option<String>) {
+    if !is_apple_music(source_app) {
+        return (artist, album);
+    }
+    let Some(artist) = artist else { return (None, album) };
+    let (singer, split_album) = split_apple_music_artist(&artist);
+    (Some(singer), album.or(split_album))
+}
+
+/// Whether the media session belongs to Apple Music for Windows, which reports the album
+/// inside the artist field.
+fn is_apple_music(source_app: Option<&str>) -> bool {
+    let Some(id) = source_app else { return false };
+    let lowered = id.to_ascii_lowercase();
+    ["applemusic", "apple.music", "music.ui"].iter().any(|needle| lowered.contains(needle))
+}
+
+/// Apple Music for Windows puts the album into the artist field: "薛之谦 — 渡 The Crossing".
+/// Split it back, so the track matches other players' and can be looked up.
+fn split_apple_music_artist(artist: &str) -> (String, Option<String>) {
+    // Only an em/en dash surrounded by spaces separates the two; an ASCII hyphen is common
+    // inside artist names ("AC - DC") and must not be used.
+    for dash in ['\u{2014}', '\u{2013}'] {
+        let mut offset = 0;
+        while let Some(found) = artist[offset..].find(dash) {
+            let start = offset + found;
+            let end = start + dash.len_utf8();
+            let spaced_before = artist[..start].chars().next_back().is_some_and(char::is_whitespace);
+            let spaced_after = artist[end..].chars().next().is_none_or(char::is_whitespace);
+            offset = end;
+            if !spaced_before || !spaced_after {
+                continue;
+            }
+            let (singer, rest) = (artist[..start].trim(), artist[end..].trim());
+            if singer.is_empty() {
+                return (artist.to_string(), None);
+            }
+            if rest.is_empty() {
+                return (singer.to_string(), None);
+            }
+            return (singer.to_string(), Some(rest.to_string()));
+        }
+    }
+    (artist.to_string(), None)
 }
 
 pub(super) fn cached_thumbnail(
@@ -709,7 +763,10 @@ pub(super) fn current_unix_millis() -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{player_track_id, thumbnail_is_fresh, CachedThumbnail};
+    use super::{
+        player_track_id, resolve_artist_album, split_apple_music_artist, thumbnail_is_fresh,
+        CachedThumbnail,
+    };
 
     #[test]
     fn a_missing_or_new_cover_is_read_again() {
@@ -734,5 +791,39 @@ mod tests {
         assert_eq!(player_track_id(genres(&["QQ-002Abc"])).as_deref(), Some("QQ-002Abc"));
         assert_eq!(player_track_id(genres(&["Pop", "NCM-", "NCM-12 34"])), None);
         assert_eq!(player_track_id(Vec::new()), None);
+    }
+
+    #[test]
+    fn apple_music_artist_is_split_into_singer_and_album() {
+        let split = |artist: &str| split_apple_music_artist(artist);
+        assert_eq!(split("薛之谦 — 渡 The Crossing"), ("薛之谦".to_string(), Some("渡 The Crossing".to_string())));
+        // An ASCII hyphen belongs to the artist name and must not split.
+        assert_eq!(split("AC - DC — 退唱片"), ("AC - DC".to_string(), Some("退唱片".to_string())));
+        assert_eq!(split("歌手 – 渡 The Crossing"), ("歌手".to_string(), Some("渡 The Crossing".to_string())));
+        assert_eq!(split("歌手"), ("歌手".to_string(), None));
+        assert_eq!(split("歌手 — "), ("歌手".to_string(), None));
+        // Only the first separator splits.
+        assert_eq!(split("歌手 — 专辑 — 副标题"), ("歌手".to_string(), Some("专辑 — 副标题".to_string())));
+        // Nothing before the separator is no artist, so the field is left alone.
+        assert_eq!(split(" — 专辑"), (" — 专辑".to_string(), None));
+    }
+
+    #[test]
+    fn only_apple_music_gets_its_artist_split() {
+        let apple = Some("AppleMusic.exe");
+        assert_eq!(
+            resolve_artist_album(apple, Some("薛之谦 — 渡 The Crossing".to_string()), None),
+            (Some("薛之谦".to_string()), Some("渡 The Crossing".to_string()))
+        );
+        // A reported album wins over the one split out of the artist.
+        assert_eq!(
+            resolve_artist_album(apple, Some("薛之谦 — 渡 The Crossing".to_string()), Some("单曲".to_string())),
+            (Some("薛之谦".to_string()), Some("单曲".to_string()))
+        );
+        // Other players keep their artist as it is.
+        assert_eq!(
+            resolve_artist_album(Some("QQMusic.exe"), Some("薛之谦 — 渡 The Crossing".to_string()), None),
+            (Some("薛之谦 — 渡 The Crossing".to_string()), None)
+        );
     }
 }

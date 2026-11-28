@@ -1,0 +1,61 @@
+.collapsed-centered-clock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  max-width: min(220px, calc(100% - 36px));
+  max-height: 100%;
+  overflow: hidden;
+  color: var(--task-text-color, var(--color-text));
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.collapsed-centered-clock__time-group,
+.collapsed-centered-clock__date { display: inline-flex; align-items: center; }
+.collapsed-centered-clock__time-group { flex: 0 0 auto; gap: 5px; line-height: 1.05; }
+.collapsed-centered-clock__time {
+  font-size: clamp(10px, calc(16px * var(--island-font-scale, 1)), 17px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+.collapsed-centered-clock__precision {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  color: var(--color-accent);
+  font-size: clamp(7px, calc(8px * var(--island-font-scale, 1)), 9px);
+  font-weight: 600;
+  line-height: 1;
+}
+.collapsed-centered-clock__seconds::before { content: ":"; margin-inline-end: 1px; color: var(--text-2); }
+.collapsed-centered-clock__date {
+  min-width: 0;
+  max-width: 100%;
+  gap: 5px;
+  color: var(--text-2);
+  font-size: clamp(7px, calc(8px * var(--island-font-scale, 1)), 9px);
+  font-weight: 600;
+  line-height: 1;
+}
+.collapsed-centered-clock__weekday { flex: 0 0 auto; color: var(--color-accent); }
+.collapsed-centered-clock__date-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.collapsed-centered-clock--date-only .collapsed-centered-clock__date {
+  font-size: clamp(10px, calc(12px * var(--island-font-scale, 1)), 13px);
+}
+.centered-clock-settings-preview {
+  width: 196px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-text) 9%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+.centered-clock-settings-preview .collapsed-centered-clock { max-width: 100%; }

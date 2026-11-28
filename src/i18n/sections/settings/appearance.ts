@@ -67,7 +67,7 @@ export type SettingsAppearanceText = {
   collapsedIsland: {
     title: string;
     priorityFooter: string;
-    items: Record<"agent" | "lyrics" | "todo", { name: string; hint: string }>;
+    items: Record<"agent" | "lyrics" | "todo" | "centeredClock", { name: string; hint: string }>;
     /** The drag handle of one item; arrow keys on it move the item too. */
     moveLabel: (name: string) => string;
     showCover: string;
@@ -142,11 +142,12 @@ export const zhCN: SettingsAppearanceText = {
   },
   collapsedIsland: {
     title: "岛屿展示优先级",
-    priorityFooter: "几样同时有内容时，收起的岛显示排在最前面的那一样。拖动调整顺序。",
+    priorityFooter: "几样同时有内容时，收起的岛显示排在最前面的那一样。安装居中时钟后也可调整它的顺序。",
     items: {
       agent: { name: "AI Agent 任务", hint: "正在运行的会话标题" },
       lyrics: { name: "歌词", hint: "播放时的当前一句，没有歌词时显示歌名" },
       todo: { name: "待办", hint: "开始做的待办；没开始时，剩余数量排在最后" },
+      centeredClock: { name: "居中时钟", hint: "没有更高优先级内容时显示" },
     },
     moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
     showCover: "显示歌曲封面",
@@ -221,11 +222,12 @@ export const en: SettingsAppearanceText = {
   },
   collapsedIsland: {
     title: "Island display priority",
-    priorityFooter: "When several have something to show, the collapsed island shows the first. Drag to reorder.",
+    priorityFooter: "When several have something to show, the collapsed island shows the first. Install Centered Clock to add it here, then drag to reorder.",
     items: {
       agent: { name: "AI Agent task", hint: "The running session's title" },
       lyrics: { name: "Lyrics", hint: "The current line while a song plays, or its title" },
       todo: { name: "Todos", hint: "The todo you started; until then, the count left comes last" },
+      centeredClock: { name: "Centered clock", hint: "Shown when no higher-priority item is active" },
     },
     moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
     showCover: "Show the song's cover",

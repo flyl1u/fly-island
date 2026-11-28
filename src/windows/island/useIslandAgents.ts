@@ -44,6 +44,7 @@ export function useIslandAgents(settings: IslandSettings) {
     kimiCode: watchesQuota && native.kimiCode,
     zcode: watchesQuota && native.zcode,
     antigravity: watchesQuota && native.antigravity,
+    relay: watchesQuota && native.relay,
   };
   // Read once for both rings and alerts. Either setting can need the data independently.
   const usages = useAgentUsages(settings.agentStatusEnabled, {
@@ -53,6 +54,7 @@ export function useIslandAgents(settings: IslandSettings) {
     kimiCode: native.kimiCode && (shown.includes("kimiCode") || alertSources.kimiCode),
     zcode: native.zcode && (shown.includes("zcode") || alertSources.zcode),
     antigravity: native.antigravity && (shown.includes("antigravity") || alertSources.antigravity),
+    relay: native.relay && (shown.includes("relay") || alertSources.relay),
   });
   const { state: workbuddy } = useWorkbuddyUsage(settings.agentStatusEnabled && (shown.includes("workbuddy") || alertSources.workbuddy));
   const workbuddyUsage = workbuddy.status === "connected" ? workbuddy.usage : null;

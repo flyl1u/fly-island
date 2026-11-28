@@ -1,0 +1,6 @@
+.screenshot-result-input { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 32px;
+  margin: 0; padding: 3px 5px; border: 1px solid transparent; border-radius: 4px; font-family: var(--font-system);
+  color: inherit; background: transparent; resize: none; overflow: hidden; white-space: pre-wrap;
+  overflow-wrap: anywhere; word-break: break-word; font-synthesis: weight style; }
+.screenshot-result-input:hover, .screenshot-result-input:focus { border-color: #4d96ff; outline: none; }
+.screenshot-result-input:disabled { opacity: 1; }
