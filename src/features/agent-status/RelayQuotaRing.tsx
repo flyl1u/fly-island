@@ -37,7 +37,7 @@ function RelayQuotaRing({ account, now, updatedAt }: { account: RelayBalance; no
     { text: text.updated(text.updatedAgo(minutes), relay.source), muted: true },
   ];
   return (
-    <IslandHoverCard lines={lines} alignTo=":scope" anchorClassName="agent-quota__hover">
+    <IslandHoverCard lines={lines} delayMs={0} alignTo=":scope" anchorClassName="agent-quota__hover">
       <span className={`agent-quota__agent agent-quota__agent--relay${problem ? " agent-quota__agent--problem" : ""}`}
         role="img" aria-label={lines.map((line) => line.text).join(" · ")} tabIndex={0}>
         <QuotaRings outer={left} inner={left} />
