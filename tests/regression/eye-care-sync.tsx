@@ -27,7 +27,7 @@ const manifest = {
   description: { "zh-CN": "护眼", en: "Eye Care" }, version: "1.0.0", apiVersion: 1,
   runtime: { command: "eye-care.exe" }, contributes: ["panel"], permissions: ["panel", "desktop-windows"],
   settings: [], panel: { icon: "heart-pulse" },
-  actions: ["rest_now", "snooze_10", "skip"].map((id) => ({ id, label: { "zh-CN": id, en: id } })),
+  actions: ["reset_work", "rest_now", "snooze_10", "skip"].map((id) => ({ id, label: { "zh-CN": id, en: id } })),
 };
 mockIPC((command) => {
   if (command === "get_plugins") return {
@@ -92,10 +92,13 @@ try {
   jump += 400_000;
   await act(async () => document.dispatchEvent(new Event("visibilitychange")));
   check(islandClock() === "00:00" && restClock() === "00:00", "Expired clocks stop at zero after visibility resumes");
-  panel = { ...panel, headline: language === "en" ? "Screen time" : "用眼中", attention: false, actions: ["rest_now"], islandActions: ["rest_now"],
+  panel = { ...panel, headline: language === "en" ? "Screen time" : "用眼中", attention: false, actions: ["reset_work", "rest_now"], islandActions: ["reset_work", "rest_now"],
     rows: [{ ...panel.rows[0], title: language === "en" ? "Screen time remaining" : "剩余用眼时长", countdownTo: Date.now() + 1_200_000 }] };
   await act(async () => { await refreshPlugins(); restRoot.render(null); });
-  check(island.querySelector(".eye-care-island__action")?.textContent === "rest_now", "The working island keeps Take a break now");
+  const workingActions = [...island.querySelectorAll<HTMLButtonElement>(".eye-care-island__action")];
+  check(workingActions.map((button) => button.textContent).join(",") === "reset_work,rest_now"
+    && workingActions[1].classList.contains("eye-care-island__action--primary"),
+    "The working island offers Reset screen time to the left of the filled Take a break now");
   check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline && island.querySelector(".eye-care-island__label")?.textContent === panel.rows[0].title,
     "The island shows the working phase and remaining screen time label");
   const card = island.querySelector(".eye-care-island__card");

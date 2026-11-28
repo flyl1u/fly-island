@@ -107,6 +107,13 @@
   ],
   "actions": [
     {
+      "id": "reset_work",
+      "label": {
+        "zh-CN": "重置用眼时长",
+        "en": "Reset screen time"
+      }
+    },
+    {
       "id": "rest_now",
       "label": {
         "zh-CN": "现在休息",

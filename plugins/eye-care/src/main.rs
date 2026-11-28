@@ -130,6 +130,7 @@ impl Reminder {
                 shared.clock.rest_now(at);
                 true
             }
+            "reset_work" => shared.clock.reset_work(at),
             "skip" => {
                 let allowed = shared.settings.allow_skip;
                 shared.clock.skip_rest(at, allowed)

@@ -150,3 +150,16 @@ fn rest_keeps_running_during_idle_and_fullscreen_and_expired_clicks_cannot_postp
     assert_eq!(clock.phase(), Phase::Working);
     assert!(!clock.skip_rest(at(base, 21), true));
 }
+
+#[test]
+fn the_user_can_restart_the_eye_use_interval() {
+    let base = Instant::now();
+    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    clock.rest_now(base);
+    assert!(clock.snooze(base, 10));
+    assert!(clock.reset_work(at(base, 11)));
+    assert_eq!(clock.remaining(at(base, 11)), Duration::from_secs(60));
+    assert!(!clock.postponed(), "a reset starts a fresh cycle");
+    clock.tick(at(base, 600), false, false);
+    assert!(!clock.reset_work(at(base, 601)), "nothing to reset once the break begins");
+}

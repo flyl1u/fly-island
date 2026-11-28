@@ -106,6 +106,17 @@ impl Clock {
         }
     }
 
+    /// Restarts the eye-use interval from now: the user's own "start over".
+    pub fn reset_work(&mut self, now: Instant) -> bool {
+        if self.phase != Phase::Working {
+            return false;
+        }
+        self.deadline = now + self.period;
+        self.snooze_used = false;
+        self.fullscreen_remaining = None;
+        true
+    }
+
     /// Emergency unlock: skip the rest and grant the next cycle a fresh postponement.
     pub fn skip_rest(&mut self, now: Instant, allowed: bool) -> bool {
         if self.phase != Phase::Resting || !allowed {

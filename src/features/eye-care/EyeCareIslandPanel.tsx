@@ -78,7 +78,8 @@ export function EyeCareIslandPanel() {
               {actions.map((action, index) => (
                 <button
                   key={action.id}
-                  className={index === 0 ? "eye-care-island__action eye-care-island__action--primary" : "eye-care-island__action"}
+                  // The main action comes last: the quieter ones (reset the screen time) sit to its left.
+                  className={index === actions.length - 1 ? "eye-care-island__action eye-care-island__action--primary" : "eye-care-island__action"}
                   type="button"
                   disabled={busy !== null || status !== "running"}
                   onClick={(event) => {

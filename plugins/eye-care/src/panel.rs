@@ -49,10 +49,11 @@ pub fn snapshot(shared: &Shared) -> Value {
             actions.push("skip");
         }
     } else {
+        actions.push("reset_work");
         actions.push("rest_now");
     }
     // The page offers the phase action only; postpone and skip belong to the break window.
-    let island_actions = if resting { Vec::new() } else { vec!["rest_now"] };
+    let island_actions = if resting { Vec::new() } else { actions.clone() };
     json!({"panel": {
         "headline": headline, "note": note,
         "rows": [{"id":"timer", "title": if resting {t("剩余休息时长", "Break time remaining")} else {t("剩余用眼时长", "Screen time remaining")},
@@ -137,6 +138,15 @@ mod tests {
             assert!(shared.clock.skip_rest(at, true));
             assert_phase(&shared, false, false);
         }
+    }
+
+    #[test]
+    fn the_working_phase_offers_resetting_before_taking_a_break() {
+        let reminder = Reminder::new(Settings::parse(&json!({})));
+        let shared = reminder.shared.lock().unwrap();
+        let data = snapshot(&shared);
+        assert_eq!(data["panel"]["actions"], json!(["reset_work", "rest_now"]));
+        assert_eq!(data["panel"]["islandActions"], json!(["reset_work", "rest_now"]));
     }
 
     #[test]
