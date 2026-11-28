@@ -166,7 +166,7 @@
   height: calc(26 * var(--u));
 }
 
-.agent-page-preview__quota .quota-rings__body > svg { width: 100%; height: 100%; }
+.agent-page-preview__quota .quota-rings > svg { width: 100%; height: 100%; }
 .agent-page-preview__quota .agent-provider-mark {
   width: calc(15.95 * var(--u) * var(--agent-mark-scale, 1));
   height: calc(15.95 * var(--u) * var(--agent-mark-scale, 1));

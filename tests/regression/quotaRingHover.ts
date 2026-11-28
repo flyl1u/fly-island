@@ -17,24 +17,12 @@ export async function checkQuotaHover(ring: HTMLElement, check: (condition: unkn
   check(lines.join("|") === "5 小时 · 剩余 73%|每周 · 剩余 38%" && card!.getBoundingClientRect().left >= bounds.right,
     `悬停在右侧一次显示两项额度，不含来源和重置说明：${lines.join("|")}`);
   await act(async () => { anchor.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
-  const body = ring.querySelector<HTMLElement>(".quota-rings__body")!;
-  const shadow = () => getComputedStyle(ring.querySelector(".quota-rings")!, "::before").boxShadow;
-  const restingShadow = shadow();
-  // "rgba(…) 0px 1px 3px 0px": what reaches below the ring has to fit the row's padding, or it is cut.
-  const [, offsetY, blur, spread] = (restingShadow.match(/(-?[\d.]+)px/g) ?? []).map(parseFloat);
-  const padding = parseFloat(getComputedStyle(ring.closest(".agent-quota")!).paddingBottom);
-  check(restingShadow !== "none" && offsetY + blur + spread <= padding
-    && getComputedStyle(ring.querySelector(".quota-rings")!, "::before").backgroundColor === "rgba(0, 0, 0, 0)",
-    `整个额度环常驻一层不带底色、不被裁掉的浅阴影：${restingShadow}`);
-  const restingTarget = targets[0].getBoundingClientRect().top;
+  const agent = () => getComputedStyle(ring).backgroundColor;
+  const resting = agent();
   await act(async () => targets[0].focus());
   await settle();
-  const lifted = new DOMMatrix(getComputedStyle(body).transform);
-  check(lifted.is2D && lifted.m42 < 0 && lifted.m42 >= -1 && lifted.m11 > 1 && lifted.m11 <= 1.06 && lifted.m11 === lifted.m22
-    && body.querySelector(".quota-rings__logo") && body.querySelectorAll(".quota-rings__track").length === 2,
-    `聚焦时环和图标整体轻微抬起，不倾斜、不变形：${lifted.toString()}`);
-  check([...body.querySelectorAll("svg path")].every((arc) => getComputedStyle(arc).opacity === "1")
-    && shadow() === restingShadow && targets[0].getBoundingClientRect().top === restingTarget
-    && getComputedStyle(ring).backgroundColor === "rgba(0, 0, 0, 0)", "两段弧不变暗，阴影和感应区不动，背后不铺底色");
+  check(agent() !== resting && getComputedStyle(ring.querySelector(".quota-rings > svg")!).transform === "none"
+    && getComputedStyle(ring.querySelector(".quota-rings")!, "::before").content === "none",
+    "聚焦时沿用 3.4.3 的底色高亮，环不抬起、没有阴影");
   await act(async () => targets[0].blur());
 }
