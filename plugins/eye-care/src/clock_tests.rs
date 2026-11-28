@@ -35,6 +35,9 @@ fn work_turns_into_a_timed_rest_and_back() {
     assert_eq!(clock.phase(), Phase::Resting);
     assert_eq!(clock.remaining(at(base, 70)), Duration::from_secs(10));
     clock.tick(at(base, 80), false, false);
+    assert_eq!(clock.phase(), Phase::Resting, "the break stays on screen past its length");
+    assert!(clock.rest_done(at(base, 80)));
+    assert!(clock.end_rest(at(base, 80)), "the user coming back ends it");
     assert_eq!(clock.phase(), Phase::Working);
 }
 
@@ -81,6 +84,8 @@ fn a_break_can_only_be_postponed_once_per_cycle() {
     assert!(!clock.can_snooze());
     assert!(!clock.snooze(at(base, 662), 10));
     clock.tick(at(base, 682), false, false);
+    assert!(clock.rest_done(at(base, 682)));
+    assert!(clock.end_rest(at(base, 682)));
     clock.tick(at(base, 742), false, false);
     assert!(clock.can_snooze(), "a completed rest opens the next cycle");
 }
@@ -143,6 +148,7 @@ fn idle_fullscreen_and_a_manual_break_never_restore_a_used_postponement() {
     assert!(!clock.can_snooze());
     assert!(!clock.snooze(at(base, 201), 30));
     clock.tick(at(base, 221), true, true);
+    assert!(clock.rest_done(at(base, 221)) && clock.end_rest(at(base, 221)));
     clock.tick(at(base, 222), true, true);
     assert_eq!(clock.remaining(at(base, 300)), Duration::from_secs(60));
 }
@@ -157,8 +163,11 @@ fn rest_keeps_running_during_idle_and_fullscreen_and_expired_clicks_cannot_postp
     assert_eq!(clock.remaining(at(base, 10)), Duration::from_secs(10));
     assert!(!clock.snooze(at(base, 20), 10));
     clock.tick(at(base, 20), true, true);
+    assert_eq!(clock.phase(), Phase::Resting);
+    assert!(clock.rest_done(at(base, 20)), "an idle desk does not shorten the break");
+    assert!(!clock.skip_rest(at(base, 21), true), "a finished break cannot be skipped");
+    assert!(clock.end_rest(at(base, 21)));
     assert_eq!(clock.phase(), Phase::Working);
-    assert!(!clock.skip_rest(at(base, 21), true));
 }
 
 #[test]
@@ -266,6 +275,7 @@ fn a_break_holds_the_screen_time_while_it_runs_and_a_completed_one_starts_from_z
     assert_eq!(clock.phase(), Phase::Resting);
     assert_eq!(clock.accumulated(at(base, 20)), Duration::from_secs(10), "a break is not screen time");
     clock.tick(at(base, 30), false, false);
+    assert!(clock.end_rest(at(base, 30)));
     assert_eq!(clock.phase(), Phase::Working);
     assert_eq!(clock.accumulated(at(base, 30)), Duration::ZERO, "a completed break starts from zero");
     assert_eq!(clock.accumulated(at(base, 40)), Duration::from_secs(10));

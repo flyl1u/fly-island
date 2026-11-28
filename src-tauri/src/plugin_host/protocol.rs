@@ -42,6 +42,10 @@ pub struct Panel {
     /// a battery is low) without a notification.
     #[serde(default)]
     pub attention: bool,
+    /// The page's event is over (Eye Care's break ran its full length): it stays on screen
+    /// without actions, waiting for the user. Absent in panels written before it existed.
+    #[serde(default)]
+    pub done: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -55,6 +59,10 @@ pub struct PanelRow {
     pub percent: Option<f64>,
     /// Unix milliseconds the host counts down to, when the entry is a deadline.
     pub countdown_to: Option<i64>,
+    /// Unix milliseconds the host counts up from, when the entry is a running total (Eye Care's
+    /// break counting its rest up). Never combined with a deadline or a fixed duration.
+    #[serde(default)]
+    pub count_up_from: Option<i64>,
     /// Milliseconds of a fixed duration the host shows as it is, when the entry stopped counting:
     /// a held timer's remaining time or a finished round's total. Never combined with a deadline.
     #[serde(default)]
@@ -139,6 +147,7 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
                 !text(&r.id) || !text(&r.title) || r.detail.as_deref().is_some_and(|detail| !text(detail))
                     || !percent(r.percent)
                     || r.countdown_to.is_some_and(|deadline| deadline <= 0)
+                    || r.count_up_from.is_some_and(|from| from <= 0 || r.countdown_to.is_some() || r.duration_ms.is_some())
                     || r.duration_ms.is_some_and(|total| total < 0 || r.countdown_to.is_some())
                     || r.tone.as_deref().is_some_and(|tone| !["normal", "warning", "danger"].contains(&tone))
             })

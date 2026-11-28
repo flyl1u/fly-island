@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { countdownSeconds, formatCountdown, nextCountdownDelay } from "../../src/utils/countdown.ts";
+import { countdownSeconds, elapsedSeconds, formatCountdown, nextCountdownDelay, nextElapsedDelay } from "../../src/utils/countdown.ts";
 
 test("countdowns schedule at deadline boundaries regardless of mount time or a late callback", () => {
   const deadline = 60_250;
@@ -26,4 +26,16 @@ test("one formatter preserves generic plugin clocks and pads Eye Care minutes on
   assert.equal(formatCountdown(65, true), "01:05");
   assert.equal(formatCountdown(0, true), "00:00");
   assert.equal(formatCountdown(3601, true), "1:00:01");
+});
+test("a running total counts whole seconds up from its anchor and wakes on the next boundary", () => {
+  assert.equal(elapsedSeconds(1_000, 1_000), 0);
+  assert.equal(elapsedSeconds(1_000, 4_950), 3);
+  assert.equal(elapsedSeconds(1_000, 90_500), 89);
+  assert.equal(elapsedSeconds(null, 90_500), 0);
+  // A clock that jumps backwards shows zero rather than a negative total.
+  assert.equal(elapsedSeconds(10_000, 5_000), 0);
+  assert.equal(nextElapsedDelay(1_000, 1_100), 900);
+  assert.equal(nextElapsedDelay(1_000, 4_950), 50);
+  assert.equal(nextElapsedDelay(1_000, 5_000), 1000);
+  assert.equal(nextElapsedDelay(null, 5_000), null);
 });

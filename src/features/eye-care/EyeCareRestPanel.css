@@ -1,7 +1,8 @@
 /* The break screen is a full-display dim surface with one card in the middle, drawn like the
-   island's own Eye Care page: a quiet title, the remaining time as the loudest element, its
-   label underneath, a thin bar for what is left, then the postponements and the optional skip.
-   Vertical auto margins centre the card but let a short screen scroll from its top. */
+   island's own Eye Care page: a quiet title, the rest time counting up as the loudest element,
+   its label underneath, a thin bar filling as the break runs, then the postponements and the
+   optional skip — replaced by one line once the break is complete. Vertical auto margins centre
+   the card but let a short screen scroll from its top. */
 .eye-care-rest {
   flex: 1 1 auto;
   width: 100%;
@@ -28,7 +29,8 @@
 .eye-care-rest__title {
   margin: 0;
   color: var(--text-3);
-  font-size: 12px;
+  /* The same size as the island's phase headline, so both surfaces name the break alike. */
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.4;
@@ -88,6 +90,14 @@
   font-size: 11.5px;
   font-weight: 500;
   line-height: 1.5;
+}
+
+.eye-care-rest__hint {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
 /* Six postponements in two rows of three, so 5 minutes leads and the widest window stay even. */

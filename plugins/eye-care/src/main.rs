@@ -113,10 +113,16 @@ impl Reminder {
             return panel::unsupported(&shared.settings);
         }
         let mut shared = self.shared.lock().unwrap_or_else(PoisonError::into_inner);
-        shared.idle = idle::elapsed().is_some_and(|elapsed| elapsed >= shared.settings.idle);
+        let at = Instant::now();
+        let since_input = idle::elapsed();
+        shared.idle = since_input.is_some_and(|elapsed| elapsed >= shared.settings.idle);
         shared.fullscreen = shared.settings.fullscreen_pause && fullscreen::active() == Some(true);
         let (idle, fullscreen) = (shared.idle, shared.fullscreen);
-        shared.clock.tick(Instant::now(), idle, fullscreen);
+        shared.clock.tick(at, idle, fullscreen);
+        // A break that ran its full length ends with the next keypress or mouse movement.
+        if since_input.is_some_and(|elapsed| elapsed < Duration::from_secs(2)) {
+            shared.clock.end_rest(at);
+        }
         panel::snapshot(&shared)
     }
 

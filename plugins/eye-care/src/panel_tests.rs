@@ -50,11 +50,13 @@ fn assert_resting(shared: &Shared) {
     assert_eq!(data["panel"]["headline"], t("休息中", "Resting"));
     assert_eq!(
         data["panel"]["rows"][0]["title"],
-        t("剩余休息时长", "Break time remaining")
+        t("已休息时长", "Break time elapsed")
     );
     assert_eq!(data["panel"]["attention"], true);
-    assert!(data["panel"]["rows"][0]["countdownTo"].is_i64());
+    assert!(data["panel"]["rows"][0]["countUpFrom"].is_i64(), "the break counts up");
+    assert!(data["panel"]["rows"][0]["countdownTo"].is_null());
     assert!(data["panel"]["rows"][0]["durationMs"].is_null());
+    assert_eq!(data["panel"]["done"], false);
     assert_eq!(
         data["panel"]["islandActions"],
         json!([]),
@@ -111,6 +113,36 @@ fn labels_follow_break_and_postponement_transitions_in_both_languages() {
         assert!(!shared.clock.snooze(at + period, 10));
         assert!(shared.clock.skip_rest(at + period, true));
         assert_working(&shared, false);
+    }
+}
+
+#[test]
+fn a_completed_break_stays_on_screen_without_actions() {
+    for language in ["zh-CN", "en"] {
+        let reminder = Reminder::new(Settings::parse(&json!({"language":language, "mode":"lock"})));
+        let mut shared = reminder.shared.lock().unwrap();
+        let at = Instant::now();
+        let period = shared.settings.period();
+        let rest = shared.settings.rest();
+        shared.clock.tick(at + period, false, false);
+        assert_resting(&shared);
+        assert_eq!(shared.clock.percent_remaining(at + period), 100.0);
+        let later = at + period + rest;
+        shared.clock.tick(later, false, false);
+        assert!(shared.clock.rest_done(later));
+        let data = snapshot_at(&shared, later);
+        let t = |zh, en| shared.settings.text(zh, en);
+        assert_eq!(data["panel"]["headline"], t("休息完成", "Break complete"));
+        assert_eq!(data["panel"]["done"], true);
+        assert_eq!(data["panel"]["actions"], json!([]), "a finished break offers nothing");
+        assert_eq!(data["panel"]["islandActions"], json!([]));
+        assert_eq!(
+            data["panel"]["rows"][0]["title"],
+            t("已休息时长", "Break time elapsed")
+        );
+        assert!(data["panel"]["rows"][0]["countUpFrom"].is_i64(), "the total keeps counting");
+        assert_eq!(data["panel"]["rows"][0]["percent"].as_f64(), Some(100.0));
+        assert_eq!(data["panel"]["attention"], true, "the window stays until the user returns");
     }
 }
 

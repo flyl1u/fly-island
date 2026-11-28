@@ -3,9 +3,10 @@
 //! Two break styles share the cycle: locking starts the full-screen break when the screen time
 //! runs out or the user asks for one, while notifying only reminds. In notify mode the cycle
 //! turns overdue once the time is up, holding the accumulated screen time until the user
-//! postpones the break or calls it done.
+//! postpones the break or calls it done. A locking break counts its rest up rather than down and
+//! stays on screen past its length, waiting for the user to come back.
 
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Phase {
@@ -33,11 +34,19 @@ pub struct Clock {
     snooze_used: bool,
     /// Frozen work remaining during idle or full-screen use.
     fullscreen_remaining: Option<Duration>,
+    /// Unix milliseconds the break began, so the host can count the rest up from a fixed anchor.
+    rest_started_ms: i64,
     /// Screen time counted up to `accumulated_at`, and whether it is held (idle, full screen,
     /// a break, or an overdue round). A held total is what the island shows as it is.
     accumulated: Duration,
     accumulated_at: Instant,
     accumulated_held: bool,
+}
+
+fn wall_ms() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX))
 }
 
 impl Clock {
@@ -50,6 +59,7 @@ impl Clock {
             mode,
             snooze_used: false,
             fullscreen_remaining: None,
+            rest_started_ms: 0,
             accumulated: Duration::ZERO,
             accumulated_at: now,
             accumulated_held: false,
@@ -105,6 +115,16 @@ impl Clock {
         self.fullscreen_remaining.is_some()
     }
 
+    /// The break has run its full length: the screens stay covered until the user comes back.
+    pub fn rest_done(&self, now: Instant) -> bool {
+        self.phase == Phase::Resting && now >= self.deadline
+    }
+
+    /// Unix milliseconds the current break began, for the island's and the window's count-up.
+    pub fn rest_started_ms(&self) -> i64 {
+        self.rest_started_ms
+    }
+
     pub fn tick(&mut self, now: Instant, idle: bool, fullscreen: bool) {
         let away = idle || fullscreen;
         match self.phase {
@@ -131,7 +151,7 @@ impl Clock {
                     }
                 }
             }
-            Phase::Resting if now >= self.deadline => self.begin_work(now),
+            // A break stays on screen past its length; input calls `end_rest`.
             Phase::Resting => {}
             // The total stands still while the user decides; it never counts a break.
             Phase::Overdue => {}
@@ -212,7 +232,16 @@ impl Clock {
 
     /// Emergency unlock: skip the rest and grant the next cycle a fresh postponement.
     pub fn skip_rest(&mut self, now: Instant, allowed: bool) -> bool {
-        if self.phase != Phase::Resting || !allowed {
+        if self.phase != Phase::Resting || !allowed || now >= self.deadline {
+            return false;
+        }
+        self.begin_work(now);
+        true
+    }
+
+    /// A completed break ends when the user touches the keyboard or mouse again.
+    pub fn end_rest(&mut self, now: Instant) -> bool {
+        if !self.rest_done(now) {
             return false;
         }
         self.begin_work(now);
@@ -223,6 +252,7 @@ impl Clock {
         self.phase = Phase::Resting;
         self.deadline = now + self.rest;
         self.fullscreen_remaining = None;
+        self.rest_started_ms = wall_ms();
         self.hold_accumulated(now);
     }
 

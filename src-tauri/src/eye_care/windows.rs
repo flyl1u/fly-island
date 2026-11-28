@@ -247,10 +247,10 @@ pub(super) fn update(app: &AppHandle, session: u64, snapshot: Option<BreakState>
     }
     let was_active = runtime.snapshot.is_some();
     let before_error = runtime.failed;
-    if snapshot.as_ref().map(|rest| rest.deadline)
-        != runtime.snapshot.as_ref().map(|rest| rest.deadline)
+    if snapshot.as_ref().map(|rest| rest.started_at)
+        != runtime.snapshot.as_ref().map(|rest| rest.started_at)
     {
-        runtime.expires_at = snapshot.as_ref().map(|rest| expires_at(rest.deadline));
+        runtime.expires_at = snapshot.as_ref().map(|rest| expires_at(rest.started_at));
     }
     runtime.snapshot = snapshot;
     if !was_active && runtime.snapshot.is_some() {
@@ -324,12 +324,14 @@ fn refresh(app: &AppHandle) {
     }
 }
 
-// Hide the overlays at the start of the next cycle even if the plugin stops publishing.
-fn expires_at(deadline: i64) -> Instant {
+// Hide the overlays if the plugin goes quiet: a break that finished is meant to stay until the
+// user comes back, so the cap is a safety net rather than the break's own length.
+fn expires_at(started_at: i64) -> Instant {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |elapsed| elapsed.as_millis() as i64);
-    Instant::now() + Duration::from_millis(deadline.saturating_sub(now).clamp(0, 3_600_000) as u64)
+    const CAP: i64 = 2 * 60 * 60 * 1000;
+    Instant::now() + Duration::from_millis((started_at + CAP - now).clamp(0, CAP) as u64)
 }
 
 pub(super) fn ready(app: &AppHandle, label: &str) {

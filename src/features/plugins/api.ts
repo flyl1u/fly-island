@@ -6,9 +6,9 @@ export type Localized = { "zh-CN": string; en: string };
 export type PluginSetting = { key: string; label: Localized; description?: Localized; type: "toggle" | "text" | "secret" | "select" | "number" | "choice"; default: boolean | string; options: { value: string; label: Localized }[]; min?: number; max?: number; showWhen?: { key: string; value: string } };
 import type { PluginPanelIcon } from "./panelTypes";
 export type { PluginPanelIcon } from "./panelTypes";
-export type PluginPanelRow = { id: string; title: string; detail: string | null; percent: number | null; countdownTo: number | null; durationMs?: number | null; tone: "normal" | "warning" | "danger" | null };
+export type PluginPanelRow = { id: string; title: string; detail: string | null; percent: number | null; countdownTo: number | null; countUpFrom?: number | null; durationMs?: number | null; tone: "normal" | "warning" | "danger" | null };
 /** What a plugin's own island page shows; the host draws it with its own components. */
-export type PluginPanel = { headline: string; note: string | null; rows: PluginPanelRow[]; actions: string[]; islandActions: string[] | null; attention: boolean };
+export type PluginPanel = { headline: string; note: string | null; rows: PluginPanelRow[]; actions: string[]; islandActions: string[] | null; attention: boolean; done?: boolean };
 export type PluginManifest = { id: string; name: Localized; description: Localized; version: string; apiVersion: 1; runtime: { command: string }; permissions: string[]; contributes: string[]; panel?: { icon: PluginPanelIcon }; settings: PluginSetting[]; actions: { id: string; label: Localized }[] };
 export type PluginQuota = { id: string; label: string; remainingPercent: number | null; secondaryPercent: number | null; balance: string | null; resetsAt: number | null; updatedAt: number };
 export type PluginSession = { id: string; title: string; cwd: string | null; status: "running" | "waiting" | "completed"; updatedAt: number; action: string | null };

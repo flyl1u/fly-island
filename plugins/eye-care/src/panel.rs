@@ -1,5 +1,5 @@
-//! Host-rendered island panel; a held timer and a finished round publish a fixed duration the
-//! host draws as it is, never a moving clock.
+//! Host-rendered island panel; a break counts up, and a held timer or a finished round publishes
+//! a fixed duration the host draws as it is, never a moving clock.
 use crate::{Phase, Settings, Shared};
 use fly_island_plugin_sdk::{json, now, Value};
 use std::time::Instant;
@@ -11,19 +11,30 @@ pub fn unsupported(settings: &Settings) -> Value {
 }
 
 pub fn snapshot(shared: &Shared) -> Value {
+    snapshot_at(shared, Instant::now())
+}
+
+/// The same panel as of `at`; the tests read a future instant without waiting for it.
+pub(crate) fn snapshot_at(shared: &Shared, at: Instant) -> Value {
     let settings = &shared.settings;
     let t = |zh, en| settings.text(zh, en);
-    let at = Instant::now();
     let remaining = shared.clock.remaining(at);
     let paused = shared.clock.paused();
     let overdue = shared.clock.phase() == Phase::Overdue;
     let resting = shared.clock.phase() == Phase::Resting;
+    let done = shared.clock.rest_done(at);
     let postponed = shared.clock.postponed();
-    // The bar stays on screen while the timer is held: an idle desk or a full-screen window
-    // freezes the round at a full period, and a round whose time is up stays full.
-    let percent = shared.clock.percent_remaining(at);
+    // A break counts the rest up, so its bar fills as the break runs; everything else shows what
+    // is left — a held timer keeps a full bar, and a round whose time is up stays full.
+    let percent = if resting {
+        100.0 - shared.clock.percent_remaining(at)
+    } else {
+        shared.clock.percent_remaining(at)
+    };
     let headline = if overdue {
         t("休息时间到", "Break time")
+    } else if done {
+        t("休息完成", "Break complete")
     } else if resting {
         t("休息中", "Resting")
     } else if shared.idle {
@@ -39,7 +50,7 @@ pub fn snapshot(shared: &Shared) -> Value {
     } else {
         ""
     };
-    let deadline = (!paused && !overdue)
+    let deadline = (!paused && !overdue && !resting)
         .then(|| now().saturating_add(i64::try_from(remaining.as_millis()).unwrap_or(i64::MAX)));
     // A held timer has no deadline to tick, so it publishes the time it has left; a round whose
     // time is up publishes the screen time it reached. Both stay put until the user acts.
@@ -51,16 +62,21 @@ pub fn snapshot(shared: &Shared) -> Value {
         None
     }
     .map(|value| i64::try_from(value.as_millis()).unwrap_or(i64::MAX));
+    // The break counts up from the moment it began, so the host ticks it without a publish a second.
+    let count_up = resting.then(|| shared.clock.rest_started_ms());
     let mut actions = Vec::new();
     if overdue {
         actions.push("defer_break");
         actions.push("finish_break");
     } else if resting {
-        if shared.clock.can_snooze() {
-            actions.push("snooze_10");
-        }
-        if settings.allow_skip {
-            actions.push("skip");
+        // A completed break has nothing left to offer: the screens wait for the user to return.
+        if !done {
+            if shared.clock.can_snooze() {
+                actions.push("snooze_10");
+            }
+            if settings.allow_skip {
+                actions.push("skip");
+            }
         }
     } else {
         actions.push("reset_work");
@@ -71,14 +87,14 @@ pub fn snapshot(shared: &Shared) -> Value {
     let (title, tone) = if overdue {
         (t("累计用眼时长", "Total screen time"), "warning")
     } else if resting {
-        (t("剩余休息时长", "Break time remaining"), "warning")
+        (t("已休息时长", "Break time elapsed"), "warning")
     } else {
         (t("剩余用眼时长", "Screen time remaining"), "normal")
     };
     json!({"panel": {
-        "headline": headline, "note": note,
-        "rows": [{"id":"timer", "title": title,
-            "detail": "", "percent": percent, "countdownTo": deadline, "durationMs": duration,
+        "headline": headline, "note": note, "done": done,
+        "rows": [{"id":"timer", "title": title, "detail": "", "percent": percent,
+            "countdownTo": deadline, "countUpFrom": count_up, "durationMs": duration,
             "tone": tone}],
         "actions": actions,
         "islandActions": island_actions,

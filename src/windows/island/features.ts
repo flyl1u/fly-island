@@ -22,7 +22,7 @@ export type PluginPageInfo = {
   /**
    * Attention without a deadline: the plugin wants the island, not a full-screen window (Eye
    * Care's break time). The island opens on this page and stays until the plugin's actions
-   * clear it; a deadline row keeps the page quiet and brings a window instead.
+   * clear it; a row that counts down or up keeps the page quiet and brings a window instead.
    */
   islandAlert: boolean;
 };
@@ -85,7 +85,8 @@ export function pluginPagesFrom(installed: Record<string, InstalledPlugin>, live
         actions: islandPanelActions(panel).length,
         note: panel ? Boolean(panel.note) : true,
         attention,
-        islandAlert: attention && rows.length > 0 && rows.every((row) => row.countdownTo === null),
+        islandAlert: attention && rows.length > 0
+          && rows.every((row) => row.countdownTo === null && row.countUpFrom == null),
       };
     });
 }

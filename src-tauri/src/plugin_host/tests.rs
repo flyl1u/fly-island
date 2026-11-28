@@ -50,6 +50,21 @@ fn validates_manifest_and_protocol() {
     let mut both = finished;
     both["panel"]["rows"][0]["countdownTo"] = json!(1_700_000_060_000_i64);
     assert!(protocol::parse_publish(&publish(both), &page).is_err(), "a row is a deadline or a total");
+    // A running total counts up from its anchor instead of down to a deadline.
+    let mut running = good.clone();
+    running["panel"]["rows"][0]["countUpFrom"] = json!(1_700_000_000_000_i64);
+    assert!(protocol::parse_publish(&publish(running.clone()), &page).is_ok());
+    for from in [json!(0), json!(-5)] {
+        let mut bad = running.clone();
+        bad["panel"]["rows"][0]["countUpFrom"] = from.clone();
+        assert!(protocol::parse_publish(&publish(bad), &page).is_err(), "countUpFrom {from}");
+    }
+    let mut running_done = running.clone();
+    running_done["panel"]["rows"][0]["countdownTo"] = json!(1_700_000_060_000_i64);
+    assert!(protocol::parse_publish(&publish(running_done), &page).is_err(), "a total does not end at a deadline");
+    let mut running_fixed = running;
+    running_fixed["panel"]["rows"][0]["durationMs"] = json!(60_000);
+    assert!(protocol::parse_publish(&publish(running_fixed), &page).is_err(), "a total is not a fixed duration");
     let mut undeclared_action = good.clone();
     undeclared_action["panel"]["actions"] = json!(["rest_now"]);
     assert!(protocol::parse_publish(&publish(undeclared_action), &page).is_err());

@@ -10,11 +10,14 @@ pub(super) const PLUGIN_ID: &str = "eye-care";
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BreakState {
-    pub deadline: i64,
+    /// Unix milliseconds the break began; the windows count the rest up from here.
+    pub started_at: i64,
     pub can_snooze: bool,
     pub can_skip: bool,
-    /// 0–100 share of the break still ahead, as the plugin measured it; absent when it cannot.
+    /// 0–100 share of the break behind the user, as the plugin measured it; absent when it cannot.
     pub percent: Option<f64>,
+    /// The break ran its full length: the windows stay, counting up, until the user acts.
+    pub done: bool,
     pub language: &'static str,
 }
 
@@ -75,12 +78,15 @@ pub(crate) fn from_publish(
         return None;
     }
     let row = panel.rows.iter().find(|row| row.id == "timer")?;
-    let deadline = row.countdown_to?;
-    (deadline > 0).then(|| BreakState {
-        deadline,
+    // Only a running break makes a window: its row counts the rest up. A held timer and a
+    // round whose time is up publish a fixed duration instead and stay on the island.
+    let started_at = row.count_up_from?;
+    (started_at > 0).then(|| BreakState {
+        started_at,
         can_snooze: panel.actions.iter().any(|id| id == "snooze_10"),
         can_skip: panel.actions.iter().any(|id| id == "skip"),
         percent: row.percent,
+        done: panel.done,
         language: if english { "en" } else { "zh-CN" },
     })
 }
@@ -94,15 +100,19 @@ mod tests {
     fn rest_is_driven_by_typed_state_and_current_actions() {
         let mut data: PluginContributions = serde_json::from_value(json!({"panel": {
             "headline":"任意文案", "note":null, "attention":true,
-            "rows":[{"id":"timer","title":"timer","countdownTo":1234,"percent":62.5}],
+            "rows":[{"id":"timer","title":"timer","countUpFrom":1234,"percent":62.5}],
             "actions":["snooze_10","skip"]
         }}))
         .unwrap();
         let state = from_publish(&data, "running", true).unwrap();
-        assert_eq!(state.deadline, 1234);
+        assert_eq!(state.started_at, 1234);
         assert_eq!(state.percent, Some(62.5));
         assert!(state.can_snooze && state.can_skip);
+        assert!(!state.done);
         assert_eq!(state.language, "en");
+        data.panel.as_mut().unwrap().done = true;
+        assert!(from_publish(&data, "running", false).unwrap().done, "a completed break keeps its window");
+        data.panel.as_mut().unwrap().done = false;
         for status in ["starting", "restarting", "failed", "stopped"] {
             assert!(from_publish(&data, status, false).is_none());
         }
@@ -129,10 +139,11 @@ mod tests {
     fn busy_ui_coalesces_updates_and_stale_sessions_cannot_undo_cancellation() {
         let pending = PendingBreak::default();
         let rest = BreakState {
-            deadline: 10_000,
+            started_at: 10_000,
             can_snooze: true,
             can_skip: false,
             percent: None,
+            done: false,
             language: "en",
         };
         assert!(pending.queue(1, Some(rest.clone())));

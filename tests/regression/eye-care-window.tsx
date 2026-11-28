@@ -19,7 +19,7 @@ const material = query.get("material") ?? "classic";
 const text = TRANSLATIONS[language].eyeCare;
 localStorage.setItem(LOCALE_STORAGE_KEY, hostLanguage);
 localStorage.setItem(STORAGE_KEY, JSON.stringify({ colorScheme: theme, material }));
-const snapshot: EyeCareBreak = { deadline: Date.now() + 90_000, canSnooze: true, canSkip: true, percent: 72, language };
+const snapshot: EyeCareBreak = { startedAt: Date.now() - 18_000, canSnooze: true, canSkip: true, percent: 72, done: false, language };
 const actions: { id: string; action: string }[] = [];
 let revealed = 0;
 let failAction = false;
@@ -53,7 +53,7 @@ const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 
 
 try {
   await mount(); await wait(160);
-  check(document.querySelector("h1")?.textContent === text.title, "The break uses its configured language");
+  check(document.querySelector("h1")?.textContent === text.resting, "The break uses its configured language");
   check(!document.querySelector(".eye-care-rest__name") && !document.querySelector(".eye-care-rest__hint"),
     "The break window has no plugin badge or looking-away hint");
   const card = document.querySelector<HTMLElement>(".eye-care-rest__card")!;
@@ -63,10 +63,10 @@ try {
     && card.contains(document.querySelector(".eye-care-rest__meter")!)
     && card.contains(document.querySelector(".eye-care-rest__choices")!),
     "Title, countdown, its label, the bar and the choices share one card");
-  check(document.querySelector(".eye-care-rest__label")?.textContent === text.remaining,
-    "The countdown carries its own label under the digits");
+  check(document.querySelector(".eye-care-rest__label")?.textContent === text.elapsed,
+    "The running total carries its own label under the digits");
   check(document.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width === "72%",
-    "The bar drains by the share the plugin reports");
+    "The bar fills by the share the plugin reports");
   check(localStorage.getItem(LOCALE_STORAGE_KEY) === hostLanguage, "Break language does not overwrite the host preference");
   check(document.documentElement.dataset.theme === theme && document.documentElement.dataset.material === material,
     "The window follows the host scheme and material");
@@ -79,7 +79,7 @@ try {
     "Skipping has the localized host action style");
   const before = clock();
   await wait(1200);
-  check(seconds(clock()) < seconds(before), "The displayed countdown advances locally");
+  check(seconds(clock()) > seconds(before), "The displayed total counts up locally");
   await act(async () => document.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[0].click());
   check(actions[actions.length - 1]?.id === "eye-care" && actions[actions.length - 1]?.action === "snooze_5", "Postponement routes to the plugin's 5-minute action");
   failAction = true;
@@ -89,6 +89,18 @@ try {
   await update({ ...snapshot, canSnooze: false, canSkip: false });
   check(!document.querySelector(".eye-care-rest__choices") && !document.querySelector(".eye-care-rest__actions"),
     "A used postponement and forbidden skip have no controls");
+  // The break ran its full length: the window stays, counts on, and explains what ends it.
+  await update({ ...snapshot, done: true, canSnooze: false, canSkip: false, percent: 100 });
+  check(document.querySelector(".eye-care-rest__title")?.textContent === text.done,
+    "A completed break names itself on the window");
+  check(!document.querySelector(".eye-care-rest__choices") && !document.querySelector(".eye-care-rest__actions"),
+    "A completed break hides the postponements and skipping");
+  check(document.querySelector(".eye-care-rest__hint")?.textContent === text.doneHint,
+    "The button area explains how the idle screens end");
+  const doneBefore = clock();
+  await wait(1100);
+  check(seconds(clock()) > seconds(doneBefore), "A completed break keeps counting up");
+
   fixture.style.width = "260px";
   fixture.style.height = "220px";
   await update(snapshot); await wait();

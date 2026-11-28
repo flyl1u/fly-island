@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Countdown } from "../../components/countdown/Countdown";
+import { CountUp } from "../../components/countdown/CountUp";
 import { formatCountdown } from "../../utils/countdown";
 import { useLocale, useTranslation } from "../../i18n";
 import { runPluginAction } from "../plugins/api";
@@ -56,13 +57,15 @@ export function EyeCareIslandPanel() {
           {head}
           <ul className="eye-care-island__rows">
             {panel.rows.map((row) => {
-              // A deadline counts down; a held timer or a finished round stands still.
-              const stacked = row.countdownTo !== null || row.durationMs != null;
+              // A deadline counts down, a break counts up, and a held timer or finished round stands still.
+              const stacked = row.countdownTo !== null || row.countUpFrom != null || row.durationMs != null;
               return (
                 <li key={row.id} className={`eye-care-island__row eye-care-island__row--${row.tone ?? "normal"}`}>
                   <div className={`eye-care-island__line${stacked ? " eye-care-island__line--stack" : ""}`}>
                     <span className="eye-care-island__label">{row.title}</span>
-                    {row.durationMs != null ? (
+                    {row.countUpFrom != null ? (
+                      <span className="eye-care-island__value eye-care-island__value--countdown"><CountUp from={row.countUpFrom} padMinutes /></span>
+                    ) : row.durationMs != null ? (
                       <span className="eye-care-island__value eye-care-island__value--countdown">{formatCountdown(Math.floor(row.durationMs / 1000), true)}</span>
                     ) : row.countdownTo !== null ? (
                       <span className="eye-care-island__value eye-care-island__value--countdown"><Countdown deadline={row.countdownTo} padMinutes /></span>
