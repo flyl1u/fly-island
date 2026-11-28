@@ -247,6 +247,8 @@ export type IslandSettings = BatteryPreferences & {
   lyricWordFill: boolean;
   /** With online lyrics, also ask Apple Music for its own word-timed lyrics. */
   lyricsAppleMusic: boolean;
+  /** The port of LX Music's local open-api, asked when that player is the media source. */
+  lyricsLxPort: number;
   /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
   lyricsOffsetMs: number;
   mailEnabled: boolean;

@@ -15,6 +15,7 @@ mod kugou;
 mod kugou_cache;
 mod local;
 mod lrclib;
+mod lxmusic;
 mod matching;
 mod netease;
 mod online;
@@ -72,6 +73,9 @@ pub struct LyricsQuery {
     /// SMTC AUMID/process name; absent in older frontends.
     #[serde(default)]
     source_app_id: Option<String>,
+    /// The port of LX Music's local open-api; the player's default when absent.
+    #[serde(default)]
+    lx_port: Option<u16>,
     #[serde(default)]
     word_fill: bool,
     #[serde(default)]
@@ -81,7 +85,7 @@ pub struct LyricsQuery {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Lyrics {
-    /// "local", "lrclib", "kugou" or "netease".
+    /// "local", "lrclib", "kugou", "netease" or "lxmusic".
     source: &'static str,
     /// Synced lyrics in LRC format.
     lrc: String,
@@ -125,6 +129,7 @@ fn source_name(name: &str) -> &'static str {
         "netease" => "netease",
         "qqmusic" => "qqmusic",
         "applemusic" => "applemusic",
+        "lxmusic" => "lxmusic",
         "soda" => "soda",
         _ => "lrclib",
     }
@@ -224,6 +229,18 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
             .map_err(|error| format!("Failed to join the lyrics folder search: {error}"))?;
         if let Some(lrc) = found {
             return Ok(Some(for_display("local", FoundLyrics { lrc, translation: None, duration_ms: None }, &query.title, &query.artist)));
+        }
+    }
+    // The LX Music player serves its own synced lyrics over a local open-api: the exact lines it
+    // displays, with the translation it loaded. They win over any search and need no online
+    // toggle — the service listens on this computer only.
+    if lxmusic::is_player(query.source_app_id.as_deref()) {
+        let playing = scoring::Playing { title: &query.title, artist: &query.artist, album: &query.album, duration_ms: query.duration_ms };
+        let port = query.lx_port.unwrap_or(lxmusic::DEFAULT_PORT);
+        match lxmusic::fetch(&playing, port).await {
+            Ok(Some((found, _))) => return Ok(Some(for_display("lxmusic", found, &query.title, &query.artist))),
+            Ok(None) => {}
+            Err(error) => eprintln!("lx music lyrics unavailable: {error}"),
         }
     }
     // Native client caches precede online caches, so a newly downloaded word-timed lyric wins.
