@@ -1,4 +1,5 @@
-//! Host-rendered island panel; paused timers use static text, never a moving deadline.
+//! Host-rendered island panel; a break counts up, and a held timer or a finished round publishes
+//! a fixed duration the host draws as it is, never a moving clock.
 use crate::{Phase, Settings, Shared};
 use fly_island_plugin_sdk::{json, now, Value};
 use std::time::Instant;
@@ -10,22 +11,48 @@ pub fn unsupported(settings: &Settings) -> Value {
 }
 
 pub fn snapshot(shared: &Shared) -> Value {
+    snapshot_at(shared, Instant::now())
+}
+
+/// The same panel as of `at`; the tests read a future instant without waiting for it.
+pub(crate) fn snapshot_at(shared: &Shared, at: Instant) -> Value {
     let settings = &shared.settings;
     let t = |zh, en| settings.text(zh, en);
-    let at = Instant::now();
     let remaining = shared.clock.remaining(at);
-    let seconds = remaining.as_secs() + u64::from(remaining.subsec_nanos() != 0);
     let paused = shared.clock.paused();
+    let overdue = shared.clock.phase() == Phase::Overdue;
     let resting = shared.clock.phase() == Phase::Resting;
+    let done = shared.clock.rest_done(at);
     let postponed = shared.clock.postponed();
-    // The bar drains with the phase; a paused timer has no bar, only its frozen time.
-    let percent = (!paused).then(|| shared.clock.percent_remaining(at));
-    let headline = if resting {
+    // A break counts the rest up, so its bar fills as the break runs; everything else shows what
+    // is left — a held timer keeps a full bar, and a round whose time is up stays full.
+    let percent = if resting {
+        100.0 - shared.clock.percent_remaining(at)
+    } else {
+        shared.clock.percent_remaining(at)
+    };
+    // A running timer names the span it moves over, so the host can step the bar with the very
+    // second its digits show instead of waiting for the next publish.
+    let total = if resting {
+        Some(shared.settings.rest())
+    } else if paused || overdue {
+        None
+    } else {
+        Some(shared.settings.period())
+    }
+    .map(|value| i64::try_from(value.as_millis()).unwrap_or(i64::MAX));
+    let headline = if overdue {
+        t("休息时间到", "Break time")
+    } else if done {
+        t("休息完成", "Break complete")
+    } else if resting {
         t("休息中", "Resting")
+    } else if shared.idle {
+        t("空闲中", "Idle")
     } else {
         t("用眼中", "Screen time")
     };
-    let note = if !resting && postponed {
+    let note = if !resting && !overdue && postponed {
         t(
             "已经推迟过一次，不能推迟下次休息",
             "Already postponed once; the next break cannot be postponed",
@@ -33,135 +60,57 @@ pub fn snapshot(shared: &Shared) -> Value {
     } else {
         ""
     };
-    let detail = if paused {
-        format!("{:02}:{:02}", seconds / 60, seconds % 60)
-    } else {
-        String::new()
-    };
-    let deadline = (!paused)
+    let deadline = (!paused && !overdue && !resting)
         .then(|| now().saturating_add(i64::try_from(remaining.as_millis()).unwrap_or(i64::MAX)));
+    // A held timer has no deadline to tick, so it publishes the time it has left; a round whose
+    // time is up publishes the screen time it reached. Both stay put until the user acts.
+    let duration = if overdue {
+        Some(shared.clock.accumulated(at))
+    } else if paused {
+        Some(remaining)
+    } else {
+        None
+    }
+    .map(|value| i64::try_from(value.as_millis()).unwrap_or(i64::MAX));
+    // The break counts up from the moment it began, so the host ticks it without a publish a second.
+    let count_up = resting.then(|| shared.clock.rest_started_ms());
     let mut actions = Vec::new();
-    if resting {
-        if shared.clock.can_snooze() {
-            actions.push("snooze_10");
-        }
-        if settings.allow_skip {
-            actions.push("skip");
+    if overdue {
+        actions.push("defer_break");
+        actions.push("finish_break");
+    } else if resting {
+        // A completed break has nothing left to offer: the screens wait for the user to return.
+        if !done {
+            if shared.clock.can_snooze() {
+                actions.push("snooze_10");
+            }
+            if settings.allow_skip {
+                actions.push("skip");
+            }
         }
     } else {
+        actions.push("reset_work");
         actions.push("rest_now");
     }
-    // The page offers the phase action only; postpone and skip belong to the break window.
-    let island_actions = if resting { Vec::new() } else { vec!["rest_now"] };
+    // The page offers the phase actions only; postpone and skip belong to the break window.
+    let island_actions = if resting { Vec::new() } else { actions.clone() };
+    let (title, tone) = if overdue {
+        (t("累计用眼时长", "Total screen time"), "warning")
+    } else if resting {
+        (t("已休息时长", "Break time elapsed"), "warning")
+    } else {
+        (t("剩余用眼时长", "Screen time remaining"), "normal")
+    };
     json!({"panel": {
-        "headline": headline, "note": note,
-        "rows": [{"id":"timer", "title": if resting {t("剩余休息时长", "Break time remaining")} else {t("剩余用眼时长", "Screen time remaining")},
-            "detail": detail, "percent": percent, "countdownTo": deadline,
-            "tone": if resting {"warning"} else {"normal"}}],
+        "headline": headline, "note": note, "done": done,
+        "rows": [{"id":"timer", "title": title, "detail": "", "percent": percent,
+            "countdownTo": deadline, "countUpFrom": count_up, "durationMs": duration,
+            "totalMs": total, "tone": tone}],
         "actions": actions,
         "islandActions": island_actions,
-        "attention": resting
+        "attention": resting || overdue
     }})
 }
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{Reminder, Settings};
-    fn assert_phase(shared: &Shared, resting: bool, postponed: bool) {
-        let data = snapshot(shared);
-        let t = |zh, en| shared.settings.text(zh, en);
-        assert_eq!(
-            data["panel"]["headline"],
-            if resting {
-                t("休息中", "Resting")
-            } else {
-                t("用眼中", "Screen time")
-            }
-        );
-        assert_eq!(
-            data["panel"]["rows"][0]["title"],
-            if resting {
-                t("剩余休息时长", "Break time remaining")
-            } else {
-                t("剩余用眼时长", "Screen time remaining")
-            }
-        );
-        assert_eq!(
-            data["panel"]["note"],
-            if !resting && postponed {
-                t(
-                    "已经推迟过一次，不能推迟下次休息",
-                    "Already postponed once; the next break cannot be postponed",
-                )
-            } else {
-                ""
-            }
-        );
-        assert_eq!(data["panel"]["attention"], resting);
-        assert_eq!(
-            data["panel"]["rows"][0]["countdownTo"].is_null(),
-            shared.clock.paused()
-        );
-        // The bar drains with the phase; a paused timer drops it and keeps the frozen time.
-        let percent = data["panel"]["rows"][0]["percent"].as_f64();
-        assert_eq!(percent.is_some(), !shared.clock.paused());
-        if let Some(percent) = percent {
-            assert!((0.0..=100.0).contains(&percent));
-        }
-        if !shared.clock.paused() {
-            assert_eq!(data["panel"]["rows"][0]["detail"], "");
-        }
-    }
-
-    #[test]
-    fn labels_follow_break_and_postponement_transitions_in_both_languages() {
-        for language in ["zh-CN", "en"] {
-            let reminder = Reminder::new(Settings::parse(&json!({"language":language})));
-            let mut shared = reminder.shared.lock().unwrap();
-            let at = Instant::now();
-            assert_phase(&shared, false, false);
-            shared.clock.rest_now(at);
-            assert_phase(&shared, true, false);
-            assert!(shared.clock.snooze(at, 10));
-            assert_phase(&shared, false, true);
-            for (idle, fullscreen) in [(true, false), (false, true), (false, false)] {
-                shared.clock.tick(at, idle, fullscreen);
-                shared.idle = idle;
-                shared.fullscreen = fullscreen;
-                assert_phase(&shared, false, true);
-            }
-            shared.clock.rest_now(at);
-            assert_phase(&shared, true, true);
-            assert!(!shared.clock.snooze(at, 10));
-            assert!(shared.clock.skip_rest(at, true));
-            assert_phase(&shared, false, false);
-        }
-    }
-
-    #[test]
-    fn paused_panel_has_no_counting_deadline_and_supports_both_languages() {
-        for language in ["zh-CN", "en"] {
-            let reminder = Reminder::new(Settings::parse(&json!({"language":language})));
-            let mut shared = reminder.shared.lock().unwrap();
-            shared.clock.tick(Instant::now(), false, true);
-            shared.fullscreen = true;
-            let data = snapshot(&shared);
-            assert!(data["panel"]["rows"][0]["countdownTo"].is_null());
-            assert!(data["panel"]["rows"][0]["percent"].is_null());
-            assert_eq!(
-                data["panel"]["headline"],
-                if language == "en" {
-                    "Screen time"
-                } else {
-                    "用眼中"
-                }
-            );
-            assert_eq!(data["panel"]["note"], "");
-            assert!(data["panel"]["rows"][0]["detail"]
-                .as_str()
-                .unwrap()
-                .contains(':'));
-        }
-    }
-}
+#[path = "panel_tests.rs"]
+mod tests;

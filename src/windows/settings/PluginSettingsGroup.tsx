@@ -7,6 +7,7 @@ import { PluginIcon } from "../../features/plugins/PluginIcon";
 import { PluginSettingRow } from "../../features/plugins/PluginSettingRow";
 import { runPluginAction, setPluginSetting, type InstalledPlugin } from "../../features/plugins/api";
 import { pluginFailureCode } from "../../features/plugins/errors";
+import { visiblePluginSettings } from "../../features/plugins/pluginSettings";
 import type { NativePluginId } from "../../features/plugins/native/catalog";
 import { pluginsOnPage, type PlacedPlugin, type PluginPageCategory } from "../../features/plugins/placement.ts";
 import { refreshPlugins, usePlugins } from "../../features/plugins/usePlugins";
@@ -29,7 +30,7 @@ export function ExternalPluginGroup({ plugin, external, page }: { plugin: Placed
   const home = plugin.category === page;
   // A plugin with its own island page offers its actions there.
   const actions = plugin.actionsCategory === page && !manifest.contributes.includes("panel") ? manifest.actions : [];
-  const settings = home ? manifest.settings : [];
+  const settings = home ? visiblePluginSettings(manifest.settings, external.settings) : [];
   // A group that would only repeat the version belongs to the plugin's main page.
   if (!home && actions.length === 0) return null;
   const perform = async (action: () => Promise<unknown>, block: boolean) => {

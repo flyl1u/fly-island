@@ -334,6 +334,27 @@ try {
     check(eyeCare.settings["pause-fullscreen"] === "false", "关闭全屏暂停立即保存");
     await act(async () => fullscreenSwitch().click());
     await wait();
+    // The reminder style is a two-option choice, the same control as General → how the island
+    // opens, and it hides the rows that only apply to the full-screen break.
+    const modeSetting = manifest.settings.find((s) => s.key === "mode")!;
+    const modeChoice = (label: string) => [...settingRow("mode")!.querySelectorAll<HTMLButtonElement>(".settings-choice__option")]
+      .find((button) => button.textContent === label)!;
+    check(modeSetting.type === "choice" && modeChoice(modeSetting.options[0].label[locale]).getAttribute("aria-pressed") === "true",
+      "提醒方式用和展开方式相同的分段按钮，默认锁屏模式");
+    // A save disables the whole group, so neither option can be clicked again while it runs.
+    saveDelay = 150;
+    await act(async () => modeChoice(modeSetting.options[1].label[locale]).click());
+    check(modeChoice(modeSetting.options[0].label[locale]).disabled && modeChoice(modeSetting.options[1].label[locale]).disabled,
+      "保存中的分段按钮全部禁用，避免重复提交");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 220)); }); await wait();
+    saveDelay = 0;
+    check(eyeCare.settings["mode"] === "notify" && !settingRow("rest-minutes") && !settingRow("allow-skip")
+      && Boolean(settingRow("period")) && Boolean(settingRow("idle")) && Boolean(settingRow("pause-fullscreen")) && Boolean(settingRow("language")),
+      "通知模式隐藏休息时长和允许跳过休息，其余设置照常显示");
+    await act(async () => modeChoice(modeSetting.options[0].label[locale]).click());
+    await wait();
+    check(eyeCare.settings["mode"] === "lock" && Boolean(settingRow("rest-minutes")) && Boolean(settingRow("allow-skip")),
+      "切回锁屏模式后两项设置回来");
     const edit = async (input: HTMLInputElement, value: string) => act(async () => {
       setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
     });

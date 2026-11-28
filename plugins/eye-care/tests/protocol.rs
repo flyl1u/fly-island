@@ -92,31 +92,42 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert_eq!(panel["note"], "");
         assert_eq!(panel["rows"][0]["title"], "Screen time remaining");
         assert_eq!(panel["rows"].as_array().unwrap().len(), 1);
-        assert_eq!(panel["actions"], json!(["rest_now"]));
-        assert_eq!(panel["islandActions"], json!(["rest_now"]));
+        assert_eq!(panel["actions"], json!(["reset_work", "rest_now"]));
+        assert_eq!(panel["islandActions"], json!(["reset_work", "rest_now"]));
         assert_eq!(panel["attention"], false);
+        assert_eq!(panel["rows"][0]["durationMs"], Value::Null);
+        assert_eq!(panel["rows"][0]["totalMs"], json!(1_200_000));
         if panel["rows"][0]["countdownTo"].is_number() {
             assert_eq!(panel["rows"][0]["detail"], "");
         }
         plugin.send(json!({"jsonrpc":"2.0","id":1,"method":"action","params":{"id":"skip"}}));
         assert_eq!(plugin.response(1)["error"]["code"], -32000);
-        plugin.send(json!({"jsonrpc":"2.0","id":2,"method":"action","params":{"id":"rest_now"}}));
+        plugin.send(json!({"jsonrpc":"2.0","id":2,"method":"action","params":{"id":"reset_work"}}));
         assert_eq!(plugin.response(2)["result"]["success"], true);
+        assert_eq!(plugin.next()["params"]["panel"]["actions"], json!(["reset_work", "rest_now"]));
+        // Locking: a break asked for by hand covers the screens straight away.
+        plugin.send(json!({"jsonrpc":"2.0","id":3,"method":"action","params":{"id":"rest_now"}}));
+        assert_eq!(plugin.response(3)["result"]["success"], true);
         let rest = plugin.next();
         assert_eq!(rest["params"]["panel"]["attention"], true);
         assert_eq!(rest["params"]["panel"]["headline"], "Resting");
         assert_eq!(rest["params"]["panel"]["note"], "");
+        assert_eq!(rest["params"]["panel"]["done"], false);
         assert_eq!(
             rest["params"]["panel"]["rows"][0]["title"],
-            "Break time remaining"
+            "Break time elapsed"
         );
+        assert!(rest["params"]["panel"]["rows"][0]["countUpFrom"].is_number());
+        assert_eq!(rest["params"]["panel"]["rows"][0]["countdownTo"], Value::Null);
+        assert_eq!(rest["params"]["panel"]["rows"][0]["durationMs"], Value::Null);
+        assert_eq!(rest["params"]["panel"]["rows"][0]["totalMs"], json!(60_000));
         assert_eq!(
             rest["params"]["panel"]["actions"],
             json!(["snooze_10", "skip"])
         );
         assert_eq!(rest["params"]["panel"]["islandActions"], json!([]));
-        plugin.send(json!({"jsonrpc":"2.0","id":3,"method":"action","params":{"id":"snooze_25"}}));
-        assert_eq!(plugin.response(3)["result"]["success"], true);
+        plugin.send(json!({"jsonrpc":"2.0","id":4,"method":"action","params":{"id":"snooze_25"}}));
+        assert_eq!(plugin.response(4)["result"]["success"], true);
         let postponed = plugin.next();
         assert_eq!(postponed["params"]["panel"]["attention"], false);
         assert_eq!(postponed["params"]["panel"]["headline"], "Screen time");
@@ -124,11 +135,11 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
             postponed["params"]["panel"]["note"],
             "Already postponed once; the next break cannot be postponed"
         );
-        plugin.send(json!({"jsonrpc":"2.0","id":4,"method":"action","params":{"id":"rest_now"}}));
-        assert_eq!(plugin.response(4)["result"]["success"], true);
+        plugin.send(json!({"jsonrpc":"2.0","id":5,"method":"action","params":{"id":"rest_now"}}));
+        assert_eq!(plugin.response(5)["result"]["success"], true);
         assert_eq!(plugin.next()["params"]["panel"]["actions"], json!(["skip"]));
-        plugin.send(json!({"jsonrpc":"2.0","id":5,"method":"action","params":{"id":"snooze_10"}}));
-        assert_eq!(plugin.response(5)["error"]["code"], -32000);
+        plugin.send(json!({"jsonrpc":"2.0","id":6,"method":"action","params":{"id":"snooze_10"}}));
+        assert_eq!(plugin.response(6)["error"]["code"], -32000);
         if eof {
             plugin.input.take();
         } else {

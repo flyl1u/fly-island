@@ -7,6 +7,10 @@ import { loadLastPage, saveLastPage } from "./lastPage";
 import type { IslandModeReason } from "./diagnosticMode";
 import { useModeDiagnostics } from "./useModeDiagnostics";
 import type { TuckSource } from "./browserTuck";
+import { isIslandHeld } from "./islandHold";
+
+/** The reasons that close the island on their own; a hold (islandHold.ts) ignores them. */
+const AUTO_CLOSE: ReadonlySet<IslandModeReason> = new Set(["focus_lost", "hover_leave", "idle_timer", "peek_timeout"]);
 
 /** Collapsed / expanded / tucked mode and the open page of the island. */
 export function useIslandNavigation() {
@@ -43,6 +47,9 @@ export function useIslandNavigation() {
   // Keeps a peek: a panel opened from a peeking island closes, and the island slides
   // back once the cursor leaves (useTuckPeek).
   const collapseIsland = useCallback((reason: IslandModeReason = "click") => {
+    // A hold (Eye Care's break time) outlasts a cursor that leaves or a window that takes the
+    // focus; the user closes the island themselves.
+    if (AUTO_CLOSE.has(reason) && isIslandHeld()) return;
     markMode(reason);
     setMode("collapsed");
     setIsTucked(false);

@@ -8,6 +8,19 @@ export function nextCountdownDelay(deadline: number | null, now: number): number
   return Math.ceil((deadline - now) % 1000) || 1000;
 }
 
+/** Whole seconds since `from`, for a running total rather than a deadline. */
+export function elapsedSeconds(from: number | null, now: number): number {
+  return from === null ? 0 : Math.max(0, Math.floor((now - from) / 1000));
+}
+
+/** Wake when a running total's next whole second starts. */
+export function nextElapsedDelay(from: number | null, now: number): number | null {
+  if (from === null) return null;
+  const elapsed = now - from;
+  if (!Number.isFinite(elapsed) || elapsed < 0) return null;
+  return 1000 - (elapsed % 1000) || 1000;
+}
+
 export function formatCountdown(seconds: number, padMinutes = false): string {
   const minutes = Math.floor(seconds / 60);
   const part = (value: number) => String(value).padStart(2, "0");

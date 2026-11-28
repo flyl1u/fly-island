@@ -19,6 +19,12 @@ export type PluginPageInfo = {
   note: boolean;
   /** Something worth a look (a break due, a low battery): a dot on the page's button. */
   attention: boolean;
+  /**
+   * Attention without a deadline: the plugin wants the island, not a full-screen window (Eye
+   * Care's break time). The island opens on this page and stays until the plugin's actions
+   * clear it; a row that counts down or up keeps the page quiet and brings a window instead.
+   */
+  islandAlert: boolean;
 };
 
 /** Which modules are switched on; an off module is hidden on the island. */
@@ -68,15 +74,19 @@ export function pluginPagesFrom(installed: Record<string, InstalledPlugin>, live
     .map((plugin) => {
       const panel = live[plugin.manifest.id]?.panel;
       const icon = plugin.manifest.panel?.icon ?? "";
+      const rows = panel?.rows ?? [];
+      const attention = panel?.attention === true;
       return {
         page: pluginPageId(plugin.manifest.id),
         id: plugin.manifest.id,
         name: plugin.manifest.name,
         icon: isPluginPanelIcon(icon) ? icon : "puzzle",
-        rows: panel?.rows.length ?? 0,
+        rows: rows.length,
         actions: islandPanelActions(panel).length,
         note: panel ? Boolean(panel.note) : true,
-        attention: panel?.attention === true,
+        attention,
+        islandAlert: attention && rows.length > 0
+          && rows.every((row) => row.countdownTo === null && row.countUpFrom == null),
       };
     });
 }

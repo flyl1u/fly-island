@@ -1,7 +1,8 @@
 /* The break screen is a full-display dim surface with one card in the middle, drawn like the
-   island's own Eye Care page: a quiet title, the remaining time as the loudest element, its
-   label underneath, a thin bar for what is left, then the postponements and the optional skip.
-   Vertical auto margins centre the card but let a short screen scroll from its top. */
+   island's own Eye Care page: a quiet title, the rest time counting up as the loudest element,
+   its label underneath, a thin bar filling as the break runs, then the postponements and the
+   optional skip — replaced by one line once the break is complete. Vertical auto margins centre
+   the card but let a short screen scroll from its top. */
 .eye-care-rest {
   flex: 1 1 auto;
   width: 100%;
@@ -28,7 +29,8 @@
 .eye-care-rest__title {
   margin: 0;
   color: var(--text-3);
-  font-size: 12px;
+  /* The same size as the island's phase headline, so both surfaces name the break alike. */
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.4;
@@ -39,9 +41,10 @@
   margin-top: 12px;
 }
 
-/* The countdown is the page: digits first, its own label under them, the bar under both. */
+/* The countdown is the page: digits first, its own label under them, the bar under both.
+   Both digits and bar use the warning tone the island shows while resting. */
 .eye-care-rest__clock {
-  color: var(--color-accent);
+  color: var(--color-warning);
   font-size: clamp(52px, 13vw, 88px);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -66,12 +69,12 @@
   border-radius: var(--radius-pill);
 }
 
+/* The width jumps with the digits on their second, never a beat behind them. */
 .eye-care-rest__meter span {
   display: block;
   height: 100%;
-  background: var(--color-accent);
+  background: var(--color-warning);
   border-radius: inherit;
-  transition: width 400ms ease;
 }
 
 .eye-care-rest__body {
@@ -89,22 +92,33 @@
   line-height: 1.5;
 }
 
+.eye-care-rest__hint {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* Six postponements in two rows of three, so 5 minutes leads and the widest window stay even. */
 .eye-care-rest__choices {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
 
-/* The five postponements read as one row of quiet pills, the same control as the island's. */
+/* Each postponement reads as a quiet pill, the same control as the island's. */
 .eye-care-rest__choices .settings-link-button {
+  width: 100%;
+  min-width: 0;
   min-height: 36px;
-  padding: 0 16px;
+  justify-content: center;
+  padding: 0 clamp(4px, 1.6vw, 14px);
   color: var(--text-2);
   background: var(--color-white-a10);
   border-radius: var(--radius-pill);
-  font-size: 12.5px;
+  font-size: clamp(11px, 3.2vw, 12.5px);
   font-weight: 600;
 }
 
@@ -151,10 +165,4 @@
 :root[data-material="frostedGlass"] .eye-care-rest__card {
   background: color-mix(in srgb, var(--color-popover) 86%, var(--color-window));
   backdrop-filter: blur(12px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eye-care-rest__meter span {
-    transition: none;
-  }
 }

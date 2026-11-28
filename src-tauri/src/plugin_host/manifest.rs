@@ -51,7 +51,15 @@ pub struct Setting {
     pub min: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<u32>,
+    /// Shown only while another setting has a given value (Eye Care hides its lock-mode rows in
+    /// notify mode). Absent means always shown.
+    #[serde(rename = "showWhen", default, skip_serializing_if = "Option::is_none")]
+    pub show_when: Option<ShowWhen>,
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ShowWhen { pub key: String, pub value: String }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -137,6 +145,14 @@ impl Manifest {
         }
         keys.clear();
         if self.actions.iter().any(|a| !field_id(&a.id) || !keys.insert(&a.id)) { return Err("Invalid plugin action".into()); }
+        // A conditional row may only point at another row, with a value that row accepts.
+        for setting in &self.settings {
+            let Some(rule) = &setting.show_when else { continue };
+            let source = self.settings.iter().find(|other| other.key == rule.key && other.key != setting.key);
+            if !source.is_some_and(|other| other.kind != "secret" && other.accepts(&Value::String(rule.value.clone()))) {
+                return Err("A setting is shown for a value its source setting does not take".into());
+            }
+        }
         Ok(())
     }
 }
@@ -153,6 +169,8 @@ impl Setting {
                     })
             }),
             "select" => value.as_str().is_some_and(|s| self.options.iter().any(|o| o.value == s)),
+            // A short side-by-side choice (two or three options) drawn as segmented buttons.
+            "choice" => value.as_str().is_some_and(|s| (2..=3).contains(&self.options.len()) && self.options.iter().any(|o| o.value == s)),
             _ => false,
         }
     }

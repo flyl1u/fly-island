@@ -139,12 +139,13 @@
   border-radius: var(--radius-pill);
 }
 
+/* The width jumps with the digits on their second: a transition would leave the bar a beat
+   behind the number it is measuring. */
 .eye-care-island__meter span {
   display: block;
   height: 100%;
   background: var(--color-accent);
   border-radius: inherit;
-  transition: width 400ms ease;
 }
 
 .eye-care-island__row--warning .eye-care-island__value {
@@ -227,10 +228,4 @@
   font-weight: 600;
   overflow-wrap: anywhere;
   white-space: normal;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eye-care-island__meter span {
-    transition: none;
-  }
 }
