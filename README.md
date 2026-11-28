@@ -14,7 +14,7 @@
     ·
     <a href="#用户交流群">用户交流群</a>
     ·
-    <a href="README.en.md">English</a> · 中文
+    <a href="README.en.md">English</a> · 中文 · <a href="README.tr.md">Türkçe</a>
   </p>
 
   <p>
