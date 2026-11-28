@@ -177,6 +177,7 @@ mod tests {
             chinese,
             track_id: track_id.map(Into::into),
             source_app_id: None,
+            lx_port: None,
             word_fill: false,
             apple_music: false,
         }

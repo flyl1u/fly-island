@@ -6,6 +6,8 @@ export type SettingsLyricsText = {
   chinese: string;
   chineseHint: string;
   wordFill: string;
+  lxPort: string;
+  lxPortHint: string;
   appleMusic: string;
   appleMusicHint: string;
   appleMusicEnable: string;
@@ -22,6 +24,8 @@ export type SettingsLyricsText = {
 
 export const zhCN: SettingsLyricsText = {
   wordFill: "逐字歌词填充",
+  lxPort: "LX Music 本地接口端口",
+  lxPortHint: "LX Music（落雪音乐）播放时，直接读取它本机开放接口里的歌词和翻译，不需要在线查找，也不发送任何数据。端口在 LX 的「设置 → 开放 API」里查看，默认 23330。",
   title: "歌词",
   hint: "找到带时间轴的歌词时，音乐页会跟着播放滚动显示。某首歌的歌词对不上时，可以在音乐页上单独调它的快慢。",
   online: "在线查找歌词",
@@ -44,6 +48,8 @@ export const zhCN: SettingsLyricsText = {
 
 export const en: SettingsLyricsText = {
   wordFill: "Word-by-word lyric fill",
+  lxPort: "LX Music local API port",
+  lxPortHint: "When LX Music plays, its own local open-api serves the lyrics and translation it displays — no online lookup and nothing sent. The port is in LX Music's Settings → Open API; the default is 23330.",
   title: "Lyrics",
   hint: "When synced lyrics are found, the music page scrolls them along with the song. A song whose lyrics run out of step can be moved on its own on the music page.",
   online: "Find lyrics online",

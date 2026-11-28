@@ -1,4 +1,5 @@
 import { SettingsGroup } from "../../../components/settings/SettingsGroup";
+import { SettingsNumberRow } from "../../../components/settings/SettingsNumberRow";
 import { SettingsToggleRow } from "../../../components/settings/SettingsToggleRow";
 import type { IslandSettings } from "../../appearance/types";
 import { useTranslation } from "../../../i18n";
@@ -39,6 +40,14 @@ export function LyricsSettingsSection({
           title={text.wordFill}
           checked={settings.lyricWordFill}
           onChange={(lyricWordFill) => onSettingsChange({ ...settings, lyricWordFill })}
+        />
+        <SettingsNumberRow
+          title={text.lxPort}
+          description={text.lxPortHint}
+          value={settings.lyricsLxPort}
+          min={1}
+          max={65535}
+          onChange={(lyricsLxPort) => onSettingsChange({ ...settings, lyricsLxPort })}
         />
       </SettingsGroup>
     </>

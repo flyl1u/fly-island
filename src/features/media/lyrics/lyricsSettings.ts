@@ -5,6 +5,7 @@ export type LyricsSettingValues = {
   lyricsChinese: boolean;
   lyricWordFill: boolean;
   lyricsAppleMusic: boolean;
+  lyricsLxPort: number;
   lyricsOffsetMs: number;
 };
 
@@ -19,6 +20,7 @@ export const DEFAULT_LYRICS_SETTINGS: LyricsSettingValues = {
   lyricsChinese: true,
   lyricWordFill: false,
   lyricsAppleMusic: false,
+  lyricsLxPort: 23330,
   lyricsOffsetMs: 0,
 };
 
@@ -34,5 +36,7 @@ export function normalizeLyricsSettings(saved: Partial<Record<keyof LyricsSettin
     lyricsChinese: saved?.lyricsChinese !== false,
     lyricWordFill: saved?.lyricWordFill === true,
     lyricsAppleMusic: saved?.lyricsAppleMusic === true,
+    lyricsLxPort: typeof saved?.lyricsLxPort === "number" && Number.isFinite(saved.lyricsLxPort)
+      && saved.lyricsLxPort >= 1 && saved.lyricsLxPort <= 65535 ? Math.round(saved.lyricsLxPort) : 23330,
   };
 }
