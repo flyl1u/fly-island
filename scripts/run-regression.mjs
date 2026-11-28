@@ -1,9 +1,11 @@
 // pnpm test:regression [filter] runs matching pages in headless Chrome/Edge with its own Vite.
+// Pages run in parallel, one browser per worker; --workers=N or REGRESSION_WORKERS sets how many.
+// A page that fails beside others runs once more on its own and is reported as such.
 // REGRESSION_REDUCED_MOTION=reduce emulates animations off; CHROME_PATH selects the browser.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PAGES } from "./regression-pages.mjs";
@@ -39,6 +41,31 @@ export function pageOutcome({ testResult = "", dataResult = "", text = "" }) {
 /** Number of passed checks, counted from the page's "PASS ..." lines. */
 export function passedChecks(text) {
   return (text.match(/^PASS /gm) ?? []).length;
+}
+
+/**
+ * How many pages run at once: what was asked for, else one per four logical cores up to six
+ * (so a small CI runner stays serial). Performance pages measure timing, so they never share.
+ */
+export function workerCount({ requested, cores, serial = false }) {
+  if (serial) return 1;
+  if (requested === undefined || requested === "") return Math.max(1, Math.min(6, Math.floor(cores / 4)));
+  const count = Number(requested);
+  if (!Number.isInteger(count) || count < 1) throw new Error(`--workers needs a whole number of 1 or more, not ${requested}.`);
+  return count;
+}
+
+/** Runs `items` with one task per worker; each takes the next item as soon as it is free. */
+export async function runPool(items, workers, run) {
+  let next = 0;
+  const results = new Array(items.length);
+  await Promise.all(workers.map(async (worker) => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await run(items[index], worker);
+    }
+  }));
+  return results;
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -207,38 +234,21 @@ export async function runPage(session, url) {
   }
 }
 
-/**
- * Starts this checkout's Vite on a free port and a headless browser, and runs `use` with a
- * DevTools session and the regression pages' base URL; stops both afterwards. `firstPage` is
- * fetched first, to know Vite answers.
- */
-export async function withRegressionBrowser(root, firstPage, use, { featuresEnabled = false } = {}) {
-  const vitePort = Number(process.env.REGRESSION_PORT ?? await freePort());
+/** A headless browser with its own profile (so its own localStorage) and a DevTools session. */
+async function launchBrowser() {
   const debugPort = await freePort();
-  const base = `http://localhost:${vitePort}/tests/regression/`;
   const profile = mkdtempSync(path.join(tmpdir(), "fly-regression-"));
-  const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], {
-    cwd: root, stdio: "ignore", env: { ...process.env, FLY_ISLAND_REGRESSION_FEATURES: featuresEnabled ? "enabled" : "" },
-  });
-  let browser;
-  try {
-    await waitForHttp(`${base}${firstPage.split("?")[0]}`, 30_000);
-    // Something else answering on the port (Vite could not take it) is not this checkout's code.
-    if (vite.exitCode !== null) throw new Error(`Vite exited (port ${vitePort} taken?); not testing whatever answers there.`);
-    // Pages that do not pick a language follow the browser's, and their checks are written
-    // against the Chinese interface; an English CI runner would otherwise fail them.
-    const language = process.env.REGRESSION_LANG ?? "zh-CN";
-    // REGRESSION_GPU=1 draws on the graphics card through Direct3D, as WebView2 does
-    // (scripts/measure-island-motion.mjs --gpu); otherwise in software, the same on every machine.
-    const graphics = process.env.REGRESSION_GPU ? ["--use-angle=d3d11", "--enable-gpu-rasterization", "--ignore-gpu-blocklist"] : ["--disable-gpu"];
-    browser = spawn(findBrowser(), ["--headless=new", ...graphics, "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `--lang=${language}`, `--accept-lang=${language}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
-    const session = await connect(debugPort);
-    const result = await use({ session, base });
-    session.close();
-    return result;
-  } finally {
-    browser?.kill();
-    vite.kill();
+  // Pages that do not pick a language follow the browser's, and their checks are written
+  // against the Chinese interface; an English CI runner would otherwise fail them.
+  const language = process.env.REGRESSION_LANG ?? "zh-CN";
+  // REGRESSION_GPU=1 draws on the graphics card through Direct3D, as WebView2 does
+  // (scripts/measure-island-motion.mjs --gpu); otherwise in software, the same on every machine.
+  const graphics = process.env.REGRESSION_GPU ? ["--use-angle=d3d11", "--enable-gpu-rasterization", "--ignore-gpu-blocklist"] : ["--disable-gpu"];
+  const browser = spawn(findBrowser(), ["--headless=new", ...graphics, "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `--lang=${language}`, `--accept-lang=${language}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
+  let session;
+  const stop = async () => {
+    session?.close();
+    browser.kill();
     await sleep(300);
     // The browser can still hold files in its profile for a moment; a leftover temp
     // folder must not turn a finished run into a failure.
@@ -247,37 +257,103 @@ export async function withRegressionBrowser(root, firstPage, use, { featuresEnab
     } catch (error) {
       console.warn(`Could not remove ${profile}: ${error instanceof Error ? error.message : error}`);
     }
+  };
+  try {
+    session = await connect(debugPort);
+  } catch (error) {
+    await stop();
+    throw error;
   }
+  return { session, stop };
+}
+
+/**
+ * Starts this checkout's Vite on a free port and `browsers` headless browsers, and runs `use`
+ * with their DevTools sessions (`session` is the first) and the regression pages' base URL;
+ * stops them all afterwards. `firstPage` is fetched first, to know Vite answers.
+ */
+export async function withRegressionBrowser(root, firstPage, use, { featuresEnabled = false, browsers = 1 } = {}) {
+  const vitePort = Number(process.env.REGRESSION_PORT ?? await freePort());
+  const base = `http://localhost:${vitePort}/tests/regression/`;
+  const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], {
+    cwd: root, stdio: "ignore", env: { ...process.env, FLY_ISLAND_REGRESSION_FEATURES: featuresEnabled ? "enabled" : "" },
+  });
+  const launched = [];
+  try {
+    await waitForHttp(`${base}${firstPage.split("?")[0]}`, 30_000);
+    // Something else answering on the port (Vite could not take it) is not this checkout's code.
+    if (vite.exitCode !== null) throw new Error(`Vite exited (port ${vitePort} taken?); not testing whatever answers there.`);
+    for (let index = 0; index < browsers; index += 1) launched.push(await launchBrowser());
+    const sessions = launched.map(({ session }) => session);
+    return await use({ session: sessions[0], sessions, base });
+  } finally {
+    await Promise.all(launched.map(({ stop }) => stop()));
+    vite.kill();
+  }
+}
+
+async function runFixture(session, base, page) {
+  const started = Date.now();
+  const fault = page.includes("shoulderSweep") && process.env.REGRESSION_SHOULDER_FAULT === "1" ? "&shoulderFault=1" : "";
+  const result = await runPage(session, base + page + fault);
+  return { ...result, page, seconds: ((Date.now() - started) / 1000).toFixed(1) };
+}
+
+function report({ page, outcome, state, errors, seconds }, note = "") {
+  console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s${note}`);
+  if (outcome === "passed") {
+    if (page.includes("shapePerf")) console.log(state.text);
+    return;
+  }
+  const lines = (state.text ?? "").split("\n").filter((line) => line.trim());
+  for (const line of lines.filter((line) => !line.startsWith("PASS ")).slice(-5)) console.log(`    ${line}`);
+  for (const error of errors.slice(0, 3)) console.log(`    ${error.split("\n")[0]}`);
 }
 
 async function main() {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const filters = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const option = args.find((arg) => arg.startsWith("--workers="));
+  const filters = args.filter((arg) => arg !== option);
   const candidates = filters.includes("shapePerf") ? SHAPE_PERF_PAGES : PAGES;
   const pages = candidates.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
   if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
+  const workers = workerCount({
+    requested: option?.slice("--workers=".length) ?? process.env.REGRESSION_WORKERS,
+    cores: availableParallelism(),
+    serial: filters.includes("shapePerf"),
+  });
+  const started = Date.now();
   let failed = 0;
-  console.log(`Regression prefers-reduced-motion: ${process.env.REGRESSION_REDUCED_MOTION ?? "no-preference"}`);
+  const retried = [];
+  console.log(`Regression prefers-reduced-motion: ${process.env.REGRESSION_REDUCED_MOTION ?? "no-preference"}, workers: ${workers}`);
   for (const featuresEnabled of [false, true]) {
     const fixtures = pages.filter((page) => page.includes("features=enabled") === featuresEnabled);
     if (fixtures.length === 0) continue;
-    await withRegressionBrowser(root, fixtures[0], async ({ session, base }) => {
-      for (const page of fixtures) {
-        const started = Date.now();
-        const fault = page.includes("shoulderSweep") && process.env.REGRESSION_SHOULDER_FAULT === "1" ? "&shoulderFault=1" : "";
-        const { outcome, state, errors } = await runPage(session, base + page + fault);
-        const seconds = ((Date.now() - started) / 1000).toFixed(1);
-        console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s`);
-        if (outcome === "passed" && page.includes("shapePerf")) console.log(state.text);
-        if (outcome !== "passed") {
-          failed += 1;
-          const lines = (state.text ?? "").split("\n").filter((line) => line.trim());
-          for (const line of lines.filter((line) => !line.startsWith("PASS ")).slice(-5)) console.log(`    ${line}`);
-          for (const error of errors.slice(0, 3)) console.log(`    ${error.split("\n")[0]}`);
-        }
+    const browsers = Math.min(workers, fixtures.length);
+    await withRegressionBrowser(root, fixtures[0], async ({ sessions, base }) => {
+      const again = [];
+      await runPool(fixtures, sessions, async (page, session) => {
+        const result = await runFixture(session, base, page);
+        const retry = browsers > 1 && result.outcome !== "passed";
+        report(result, retry ? "  (will run again on its own)" : "");
+        if (retry) again.push(page);
+        else if (result.outcome !== "passed") failed += 1;
+      });
+      // One at a time, with nothing else running: tells a real failure from a busy machine.
+      for (const page of again) {
+        const result = await runFixture(sessions[0], base, page);
+        report(result, "  (on its own)");
+        if (result.outcome === "passed") retried.push(page);
+        else failed += 1;
       }
-    }, { featuresEnabled });
+    }, { featuresEnabled, browsers });
   }
+  if (retried.length > 0) {
+    console.log(`${retried.length} page(s) failed in parallel and passed on their own (timing-sensitive or flaky):`);
+    for (const page of retried) console.log(`    ${page}`);
+  }
+  console.log(`Took ${Math.round((Date.now() - started) / 1000)}s.`);
   console.log(failed === 0 ? `All ${pages.length} regression pages passed.` : `${failed} of ${pages.length} regression pages did not pass.`);
   return failed === 0 ? 0 : 1;
 }
