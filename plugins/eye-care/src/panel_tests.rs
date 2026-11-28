@@ -36,6 +36,10 @@ fn assert_working(shared: &Shared, postponed: bool) {
     assert!((0.0..=100.0).contains(&percent));
     if shared.clock.paused() {
         assert_eq!(percent, 100.0, "a held timer restarts at a full period");
+        assert!(data["panel"]["rows"][0]["totalMs"].is_null(), "a held timer has no span to move");
+    } else {
+        let period = i64::try_from(shared.settings.period().as_millis()).unwrap();
+        assert_eq!(data["panel"]["rows"][0]["totalMs"].as_i64(), Some(period));
     }
     assert_eq!(
         data["panel"]["rows"][0]["durationMs"].is_i64(),
@@ -56,6 +60,8 @@ fn assert_resting(shared: &Shared) {
     assert!(data["panel"]["rows"][0]["countUpFrom"].is_i64(), "the break counts up");
     assert!(data["panel"]["rows"][0]["countdownTo"].is_null());
     assert!(data["panel"]["rows"][0]["durationMs"].is_null());
+    let rest = i64::try_from(shared.settings.rest().as_millis()).unwrap();
+    assert_eq!(data["panel"]["rows"][0]["totalMs"].as_i64(), Some(rest));
     assert_eq!(data["panel"]["done"], false);
     assert_eq!(
         data["panel"]["islandActions"],
@@ -78,6 +84,7 @@ fn assert_overdue(shared: &Shared) {
         "the total does not count on"
     );
     assert!(data["panel"]["rows"][0]["durationMs"].is_i64());
+    assert!(data["panel"]["rows"][0]["totalMs"].is_null(), "a stopped total has no span to move");
     assert_eq!(data["panel"]["rows"][0]["percent"].as_f64(), Some(100.0));
     assert_eq!(data["panel"]["note"], "", "nothing is written under the headline");
     assert_eq!(data["panel"]["actions"], json!(["defer_break", "finish_break"]));
@@ -185,7 +192,7 @@ fn an_overdue_round_shows_the_frozen_total_and_offers_the_two_answers() {
         let first = snapshot(&shared)["panel"]["rows"][0]["durationMs"]
             .as_i64()
             .unwrap();
-        assert!((59_000..=61_000).contains(&first), "the total is the round's screen time: {first}");
+        assert_eq!(first, 60_000, "the total stops at the round's own length");
         // Time passing changes nothing: the number waits for the answer.
         shared.clock.tick(Instant::now() + period * 3, false, false);
         assert_eq!(

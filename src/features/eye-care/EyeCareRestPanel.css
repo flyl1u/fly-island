@@ -69,12 +69,12 @@
   border-radius: var(--radius-pill);
 }
 
+/* The width jumps with the digits on their second, never a beat behind them. */
 .eye-care-rest__meter span {
   display: block;
   height: 100%;
   background: var(--color-warning);
   border-radius: inherit;
-  transition: width 400ms ease;
 }
 
 .eye-care-rest__body {
@@ -165,10 +165,4 @@
 :root[data-material="frostedGlass"] .eye-care-rest__card {
   background: color-mix(in srgb, var(--color-popover) 86%, var(--color-window));
   backdrop-filter: blur(12px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eye-care-rest__meter span {
-    transition: none;
-  }
 }

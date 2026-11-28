@@ -19,7 +19,7 @@ const material = query.get("material") ?? "classic";
 const text = TRANSLATIONS[language].eyeCare;
 localStorage.setItem(LOCALE_STORAGE_KEY, hostLanguage);
 localStorage.setItem(STORAGE_KEY, JSON.stringify({ colorScheme: theme, material }));
-const snapshot: EyeCareBreak = { startedAt: Date.now() - 18_000, canSnooze: true, canSkip: true, percent: 72, done: false, language };
+const snapshot: EyeCareBreak = { startedAt: Date.now() - 18_000, canSnooze: true, canSkip: true, percent: 72, totalMs: null, done: false, language };
 const actions: { id: string; action: string }[] = [];
 let revealed = 0;
 let failAction = false;

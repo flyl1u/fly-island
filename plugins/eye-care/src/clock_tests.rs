@@ -282,13 +282,36 @@ fn a_break_holds_the_screen_time_while_it_runs_and_a_completed_one_starts_from_z
 }
 
 #[test]
-fn an_overdue_round_holds_its_total_whatever_the_desk_does() {
+fn a_late_poll_freezes_the_total_when_the_screen_time_ran_out() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    // The poll only notices the deadline a second late: the extra second is not screen time.
+    clock.tick(at(base, 61), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert_eq!(clock.accumulated(at(base, 61)), Duration::from_secs(60));
+    // The next round adds exactly its own length, so the total stays on whole minutes.
+    assert!(clock.defer_break(at(base, 61)));
+    clock.tick(at(base, 122), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert_eq!(clock.accumulated(at(base, 122)), Duration::from_secs(120));
+}
+
+#[test]
+fn an_idle_desk_answers_an_overdue_round_and_holds_a_fresh_interval() {
     let base = Instant::now();
     let mut clock = notifying(base);
     clock.tick(at(base, 60), false, false);
-    clock.tick(at(base, 70), true, false);
-    assert_eq!(clock.accumulated(at(base, 500)), Duration::from_secs(60), "an idle desk changes nothing");
-    clock.tick(at(base, 500), false, false);
-    assert_eq!(clock.accumulated(at(base, 510)), Duration::from_secs(60), "typing again does not restart the total");
     assert_eq!(clock.phase(), Phase::Overdue);
+    // A full-screen window pauses the timer but is not a rest.
+    clock.tick(at(base, 90), false, true);
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert_eq!(clock.accumulated(at(base, 500)), Duration::from_secs(60), "the total is held");
+    // Being away for the whole idle span is the break: the round answers itself, the total
+    // starts over and the fresh interval waits for the user to come back.
+    clock.tick(at(base, 100), true, false);
+    assert_eq!(clock.phase(), Phase::Working);
+    assert_eq!(clock.accumulated(at(base, 100)), Duration::ZERO);
+    assert_eq!(clock.remaining(at(base, 150)), Duration::from_secs(60), "the idle desk holds it");
+    clock.tick(at(base, 160), false, false);
+    assert_eq!(clock.remaining(at(base, 160)), Duration::from_secs(60));
 }

@@ -20,7 +20,7 @@ Date.now = () => base + Math.floor(performance.now() - started) + jump;
 let restStart = base - 15_400;
 let panel: Panel = {
   headline: language === "en" ? "Resting" : "休息中", note: "", attention: true, actions: ["snooze_10", "skip"], islandActions: [],
-  rows: [{ id: "timer", title: language === "en" ? "Break time elapsed" : "已休息时长", detail: "", percent: 85, countdownTo: null, countUpFrom: restStart, tone: "warning" }],
+  rows: [{ id: "timer", title: language === "en" ? "Break time elapsed" : "已休息时长", detail: "", percent: 0, countdownTo: null, countUpFrom: restStart, totalMs: 60_000, tone: "warning" }],
 };
 const manifest = {
   id: "eye-care", name: { "zh-CN": "护眼提醒", en: "Eye Care" },
@@ -52,9 +52,16 @@ function check(condition: unknown, label: string) {
 const wait = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
 const islandClock = () => island.querySelector(".eye-care-island__value--countdown")?.textContent ?? "";
 const restClock = () => rest.querySelector("[role=timer]")?.textContent ?? "";
+const islandMeter = () => island.querySelector<HTMLElement>(".eye-care-island__meter span")?.style.width ?? "";
+const restMeter = () => rest.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width ?? "";
 const seconds = (value: string) => value.split(":").reduce((sum, part) => sum * 60 + Number(part), 0);
-const showRest = (done = false, percent = 60) => act(async () => restRoot.render(<I18nProvider><EyeCareRestPanel
-  snapshot={{ startedAt: restStart, canSnooze: !done, canSkip: !done, percent, done, language }} busy={false} failed={false} onAction={(action) => windowActions.push(action)}
+/** The share the bar must show for the clock beside it, rounded as the page rounds it. */
+const share = (clock: string, total: number) => {
+  const percent = Math.min(100, (seconds(clock) / total) * 100);
+  return `${Math.round(percent * 100) / 100}%`;
+};
+const showRest = (done = false) => act(async () => restRoot.render(<I18nProvider><EyeCareRestPanel
+  snapshot={{ startedAt: restStart, canSnooze: !done, canSkip: !done, percent: 0, totalMs: 60_000, done, language }} busy={false} failed={false} onAction={(action) => windowActions.push(action)}
 /></I18nProvider>));
 try {
   await act(async () => { await refreshPlugins(); });
@@ -63,25 +70,25 @@ try {
     "The island shows the resting phase and the elapsed break time label");
   check(!island.querySelector(".eye-care-island__note") && !island.querySelector(".eye-care-island__detail"),
     "Empty notes do not fall back to the manifest description or leave redundant instructions");
-  check(island.querySelector<HTMLElement>(".eye-care-island__meter span")?.style.width === "85%",
-    "The island fills a bar as the break runs");
+  check(islandMeter() === share(islandClock(), 60), "The island bar steps with the seconds the clock shows, not the plugin's share");
   check(island.querySelector(".eye-care-island__line--stack") !== null, "The count-up sits above its own label");
   await wait(650);
   await showRest();
   check(seconds(islandClock()) === seconds(restClock()), "Staggered mounts share the same elapsed second");
   check(islandClock() === restClock(), "Eye Care uses the same clock format on both surfaces");
+  check(islandMeter() === restMeter() && islandMeter() === share(islandClock(), 60),
+    "Both surfaces fill the same share from the same second");
   check(seconds(islandClock()) >= 15, "The break counts the rest up from where it began");
 
   restStart = Date.now() - 200_000;
   panel = { ...panel, rows: [{ ...panel.rows[0], countUpFrom: restStart }] };
   await act(async () => { await refreshPlugins(); });
-  await showRest(false, 90);
+  await showRest();
   check(islandClock() === restClock() && seconds(restClock()) === 200, "A new break start updates both clocks immediately");
+  check(islandMeter() === "100%" && restMeter() === "100%", "A break past its length fills the bar completely");
   check(!island.querySelector(".eye-care-island__actions"), "Resting island shows no duplicate postponement or skip buttons");
   check(rest.querySelectorAll(".eye-care-rest__choices button").length === 6 && rest.querySelector(".eye-care-rest__actions button"),
     "The break window retains all six postponements and optional skipping");
-  check(rest.querySelector<HTMLElement>(".eye-care-rest__meter span")?.style.width === "90%",
-    "The break window fills the same kind of bar as the island");
   await act(async () => rest.querySelectorAll<HTMLButtonElement>(".eye-care-rest__choices button")[5].click());
   await act(async () => rest.querySelector<HTMLButtonElement>(".eye-care-rest__actions button")!.click());
   check(windowActions.join(",") === "snooze_30,skip", "The remaining break-window actions still work");
@@ -95,7 +102,7 @@ try {
   check(islandClock() === restClock() && seconds(restClock()) > 600,
     "A running total keeps growing past the set break length");
   panel = { ...panel, headline: language === "en" ? "Screen time" : "用眼中", attention: false, actions: ["reset_work", "rest_now"], islandActions: ["reset_work", "rest_now"],
-    rows: [{ ...panel.rows[0], title: language === "en" ? "Screen time remaining" : "剩余用眼时长", countUpFrom: null, countdownTo: Date.now() + 1_200_000 }] };
+    rows: [{ ...panel.rows[0], title: language === "en" ? "Screen time remaining" : "剩余用眼时长", countUpFrom: null, countdownTo: Date.now() + 1_200_000, percent: 0, totalMs: 1_200_000 }] };
   await act(async () => { await refreshPlugins(); restRoot.render(null); });
   const workingActions = [...island.querySelectorAll<HTMLButtonElement>(".eye-care-island__action")];
   check(workingActions.map((button) => button.textContent).join(",") === "reset_work,rest_now"
@@ -108,16 +115,20 @@ try {
     && card.contains(island.querySelector(".eye-care-island__value--countdown")!)
     && card.contains(island.querySelector(".eye-care-island__action")!),
     "The phase, the remaining time and Take a break now share one card");
+  jump += 300_000;
+  await act(async () => window.dispatchEvent(new Event("focus")));
+  check(islandClock() === "15:00" && islandMeter() === share("15:00", 1200),
+    "A countdown steps its bar on the very second its digits change");
   panel = { ...panel, note: language === "en" ? "Already postponed once; the next break cannot be postponed" : "已经推迟过一次，不能推迟下次休息" };
   await act(async () => { await refreshPlugins(); });
   check(island.querySelector(".eye-care-island__note")?.textContent === panel.note && island.querySelector(".eye-care-island__headline")?.textContent === panel.headline,
     "Postponement adds its warning while keeping the working headline");
   // The desk went idle: the round restarts at a full period and holds, digits and bar included.
   panel = { ...panel, headline: language === "en" ? "Idle" : "空闲中",
-    rows: [{ ...panel.rows[0], countUpFrom: null, countdownTo: null, percent: 100, durationMs: 1_200_000, detail: "" }] };
+    rows: [{ ...panel.rows[0], countUpFrom: null, countdownTo: null, percent: 100, totalMs: null, durationMs: 1_200_000, detail: "" }] };
   await act(async () => { await refreshPlugins(); });
   check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline && islandClock() === "20:00"
-    && island.querySelector<HTMLElement>(".eye-care-island__meter span")?.style.width === "100%"
+    && islandMeter() === "100%"
     && island.querySelector(".eye-care-island__note")?.textContent === panel.note,
     "An idle desk names itself and keeps the frozen countdown and bar");
   await wait(1100);

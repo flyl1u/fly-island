@@ -96,6 +96,7 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert_eq!(panel["islandActions"], json!(["reset_work", "rest_now"]));
         assert_eq!(panel["attention"], false);
         assert_eq!(panel["rows"][0]["durationMs"], Value::Null);
+        assert_eq!(panel["rows"][0]["totalMs"], json!(1_200_000));
         if panel["rows"][0]["countdownTo"].is_number() {
             assert_eq!(panel["rows"][0]["detail"], "");
         }
@@ -119,6 +120,7 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert!(rest["params"]["panel"]["rows"][0]["countUpFrom"].is_number());
         assert_eq!(rest["params"]["panel"]["rows"][0]["countdownTo"], Value::Null);
         assert_eq!(rest["params"]["panel"]["rows"][0]["durationMs"], Value::Null);
+        assert_eq!(rest["params"]["panel"]["rows"][0]["totalMs"], json!(60_000));
         assert_eq!(
             rest["params"]["panel"]["actions"],
             json!(["snooze_10", "skip"])

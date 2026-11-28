@@ -22,7 +22,12 @@ export function EyeCareRestPanel({ snapshot, busy, failed, onAction }: {
   const text = useTranslation(snapshot?.language).eyeCare;
   const seconds = useElapsed(snapshot?.startedAt ?? null);
   if (!snapshot) return null;
-  const percent = snapshot.percent === null ? null : Math.min(100, Math.max(0, snapshot.percent));
+  // The bar and the digits come from the same whole seconds, so the bar fills exactly when the
+  // total reaches the break's length and never trails or stops short of it.
+  const total = snapshot.totalMs ?? 0;
+  const percent = total > 0
+    ? Math.round(Math.min(100, Math.max(0, ((seconds * 1000) / total) * 100)) * 100) / 100
+    : snapshot.percent === null ? null : Math.min(100, Math.max(0, snapshot.percent));
   return (
     <section className="eye-care-rest" lang={snapshot.language} aria-labelledby="eye-care-title">
       <div className="eye-care-rest__card">

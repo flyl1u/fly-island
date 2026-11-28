@@ -31,6 +31,16 @@ pub(crate) fn snapshot_at(shared: &Shared, at: Instant) -> Value {
     } else {
         shared.clock.percent_remaining(at)
     };
+    // A running timer names the span it moves over, so the host can step the bar with the very
+    // second its digits show instead of waiting for the next publish.
+    let total = if resting {
+        Some(shared.settings.rest())
+    } else if paused || overdue {
+        None
+    } else {
+        Some(shared.settings.period())
+    }
+    .map(|value| i64::try_from(value.as_millis()).unwrap_or(i64::MAX));
     let headline = if overdue {
         t("休息时间到", "Break time")
     } else if done {
@@ -95,7 +105,7 @@ pub(crate) fn snapshot_at(shared: &Shared, at: Instant) -> Value {
         "headline": headline, "note": note, "done": done,
         "rows": [{"id":"timer", "title": title, "detail": "", "percent": percent,
             "countdownTo": deadline, "countUpFrom": count_up, "durationMs": duration,
-            "tone": tone}],
+            "totalMs": total, "tone": tone}],
         "actions": actions,
         "islandActions": island_actions,
         "attention": resting || overdue

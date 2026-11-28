@@ -3,7 +3,8 @@
 //! Two break styles share the cycle: locking starts the full-screen break when the screen time
 //! runs out or the user asks for one, while notifying only reminds. In notify mode the cycle
 //! turns overdue once the time is up, holding the accumulated screen time until the user
-//! postpones the break or calls it done. A locking break counts its rest up rather than down and
+//! postpones the break or calls it done; idling away for the whole idle span counts as the break
+//! they took and starts the next interval. A locking break counts its rest up rather than down and
 //! stays on screen past its length, waiting for the user to come back.
 
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -132,9 +133,7 @@ impl Clock {
                 // An idle desk, or a full-screen window when that setting is on, starts a
                 // completely fresh eye-use interval and holds it until input or the window
                 // view returns.
-                self.deadline = now + self.period;
-                self.fullscreen_remaining = Some(self.period);
-                self.hold_accumulated(now);
+                self.hold_full_interval(now);
             }
             Phase::Working => {
                 if let Some(remaining) = self.fullscreen_remaining.take() {
@@ -146,14 +145,22 @@ impl Clock {
                         BreakMode::Lock => self.begin_rest(now),
                         BreakMode::Notify => {
                             self.phase = Phase::Overdue;
-                            self.hold_accumulated(now);
+                            // The poll can run late; the total stops when the screen time ran
+                            // out, not when the plugin happened to notice it.
+                            self.hold_accumulated(self.deadline);
                         }
                     }
                 }
             }
             // A break stays on screen past its length; input calls `end_rest`.
             Phase::Resting => {}
-            // The total stands still while the user decides; it never counts a break.
+            // The total stands still while the user decides; it never counts a break. Idling
+            // away for the whole idle span is one, though: the reminder answers itself and the
+            // next interval starts, held until the user comes back.
+            Phase::Overdue if idle => {
+                self.begin_work(now);
+                self.hold_full_interval(now);
+            }
             Phase::Overdue => {}
         }
     }
@@ -263,6 +270,13 @@ impl Clock {
         self.fullscreen_remaining = None;
         // A completed break is rest: the next reminder counts from zero.
         self.reset_accumulated(now);
+    }
+
+    /// The desk is away: a fresh interval waits at its full length until the user returns.
+    fn hold_full_interval(&mut self, now: Instant) {
+        self.deadline = now + self.period;
+        self.fullscreen_remaining = Some(self.period);
+        self.hold_accumulated(now);
     }
 
     fn hold_accumulated(&mut self, now: Instant) {

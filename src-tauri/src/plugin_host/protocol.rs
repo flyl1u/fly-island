@@ -67,6 +67,10 @@ pub struct PanelRow {
     /// a held timer's remaining time or a finished round's total. Never combined with a deadline.
     #[serde(default)]
     pub duration_ms: Option<i64>,
+    /// Milliseconds the running timer spans, so the host can move the bar on the same tick as
+    /// the digits rather than on the plugin's publish. Only with a deadline or a running total.
+    #[serde(default)]
+    pub total_ms: Option<i64>,
     /// "normal", "warning" or "danger"; anything else reads as normal.
     pub tone: Option<String>,
 }
@@ -149,6 +153,8 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
                     || r.countdown_to.is_some_and(|deadline| deadline <= 0)
                     || r.count_up_from.is_some_and(|from| from <= 0 || r.countdown_to.is_some() || r.duration_ms.is_some())
                     || r.duration_ms.is_some_and(|total| total < 0 || r.countdown_to.is_some())
+                    || r.total_ms.is_some_and(|total| total <= 0
+                        || (r.countdown_to.is_none() && r.count_up_from.is_none()))
                     || r.tone.as_deref().is_some_and(|tone| !["normal", "warning", "danger"].contains(&tone))
             })
             || !unique(panel.rows.iter().map(|r| r.id.as_str()).collect())

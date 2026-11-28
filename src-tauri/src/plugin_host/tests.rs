@@ -65,6 +65,19 @@ fn validates_manifest_and_protocol() {
     let mut running_fixed = running;
     running_fixed["panel"]["rows"][0]["durationMs"] = json!(60_000);
     assert!(protocol::parse_publish(&publish(running_fixed), &page).is_err(), "a total is not a fixed duration");
+    // A running timer names the span it moves over, so the host can step the bar with the digits.
+    let mut spanned = good.clone();
+    spanned["panel"]["rows"][0]["countdownTo"] = json!(1_700_000_060_000_i64);
+    spanned["panel"]["rows"][0]["totalMs"] = json!(1_200_000_i64);
+    assert!(protocol::parse_publish(&publish(spanned.clone()), &page).is_ok());
+    for total in [json!(0), json!(-1)] {
+        let mut bad = spanned.clone();
+        bad["panel"]["rows"][0]["totalMs"] = total.clone();
+        assert!(protocol::parse_publish(&publish(bad), &page).is_err(), "totalMs {total}");
+    }
+    let mut span_only = good.clone();
+    span_only["panel"]["rows"][0]["totalMs"] = json!(1_200_000_i64);
+    assert!(protocol::parse_publish(&publish(span_only), &page).is_err(), "a span needs a running timer");
     let mut undeclared_action = good.clone();
     undeclared_action["panel"]["actions"] = json!(["rest_now"]);
     assert!(protocol::parse_publish(&publish(undeclared_action), &page).is_err());

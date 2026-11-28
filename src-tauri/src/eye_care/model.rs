@@ -16,6 +16,9 @@ pub struct BreakState {
     pub can_skip: bool,
     /// 0–100 share of the break behind the user, as the plugin measured it; absent when it cannot.
     pub percent: Option<f64>,
+    /// Milliseconds the break runs over, so the window moves its bar on the same tick as the
+    /// digits; absent when the plugin does not name the span.
+    pub total_ms: Option<i64>,
     /// The break ran its full length: the windows stay, counting up, until the user acts.
     pub done: bool,
     pub language: &'static str,
@@ -86,6 +89,7 @@ pub(crate) fn from_publish(
         can_snooze: panel.actions.iter().any(|id| id == "snooze_10"),
         can_skip: panel.actions.iter().any(|id| id == "skip"),
         percent: row.percent,
+        total_ms: row.total_ms,
         done: panel.done,
         language: if english { "en" } else { "zh-CN" },
     })
@@ -100,13 +104,14 @@ mod tests {
     fn rest_is_driven_by_typed_state_and_current_actions() {
         let mut data: PluginContributions = serde_json::from_value(json!({"panel": {
             "headline":"任意文案", "note":null, "attention":true,
-            "rows":[{"id":"timer","title":"timer","countUpFrom":1234,"percent":62.5}],
+            "rows":[{"id":"timer","title":"timer","countUpFrom":1234,"percent":62.5,"totalMs":60000}],
             "actions":["snooze_10","skip"]
         }}))
         .unwrap();
         let state = from_publish(&data, "running", true).unwrap();
         assert_eq!(state.started_at, 1234);
         assert_eq!(state.percent, Some(62.5));
+        assert_eq!(state.total_ms, Some(60_000));
         assert!(state.can_snooze && state.can_skip);
         assert!(!state.done);
         assert_eq!(state.language, "en");
@@ -143,6 +148,7 @@ mod tests {
             can_snooze: true,
             can_skip: false,
             percent: None,
+            total_ms: None,
             done: false,
             language: "en",
         };
