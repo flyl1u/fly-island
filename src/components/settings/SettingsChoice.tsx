@@ -7,11 +7,13 @@ export function SettingsChoice<T extends string>({
   value,
   options,
   ariaLabel,
+  disabled = false,
   onChange,
 }: {
   value: T;
   options: readonly SettingsChoiceOption<T>[];
   ariaLabel: string;
+  disabled?: boolean;
   onChange: (value: T) => void;
 }) {
   return (
@@ -24,6 +26,7 @@ export function SettingsChoice<T extends string>({
             className={active ? "settings-choice__option settings-choice__option--active" : "settings-choice__option"}
             type="button"
             aria-pressed={active}
+            disabled={disabled}
             onClick={() => onChange(option.value)}
           >
             {option.label}

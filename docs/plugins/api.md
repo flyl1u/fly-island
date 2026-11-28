@@ -176,7 +176,7 @@ manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一�
 | row | id、title；detail 可空；percent 为 null 或 0–100；countdownTo 为 null 或正 Unix 毫秒；countUpFrom 为 null 或正 Unix 毫秒（正在累计的起点，与 countdownTo、durationMs 互斥）；durationMs 为 null 或非负毫秒数（宿主原样显示的固定时长：暂停时的剩余时间或到期后的累计值，和 countdownTo 互斥，两者都给会被拒绝）；totalMs 为 null 或正毫秒数（正在走的计时总长，只与 countdownTo 或 countUpFrom 同时出现；宿主用同一个整秒刷新数字和进度条）；tone 为 normal / warning / danger |
 | actions | 最多 4 个唯一的 manifest 已声明 id，只显示当前有效的阶段性动作 / At most 4 unique declared IDs for currently available actions |
 | islandActions | `actions` 的子集（最多 4 个唯一 id），岛内页面只显示这些；省略或 null 表示全部显示。给自家窗口用的动作留在 `actions` / Subset of `actions` shown on the island page (at most 4 unique IDs); omitted or null shows all. Keep window-only actions in `actions` |
-| attention | bool；点亮页按钮提示点，不弹通知 / Page-button indicator, no notification |
+| attention | bool；点亮页按钮提示点，不弹通知；为真且 timer 行没有 `countdownTo` 时，宿主还会展开插件页并保持到它清除（护眼通知模式到点）/ Page-button indicator, no notification; with no deadline on the timer row it also opens the plugin page and keeps it open until cleared (Eye Care's notify mode) |
 | done | bool，缺省 false；页面的事件已经结束（护眼的休息跑满），页面留在原处、不再提供动作 / The page's event is over; the page stays on screen without actions |
 
 每次 publish 替换整个 panel；省略或 null 清空。文本最多 4096 UTF-8 字节且无 NUL，行 id 非空唯一。倒计时和累计都由宿主本地按秒更新，插件只提供期限或起点；`durationMs` 是宿主原样显示的固定时长（暂停时的剩余时间、到期后的累计值），不自行计时（护眼暂停时与「休息时间到」都这样），因此同样不需要每秒 publish。`totalMs` 给出正在走的计时总长，宿主用它和本地整秒一起算进度条，数字和进度条在同一秒变化，倒计时到 0 时进度条正好空、跑满时正好填满。主进程只在快照变化时发送 plugins-changed；panel 的错误字段或动作使该 publish 被拒绝。无 panel 的旧适配器不受影响。

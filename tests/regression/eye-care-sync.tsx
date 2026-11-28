@@ -32,7 +32,7 @@ const manifest = {
 mockIPC((command) => {
   if (command === "get_plugins") return {
     registry: { developerMode: true, indexUrl: "", installed: {
-      "eye-care": { manifest, enabled: true, directory: "", development: true, settings: {} },
+      "eye-care": { manifest, enabled: true, directory: "", development: true, settings: { language } },
     } },
     live: { "eye-care": { status: "running", quota: [], sessions: [], notifications: [], panel } },
   };
@@ -68,6 +68,8 @@ try {
   await act(async () => islandRoot.render(<I18nProvider><EyeCareIslandPanel /></I18nProvider>));
   check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline && island.querySelector(".eye-care-island__label")?.textContent === panel.rows[0].title,
     "The island shows the resting phase and the elapsed break time label");
+  check(island.querySelector<HTMLElement>(".eye-care-island")?.lang === language,
+    "The island page declares the plugin's language for its text");
   check(!island.querySelector(".eye-care-island__note") && !island.querySelector(".eye-care-island__detail"),
     "Empty notes do not fall back to the manifest description or leave redundant instructions");
   check(islandMeter() === share(islandClock(), 60), "The island bar steps with the seconds the clock shows, not the plugin's share");

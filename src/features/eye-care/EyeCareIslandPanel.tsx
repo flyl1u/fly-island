@@ -73,6 +73,8 @@ export function EyeCareIslandPanel() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   if (!installed) return null;
+  // The panel's words follow the plugin's own language; the host's fallback copy follows the app.
+  const contentLanguage = panel ? (installed.settings.language === "en" ? "en" : "zh-CN") : locale;
   const actions = islandPanelActions(panel)
     .map((id) => installed.manifest.actions.find((action) => action.id === id))
     .filter((action) => action !== undefined);
@@ -99,7 +101,7 @@ export function EyeCareIslandPanel() {
   );
 
   return (
-    <section className="eye-care-island" aria-label={installed.manifest.name[locale]}>
+    <section className="eye-care-island" lang={contentLanguage} aria-label={installed.manifest.name[contentLanguage]}>
       {panel && panel.rows.length > 0 ? (
         <div className="eye-care-island__card">
           {head}
@@ -107,7 +109,7 @@ export function EyeCareIslandPanel() {
             {panel.rows.map((row) => <EyeCareRow key={row.id} row={row} />)}
           </ul>
           {actions.length > 0 && (
-            <div className="eye-care-island__actions">
+            <div className="eye-care-island__actions" lang={locale}>
               {actions.map((action, index) => (
                 <button
                   key={action.id}
@@ -130,10 +132,10 @@ export function EyeCareIslandPanel() {
       ) : (
         <>
           {head}
-          <p className="eye-care-island__empty">{panel ? text.empty : statusText}</p>
+          <p className="eye-care-island__empty" lang={locale}>{panel ? text.empty : statusText}</p>
         </>
       )}
-      {error && <p className="eye-care-island__error" role="alert">{error}</p>}
+      {error && <p className="eye-care-island__error" role="alert" lang={locale}>{error}</p>}
     </section>
   );
 }

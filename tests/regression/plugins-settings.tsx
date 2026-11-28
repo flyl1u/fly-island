@@ -341,8 +341,13 @@ try {
       .find((button) => button.textContent === label)!;
     check(modeSetting.type === "choice" && modeChoice(modeSetting.options[0].label[locale]).getAttribute("aria-pressed") === "true",
       "提醒方式用和展开方式相同的分段按钮，默认锁屏模式");
+    // A save disables the whole group, so neither option can be clicked again while it runs.
+    saveDelay = 150;
     await act(async () => modeChoice(modeSetting.options[1].label[locale]).click());
-    await wait();
+    check(modeChoice(modeSetting.options[0].label[locale]).disabled && modeChoice(modeSetting.options[1].label[locale]).disabled,
+      "保存中的分段按钮全部禁用，避免重复提交");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 220)); }); await wait();
+    saveDelay = 0;
     check(eyeCare.settings["mode"] === "notify" && !settingRow("rest-minutes") && !settingRow("allow-skip")
       && Boolean(settingRow("period")) && Boolean(settingRow("idle")) && Boolean(settingRow("pause-fullscreen")) && Boolean(settingRow("language")),
       "通知模式隐藏休息时长和允许跳过休息，其余设置照常显示");
