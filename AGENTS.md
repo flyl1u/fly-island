@@ -69,7 +69,7 @@
 | 前端静态检查 | `pnpm lint`（ESLint，配置见 `eslint.config.js`） |
 | 文件行数检查 | `pnpm check:size` |
 | 回归页类型检查 | `pnpm check:tests-types`（`tsconfig.tests.json`，检查 `tests/regression/*.tsx`） |
-| 浏览器回归页 | `pnpm test:regression [页面名中的词]`（自带 Vite，用无头 Chrome / Edge 跑 `tests/regression/` 下全部回归页并汇总结果，约 20 秒） |
+| 浏览器回归页 | `pnpm test:regression [页面名中的词]`（自带 Vite，用无头 Chrome / Edge 跑 `tests/regression/` 下全部回归页并汇总结果。按每 4 个逻辑核心 1 路并行（最多 6 路），32 核机器上全量约 3 分 20 秒；`--workers=N` 或 `REGRESSION_WORKERS` 可改，并行时失败的页面会单独重跑一次并在结尾列出。带页面名过滤时几十秒内完成） |
 | 提交前总检查 | `pnpm check`（类型检查 + 回归页类型检查 + lint + 行数检查 + 单元测试） |
 | Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
 | 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle`（写到 `src-tauri/target/release`） |

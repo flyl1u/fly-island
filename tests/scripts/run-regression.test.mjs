@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { PAGES, pageOutcome, passedChecks } from "../../scripts/run-regression.mjs";
+import { PAGES, pageOutcome, passedChecks, runPool, workerCount } from "../../scripts/run-regression.mjs";
 
 test("each way a regression page reports its result is understood", () => {
   assert.equal(pageOutcome({ testResult: "passed" }), "passed");
@@ -29,6 +29,28 @@ test("passed checks are counted from PASS lines only", () => {
 test("every listed regression page exists", () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   for (const page of PAGES) assert.ok(existsSync(path.join(root, "tests/regression", page.split("?")[0])), page);
+});
+
+test("workers default by core count, can be asked for, and performance pages stay serial", () => {
+  assert.equal(workerCount({ cores: 32 }), 6);
+  assert.equal(workerCount({ cores: 12 }), 3);
+  assert.equal(workerCount({ cores: 4 }), 1);
+  assert.equal(workerCount({ requested: "8", cores: 4 }), 8);
+  assert.equal(workerCount({ requested: "8", cores: 32, serial: true }), 1);
+  for (const bad of ["0", "1.5", "many"]) assert.throws(() => workerCount({ requested: bad, cores: 8 }), /--workers/);
+});
+
+test("the pool runs every item once, never more at a time than it has workers", async () => {
+  let running = 0;
+  let most = 0;
+  const results = await runPool([30, 5, 6, 7, 8], ["a", "b"], async (ms) => {
+    most = Math.max(most, ++running);
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    running -= 1;
+    return ms * 2;
+  });
+  assert.equal(most, 2);
+  assert.deepEqual(results, [60, 10, 12, 14, 16]);
 });
 
 test("each run gets free ports of its own", async () => {
