@@ -65,6 +65,18 @@ export type AgentText = {
     /** Why DSH is set up but shows no balance: a word or two beside the empty ring, then the hover detail. */
     dshProblem: Record<"noSession" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format", { short: string; detail: string }>;
     workbuddy: { label: string; credits: (value: string) => string; balance: (remaining: string, total: string) => string; percent: (value: number) => string; source: string };
+    /** Third-party relay balances: money, not percentage windows. */
+    relay: {
+      label: (name: string, adapter: string) => string;
+      balance: (remaining: string, total: string | null) => string;
+      used: (value: string) => string;
+      percent: (value: number) => string;
+      spend: (kind: string, value: string) => string;
+      today: string; week: string; month: string; allTime: string;
+      unlimited: string;
+      source: string;
+      problem: Record<"credential" | "auth" | "network" | "http" | "format" | "unknown", { short: string; detail: string }>;
+    };
     fiveHour: string;
     sevenDay: string;
     /** Compact time left: "1d10h", "3h20m", "42m". */
@@ -203,6 +215,24 @@ export const zhCN: AgentText = {
       percent: (value) => `剩余 ${value}%`,
       source: "WorkBuddy 官网",
     },
+    relay: {
+      label: (name, adapter) => `${name} · ${({ "newapi-account": "New API 账户", "newapi-token": "New API 令牌", sub2api: "Sub2API", custom: "自定义" } as Record<string, string>)[adapter] ?? adapter}`,
+      balance: (remaining, total) => (total === null ? `剩余 ${remaining}` : `剩余 ${remaining} / 共 ${total}`),
+      used: (value) => `已用 ${value}`,
+      percent: (value) => `剩余 ${value}%`,
+      spend: (kind, value) => `${kind}消费 ${value}`,
+      today: "今日", week: "近 7 天", month: "本月", allTime: "累计",
+      unlimited: "不限额度",
+      source: "来自第三方中转站",
+      problem: {
+        credential: { short: "未配置", detail: "账号缺少凭据，请在设置里填写 API Key 或令牌。" },
+        auth: { short: "凭据失效", detail: "中转站拒绝了凭据，请检查 Key 或令牌是否正确。" },
+        network: { short: "无法连接", detail: "连不上中转站，请检查网络或地址，稍后会自动重试。" },
+        http: { short: "服务出错", detail: "中转站接口返回错误，稍后会自动重试。" },
+        format: { short: "无法识别", detail: "余额格式无法识别，请检查适配器与 JSON 路径设置。" },
+        unknown: { short: "查询失败", detail: "余额查询失败，请稍后重试。" },
+      },
+    },
     fiveHour: "5 小时",
     sevenDay: "7 天",
     resetsIn: ({ days, hours, minutes }) =>
@@ -333,6 +363,24 @@ export const en: AgentText = {
       balance: (remaining, total) => `${remaining} of ${total} credits left`,
       percent: (value) => `${value}% left`,
       source: "WorkBuddy website",
+    },
+    relay: {
+      label: (name, adapter) => `${name} · ${({ "newapi-account": "New API account", "newapi-token": "New API token", sub2api: "Sub2API", custom: "Custom" } as Record<string, string>)[adapter] ?? adapter}`,
+      balance: (remaining, total) => (total === null ? `${remaining} left` : `${remaining} of ${total} left`),
+      used: (value) => `${value} used`,
+      percent: (value) => `${value}% left`,
+      spend: (kind, value) => `${kind} spend ${value}`,
+      today: "Today", week: "7 days", month: "This month", allTime: "All time",
+      unlimited: "Unlimited",
+      source: "from third-party relay",
+      problem: {
+        credential: { short: "No key", detail: "This account has no credential. Add an API key or token in settings." },
+        auth: { short: "Rejected", detail: "The relay rejected the credential. Check the key or token." },
+        network: { short: "Offline", detail: "Cannot reach the relay. Check the network or address; it retries shortly." },
+        http: { short: "Server error", detail: "The relay endpoint returned an error; it retries shortly." },
+        format: { short: "Unrecognized", detail: "The balance format was not recognized. Check the adapter and JSON path." },
+        unknown: { short: "Failed", detail: "The balance query failed. Try again shortly." },
+      },
     },
     fiveHour: "5h",
     sevenDay: "7d",

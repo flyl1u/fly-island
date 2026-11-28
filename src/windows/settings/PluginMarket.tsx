@@ -6,6 +6,10 @@ import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
 import type { IslandSettings } from "../../features/appearance/types";
+import { setCenteredClockSettings, DEFAULT_CENTERED_CLOCK_SETTINGS } from "../../features/centered-clock";
+import { configureScreenshotPlugin } from "../../features/screenshot/api";
+import { updateScreenshotSettings } from "../../features/screenshot/useScreenshotSettings";
+import { loadScreenshotSettings } from "../../features/screenshot/storage";
 import { setClockWeatherSettings } from "../../features/weather";
 import { isNativePluginId, MARKET_PACKAGES, PACKAGED_MARKET_PLUGINS, type PackagedMarketId } from "../../features/plugins/native/catalog";
 import { PluginIcon } from "../../features/plugins/PluginIcon";
@@ -72,19 +76,30 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
   // left off from before, or turned off and forgotten, kept an installed plugin off the island
   // with nothing there to say why (2026-11-19, owner: 钉钉装好后岛上没有).
   const install = (id: NativePluginId) => {
+    if (id === "centeredClock") setCenteredClockSettings(DEFAULT_CENTERED_CLOCK_SETTINGS);
+    if (id === "appleMusicLyrics") onSettingsChange({ ...settings, lyricsAppleMusic: true });
     if (id === "clockWeather") setClockWeatherSettings({ showClock: true, showWeather: true });
     const office = OFFICE_SOURCES.find((source) => source === id);
     if (office) setOfficeEnabled(office, true);
     const agent = NATIVE_AGENTS.find((item) => item.id === id);
     if (agent) {
       // Its quota ring too, like the built-in agents' rings that start ticked.
-      const ring = agent.id === "kimiCode" || agent.id === "zcode" || agent.id === "antigravity" ? agent.id : null;
+      const ring = agent.id === "kimiCode" || agent.id === "zcode" || agent.id === "antigravity" || agent.id === "relay" ? agent.id : null;
       const quota = ring !== null && !settings.agentQuotaSources.includes(ring);
       if (!settings[agent.setting] || quota) {
         onSettingsChange({ ...settings, [agent.setting]: true, ...(quota ? { agentQuotaSources: [...settings.agentQuotaSources, ring] } : {}) });
       }
     }
     setNativePluginInstalled(id, true);
+    if (id === "screenshot") {
+      const config = loadScreenshotSettings();
+      void configureScreenshotPlugin(true, config.shortcutEnabled ? config.shortcut : "").catch((error: unknown) => {
+        setNativePluginEnabled("screenshot", false);
+        updateScreenshotSettings({ shortcutIssue: { shortcut: config.shortcut, reason: String(error) } });
+        const target = { id, native: id, category: "screenshot", actionsCategory: "screenshot", standalone: true } as const;
+        onOpenSettings(target);
+      });
+    }
   };
   const packagesInstalled = PACKAGED_MARKET_PLUGINS.filter(({ id }) => registry.installed[id]?.development === false);
   const newVersion = (id: string) => {
@@ -118,7 +133,9 @@ export function PluginMarket({ settings, onSettingsChange, onOpenSettings }: Plu
         const inDevelopment = !isNative && !isInstalled && !MARKET_PACKAGES.some((plugin) => plugin.id === id);
         const status = live[id]?.status;
         const job = isNative ? undefined : jobs[id];
-        const target = placed.find((plugin) => plugin.id === id);
+        // A disabled screenshot with an occupied shortcut still needs its repair actions.
+        const target = placed.find((plugin) => plugin.id === id) ?? (id === "screenshot" && isInstalled
+          ? { id, native: id, category: "screenshot", actionsCategory: "screenshot", standalone: true } as const : undefined);
         const version = newVersion(id);
         const failure = job?.phase === "failed" ? pluginFailureCode(job.error) : error?.id === id ? error.code : undefined;
         const failed = job?.phase === "failed" || error?.id === id;

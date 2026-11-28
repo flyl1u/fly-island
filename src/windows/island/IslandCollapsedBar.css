@@ -299,3 +299,13 @@
   outline-offset: -2px;
   border-radius: var(--radius-pill);
 }
+.island__collapsed--centered-clock { position: relative; }
+.island__centered-clock {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(220px, calc(100% - 36px));
+  pointer-events: none;
+}

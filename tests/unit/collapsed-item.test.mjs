@@ -26,3 +26,12 @@ test("nothing to show leaves the text place empty", () => {
   assert.equal(pickCollapsedItem(TODO_FIRST, { todo: false, agent: false, lyrics: false }, false), null);
   assert.equal(pickCollapsedItem(DEFAULT_ORDER, { todo: false, agent: false, lyrics: false }), null);
 });
+
+test("the centered clock fills the idle slot and yields to configured activity", () => {
+  const priority = ["agent", "lyrics", "todo", "centeredClock"];
+  const idle = { agent: false, lyrics: false, todo: false, centeredClock: true };
+  assert.equal(pickCollapsedItem(priority, idle), "centeredClock");
+  assert.equal(pickCollapsedItem(priority, { ...idle, agent: true }), "agent");
+  assert.equal(pickCollapsedItem(priority, { ...idle, lyrics: true }), "lyrics");
+  assert.equal(pickCollapsedItem(priority, { ...idle, todo: true }), "todo");
+});

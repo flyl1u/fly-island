@@ -3,7 +3,7 @@ import type { AgentQuotaSource, AgentSessionGroup, AgentSessionSort, CollapsedIt
 
 export const AGENT_SESSION_SORTS: readonly AgentSessionSort[] = ["status", "recent", "firstSeen"];
 export const AGENT_SESSION_GROUPS: readonly AgentSessionGroup[] = ["computer", "project", "none"];
-export const AGENT_QUOTA_SOURCES: readonly AgentQuotaSource[] = ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode", "antigravity"];
+export const AGENT_QUOTA_SOURCES: readonly AgentQuotaSource[] = ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode", "antigravity", "relay"];
 /** Choices for how far back the Agent page lists sessions, in hours. */
 export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 /** How long a page opened for an agent alert stays, in seconds. */
@@ -94,7 +94,7 @@ export function normalizeExpandedScale(value: unknown) {
 }
 
 /** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
-export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo"];
+export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo", "centeredClock"];
 /** The collapsed island's layout as it always was: the light and the text, then the icons on its right. */
 export const COLLAPSED_SLOTS: readonly CollapsedSlot[] = ["pulse", "text", "mail", "shelf", "music", "agents", "clock", "weather", "battery"];
 /** The header's page dots in their default order; translation joined last (2026-11-11). */

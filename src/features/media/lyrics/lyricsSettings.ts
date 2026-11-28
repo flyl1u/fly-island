@@ -4,18 +4,21 @@ export type LyricsSettingValues = {
   lyricsOnline: boolean;
   lyricsChinese: boolean;
   lyricWordFill: boolean;
+  lyricsAppleMusic: boolean;
   lyricsOffsetMs: number;
 };
 
 /**
  * No folder, no offset; lyrics are looked up online, Kugou and NetEase included, unless the user
  * turns that off (on by default since 2026-11-10: lyrics are what makes the music page).
+ * Apple's own lyrics stay off until the user gives a media-user-token.
  */
 export const DEFAULT_LYRICS_SETTINGS: LyricsSettingValues = {
   lyricsFolder: "",
   lyricsOnline: true,
   lyricsChinese: true,
   lyricWordFill: false,
+  lyricsAppleMusic: false,
   lyricsOffsetMs: 0,
 };
 
@@ -30,5 +33,6 @@ export function normalizeLyricsSettings(saved: Partial<Record<keyof LyricsSettin
     lyricsOnline: saved?.lyricsOnline !== false,
     lyricsChinese: saved?.lyricsChinese !== false,
     lyricWordFill: saved?.lyricWordFill === true,
+    lyricsAppleMusic: saved?.lyricsAppleMusic === true,
   };
 }

@@ -118,11 +118,12 @@ try {
     check(cards.length === NATIVE_PLUGINS.length + PACKAGED_MARKET_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
     await checkPluginAuthors(cards, market.items, market.authors, check);
     const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
+    const dingtalkCard = get.closest<HTMLElement>(".plugin-card")!;
     await act(async () => get.click());
-    check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
+    check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && dingtalkCard.classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
     check(JSON.parse(localStorage.getItem(OFFICE_IM_ENABLED_KEY) ?? "{}").dingtalk === true, "安装钉钉同时打开它在消息设置里的开关");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.dingtalk.name)}']`)!.click());
-    check(localStorage.getItem(NATIVE_PLUGINS_KEY) === "[]" && !cards[0].classList.contains("plugin-card--installed"), "卸载后恢复为未安装");
+    check(localStorage.getItem(NATIVE_PLUGINS_KEY) === "[]" && !dingtalkCard.classList.contains("plugin-card--installed"), "卸载后恢复为未安装");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.cursor.name)}']`)!.click());
     check(latestSettings.agentShowCursor, "安装 Cursor 同时打开它在 Agent 设置里的开关");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.zcode.name)}']`)!.click());
@@ -166,7 +167,10 @@ try {
 
     const fixture = document.getElementById("fixture")!;
     fixture.style.width = "168px";
-    await wait();
+    // Author rows resize after layout; a fixed timer can run before their observer on high-DPI displays.
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0))));
+    });
     const fixtureBox = fixture.getBoundingClientRect();
     const switchBox = weatherSwitch()!.getBoundingClientRect();
     const buttonBox = weatherRemove().getBoundingClientRect();

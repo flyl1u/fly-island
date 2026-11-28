@@ -11,7 +11,7 @@ import { PluginNumberSettingRow } from "./PluginNumberSettingRow";
 export function PluginSettingRow({ setting, value, disabled, onSave }: { setting: PluginSetting; value: boolean | string; disabled: boolean; onSave: (value: boolean | string) => void }) {
   const { locale } = useLocale();
   const t = useTranslation().settings.plugins;
-  const [draft, setDraft] = useState(setting.type === "secret" ? "" : String(value));
+  const [draft, setDraft] = useState(String(value));
   const title = setting.label[locale];
   // The manifest explains its own settings; the host reads that line instead of a per-plugin string.
   const description = setting.description?.[locale];

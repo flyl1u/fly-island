@@ -9,6 +9,8 @@ const ALL_SETTINGS_CATEGORIES = [
   "clipboard",
   "messages",
   "clockWeather",
+  "centeredClock",
+  "screenshot",
   "battery",
   "agents",
   "agentConnect",

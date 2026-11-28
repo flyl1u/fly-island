@@ -21,8 +21,12 @@ Rust `weather/` 用已有 reqwest 异步请求固定 Open-Meteo 端点；城市�
 `plugins/eye-care/` 是独立护眼插件：`clock.rs` 管理单调时钟与一次推迟状态，`panel.rs` 输出宿主面板，`win32/` 只隔离空闲 / 全屏探测。0.2.0 多屏休息窗口由宿主 `src-tauri/src/eye_care` 与 `src/windows/eye-care` 按需创建，复用共享主题与控件。它只依赖插件 SDK 与 Windows API，不向主程序引入依赖；配置复用宿主插件设置，生命周期随启停和 stdin EOF 结束。详见 [护眼插件](../plugins/eye-care.md)。
 
 
+内置 `centeredClock` 插件复用市场安装/启用状态，在独立设置页管理显示格式；折叠岛只在没有更高优先级内容时将时钟居中显示。它不启动插件进程或访问网络。与 `clockWeather` 并装时，居中时钟显示期间代替原时间槽，天气与原偏好保留。细节见 [居中时钟](../plugins/centered-clock.md)。
+
 ## 正式市场包
 
 插件市场打开时，正式宿主只安装和运行 `plugins/market-packages.json` 中的包，固定使用官方索引。清单之外的外部插件卡片显示「开发中」。收录流程：改清单 → 运行 `pnpm release:plugins` 发布独立通道 → 下一个应用版本带上新清单。已收录插件的更新无需发布应用。v3.3.0 及以前正式版不受影响。开发目录和自定义源仍由 `plugins` 发布开关控制。日历标记沿用内置插件开关。设备市场包只在设备/设置页或收起态的低频电量检查时使用独立读取器，由宿主解析安装目录与结束读取进程。该包由 C# bridge（音频与两个原生读取器）和 Rust 读取引擎（`plugins/device-battery/engine`，插件工作区成员，48 个读取器）组成，不含 Python；引擎按宿主固定的路径放在 `engine/runtime/python.exe`，每次读取起一个新进程，详见 [插件说明](../../plugins/device-battery/README.md)。MiniMax Code 与护眼提醒使用 stdio。
 
 安装失败按目录不可达、目录或宿主不兼容、尚未收录、下载、完整性、解包、启动分别提示。市场仅显示已知本地化错误，不显示原始 URL 或路径。诊断写入 `plugin-logs/catalog.log` 和 stderr，插件运行日志仍在 `<id>.log`。
+
+维护者接入 #98/#128/#141/#143：截图与居中时钟各有独立设置栏目，Apple Music 歌词属于音乐页，中转站额度属于 Agent 页；市场只管理安装和开关。下载增强 OCR 的命令与模型放在 `screenshot/ocr_resources.rs`，不随宿主打包模型。来源和验证记录见 [四项 PR 审查](../investigations/pr-review-2026-11-27.md)。

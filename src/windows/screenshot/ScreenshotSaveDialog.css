@@ -1,0 +1,70 @@
+/* 保存图像弹窗：左预览右设置，和主流截图工具一致。 */
+.screenshot-save-mask {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  background: rgba(15, 15, 20, 0.45);
+}
+.screenshot-save-dialog {
+  width: min(940px, calc(100vw - 48px));
+  height: min(660px, calc(100vh - 48px));
+  display: flex; flex-direction: column;
+  background: #f7f7f9; color: #22242a;
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+}
+.screenshot-save-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; font-size: 13px; font-weight: 600;
+  background: #fff; border-bottom: 1px solid #e5e5ea;
+}
+.screenshot-save-close { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: #555; cursor: pointer; }
+.screenshot-save-close:hover { background: #ececf1; }
+.screenshot-save-body { flex: 1; display: flex; min-height: 0; }
+.screenshot-save-preview {
+  flex: 1 1 auto; display: grid; place-items: center; min-width: 0; padding: 24px;
+  background: #efeff3;
+}
+.screenshot-save-preview { overflow: auto; min-height: 0; }
+.screenshot-save-preview img { max-width: none; max-height: none; object-fit: fill; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+.screenshot-save-scale { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+.screenshot-save-scale input { flex: 1; min-width: 0; padding: 0; accent-color: #4d96ff; }
+.screenshot-save-settings {
+  flex: 0 0 320px; display: flex; flex-direction: column; gap: 14px;
+  padding: 20px; background: #fff; border-left: 1px solid #e5e5ea; overflow: auto;
+}
+.screenshot-save-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5b5e68; }
+.screenshot-save-field > span:first-child { font-weight: 600; color: #30323a; }
+.screenshot-save-field input, .screenshot-save-field select {
+  min-width: 0; padding: 6px 8px; font-size: 12px; color: #22242a;
+  border: 1px solid #dcdce4; border-radius: 7px; background: #fff;
+}
+.screenshot-save-folder, .screenshot-save-name { display: flex; gap: 6px; }
+.screenshot-save-folder input, .screenshot-save-name input { flex: 1 1 auto; }
+.screenshot-save-folder button {
+  flex: 0 0 auto; display: grid; place-items: center; width: 32px;
+  border: 1px solid #dcdce4; border-radius: 7px; background: #fff; cursor: pointer;
+}
+.screenshot-save-size { display: flex; align-items: center; gap: 6px; }
+.screenshot-save-size label { display: flex; align-items: center; gap: 4px; }
+.screenshot-save-size input { width: 78px; }
+.screenshot-save-size button { padding: 4px 7px; border: 1px solid #dcdce4; border-radius: 6px; background: #fff; cursor: pointer; }
+.screenshot-save-size button.locked { border-color: #4d96ff; color: #2f6fd0; }
+.screenshot-save-field small { color: #8b8e99; font-size: 11px; }
+.screenshot-save-estimate { margin: auto 0 0; font-size: 12px; color: #6b6e78; }
+.screenshot-save-error { margin: 0; font-size: 12px; color: #d63938; }
+.screenshot-save-primary {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 10px; border: 0; border-radius: 9px;
+  background: #3b82f6; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.screenshot-save-primary:disabled { opacity: 0.6; cursor: default; }
+.screenshot-save-system { padding: 6px; border: 0; background: transparent; color: #3b82f6; font-size: 12px; cursor: pointer; }
+.screenshot-save-dialog { background: var(--color-window); color: var(--color-text); color-scheme: var(--color-scheme); }
+.screenshot-save-head, .screenshot-save-settings { background: var(--color-window); border-color: rgba(var(--overlay-rgb), .16); }
+.screenshot-save-preview { background: var(--color-surface-dark); }
+.screenshot-save-field, .screenshot-save-field > span:first-child, .screenshot-save-close { color: var(--color-text); }
+.screenshot-save-field input, .screenshot-save-field select, .screenshot-save-folder button, .screenshot-save-size button { background: var(--color-surface-dark); color: var(--color-text); border-color: rgba(var(--overlay-rgb), .22); }
+.screenshot-save-primary { background: var(--color-inverse); color: var(--color-inverse-ink); }
+.screenshot-save-system { color: var(--color-text); }
+.screenshot-save-dialog :focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; }
+@media (max-width: 640px) { .screenshot-save-body { flex-direction: column; overflow: auto; } .screenshot-save-preview { min-height: 120px; } .screenshot-save-settings { flex: 1 0 auto; padding: 12px; } .screenshot-save-size { flex-wrap: wrap; } }

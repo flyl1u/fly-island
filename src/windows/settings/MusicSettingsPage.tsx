@@ -1,3 +1,5 @@
+import { PluginPageGroups } from "./PluginSettingsGroup";
+import { AppleMusicLyricsSection } from "../../features/media/lyrics/AppleMusicLyricsSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { LyricsSettingsSection } from "../../features/media/lyrics/LyricsSettingsSection";
 import { MusicSourcePrioritySection } from "../../features/media/MusicSourcePrioritySection";
@@ -39,6 +41,7 @@ export function MusicSettingsPage({
       </SettingsGroup>}
       {settings.musicEnabled && <LyricsSettingsSection settings={settings} onSettingsChange={onSettingsChange} />}
       {settings.musicEnabled && <MediaCompatibilitySection />}
+      <PluginPageGroups page="music" renderNative={() => <AppleMusicLyricsSection settings={settings} onSettingsChange={onSettingsChange} />} />
     </>
   );
 }

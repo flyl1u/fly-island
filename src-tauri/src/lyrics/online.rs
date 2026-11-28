@@ -22,6 +22,13 @@ const LYRICS_OVERRUN_MS: u64 = 15_000;
 /// The online sources to ask, most likely first. A song named in Chinese asks Kugou and NetEase
 /// first, as LRCLIB has few Chinese songs; a song id the player gave puts its service first.
 pub(super) fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
+    let mut sources = fallback_source_order(query);
+    let player = query.source_app_id.as_deref().unwrap_or_default().to_ascii_lowercase();
+    if query.apple_music && ["applemusic", "apple.music", "music.ui"].iter().any(|sign| player.contains(sign))
+        && super::applemusic::read_token().is_some() { sources.insert(0, "applemusic"); }
+    sources
+}
+fn fallback_source_order(query: &LyricsQuery) -> Vec<&'static str> {
     if !query.chinese {
         return vec!["lrclib"];
     }
@@ -88,6 +95,11 @@ async fn ask(source: &'static str, query: &LyricsQuery) -> Result<Option<(FoundL
         "kugou" => kugou::fetch(&playing).await,
         "netease" => netease::fetch(&playing, id).await,
         "qqmusic" => qqmusic::fetch(&playing, id).await,
+        "applemusic" => match super::applemusic::read_token() {
+            Some(token) => super::applemusic::fetch(&query.title, &query.artist, &query.album, query.duration_ms, &token)
+                .await.map(|found| found.map(|found| (found, 100))),
+            None => Ok(None),
+        },
         _ => lrclib::fetch(&playing).await,
     }
 }
@@ -166,6 +178,7 @@ mod tests {
             track_id: track_id.map(Into::into),
             source_app_id: None,
             word_fill: false,
+            apple_music: false,
         }
     }
 

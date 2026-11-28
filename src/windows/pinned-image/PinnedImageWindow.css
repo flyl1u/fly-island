@@ -1,0 +1,60 @@
+/* 贴图窗口：无边框、透明背景，获得焦点时蓝色描边（PixPin 同款）。 */
+html, body, #root { margin: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+.pin-root {
+  container-type: inline-size;
+  position: relative; width: 100%; height: 100%; box-sizing: border-box;
+  overflow: hidden;
+  background: transparent; cursor: default;
+}
+/* 窗口比图片大一圈透明边距（Rust 侧 glow=8），图片区缩到 inset 8px，
+   光晕画在图片「外侧」——贴合 PixPin 样例。图片本身仍是框选 1:1 尺寸。 */
+.pin-stage { container-type: size; position: absolute; inset: 8px; transform-origin: top left; }
+/* 失焦：黑色柔和外阴影；聚焦：亮蓝边 + 蓝色外发光。 */
+.pin-image {
+  /* 失焦：PixPin 同款柔和淡黑阴影，不抢眼。 */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.38);
+  transition: box-shadow 120ms ease;
+}
+.pin-root-focused .pin-image {
+  /* PixPin 同款：细蓝边 + 一圈柔和淡蓝光晕，不要粗边和大范围发光。 */
+  box-shadow: 0 0 0 1px #4d96ff, 0 0 5px 1px rgba(77, 150, 255, 0.55);
+}
+.pin-image { position: absolute; inset: 0; max-width: none; max-height: none; width: 100%; height: 100%; object-fit: contain; user-select: none; pointer-events: none; }
+/* OCR 透明文字层：保留文字可选中，位置尺寸与识别行对齐。 */
+.pin-text-layer { position: absolute; inset: 0; }
+.pin-text-line {
+  position: absolute; display: block; white-space: pre; overflow: hidden;
+  color: transparent; -webkit-text-fill-color: transparent;
+  user-select: text; cursor: text; line-height: 1;
+  background: transparent;
+}
+.pin-text-line::selection { background: rgba(77, 150, 255, 0.35); -webkit-text-fill-color: transparent; }
+.pin-text-menu {
+  position: fixed; z-index: 10; padding: 5px 10px; border-radius: 6px;
+  background: #fffdf7; color: #222; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.25); cursor: pointer;
+}
+/* 右键菜单：PixPin 风格，白底圆角卡片，条目 = 勾选位 + 名称 + 快捷键。 */
+.pin-ctx-menu {
+  position: fixed; z-index: 20; width: 220px; padding: 5px;
+  background: #fffdf7; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22); user-select: none;
+}
+.pin-ctx-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 6px 8px; border: none; border-radius: 6px;
+  background: transparent; color: #222; font-size: 13px; text-align: left; cursor: pointer;
+}
+.pin-ctx-item:hover { background: #f0f5ff; }
+.pin-ctx-sep { margin-top: 6px; box-shadow: 0 -5px 0 -4px rgba(0, 0, 0, 0.12); }
+.pin-ctx-check { width: 14px; flex: none; font-size: 12px; color: #4d96ff; visibility: hidden; }
+.pin-ctx-check.on { visibility: visible; }
+.pin-ctx-label { flex: 1; }
+.pin-ctx-hint { flex: none; color: #999; font-size: 11px; }
+
+/* 操作反馈 toast：贴图底部居中，短暂显示后自动消失。 */
+.pin-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  z-index: 20; padding: 6px 14px; border-radius: 6px;
+  background: rgba(20, 20, 20, .82); color: #fff; font-size: 12px; white-space: nowrap;
+  pointer-events: none;
+}

@@ -13,7 +13,7 @@ import { useCategoryTitle } from "./useCategoryTitle";
 import "./SettingsSidebar.css";
 
 /** The fixed pages; a plugin's own page takes the plugin's line icon. */
-const CATEGORY_ICONS: Record<Exclude<StaticSettingsCategory, "devices" | "clockWeather" | "battery">, LucideIcon> & Partial<Record<SettingsCategory, LucideIcon>> = {
+const CATEGORY_ICONS: Record<Exclude<StaticSettingsCategory, "devices" | "clockWeather" | "battery" | "centeredClock" | "screenshot">, LucideIcon> & Partial<Record<SettingsCategory, LucideIcon>> = {
   general: SlidersHorizontal,
   appearance: Palette,
   messages: MessageCircle,

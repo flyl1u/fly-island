@@ -8,6 +8,7 @@ import hermesIcon from "../../assets/brands/hermes.svg";
 import zcodeIcon from "../../assets/brands/zcode.svg";
 import codebuddyIcon from "../../assets/brands/codebuddy.svg";
 import antigravityIcon from "../../assets/brands/antigravity.svg";
+import relayIcon from "../../assets/plugins/relay.svg";
 import type { AgentProvider } from "./api";
 import { Puzzle } from "lucide-react";
 import "./AgentProviderIcon.css";
@@ -24,6 +25,7 @@ const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin">, string> = {
   zcode: zcodeIcon,
   codebuddy: codebuddyIcon,
   antigravity: antigravityIcon,
+  relay: relayIcon,
 };
 
 export function AgentProviderIcon({ provider, size = 16 }: { provider: AgentProvider; size?: number }) {

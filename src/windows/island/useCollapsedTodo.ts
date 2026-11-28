@@ -7,7 +7,8 @@ import { idleTextDisplay } from "../../features/appearance/idleText";
 import type { CollapsedItem, IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
-import { useTranslation } from "../../i18n";
+import { useLocale, useTranslation } from "../../i18n";
+import { formatCenteredClock, useCenteredClock } from "../../features/centered-clock";
 import { useTodoRotation } from "./useIslandAutomation";
 import { getCollapsedTextUnits } from "../../utils/text";
 import { collapsedWidthTarget, type CollapsedWidthContent } from "./collapsedWidth";
@@ -55,9 +56,13 @@ export function useCollapsedTodo(
   } = {},
 ) {
   const t = useTranslation();
+  const { locale } = useLocale();
   const clockWeather = useClockWeather();
+  const centeredClock = useCenteredClock();
   // Dragged off the island in Settings → Appearance, they take no room and fetch nothing.
-  const clockOn = clockWeather.installed && clockWeather.settings.showClock && !settings.collapsedHidden.includes("clock");
+  const centeredClockOn = centeredClock.installed && (centeredClock.settings.showTime || centeredClock.settings.showDate);
+  const clockOn = clockWeather.installed && clockWeather.settings.showClock && !centeredClockOn
+    && !settings.collapsedHidden.includes("clock");
   const weather = useCurrentWeather(clockWeather.installed && clockWeather.settings.showWeather && !settings.collapsedHidden.includes("weather"),
     clockWeather.settings.location);
   // Only the automatic width is measured; a manual width is the whole island.
@@ -101,6 +106,7 @@ export function useCollapsedTodo(
     ? pendingTodoCount
     : null;
   const available = {
+    centeredClock: centeredClockOn,
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
@@ -138,16 +144,17 @@ export function useCollapsedTodo(
     const todoText = rotating && rotationTodos.length
       ? rotationTodos.reduce((widest, todo) => getCollapsedTextUnits(todo.title) > getCollapsedTextUnits(widest) ? todo.title : widest, "")
       : collapsedTaskTitle ?? (collapsedTodoCount !== null ? idleDisplay.pending ?? t.island.pendingTodos(collapsedTodoCount) : null);
+    const centerText = formatCenteredClock(new Date(2026, 0, 2, 12, 34, 56), centeredClock.settings, locale);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + shownAgentTitle
-      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
+      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : collapsedItem === "centeredClock" ? centerText : null;
     return {
-      text: settings.showCollapsedText ? itemText ?? "" : "",
+      text: collapsedItem === "centeredClock" ? centerText : settings.showCollapsedText ? itemText ?? "" : "",
       brand: settings.showCollapsedText ? idleDisplay.brand : null,
       fixedText: collapsedItem === "lyrics",
       extraWidth: widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0,
     };
-  }, [shownAgentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, fontScale, settings.showCollapsedText,
+  }, [centeredClock.settings, locale, shownAgentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, fontScale, settings.showCollapsedText,
     idleDisplay.brand, idleDisplay.pending, t, collapsedTimer, timers, rotating, rotationTodos]);
 
   const statusFit = fitClockWeather(settings.collapsedAutoWidth ? settings.collapsedAutoWidthMax : settings.collapsedWidth,

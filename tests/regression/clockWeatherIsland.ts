@@ -3,6 +3,7 @@ import { setNativePluginInstalled, NATIVE_PLUGINS_KEY } from "../../src/features
 import { setClockWeatherSettings } from "../../src/features/weather";
 import { CLOCK_WEATHER_KEY, WEATHER_CACHE_KEY } from "../../src/features/weather/storage";
 import { WEATHER_MAX_AGE_MS } from "../../src/features/weather/model";
+import { checkCenteredClockIsland } from "./centeredClockIsland";
 
 export function collapsedBarOrder() {
   return [...document.querySelectorAll<HTMLElement>(".island__collapsed > *")]
@@ -23,6 +24,10 @@ export async function checkClockWeatherIsland(
   check: (condition: unknown, message: string) => void,
   settle: (ms: number) => Promise<void>,
 ) {
+  if (new URLSearchParams(location.search).has("centeredClock")) {
+    checkCenteredClockIsland(check);
+    return;
+  }
   const city = { name: "Beijing · China", latitude: 39.9, longitude: 116.4 };
   const clock = () => document.querySelector<HTMLElement>(".island__status-slot:not([data-collapsed-presence=leaving]) .collapsed-clock");
   const weather = () => document.querySelector<HTMLElement>(".island__status-slot:not([data-collapsed-presence=leaving]) .collapsed-weather");

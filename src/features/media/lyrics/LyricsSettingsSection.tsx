@@ -4,8 +4,9 @@ import type { IslandSettings } from "../../appearance/types";
 import { useTranslation } from "../../../i18n";
 
 /**
- * Settings → Music → Lyrics: looking lyrics up online, and the Chinese sources with them. Timing
- * is fixed per song on the music page itself (LyricsOffsetControl).
+ * Settings → Music → Lyrics: looking lyrics up online, the Chinese sources with them, and the
+ * Apple Music group, which lives in its own file with the source it switches on. Timing is fixed
+ * per song on the music page itself (LyricsOffsetControl).
  */
 export function LyricsSettingsSection({
   settings,
@@ -17,27 +18,29 @@ export function LyricsSettingsSection({
   const text = useTranslation().settings.lyrics;
 
   return (
-    <SettingsGroup title={text.title} footer={text.hint}>
-      <SettingsToggleRow
-        title={text.online}
-        description={text.onlineHint}
-        checked={settings.lyricsOnline}
-        onChange={(lyricsOnline) => onSettingsChange({ ...settings, lyricsOnline })}
-      />
-      {settings.lyricsOnline && (
+    <>
+      <SettingsGroup title={text.title} footer={text.hint}>
         <SettingsToggleRow
-          indent
-          title={text.chinese}
-          description={text.chineseHint}
-          checked={settings.lyricsChinese}
-          onChange={(lyricsChinese) => onSettingsChange({ ...settings, lyricsChinese })}
+          title={text.online}
+          description={text.onlineHint}
+          checked={settings.lyricsOnline}
+          onChange={(lyricsOnline) => onSettingsChange({ ...settings, lyricsOnline })}
         />
-      )}
-      <SettingsToggleRow
-        title={text.wordFill}
-        checked={settings.lyricWordFill}
-        onChange={(lyricWordFill) => onSettingsChange({ ...settings, lyricWordFill })}
-      />
-    </SettingsGroup>
+        {settings.lyricsOnline && (
+          <SettingsToggleRow
+            indent
+            title={text.chinese}
+            description={text.chineseHint}
+            checked={settings.lyricsChinese}
+            onChange={(lyricsChinese) => onSettingsChange({ ...settings, lyricsChinese })}
+          />
+        )}
+        <SettingsToggleRow
+          title={text.wordFill}
+          checked={settings.lyricWordFill}
+          onChange={(lyricWordFill) => onSettingsChange({ ...settings, lyricWordFill })}
+        />
+      </SettingsGroup>
+    </>
   );
 }

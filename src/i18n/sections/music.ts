@@ -33,7 +33,7 @@ export type MusicText = {
   lyricsLabel: string;
   /** No lyrics for a Chinese song while only LRCLIB is asked; opens Settings → Music. */
   lyricsChineseHint: { text: string; label: string };
-  lyricsOffset: { label: string; earlier: string; later: string; reset: (seconds: number) => string };
+  lyricsOffset: { label: string; earlier: string; later: string; reset: (seconds: number) => string; fast: string };
   unknownArtist: string;
   previous: string;
   previousTrack: string;
@@ -93,6 +93,7 @@ export const zhCN: MusicText = {
     earlier: "歌词提前 0.5 秒",
     later: "歌词推后 0.5 秒",
     reset: (seconds) => (seconds === 0 ? "没有调整" : `已${seconds > 0 ? "推后" : "提前"} ${Math.abs(seconds)} 秒，点击恢复`),
+    fast: "长按可一次调整 5 秒",
   },
   unknownArtist: "未知艺术家",
   previous: "上一首",
@@ -153,6 +154,7 @@ export const en: MusicText = {
     earlier: "Lyrics 0.5 s earlier",
     later: "Lyrics 0.5 s later",
     reset: (seconds) => (seconds === 0 ? "Not moved" : `Moved ${Math.abs(seconds)} s ${seconds > 0 ? "later" : "earlier"}; click to reset`),
+    fast: "Hold to move 5 s at a time",
   },
   unknownArtist: "Unknown artist",
   previous: "Previous",

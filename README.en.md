@@ -186,8 +186,10 @@ Thanks to these plugin contributors:
 - Antigravity: [lilipeng0615-cyber](https://github.com/lilipeng0615-cyber) ([#120](https://github.com/flyl1u/fly-island/pull/120))
 - MiniMax Code: [YTC0408](https://github.com/YTC0408) ([#110](https://github.com/flyl1u/fly-island/pull/110))
 - Device Battery & Audio: [Anobod1119](https://github.com/Anobod1119) ([#106](https://github.com/flyl1u/fly-island/pull/106))
-- Apple Music official lyrics and collapsed lyric improvements: [YTC0408](https://github.com/YTC0408) ([#98](https://github.com/flyl1u/fly-island/pull/98), under review)
-- Screenshot annotations, OCR and pinned images: [Philipfanw](https://github.com/Philipfanw) ([#128](https://github.com/flyl1u/fly-island/pull/128), under review)
+- Centered clock: [SeanWang114514](https://github.com/SeanWang114514) ([#143](https://github.com/flyl1u/fly-island/pull/143))
+- Relay account balances: [yiumanlenong](https://github.com/yiumanlenong) ([#141](https://github.com/flyl1u/fly-island/pull/141))
+- Apple Music official lyrics and collapsed lyric improvements: [YTC0408](https://github.com/YTC0408) ([#98](https://github.com/flyl1u/fly-island/pull/98))
+- Screenshot annotations, OCR and pinned images: [Philipfanw](https://github.com/Philipfanw) ([#128](https://github.com/flyl1u/fly-island/pull/128))
 
 ## Star History
 

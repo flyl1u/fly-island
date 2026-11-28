@@ -17,6 +17,7 @@ import * as clipboard from "../sections/clipboard.ts";
 import * as fileShelf from "../sections/fileShelf.ts";
 import * as eyeCare from "../sections/eyeCare.ts";
 import * as pluginPanel from "../sections/pluginPanel.ts";
+import * as screenshot from "../sections/screenshot.ts";
 import * as settings from "../sections/settings/index.ts";
 
 const en: Translations = {
@@ -50,6 +51,8 @@ const en: Translations = {
   pluginPanel: pluginPanel.en,
   eyeCare: eyeCare.en,
   deviceBattery,
+
+  screenshot: screenshot.en,
 
   settings: settings.en,
 };
