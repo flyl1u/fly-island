@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 
 /** Two separate arcs: the short window above the app, the weekly window below it. Hovering
     anywhere on the ring shows both. */
-export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
+export function QuotaRings({ outer, inner, size = 24, provider, hints }: {
   outer: number | null;
   inner: number | null;
   size?: number;
@@ -20,7 +20,7 @@ export function QuotaRings({ outer, inner, size = 26, provider, hints }: {
       <Arc path="M 2.34 14.59 A 10 10 0 0 0 21.66 14.59" left={inner} />
     </svg>
     {provider && <span className="quota-rings__logo" aria-hidden="true"><AgentProviderMark provider={provider} size={size * 13.5 / 22} /></span>}
-    {lines.length > 0 && <IslandHoverCard lines={lines.map((text) => ({ text }))} placement="right" compact
+    {lines.length > 0 && <IslandHoverCard lines={lines.map((text) => ({ text }))} placement="right" compact delayMs={0}
       alignTo=".quota-rings" anchorClassName="quota-rings__hover">
       <button type="button" className="quota-rings__target" aria-label={lines.join(", ")} />
     </IslandHoverCard>}

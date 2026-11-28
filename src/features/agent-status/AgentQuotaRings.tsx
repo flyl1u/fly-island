@@ -59,7 +59,7 @@ export function QuotaRingPair({
   provider,
   outer,
   inner,
-  size = 26,
+  size = 24,
   stale = false,
   label,
   hints,

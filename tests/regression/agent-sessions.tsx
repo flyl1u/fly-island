@@ -264,7 +264,7 @@ async function runChecks() {
       && fills[1].getAttribute("d")?.startsWith("M 2.34 14.59") && fills[1].getAttribute("stroke-dasharray") === "38 100", "上弧为 5 小时，下弧为每周，按剩余比例填充");
     check(claudeRings?.querySelector(".quota-rings__logo .agent-provider-mark--claudeCode") && !claudeRings.querySelector(".agent-quota__values") && !document.querySelector(".agent-quota__agent--codex"), "纯 Logo 居中，移除底板和旁边的百分比；无数据的 Codex 不显示");
     const ringsSize = claudeRings!.querySelector("svg")!.getBoundingClientRect();
-    check(ringsSize.width === 26 && ringsSize.height === 26, "额度环放大到 26px，中央展示没有底板的品牌标志");
+    check(ringsSize.width === 24 && ringsSize.height === 24, "额度环 24px，中央展示没有底板的品牌标志");
     const listFits = () => { const list = document.querySelector<HTMLElement>(".agent-sessions__list")!; return list.scrollHeight <= list.clientHeight + 1; };
     check(listFits(), "加上额度环那一行后，设为 3 条时仍放下 3 个会话");
     await checkQuotaHover(claudeRings!, check);

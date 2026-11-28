@@ -35,6 +35,8 @@
 }
 
 .island-hover-card--compact {
+  /* Quota hints appear at once, with no fade-in (user, 2026-11-27). */
+  animation: none;
   max-width: calc(100vw - 12px);
   padding: 6px 10px;
   border: 0;
@@ -68,7 +70,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .island-hover-card {
+  .island-hover-card,
+  .island-hover-card--compact {
     animation: none;
   }
 }

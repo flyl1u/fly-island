@@ -92,8 +92,8 @@ const AGENT_ROWS: Record<AgentSessionView, { height: number; gap: number }> = {
   cards: { height: 62, gap: 6 },
   compact: { height: 34, gap: 4 },
 };
-// The quota row above the list: 26 plus 6 below it (AgentQuotaRings.css).
-const AGENT_USAGE_HEIGHT = 32;
+// The quota row above the list: 24 plus 6 below it (AgentQuotaRings.css).
+const AGENT_USAGE_HEIGHT = 30;
 
 /**
  * Expanded height that fits exactly `rows` Agent sessions, shown as `view`, below `usageLines`

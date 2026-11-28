@@ -28,7 +28,7 @@ export function DshProblemNote({ problem }: { problem: DshProblem }) {
   const text = useTranslation().agent.usage;
   const reason = text.dshProblem[problem];
   return (
-    <IslandHoverCard lines={[{ text: reason.short }]} placement="right" compact alignTo=":scope" anchorClassName="agent-quota__hover">
+    <IslandHoverCard lines={[{ text: reason.short }]} placement="right" compact delayMs={0} alignTo=":scope" anchorClassName="agent-quota__hover">
       <span className="agent-quota__agent agent-quota__agent--dsh agent-quota__agent--problem" role="img" aria-label={`${text.dshLabel} · ${reason.detail}`} tabIndex={0}>
         <QuotaRings outer={null} inner={null} provider="dsh" />
       </span>

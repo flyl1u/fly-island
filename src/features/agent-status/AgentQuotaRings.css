@@ -1,9 +1,9 @@
 /* One row above the session list with each provider's quota rings. Its height is part of the Agent
    page's chrome in getAgentPageExpandedHeight (windows/island/layout.ts, AGENT_USAGE_HEIGHT:
-   26 plus 6 below): keep the two in step. */
+   24 plus 6 below): keep the two in step. */
 .agent-quota {
   flex: none;
-  height: 26px;
+  height: 24px;
   margin: 0 6px 6px;
   display: flex;
   align-items: center;
@@ -69,8 +69,8 @@
 
 .quota-rings {
   position: relative;
-  width: var(--quota-size, 26px);
-  height: var(--quota-size, 26px);
+  width: var(--quota-size, 24px);
+  height: var(--quota-size, 24px);
   flex: none;
   display: block;
   overflow: visible;

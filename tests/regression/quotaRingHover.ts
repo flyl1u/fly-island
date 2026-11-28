@@ -10,9 +10,12 @@ export async function checkQuotaHover(ring: HTMLElement, check: (condition: unkn
   const arcs = [...ring.querySelectorAll<SVGPathElement>(".quota-rings__track")];
   check(arcs.every((arc) => arc.getPointAtLength(0).x < arc.getPointAtLength(arc.getTotalLength()).x), "上下弧均从左端起画，剩余额度从右端向左耗尽");
   const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 260)); });
-  await act(async () => { anchor.dispatchEvent(new PointerEvent("pointerover", { bubbles: true })); });
-  await settle();
+  await act(async () => {
+    anchor.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
   const card = document.querySelector<HTMLElement>(".island-hover-card");
+  check(card && getComputedStyle(card).animationName === "none", "悬停后提示立即出现，没有等待和淡入");
   const lines = [...(card?.querySelectorAll(".island-hover-card__line") ?? [])].map((line) => line.textContent);
   check(lines.join("|") === "5 小时 · 剩余 73%|每周 · 剩余 38%" && card!.getBoundingClientRect().left >= bounds.right,
     `悬停在右侧一次显示两项额度，不含来源和重置说明：${lines.join("|")}`);
