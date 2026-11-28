@@ -95,6 +95,7 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         assert_eq!(panel["actions"], json!(["reset_work", "rest_now"]));
         assert_eq!(panel["islandActions"], json!(["reset_work", "rest_now"]));
         assert_eq!(panel["attention"], false);
+        assert_eq!(panel["rows"][0]["totalMs"], Value::Null);
         if panel["rows"][0]["countdownTo"].is_number() {
             assert_eq!(panel["rows"][0]["detail"], "");
         }
@@ -103,6 +104,7 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
         plugin.send(json!({"jsonrpc":"2.0","id":2,"method":"action","params":{"id":"reset_work"}}));
         assert_eq!(plugin.response(2)["result"]["success"], true);
         assert_eq!(plugin.next()["params"]["panel"]["actions"], json!(["reset_work", "rest_now"]));
+        // Locking: a break asked for by hand covers the screens straight away.
         plugin.send(json!({"jsonrpc":"2.0","id":3,"method":"action","params":{"id":"rest_now"}}));
         assert_eq!(plugin.response(3)["result"]["success"], true);
         let rest = plugin.next();
@@ -113,6 +115,8 @@ fn initialize_publishes_a_valid_panel_and_shutdown_or_eof_exits() {
             rest["params"]["panel"]["rows"][0]["title"],
             "Break time remaining"
         );
+        assert!(rest["params"]["panel"]["rows"][0]["countdownTo"].is_number());
+        assert_eq!(rest["params"]["panel"]["rows"][0]["totalMs"], Value::Null);
         assert_eq!(
             rest["params"]["panel"]["actions"],
             json!(["snooze_10", "skip"])

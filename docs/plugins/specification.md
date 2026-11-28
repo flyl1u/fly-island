@@ -59,8 +59,8 @@ Use UTF-8 JSON in `fly-island-plugin.json`, at most **65,536 bytes**. Every mani
 
 | 对象 / Object | 全字段 / All fields | 规则 / Rules |
 | --- | --- | --- |
-| `Setting` | `key: string`, `label: Localized`, `description?: Localized`, `type: string`, `default: JSON`, `options?: SettingOption[]` | `key` / `label` / `type` / `default` 必填；`options` 缺省 `[]`；`description` 显示为标签下的一句说明 / `key`, `label`, `type` and `default` are required; `options` defaults to `[]`; `description` renders as one line under the label. |
-| `SettingOption` | `value: string`, `label: Localized` | 两项必填，供 select 使用。/ Both required, used by select. |
+| `Setting` | `key: string`, `label: Localized`, `description?: Localized`, `type: string`, `default: JSON`, `options?: SettingOption[]`, `min?: number`, `max?: number`, `showWhen?: { key: string, value: string }` | `key` / `label` / `type` / `default` 必填；`options` 缺省 `[]`；`description` 显示为标签下的一句说明；`min` / `max` 只给 `number`；`showWhen` 让该行只在另一个设置等于 `value` 时出现 / `key`, `label`, `type` and `default` are required; `options` defaults to `[]`; `description` renders as one line under the label; `min` / `max` belong to `number`; `showWhen` keeps the row visible only while another setting equals `value`. |
+| `SettingOption` | `value: string`, `label: Localized` | 两项必填，供 `select` / `choice` 使用。/ Both required, used by `select` and `choice`. |
 | `Action` | `id: string`, `label: Localized` | 两项必填，显示为原生按钮。/ Both required; rendered as a host button. |
 
 设置 key 和清单动作 id：1–100 字节，小写 ASCII 字母开头，后续 `[a-z0-9._-]`；分别在 settings / actions 数组中唯一。不要用变更 key 来清除秘密或静默重置选择。
@@ -74,10 +74,15 @@ Setting keys and manifest action IDs are 1–100 bytes, start with a lowercase A
 | `secret` | 默认必须 `""`；保存值同上 / Default must be `""`; same saved-string limit | 密码输入框，保存后清空草稿；不回显旧值 / Password input clears after saving; old value is never returned |
 | `number` | 范围内整数字符串，必填整数 min / max / Integer string within required integer min/max bounds | 整数输入，自动保存 / Integer input, auto-save |
 | `select` | 字符串，必须匹配 options 中的一个 value / String matching an option value | 原生选择控件 / Host select control |
+| `choice` | 字符串，必须匹配 options 中的一个 value；options 为 2–3 项 / String matching an option value, with two or three options | 并排的分段按钮，和「通用 → 展开方式」同一个控件 / Side-by-side segmented buttons, the same control as General → Open the island by |
 
 `options` 的 value 应唯一、文案非空是审核要求；目前不是额外的自动校验。只有 text/secret 强制 8192 字节上限。设置保存成功后，正在启用的插件会停止并重新 initialize，收到所有设置的完整有效值；没有逐字段 change 通知。
 
+`showWhen` 的 `key` 必须是同一清单里另一个非 secret 设置，`value` 必须是那个设置接受的取值；不符合时清单被拒绝。符合条件的设置行在宿主里直接隐藏（不是禁用）：护眼提醒的「通知模式」下就不显示休息时长和允许跳过休息。被隐藏的设置仍保留已保存的值，插件仍然会收到它们。
+
 Unique option values and nonempty labels are review requirements, not additional automatic validation. Only text/secret have the 8192-byte check. Saving a setting restarts an enabled plugin with the complete effective settings object; there is no per-field change notification.
+
+`showWhen.key` must name another non-secret setting in the same manifest, and `showWhen.value` must be a value that setting accepts; anything else rejects the manifest. A hidden row is removed from the page rather than disabled — Eye Care's notify mode hides the break length and the skip switch — and its saved value is kept and still reaches the plugin.
 
 ```json
 {

@@ -48,6 +48,7 @@ import { useIslandTranslation } from "./useIslandTranslation";
 import { useMessageView } from "./useMessageView";
 import { useSettingsPageHeight } from "./useSettingsPageHeight";
 import { useIslandPickerOpen } from "../../lib/islandPicker";
+import { usePluginAlerts } from "./usePluginAlerts";
 import { TODO_DATE_PICKER_EXPANDED_ISLAND_HEIGHT } from "./layout";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
@@ -115,6 +116,8 @@ export function IslandApp() {
     features.pluginPages?.some((entry) => entry.id === "device-battery") ?? false,
     mode === "collapsed" && !isTucked && !game.quiet && !hasMessagePreview && quotaAlert === null,
   );
+  // Eye Care's break time opens the island when the screen time is up and keeps it open.
+  usePluginAlerts(features, openIslandPage, collapseIsland, game.quiet);
   const collapsed = mode === "collapsed" && !isTucked;
   const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, peekedAgent, switchCollapsedItem, collapsedIslandWidth: collapsedWidthTarget, statusFit, idleDisplay, todoRotation, collapsedTimer } =
     useCollapsedTodo(

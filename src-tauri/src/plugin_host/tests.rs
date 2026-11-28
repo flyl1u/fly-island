@@ -40,6 +40,16 @@ fn validates_manifest_and_protocol() {
         bad["panel"]["rows"][0][field] = value;
         assert!(protocol::parse_publish(&publish(bad), &page).is_err(), "{field}");
     }
+    // A finished total instead of a deadline: one or the other, never both, never negative.
+    let mut finished = good.clone();
+    finished["panel"]["rows"][0]["totalMs"] = json!(913_000_i64);
+    assert!(protocol::parse_publish(&publish(finished.clone()), &page).is_ok());
+    let mut bad_total = finished.clone();
+    bad_total["panel"]["rows"][0]["totalMs"] = json!(-5);
+    assert!(protocol::parse_publish(&publish(bad_total), &page).is_err(), "a total cannot be negative");
+    let mut both = finished;
+    both["panel"]["rows"][0]["countdownTo"] = json!(1_700_000_060_000_i64);
+    assert!(protocol::parse_publish(&publish(both), &page).is_err(), "a row is a deadline or a total");
     let mut undeclared_action = good.clone();
     undeclared_action["panel"]["actions"] = json!(["rest_now"]);
     assert!(protocol::parse_publish(&publish(undeclared_action), &page).is_err());
@@ -115,8 +125,9 @@ fn integer_settings_reject_fractions_and_enforce_manifest_bounds() {
     }
     for (min, max) in [(Some(3), Some(2)), (None, Some(2)), (Some(1), None)] {
         let mut invalid = manifest.clone();
-        invalid.settings[0].min = min;
-        invalid.settings[0].max = max;
+        let period = invalid.settings.iter_mut().find(|s| s.key == "period").unwrap();
+        period.min = min;
+        period.max = max;
         assert!(invalid.validate().is_err());
     }
 }
@@ -547,4 +558,36 @@ fn published_market_packages_install() {
     drop(host);
     std::fs::remove_dir_all(root).unwrap();
     assert!(failed.is_empty(), "failed: {failed:?}");
+}
+
+#[test]
+fn a_choice_offers_two_or_three_options_and_conditional_rows_name_a_real_value() {
+    let base = json!({
+        "id":"demo","name":{"zh-CN":"演示","en":"Demo"},"description":{"zh-CN":"演示","en":"Demo"},
+        "version":"0.1.0","apiVersion":1,"runtime":{"command":"demo.exe"},
+        "permissions":[],"contributes":[],
+        "settings":[
+            {"key":"mode","label":{"zh-CN":"方式","en":"Style"},"type":"choice","default":"a",
+             "options":[{"value":"a","label":{"zh-CN":"甲","en":"A"}},{"value":"b","label":{"zh-CN":"乙","en":"B"}}]},
+            {"key":"extra","label":{"zh-CN":"其他","en":"Extra"},"type":"toggle","default":true,
+             "showWhen":{"key":"mode","value":"a"}}
+        ]
+    });
+    let parse = |value: &serde_json::Value| Manifest::parse(&serde_json::to_vec(value).unwrap());
+    let manifest = parse(&base).unwrap();
+    let choice = manifest.settings.iter().find(|s| s.key == "mode").unwrap();
+    assert!(choice.accepts(&json!("a")) && !choice.accepts(&json!("c")) && !choice.accepts(&json!(true)));
+    let mut single = base.clone();
+    single["settings"][0]["options"].as_array_mut().unwrap().pop();
+    assert!(parse(&single).is_err(), "one option is a select, not a choice");
+    let mut wrong = base.clone();
+    wrong["settings"][1]["showWhen"]["value"] = json!("zzz");
+    assert!(parse(&wrong).is_err(), "a rule names a value its source takes");
+    let mut orphan = base.clone();
+    orphan["settings"][1]["showWhen"]["key"] = json!("gone");
+    assert!(parse(&orphan).is_err(), "a rule names a setting that exists");
+    let mut secret = base.clone();
+    secret["settings"][0] = json!({"key":"mode","label":{"zh-CN":"方式","en":"Style"},"type":"secret","default":""});
+    secret["settings"][1]["showWhen"]["value"] = json!("token");
+    assert!(parse(&secret).is_err(), "a secret cannot drive a condition");
 }

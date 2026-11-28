@@ -3,7 +3,7 @@ mod clock;
 mod panel;
 mod win32;
 
-use clock::Clock;
+use clock::{BreakMode, Clock};
 pub(crate) use clock::Phase;
 use fly_island_plugin_sdk::{json, run, Value};
 use std::{
@@ -20,6 +20,7 @@ pub(crate) struct Settings {
     fullscreen_pause: bool,
     hosted_windows: bool,
     english: bool,
+    mode: BreakMode,
 }
 
 impl Settings {
@@ -34,6 +35,7 @@ impl Settings {
                 .as_bool()
                 .unwrap_or(false),
             english: settings["language"] == "en",
+            mode: if settings["mode"] == "notify" { BreakMode::Notify } else { BreakMode::Lock },
         }
     }
     fn period(&self) -> Duration {
@@ -88,9 +90,10 @@ struct Reminder {
 
 impl Reminder {
     fn new(settings: Settings) -> Self {
+        let clock = Clock::new(Instant::now(), settings.period(), settings.rest(), settings.mode);
         Self {
             shared: Arc::new(Mutex::new(Shared {
-                clock: Clock::new(Instant::now(), settings.period(), settings.rest()),
+                clock,
                 settings,
                 idle: false,
                 fullscreen: false,
@@ -126,11 +129,10 @@ impl Reminder {
         let (idle, fullscreen) = (shared.idle, shared.fullscreen);
         shared.clock.tick(at, idle, fullscreen);
         let accepted = match id {
-            "rest_now" if shared.clock.phase() == Phase::Working => {
-                shared.clock.rest_now(at);
-                true
-            }
+            "rest_now" => shared.clock.rest_now(at),
             "reset_work" => shared.clock.reset_work(at),
+            "defer_break" => shared.clock.defer_break(at),
+            "finish_break" => shared.clock.finish_break(at),
             "skip" => {
                 let allowed = shared.settings.allow_skip;
                 shared.clock.skip_rest(at, allowed)
@@ -229,7 +231,7 @@ mod tests {
     #[test]
     fn host_window_actions_preserve_phase_permissions_and_one_postponement() {
         let mut reminder = Reminder::new(Settings::parse(&json!({
-            "_host-eye-care-windows":true, "allow-skip":false
+            "_host-eye-care-windows":true, "allow-skip":false, "period":"1"
         })));
         assert!(reminder.action("skip").is_err());
         assert!(reminder.action("snooze_10").is_err());
@@ -247,6 +249,40 @@ mod tests {
         assert!(reminder.action("snooze_10").is_err());
         reminder.shared.lock().unwrap().settings.allow_skip = true;
         assert!(reminder.action("skip").is_ok());
+    }
+
+    #[test]
+    fn the_break_style_defaults_to_locking_and_reads_notify() {
+        assert_eq!(Settings::parse(&json!({})).mode, BreakMode::Lock);
+        assert_eq!(Settings::parse(&json!({"mode":"notify"})).mode, BreakMode::Notify);
+        assert_eq!(Settings::parse(&json!({"mode":"lock"})).mode, BreakMode::Lock);
+        assert_eq!(Settings::parse(&json!({"mode":"other"})).mode, BreakMode::Lock);
+    }
+
+    #[test]
+    fn notify_mode_offers_resetting_while_working_and_the_two_answers_once_overdue() {
+        let mut reminder = Reminder::new(Settings::parse(&json!({
+            "_host-eye-care-windows":true, "mode":"notify", "period":"1"
+        })));
+        assert!(reminder.action("reset_work").is_ok());
+        assert!(reminder.action("defer_break").is_err(), "nothing to postpone while working");
+        assert!(reminder.action("finish_break").is_err());
+        {
+            let mut shared = reminder.shared.lock().unwrap();
+            let overdue = Instant::now() + shared.settings.period();
+            shared.clock.tick(overdue, false, false);
+            assert_eq!(shared.clock.phase(), Phase::Overdue);
+        }
+        assert!(reminder.action("reset_work").is_err(), "the two answers replace the reset button");
+        assert!(reminder.action("defer_break").is_ok());
+        {
+            let mut shared = reminder.shared.lock().unwrap();
+            let overdue = Instant::now() + shared.settings.period();
+            shared.clock.tick(overdue, false, false);
+            assert_eq!(shared.clock.phase(), Phase::Overdue);
+        }
+        assert!(reminder.action("finish_break").is_ok());
+        assert_eq!(reminder.shared.lock().unwrap().clock.phase(), Phase::Working);
     }
 
     #[test]

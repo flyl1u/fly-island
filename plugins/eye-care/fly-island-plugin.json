@@ -5,8 +5,8 @@
     "en": "Eye Care"
   },
   "description": {
-    "zh-CN": "在小岛和多屏休息窗口显示护眼倒计时，复用宿主主题，支持一次推迟与可选跳过",
-    "en": "Eye-break countdowns with host-themed multi-monitor windows, one postponement and optional skipping"
+    "zh-CN": "在小岛和多屏休息窗口显示护眼倒计时，可选到点锁屏或只在小岛提醒，支持推迟与可选跳过",
+    "en": "Eye-break countdowns with host-themed multi-monitor windows: lock the screens or only remind on the island, with postponement and optional skipping"
   },
   "version": "0.3.0",
   "apiVersion": 1,
@@ -24,6 +24,35 @@
     "icon": "heart-pulse"
   },
   "settings": [
+    {
+      "key": "mode",
+      "label": {
+        "zh-CN": "提醒方式",
+        "en": "Reminder style"
+      },
+      "description": {
+        "zh-CN": "锁屏模式：到点后小岛和多屏窗口显示休息画面。通知模式：到点后小岛展开提示，不锁屏，由你决定什么时候完成休息。",
+        "en": "Lock screen: when the time is up, the island and every display show the break. Notify: the island opens with the reminder and nothing covers the screens; you decide when the break is done."
+      },
+      "type": "choice",
+      "default": "lock",
+      "options": [
+        {
+          "value": "lock",
+          "label": {
+            "zh-CN": "锁屏模式",
+            "en": "Lock screen"
+          }
+        },
+        {
+          "value": "notify",
+          "label": {
+            "zh-CN": "通知模式",
+            "en": "Notify"
+          }
+        }
+      ]
+    },
     {
       "key": "period",
       "label": {
@@ -44,7 +73,11 @@
       "type": "number",
       "min": 1,
       "max": 60,
-      "default": "1"
+      "default": "1",
+      "showWhen": {
+        "key": "mode",
+        "value": "lock"
+      }
     },
     {
       "key": "idle",
@@ -68,7 +101,11 @@
         "en": "Allow skipping a break"
       },
       "type": "toggle",
-      "default": true
+      "default": true,
+      "showWhen": {
+        "key": "mode",
+        "value": "lock"
+      }
     },
     {
       "key": "pause-fullscreen",
@@ -118,6 +155,20 @@
       "label": {
         "zh-CN": "现在休息",
         "en": "Take a break now"
+      }
+    },
+    {
+      "id": "defer_break",
+      "label": {
+        "zh-CN": "推迟休息",
+        "en": "Postpone the break"
+      }
+    },
+    {
+      "id": "finish_break",
+      "label": {
+        "zh-CN": "休息完成",
+        "en": "Break done"
       }
     },
     {

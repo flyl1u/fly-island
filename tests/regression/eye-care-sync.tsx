@@ -27,7 +27,7 @@ const manifest = {
   description: { "zh-CN": "护眼", en: "Eye Care" }, version: "1.0.0", apiVersion: 1,
   runtime: { command: "eye-care.exe" }, contributes: ["panel"], permissions: ["panel", "desktop-windows"],
   settings: [], panel: { icon: "heart-pulse" },
-  actions: ["reset_work", "rest_now", "snooze_10", "skip"].map((id) => ({ id, label: { "zh-CN": id, en: id } })),
+  actions: ["reset_work", "rest_now", "defer_break", "finish_break", "snooze_10", "skip"].map((id) => ({ id, label: { "zh-CN": id, en: id } })),
 };
 mockIPC((command) => {
   if (command === "get_plugins") return {
@@ -115,6 +115,23 @@ try {
   check(!islandClock() && island.querySelector(".eye-care-island__detail")?.textContent === "20:00" && island.querySelector(".eye-care-island__note")?.textContent === panel.note
     && !island.querySelector(".eye-care-island__meter"),
     "A paused timer retains its frozen remaining time and postponement warning");
+
+  // The break is due: the island shows the total the round reached and waits for an answer.
+  panel = { headline: "休息时间到", note: "", attention: true, actions: ["defer_break", "finish_break"], islandActions: ["defer_break", "finish_break"],
+    rows: [{ id: "timer", title: "累计用眼时长", detail: "", percent: 100, countdownTo: null, totalMs: 1_500_400, tone: "warning" }] };
+  await act(async () => { await refreshPlugins(); });
+  check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline
+    && island.querySelector(".eye-care-island__label")?.textContent === panel.rows[0].title,
+    "An overdue round names the break and the accumulated screen time");
+  check(!island.querySelector(".eye-care-island__note") && island.querySelector(".eye-care-island__line--stack") !== null
+    && islandClock() === "25:00",
+    "The total stands in the countdown's place with nothing written under the headline");
+  await wait(1100);
+  check(islandClock() === "25:00", "The total stays where it is while the user decides");
+  const overdueActions = [...island.querySelectorAll<HTMLButtonElement>(".eye-care-island__action")];
+  check(overdueActions.map((button) => button.textContent).join(",") === "defer_break,finish_break"
+    && overdueActions[1].classList.contains("eye-care-island__action--primary"),
+    "Postpone the break sits left of the filled Break done");
 
   await act(async () => { islandRoot.unmount(); restRoot.unmount(); });
   document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");

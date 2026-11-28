@@ -1,14 +1,22 @@
-use super::{Clock, Phase};
+use super::{BreakMode, Clock, Phase};
 use std::time::{Duration, Instant};
 
 fn at(base: Instant, seconds: u64) -> Instant {
     base + Duration::from_secs(seconds)
 }
 
+fn locking(base: Instant) -> Clock {
+    Clock::new(base, Duration::from_secs(60), Duration::from_secs(20), BreakMode::Lock)
+}
+
+fn notifying(base: Instant) -> Clock {
+    Clock::new(base, Duration::from_secs(60), Duration::from_secs(20), BreakMode::Notify)
+}
+
 #[test]
 fn remaining_percent_follows_the_span_of_the_current_phase() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     assert_eq!(clock.percent_remaining(base), 100.0);
     assert_eq!(clock.percent_remaining(at(base, 15)), 75.0);
     clock.tick(at(base, 60), false, false);
@@ -20,7 +28,7 @@ fn remaining_percent_follows_the_span_of_the_current_phase() {
 #[test]
 fn work_turns_into_a_timed_rest_and_back() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     clock.tick(at(base, 59), false, false);
     assert_eq!(clock.phase(), Phase::Working);
     clock.tick(at(base, 60), false, false);
@@ -33,7 +41,7 @@ fn work_turns_into_a_timed_rest_and_back() {
 #[test]
 fn idle_resets_to_a_full_interval() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     clock.tick(at(base, 50), false, false);
     clock.tick(at(base, 51), true, false);
     assert_eq!(clock.remaining(at(base, 51)), Duration::from_secs(60));
@@ -46,7 +54,7 @@ fn idle_resets_to_a_full_interval() {
 #[test]
 fn fullscreen_pause_restarts_the_interval_and_resumes_the_whole_period() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     clock.tick(at(base, 40), false, false);
     clock.tick(at(base, 41), false, true);
     assert_eq!(clock.remaining(at(base, 41)), Duration::from_secs(60));
@@ -63,7 +71,7 @@ fn fullscreen_pause_restarts_the_interval_and_resumes_the_whole_period() {
 #[test]
 fn a_break_can_only_be_postponed_once_per_cycle() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     assert!(!clock.snooze(base, 10));
     clock.tick(at(base, 60), false, false);
     assert!(clock.snooze(at(base, 61), 10));
@@ -80,7 +88,7 @@ fn a_break_can_only_be_postponed_once_per_cycle() {
 #[test]
 fn emergency_unlock_skips_rest_and_starts_a_fresh_cycle() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     clock.tick(at(base, 60), false, false);
     assert!(!clock.skip_rest(at(base, 65), false));
     assert_eq!(clock.phase(), Phase::Resting);
@@ -94,14 +102,15 @@ fn emergency_unlock_skips_rest_and_starts_a_fresh_cycle() {
 fn all_postponements_are_exact_and_invalid_choices_do_not_consume_one() {
     for minutes in [5, 10, 15, 20, 25, 30] {
         let base = Instant::now();
-        let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
-        clock.rest_now(base);
+        let mut clock = locking(base);
+        clock.tick(at(base, 60), false, false);
+        assert_eq!(clock.phase(), Phase::Resting);
         for invalid in [0, 4, 6, 9, 11, 31, u64::MAX] {
-            assert!(!clock.snooze(base, invalid));
+            assert!(!clock.snooze(at(base, 61), invalid));
         }
-        assert!(clock.snooze(base, minutes));
-        assert_eq!(clock.remaining(base), Duration::from_secs(minutes * 60));
-        clock.tick(at(base, minutes * 60), false, false);
+        assert!(clock.snooze(at(base, 61), minutes));
+        assert_eq!(clock.remaining(at(base, 61)), Duration::from_secs(minutes * 60));
+        clock.tick(at(base, 61 + minutes * 60), false, false);
         assert_eq!(clock.phase(), Phase::Resting);
         assert!(!clock.can_snooze());
     }
@@ -110,7 +119,7 @@ fn all_postponements_are_exact_and_invalid_choices_do_not_consume_one() {
 #[test]
 fn idle_freezes_between_polls_and_takes_precedence_over_fullscreen() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     clock.tick(at(base, 30), false, true);
     clock.tick(at(base, 500), true, true);
     assert_eq!(clock.remaining(at(base, 900)), Duration::from_secs(60));
@@ -121,15 +130,16 @@ fn idle_freezes_between_polls_and_takes_precedence_over_fullscreen() {
 }
 
 #[test]
-fn idle_fullscreen_and_manual_break_never_restore_a_used_postponement() {
+fn idle_fullscreen_and_a_manual_break_never_restore_a_used_postponement() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
-    clock.rest_now(base);
-    assert!(clock.snooze(base, 10));
-    clock.tick(at(base, 10), false, true);
+    let mut clock = locking(base);
+    clock.tick(at(base, 60), false, false);
+    assert!(clock.snooze(at(base, 61), 10));
+    clock.tick(at(base, 71), false, true);
     clock.tick(at(base, 100), true, true);
     clock.tick(at(base, 200), false, false);
-    clock.rest_now(at(base, 201));
+    assert!(clock.rest_now(at(base, 201)));
+    assert_eq!(clock.phase(), Phase::Resting);
     assert!(!clock.can_snooze());
     assert!(!clock.snooze(at(base, 201), 30));
     clock.tick(at(base, 221), true, true);
@@ -140,7 +150,7 @@ fn idle_fullscreen_and_manual_break_never_restore_a_used_postponement() {
 #[test]
 fn rest_keeps_running_during_idle_and_fullscreen_and_expired_clicks_cannot_postpone() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
+    let mut clock = locking(base);
     clock.rest_now(base);
     clock.rest_now(at(base, 5));
     clock.tick(at(base, 10), true, true);
@@ -152,14 +162,123 @@ fn rest_keeps_running_during_idle_and_fullscreen_and_expired_clicks_cannot_postp
 }
 
 #[test]
-fn the_user_can_restart_the_eye_use_interval() {
+fn notify_mode_turns_overdue_and_holds_the_screen_time() {
     let base = Instant::now();
-    let mut clock = Clock::new(base, Duration::from_secs(60), Duration::from_secs(20));
-    clock.rest_now(base);
-    assert!(clock.snooze(base, 10));
-    assert!(clock.reset_work(at(base, 11)));
-    assert_eq!(clock.remaining(at(base, 11)), Duration::from_secs(60));
-    assert!(!clock.postponed(), "a reset starts a fresh cycle");
-    clock.tick(at(base, 600), false, false);
-    assert!(!clock.reset_work(at(base, 601)), "nothing to reset once the break begins");
+    let mut clock = notifying(base);
+    assert_eq!(clock.phase(), Phase::Working);
+    clock.tick(at(base, 59), false, false);
+    assert_eq!(clock.phase(), Phase::Working);
+    clock.tick(at(base, 60), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue, "no full-screen break in notify mode");
+    assert_eq!(clock.remaining(at(base, 60)), Duration::ZERO);
+    assert_eq!(clock.percent_remaining(at(base, 60)), 100.0);
+    assert_eq!(clock.accumulated(at(base, 60)), Duration::from_secs(60));
+    assert_eq!(clock.accumulated(at(base, 95)), Duration::from_secs(60), "the total stops with the round");
+    assert!(!clock.can_snooze());
+}
+
+#[test]
+fn asking_for_a_break_by_hand_covers_the_screens_only_when_locking() {
+    let base = Instant::now();
+    let mut clock = locking(base);
+    clock.tick(at(base, 25), false, false);
+    assert!(clock.rest_now(at(base, 25)));
+    assert_eq!(clock.phase(), Phase::Resting, "locking goes straight to the break");
+    assert_eq!(clock.remaining(at(base, 25)), Duration::from_secs(20));
+    assert!(!clock.rest_now(at(base, 26)), "already resting");
+}
+
+#[test]
+fn a_manual_break_in_notify_mode_turns_overdue_and_freezes_the_total() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    clock.tick(at(base, 25), false, false);
+    assert!(clock.rest_now(at(base, 25)));
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert!(!clock.can_snooze(), "no break window in notify mode");
+    assert_eq!(clock.percent_remaining(at(base, 25)), 100.0);
+    assert_eq!(clock.accumulated(at(base, 25)), Duration::from_secs(25));
+    assert_eq!(clock.accumulated(at(base, 500)), Duration::from_secs(25));
+    assert!(!clock.rest_now(at(base, 26)), "already overdue");
+}
+
+#[test]
+fn postponing_an_overdue_round_keeps_the_accumulated_screen_time() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    clock.tick(at(base, 60), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert!(clock.defer_break(at(base, 70)));
+    assert_eq!(clock.phase(), Phase::Working);
+    assert_eq!(clock.remaining(at(base, 70)), Duration::from_secs(60));
+    assert_eq!(clock.accumulated(at(base, 70)), Duration::from_secs(60), "the wait after the alert adds nothing");
+    clock.tick(at(base, 130), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue, "the next round ends the same way");
+    assert_eq!(clock.accumulated(at(base, 130)), Duration::from_secs(120), "screen time is added up across rounds");
+}
+
+#[test]
+fn finishing_an_overdue_rest_starts_the_count_over() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    clock.tick(at(base, 60), false, false);
+    assert!(clock.finish_break(at(base, 90)));
+    assert_eq!(clock.phase(), Phase::Working);
+    assert_eq!(clock.remaining(at(base, 90)), Duration::from_secs(60));
+    assert_eq!(clock.accumulated(at(base, 100)), Duration::from_secs(10));
+}
+
+#[test]
+fn only_an_overdue_round_can_be_postponed_or_finished_and_only_working_resets() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    assert!(!clock.defer_break(base), "nothing to answer while working");
+    assert!(!clock.finish_break(base));
+    assert!(clock.reset_work(base));
+    clock.tick(at(base, 60), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert!(!clock.reset_work(at(base, 61)), "the two answers replace the reset button");
+    assert!(clock.defer_break(at(base, 61)));
+    clock.tick(at(base, 121), false, false);
+    assert_eq!(clock.phase(), Phase::Overdue);
+    assert!(clock.finish_break(at(base, 121)));
+    assert!(clock.reset_work(at(base, 122)));
+    assert_eq!(clock.accumulated(at(base, 125)), Duration::from_secs(3));
+}
+
+#[test]
+fn resetting_the_screen_time_starts_the_round_and_the_count_over() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    clock.tick(at(base, 40), false, false);
+    assert!(clock.reset_work(at(base, 40)));
+    assert_eq!(clock.remaining(at(base, 40)), Duration::from_secs(60));
+    assert_eq!(clock.accumulated(at(base, 50)), Duration::from_secs(10));
+    assert!(!clock.postponed());
+}
+
+#[test]
+fn a_break_holds_the_screen_time_while_it_runs_and_a_completed_one_starts_from_zero() {
+    let base = Instant::now();
+    let mut clock = locking(base);
+    clock.tick(at(base, 10), false, false);
+    clock.rest_now(at(base, 10));
+    assert_eq!(clock.phase(), Phase::Resting);
+    assert_eq!(clock.accumulated(at(base, 20)), Duration::from_secs(10), "a break is not screen time");
+    clock.tick(at(base, 30), false, false);
+    assert_eq!(clock.phase(), Phase::Working);
+    assert_eq!(clock.accumulated(at(base, 30)), Duration::ZERO, "a completed break starts from zero");
+    assert_eq!(clock.accumulated(at(base, 40)), Duration::from_secs(10));
+}
+
+#[test]
+fn an_overdue_round_holds_its_total_whatever_the_desk_does() {
+    let base = Instant::now();
+    let mut clock = notifying(base);
+    clock.tick(at(base, 60), false, false);
+    clock.tick(at(base, 70), true, false);
+    assert_eq!(clock.accumulated(at(base, 500)), Duration::from_secs(60), "an idle desk changes nothing");
+    clock.tick(at(base, 500), false, false);
+    assert_eq!(clock.accumulated(at(base, 510)), Duration::from_secs(60), "typing again does not restart the total");
+    assert_eq!(clock.phase(), Phase::Overdue);
 }
