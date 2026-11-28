@@ -173,14 +173,14 @@ manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一�
 | --- | --- |
 | headline / note | 纯文本状态与可空说明 / Plain status and nullable note |
 | rows | 最多 16 行 / At most 16 rows |
-| row | id、title；detail 可空；percent 为 null 或 0–100；countdownTo 为 null 或正 Unix 毫秒；totalMs 为 null 或非负毫秒数（已经停下的累计值，和 countdownTo 互斥，两者都给会被拒绝）；tone 为 normal / warning / danger |
+| row | id、title；detail 可空；percent 为 null 或 0–100；countdownTo 为 null 或正 Unix 毫秒；durationMs 为 null 或非负毫秒数（宿主原样显示的固定时长：暂停时的剩余时间或到期后的累计值，和 countdownTo 互斥，两者都给会被拒绝）；tone 为 normal / warning / danger |
 | actions | 最多 4 个唯一的 manifest 已声明 id，只显示当前有效的阶段性动作 / At most 4 unique declared IDs for currently available actions |
 | islandActions | `actions` 的子集（最多 4 个唯一 id），岛内页面只显示这些；省略或 null 表示全部显示。给自家窗口用的动作留在 `actions` / Subset of `actions` shown on the island page (at most 4 unique IDs); omitted or null shows all. Keep window-only actions in `actions` |
 | attention | bool；点亮页按钮提示点，不弹通知 / Page-button indicator, no notification |
 
-每次 publish 替换整个 panel；省略或 null 清空。文本最多 4096 UTF-8 字节且无 NUL，行 id 非空唯一。倒计时由宿主本地按秒更新，插件只提供期限与状态；`totalMs` 是停住的累计值，宿主原样显示、不自行计时（护眼「休息时间到」的「累计用眼时长」就是这样），因此同样不需要每秒 publish。主进程只在快照变化时发送 plugins-changed；panel 的错误字段或动作使该 publish 被拒绝。无 panel 的旧适配器不受影响。
+每次 publish 替换整个 panel；省略或 null 清空。文本最多 4096 UTF-8 字节且无 NUL，行 id 非空唯一。倒计时由宿主本地按秒更新，插件只提供期限与状态；`durationMs` 是宿主原样显示的固定时长（暂停时的剩余时间、到期后的累计值），不自行计时（护眼暂停时与「休息时间到」都这样），因此同样不需要每秒 publish。主进程只在快照变化时发送 plugins-changed；panel 的错误字段或动作使该 publish 被拒绝。无 panel 的旧适配器不受影响。
 
-Every publish replaces the complete panel; omission/null clears it. Text is bounded to 4096 UTF-8 bytes without NUL and row IDs are unique/nonempty. The host ticks countdowns locally, publishes changes only when snapshots differ, and rejects undeclared/invalid fields or actions. `totalMs` is a finished total the host shows as it is instead of ticking it (Eye Care shows its accumulated screen time this way once the break is due), so a total needs no per-second publish. Legacy adapters without panels are unchanged.
+Every publish replaces the complete panel; omission/null clears it. Text is bounded to 4096 UTF-8 bytes without NUL and row IDs are unique/nonempty. The host ticks countdowns locally, publishes changes only when snapshots differ, and rejects undeclared/invalid fields or actions. `durationMs` is a fixed duration the host shows as it is instead of ticking it — a paused timer's remaining time or a finished round's total (Eye Care uses it for both) — so it needs no per-second publish. Legacy adapters without panels are unchanged.
 
 Eye Care 0.2.0 的窗口是固定宿主源码接入，不是插件可指定的通用 URL/HTML 窗口。仅支持带完整休息动作与 desktop-windows 权限的 eye-care 清单；由 attention、timer 行截止时间和当前动作得到有界状态，snooze_10 表示本轮可推迟，skip 表示可跳过。宿主初始化时临时提供 `_host-eye-care-windows` 能力标记。通知模式到点、以及通知模式下手动「现在休息」都没有截止时间：attention 为真且 timer 行不带 countdownTo 时不开窗口，改为把岛屿展开到插件页并保持在最前面，直到插件动作清掉 attention。其他适配器不受影响。
 

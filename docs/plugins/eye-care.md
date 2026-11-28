@@ -21,7 +21,7 @@
 
 设置中的「空闲时长」说明由清单的 `settings[].description` 提供，文案为「连续无键盘和鼠标操作到达空闲时长，暂停并重置用眼计时，恢复操作后开始计时」；已开始的休息不受影响。另有开关「全屏模式下暂停并重置计时」：开启时进入全屏即把用眼计时重置为完整周期并冻结，退出全屏后从完整周期重新走表；关闭时全屏窗口不影响计时。（2026-11-26 用户要求）设置项文案为「允许跳过休息」，不再写成疑问句。岛内护眼面板不再提供额外的齿轮按钮，配置统一在设置窗口「功能」组末尾的护眼提醒栏目里。
 
-岛内标题为「用眼中」「休息中」或「休息时间到」，标注分别是「剩余用眼时长」（倒计时）、「剩余休息时长」（倒计时）和「累计用眼时长」（停住的累计值）。已推迟的用眼阶段提示「已经推迟过一次，不能推迟下次休息」。不再显示规则、配置时长或远眺 / 自动解锁说明；空闲和全屏暂停时仍显示静态剩余时间。岛内页面由护眼自己的组件绘制（`src/features/eye-care/EyeCareIslandPanel`），通用插件页不受影响：状态、剩余时间、剩余进度条和「现在休息」收在一张卡片内，26px 等宽倒计时在上、标签在下、4px 进度条在底，暂停时不给 `percent` 也不显示进度条，页高由 `getEyeCareIslandHeight` 单独计算。（2026-11-26 用户要求）
+岛内标题为「用眼中」「空闲中」「休息中」或「休息时间到」，标注分别是「剩余用眼时长」「剩余用眼时长」「剩余休息时长」和「累计用眼时长」。已推迟的用眼阶段提示「已经推迟过一次，不能推迟下次休息」。不再显示规则、配置时长或远眺 / 自动解锁说明；空闲和全屏暂停时倒计时和进度条都保留，只是停住不动：不再给 `countdownTo`，改用 `durationMs` 和冻结的 `percent`。岛内页面由护眼自己的组件绘制（`src/features/eye-care/EyeCareIslandPanel`），通用插件页不受影响：状态、剩余时间、剩余进度条和「现在休息」收在一张卡片内，26px 等宽倒计时在上、标签在下、4px 进度条在底，页高由 `getEyeCareIslandHeight` 单独计算。（2026-11-26 用户要求；2026-11-28 要求空闲时显示「空闲中」，并且暂停后倒计时与进度条不消失）
 
 岛内与休息窗口使用同一截止时间和倒计时计算，按剩余秒数改变的边界刷新，不再各自从挂载时刻启动一秒定时器。窗口重新可见或获得焦点时立即校准，切换截止时间立即更新，结束后停止刷新。
 
@@ -31,7 +31,7 @@
 
 ### 提醒方式
 
-设置项「提醒方式」是两段式按钮，和「通用 → 展开方式」的「点击 / 鼠标悬停」是同一个宿主控件（清单 `type: "choice"`）。这套设置和面板字段是宿主新增的（清单 `showWhen`、面板 `totalMs`），宿主与插件需要一起更新，旧版宿主解析不了这份清单。
+设置项「提醒方式」是两段式按钮，和「通用 → 展开方式」的「点击 / 鼠标悬停」是同一个宿主控件（清单 `type: "choice"`）。这套设置和面板字段是宿主新增的（清单 `showWhen`、面板 `durationMs`），宿主与插件需要一起更新，旧版宿主解析不了这份清单。
 
 - **锁屏模式**（默认）：到点后照旧在小岛和多屏窗口显示休息画面。只有这个模式才用得上「休息时长」和「允许跳过休息」，切到通知模式后清单用 `showWhen` 把这两行从设置页隐藏（已保存的值保留，插件仍会收到）。手动点「现在休息」仍然立刻进入休息画面。
 - **通知模式**：到点不锁屏，也不创建任何休息窗口。
@@ -46,7 +46,7 @@
 
 累计只在真正用眼时增加：休息期间不增加；进入「休息时间到」时停在当时的数值，之后空闲或全屏暂停也不会改变它。
 
-插件通过面板行的 `totalMs` 把停住的累计值交给宿主，宿主原样显示、不自行计时，因此不需要每秒 publish。这也让宿主区分两种提醒：`attention` 为真且 timer 行带 `countdownTo` 时创建休息窗口（锁屏模式到点），`attention` 为真但没有 `countdownTo` 时只展开小岛（通知模式到点，以及通知模式下手动「现在休息」）。
+插件通过面板行的 `durationMs` 把固定时长交给宿主（暂停时的剩余时间、休息时间到的累计值），宿主原样显示、不自行计时，因此不需要每秒 publish。这也让宿主区分两种提醒：`attention` 为真且 timer 行带 `countdownTo` 时创建休息窗口（锁屏模式到点），`attention` 为真但没有 `countdownTo` 时只展开小岛（通知模式到点，以及通知模式下手动「现在休息」）。
 
 ## 生命周期与失败
 
@@ -78,7 +78,7 @@ During a break, the island shows status and the countdown without duplicate post
 
 In notify mode that state opens the island on the Eye Care page and keeps it open, ignoring clicks outside, until the user answers. The headline is Break time, the big number becomes the actual accumulated screen time and stays there, the bar is full, and nothing is written under the headline. Its two buttons are Postpone the break and Break done (the filled one): postponing starts the next round and keeps adding to the total, while Break done resets the total to zero; either answer clears `attention` and the island closes itself.
 
-While working, Reset screen time restarts the round and the total and restores the one postponement; it appears only in the working phase, and the two answers replace it once the time is up. Only real screen time is counted: a break adds nothing, and the total stops where it was when the break came due — idling or a full-screen window does not move it. The panel row carries `totalMs`, so the host shows the finished total as it is and the plugin does not publish every second; that field also tells the two cases apart — `attention` with a `countdownTo` opens the break windows, `attention` without one only opens the island.
+While working, Reset screen time restarts the round and the total and restores the one postponement; it appears only in the working phase, and the two answers replace it once the time is up. Only real screen time is counted: a break adds nothing, and the total stops where it was when the break came due — idling or a full-screen window does not move it. The panel row carries `durationMs` — a fixed duration for a paused timer or a finished total — so the host shows it as it is and the plugin does not publish every second; that field also tells the two cases apart — `attention` with a `countdownTo` opens the break windows, `attention` without one only opens the island.
 
 The island and break window share the countdown calculation and absolute deadline. Updates align with remaining-second boundaries rather than mount times, resync on focus/visibility, and stop at zero.
 
@@ -94,6 +94,6 @@ Windows are created only during an enabled break, shown after initial state and 
 
 The idle-duration setting carries its explanation in the manifest (`settings[].description`), which the host shows under the label: inactivity pauses and resets the screen-time timer, which starts when input resumes; an ongoing break is unaffected. A separate switch, “Pause and reset the timer in full screen”, is on by default: entering a full-screen window restarts the eye-use interval and freezes it, and leaving it resumes the whole period. Switched off, full screen no longer affects the timer. The skip setting reads “Allow skipping a break” rather than a question. Configure Eye Care in its own section at the end of the Features group in Settings; its island panel has no additional settings gear.
 
-The island shows “Screen time” or “Resting”, with “Screen time remaining” or “Break time remaining”. After a postponement, screen time also shows “Already postponed once; the next break cannot be postponed”. Rule summaries, configured durations and break instructions are omitted; idle and full-screen pauses still show a frozen remaining time. The page is Eye Care's own component (`src/features/eye-care/EyeCareIslandPanel`), so the host's generic plugin page is unchanged: the phase, the remaining time, a remaining-time bar and Take a break now share one card, with a 26px tabular countdown over its label and a 4px bar below; a paused timer publishes no `percent` and shows no bar, and `getEyeCareIslandHeight` sizes the page.
+The island shows “Screen time”, “Idle”, “Resting” or “Break time”, with “Screen time remaining”, “Break time remaining” or “Total screen time” under it. After a postponement, screen time also shows “Already postponed once; the next break cannot be postponed”. Rule summaries, configured durations and break instructions are omitted; an idle desk or a full-screen pause keeps the countdown and the bar, frozen (no `countdownTo`; a fixed `durationMs` and a held `percent` instead). The page is Eye Care's own component (`src/features/eye-care/EyeCareIslandPanel`), so the host's generic plugin page is unchanged: the phase, the remaining time, a remaining-time bar and Take a break now share one card, with a 26px tabular countdown over its label and a 4px bar below; and `getEyeCareIslandHeight` sizes the page. (2026-11-28: the idle phase is named “Idle”, and a paused timer keeps its digits and bar.)
 
 Eye Care is listed as In development in the plugin market. Developers can use a local index as described in the [quickstart](quickstart.md). The host also expires break windows at the deadline if the worker goes quiet. Physical multi-monitor/DPI behavior, desktop layering and resource use should be checked on the target setup.

@@ -1,4 +1,5 @@
-//! Host-rendered island panel; paused timers and finished totals use static text, never a moving clock.
+//! Host-rendered island panel; a held timer and a finished round publish a fixed duration the
+//! host draws as it is, never a moving clock.
 use crate::{Phase, Settings, Shared};
 use fly_island_plugin_sdk::{json, now, Value};
 use std::time::Instant;
@@ -14,18 +15,19 @@ pub fn snapshot(shared: &Shared) -> Value {
     let t = |zh, en| settings.text(zh, en);
     let at = Instant::now();
     let remaining = shared.clock.remaining(at);
-    let seconds = remaining.as_secs() + u64::from(remaining.subsec_nanos() != 0);
     let paused = shared.clock.paused();
     let overdue = shared.clock.phase() == Phase::Overdue;
     let resting = shared.clock.phase() == Phase::Resting;
     let postponed = shared.clock.postponed();
-    // The bar drains with the phase; a paused timer has no bar, only its frozen time. A round
-    // whose time is up keeps its bar full.
-    let percent = (!paused).then(|| shared.clock.percent_remaining(at));
+    // The bar stays on screen while the timer is held: an idle desk or a full-screen window
+    // freezes the round at a full period, and a round whose time is up stays full.
+    let percent = shared.clock.percent_remaining(at);
     let headline = if overdue {
         t("休息时间到", "Break time")
     } else if resting {
         t("休息中", "Resting")
+    } else if shared.idle {
+        t("空闲中", "Idle")
     } else {
         t("用眼中", "Screen time")
     };
@@ -37,18 +39,18 @@ pub fn snapshot(shared: &Shared) -> Value {
     } else {
         ""
     };
-    let detail = if paused {
-        format!("{:02}:{:02}", seconds / 60, seconds % 60)
-    } else {
-        String::new()
-    };
     let deadline = (!paused && !overdue)
         .then(|| now().saturating_add(i64::try_from(remaining.as_millis()).unwrap_or(i64::MAX)));
-    // An overdue round shows the screen time it reached and holds it there: the number must not
-    // move while the user decides, so the host draws a total instead of a running clock.
-    let total = overdue.then(|| {
-        i64::try_from(shared.clock.accumulated(at).as_millis()).unwrap_or(i64::MAX)
-    });
+    // A held timer has no deadline to tick, so it publishes the time it has left; a round whose
+    // time is up publishes the screen time it reached. Both stay put until the user acts.
+    let duration = if overdue {
+        Some(shared.clock.accumulated(at))
+    } else if paused {
+        Some(remaining)
+    } else {
+        None
+    }
+    .map(|value| i64::try_from(value.as_millis()).unwrap_or(i64::MAX));
     let mut actions = Vec::new();
     if overdue {
         actions.push("defer_break");
@@ -76,7 +78,7 @@ pub fn snapshot(shared: &Shared) -> Value {
     json!({"panel": {
         "headline": headline, "note": note,
         "rows": [{"id":"timer", "title": title,
-            "detail": detail, "percent": percent, "countdownTo": deadline, "totalMs": total,
+            "detail": "", "percent": percent, "countdownTo": deadline, "durationMs": duration,
             "tone": tone}],
         "actions": actions,
         "islandActions": island_actions,

@@ -55,10 +55,10 @@ pub struct PanelRow {
     pub percent: Option<f64>,
     /// Unix milliseconds the host counts down to, when the entry is a deadline.
     pub countdown_to: Option<i64>,
-    /// Milliseconds of a finished total the host shows as it is, when the entry stopped counting
-    /// (Eye Care's accumulated screen time once the break is due). Never combined with a deadline.
+    /// Milliseconds of a fixed duration the host shows as it is, when the entry stopped counting:
+    /// a held timer's remaining time or a finished round's total. Never combined with a deadline.
     #[serde(default)]
-    pub total_ms: Option<i64>,
+    pub duration_ms: Option<i64>,
     /// "normal", "warning" or "danger"; anything else reads as normal.
     pub tone: Option<String>,
 }
@@ -139,7 +139,7 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
                 !text(&r.id) || !text(&r.title) || r.detail.as_deref().is_some_and(|detail| !text(detail))
                     || !percent(r.percent)
                     || r.countdown_to.is_some_and(|deadline| deadline <= 0)
-                    || r.total_ms.is_some_and(|total| total < 0 || r.countdown_to.is_some())
+                    || r.duration_ms.is_some_and(|total| total < 0 || r.countdown_to.is_some())
                     || r.tone.as_deref().is_some_and(|tone| !["normal", "warning", "danger"].contains(&tone))
             })
             || !unique(panel.rows.iter().map(|r| r.id.as_str()).collect())

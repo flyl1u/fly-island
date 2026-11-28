@@ -40,12 +40,12 @@ fn validates_manifest_and_protocol() {
         bad["panel"]["rows"][0][field] = value;
         assert!(protocol::parse_publish(&publish(bad), &page).is_err(), "{field}");
     }
-    // A finished total instead of a deadline: one or the other, never both, never negative.
+    // A fixed duration instead of a deadline: one or the other, never both, never negative.
     let mut finished = good.clone();
-    finished["panel"]["rows"][0]["totalMs"] = json!(913_000_i64);
+    finished["panel"]["rows"][0]["durationMs"] = json!(913_000_i64);
     assert!(protocol::parse_publish(&publish(finished.clone()), &page).is_ok());
     let mut bad_total = finished.clone();
-    bad_total["panel"]["rows"][0]["totalMs"] = json!(-5);
+    bad_total["panel"]["rows"][0]["durationMs"] = json!(-5);
     assert!(protocol::parse_publish(&publish(bad_total), &page).is_err(), "a total cannot be negative");
     let mut both = finished;
     both["panel"]["rows"][0]["countdownTo"] = json!(1_700_000_060_000_i64);

@@ -110,15 +110,20 @@ try {
   await act(async () => { await refreshPlugins(); });
   check(island.querySelector(".eye-care-island__note")?.textContent === panel.note && island.querySelector(".eye-care-island__headline")?.textContent === panel.headline,
     "Postponement adds its warning while keeping the working headline");
-  panel = { ...panel, rows: [{ ...panel.rows[0], countdownTo: null, percent: null, detail: "20:00" }] };
+  // The desk went idle: the round restarts at a full period and holds, digits and bar included.
+  panel = { ...panel, headline: language === "en" ? "Idle" : "空闲中",
+    rows: [{ ...panel.rows[0], countdownTo: null, percent: 100, durationMs: 1_200_000, detail: "" }] };
   await act(async () => { await refreshPlugins(); });
-  check(!islandClock() && island.querySelector(".eye-care-island__detail")?.textContent === "20:00" && island.querySelector(".eye-care-island__note")?.textContent === panel.note
-    && !island.querySelector(".eye-care-island__meter"),
-    "A paused timer retains its frozen remaining time and postponement warning");
+  check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline && islandClock() === "20:00"
+    && island.querySelector<HTMLElement>(".eye-care-island__meter span")?.style.width === "100%"
+    && island.querySelector(".eye-care-island__note")?.textContent === panel.note,
+    "An idle desk names itself and keeps the frozen countdown and bar");
+  await wait(1100);
+  check(islandClock() === "20:00", "The held countdown does not move");
 
   // The break is due: the island shows the total the round reached and waits for an answer.
   panel = { headline: "休息时间到", note: "", attention: true, actions: ["defer_break", "finish_break"], islandActions: ["defer_break", "finish_break"],
-    rows: [{ id: "timer", title: "累计用眼时长", detail: "", percent: 100, countdownTo: null, totalMs: 1_500_400, tone: "warning" }] };
+    rows: [{ id: "timer", title: "累计用眼时长", detail: "", percent: 100, countdownTo: null, durationMs: 1_500_400, tone: "warning" }] };
   await act(async () => { await refreshPlugins(); });
   check(island.querySelector(".eye-care-island__headline")?.textContent === panel.headline
     && island.querySelector(".eye-care-island__label")?.textContent === panel.rows[0].title,
