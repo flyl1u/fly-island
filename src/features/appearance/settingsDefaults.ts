@@ -189,7 +189,7 @@ export const FIRST_LAUNCH_SETTINGS: IslandSettings = {
   keepVisibleWhileAgentRunning: true,
   keepVisibleWhileLyrics: true,
   keepVisibleWhileTodoRunning: true,
-  collapsedPriority: ["lyrics", "agent", "todo"],
+  collapsedPriority: ["lyrics", "agent", "todo", "centeredClock"],
   collapsedLayout: ["pulse", "text", "music", "mail", "shelf", "clock", "weather", "agents", "battery"],
   gameDoNotDisturb: false,
   ctrlWheelPages: true,
