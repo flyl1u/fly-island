@@ -1,13 +1,15 @@
 import { useCallback } from "react";
-import { Bot, ListTodo, MicVocal } from "lucide-react";
+import { Bot, Clock3, ListTodo, MicVocal } from "lucide-react";
 import { ReorderList } from "../../components/reorder/ReorderList";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import { CollapsedIdleTextRows } from "./CollapsedIdleTextRows";
 import type { CollapsedItem, IslandSettings } from "./types";
+import { useCenteredClock } from "../centered-clock";
+import { placeCollapsedPriority } from "./collapsedPriority.ts";
 
-const ICONS = { agent: Bot, lyrics: MicVocal, todo: ListTodo } as const;
+const ICONS = { agent: Bot, lyrics: MicVocal, todo: ListTodo, centeredClock: Clock3 } as const;
 
 /**
  * Appearance → Collapsed island: the order in which a running agent, the lyric line and a todo
@@ -22,10 +24,14 @@ export function CollapsedIslandSection({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const text = useTranslation().settings.appearance.collapsedIsland;
-  const order = settings.collapsedPriority;
+  const { installed } = useCenteredClock();
+  const order = settings.collapsedPriority.filter((item) => item !== "centeredClock" || installed);
   const reorder = useCallback(
-    (collapsedPriority: CollapsedItem[]) => onSettingsChange({ ...settings, collapsedPriority }),
-    [onSettingsChange, settings],
+    (collapsedPriority: CollapsedItem[]) => onSettingsChange({
+      ...settings, collapsedPriority: placeCollapsedPriority(settings.collapsedPriority, collapsedPriority,
+        installed ? [] : ["centeredClock"]),
+    }),
+    [installed, onSettingsChange, settings],
   );
 
   return (

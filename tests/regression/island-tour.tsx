@@ -64,7 +64,8 @@ localStorage.setItem("fly-island-settings", JSON.stringify({
   agentAlertWaiting: false, agentAlertCompleted: false, agentAlertFailed: false,
   lyricsOnline: query.get("lyrics") !== "0",
   collapsedShowCover: query.get("cover") === "1",
-  ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
+  ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") }
+    : query.has("centeredClock") ? { collapsedPriority: ["centeredClock", "agent", "lyrics", "todo"] } : {}),
   ...(query.get("layout") ? { collapsedLayout: query.get("layout")!.split(",") } : {}),
 }));
 // A colour of the user's own survives the one-time colour refresh (storage.ts) as it would for a real user.
@@ -193,7 +194,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     if (query.has("cycle")) await checkCollapsedItemSwitch(check, settle);
     const island = () => document.querySelector<HTMLElement>(".island")!;
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
-    if (query.has("clockWeather")) await checkClockWeatherIsland(check, settle);
+    if (query.has("clockWeather") || query.has("centeredClock")) await checkClockWeatherIsland(check, settle);
     const collapsed = island().getBoundingClientRect();
     const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
     const expectedHeight = customNotch ? 32 : 38;
@@ -340,12 +341,12 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
       document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "七个入口切换为图标，外观预览和保存同步");
     await click('[aria-label="页面按钮"] button:first-child');
     const priority = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((item) => item.dataset.reorderId);
-    check(priority().join() === "agent,lyrics,todo", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办");
+    check(priority().join() === (query.has("centeredClock") ? "centeredClock,agent,lyrics,todo" : "agent,lyrics,todo"), `外观页列出优先级（${priority().join()}；安装=${localStorage.getItem("fly-island-native-plugins")}）`);
     await act(async () => {
       document.querySelector<HTMLElement>(".reorder-list__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     });
-    const savedPriority = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
-    check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
+    const savedPriority = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedPriority as string[] | undefined, expectedPriority = query.has("centeredClock") ? "agent,centeredClock,lyrics,todo" : "lyrics,agent,todo";
+    check(priority().join() === expectedPriority && savedPriority?.join() === (query.has("centeredClock") ? expectedPriority : `${expectedPriority},centeredClock`), "按方向键调整顺序并保存");
     // Appearance → On the island: the music waveform moved left of the light and the text sits on
     // the collapsed island's left.
     for (let step = 0; step < 4; step++) {

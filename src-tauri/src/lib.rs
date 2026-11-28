@@ -25,11 +25,12 @@ mod system;
 mod translation;
 mod tray;
 mod office_im;
+mod screenshot;
 mod weather;
 mod wechat_reminders;
 mod win32;
 
-use tauri::WindowEvent;
+use tauri::{Manager, WindowEvent};
 
 /// Chains each module's `tauri_commands!` list into a single `generate_handler!`.
 macro_rules! collect_commands {
@@ -63,8 +64,13 @@ pub fn run() {
             tray::on_relaunch(app);
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|window, event| {
+            if matches!(event, WindowEvent::Destroyed) {
+                screenshot::cleanup_pin(window.app_handle(), window.label());
+                if window.label() == screenshot::window::WINDOW_LABEL { screenshot::window::destroyed(); }
+            }
             if window.label() == "translation" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
@@ -92,6 +98,7 @@ pub fn run() {
                 eprintln!("failed to initialize clipboard history: {error}");
             }
             translation::init(app.handle());
+            screenshot::init(app.handle());
             if let Err(error) = file_shelf::init(app.handle()) {
                 eprintln!("failed to initialize the file shelf: {error}");
             }
@@ -172,6 +179,7 @@ pub fn run() {
             ; app_log
             ; config_transfer
             ; weather
+            ; screenshot
         ))
         .build(context)
         .map(|app| {

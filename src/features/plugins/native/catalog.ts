@@ -3,7 +3,7 @@
 
 import marketPackageIds from "../../../../plugins/market-packages.json" with { type: "json" };
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks" | "battery";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "telegram" | "cursor" | "kimiCode" | "codebuddy" | "antigravity" | "zcode" | "hermes" | "clockWeather" | "calendarMarks" | "battery" | "centeredClock" | "relay" | "appleMusicLyrics" | "screenshot";
 
 /** Where an installed plugin shows up: the Messages page, the Agent page or the collapsed island. */
 export type NativePluginKind = "messages" | "agent" | "island";
@@ -19,12 +19,12 @@ function contributed(login: string, name = login): readonly PluginAuthor[] {
 }
 
 /** The kind of settings page a plugin belongs on. Rules: docs/design/settings.md, "插件设置归类规范（长期）". */
-export type PluginSettingsPlacementName = "standalone" | "agentSessions" | "agentConnect" | "messages";
+export type PluginSettingsPlacementName = "standalone" | "agentSessions" | "agentConnect" | "messages" | "music";
 
 export type PluginSettingsPlacement = {
   placement: PluginSettingsPlacementName;
   /** Standalone only: an existing page name to keep, instead of `plugin:<id>`. */
-  category?: "clockWeather" | "devices" | "battery";
+  category?: "clockWeather" | "devices" | "battery" | "centeredClock" | "screenshot";
   /** Where the action buttons go when they belong on another page than the settings. */
   actionsPlacement?: PluginSettingsPlacementName;
 };
@@ -44,6 +44,10 @@ const MESSAGES = { placement: "messages" } as const;
 const AGENT_SESSIONS = { placement: "agentSessions" } as const;
 
 export const NATIVE_PLUGINS: readonly NativePlugin[] = [
+  { id: "centeredClock", kind: "island", accent: "#b8a5ff", authors: contributed("SeanWang114514"), settings: { placement: "standalone", category: "centeredClock" } },
+  { id: "relay", kind: "agent", accent: "#82b7b4", authors: contributed("yiumanlenong"), settings: { placement: "agentSessions" } },
+  { id: "appleMusicLyrics", kind: "island", accent: "#f36a87", authors: contributed("YTC0408"), settings: { placement: "music" } },
+  { id: "screenshot", kind: "island", accent: "#7c9cff", authors: contributed("Philipfanw"), settings: { placement: "standalone", category: "screenshot" } },
   { id: "dingtalk", kind: "messages", accent: "#0089ff", authors: OWN, settings: MESSAGES },
   { id: "feishu", kind: "messages", accent: "#3370ff", authors: OWN, settings: MESSAGES },
   { id: "wecom", kind: "messages", accent: "#0082f0", authors: OWN, settings: MESSAGES },

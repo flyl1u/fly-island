@@ -59,6 +59,25 @@
   --quota-base: #6dc487;
 }
 
+.agent-quota__agent--relay {
+  --quota-base: #7cc4e8;
+}
+
+.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy, .agent-quota__agent--relay) {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy, .agent-quota__agent--relay) .agent-quota__values {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy, .agent-quota__agent--relay) b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .agent-quota__agent--stale {
   opacity: 0.6;
 }
@@ -131,4 +150,8 @@
   flex: none;
 }
 
+.agent-quota__hover:has(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy, .agent-quota__agent--relay) {
+  min-width: 22px;
+  flex-shrink: 1;
+}
 .agent-quota__agent--plugin { --quota-base: #43b4a5; }

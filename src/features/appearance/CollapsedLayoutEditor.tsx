@@ -6,6 +6,7 @@ import { useTranslation } from "../../i18n";
 import { moveItem } from "../../utils/order.ts";
 import { WeatherIcon, useClockWeather } from "../weather";
 import { BatteryReadout } from "../battery/BatteryReadout";
+import { useCenteredClock } from "../centered-clock";
 import { useNativePlugins } from "../plugins";
 import { placeCollapsedLayout, visibleCollapsedSlots } from "./collapsedLayout";
 import { COLLAPSED_SLOTS } from "./settingsLimits";
@@ -54,11 +55,13 @@ export function CollapsedLayoutEditor({
   const text = useTranslation().settings.appearance.collapsedIsland.layout;
   const preview = islandPreviewStyle(settings, useResolvedScheme(settings.colorScheme));
   const clockWeather = useClockWeather();
+  const centeredClock = useCenteredClock();
+  const centeredClockActive = centeredClock.installed && (centeredClock.settings.showTime || centeredClock.settings.showDate);
   const batteryInstalled = useNativePlugins().battery;
   // Plugin slots exist once their plugin is installed; until then they keep their saved places.
   const absent = useMemo<readonly CollapsedSlot[]>(
-    () => [...(clockWeather.installed ? [] : CLOCK_WEATHER_SLOTS), ...(batteryInstalled ? [] : ["battery" as const])],
-    [batteryInstalled, clockWeather.installed],
+    () => [...(clockWeather.installed ? [] : CLOCK_WEATHER_SLOTS), ...(batteryInstalled ? [] : ["battery" as const]), ...(clockWeather.installed && centeredClockActive ? ["clock" as const] : [])],
+    [batteryInstalled, centeredClockActive, clockWeather.installed],
   );
   const arrangement = useMemo<SlotArrangement>(() => ({
     shown: visibleCollapsedSlots(settings.collapsedLayout, settings.collapsedHidden).filter((slot) => !absent.includes(slot)),
@@ -71,7 +74,7 @@ export function CollapsedLayoutEditor({
   }), [absent, onSettingsChange, settings]);
   const drag = useCollapsedSlotDrag(arrangement, apply);
   const { shown, hidden } = drag.current;
-  const on = { ...slotsOn(settings), clock: clockWeather.settings.showClock,
+  const on = { ...slotsOn(settings), clock: clockWeather.settings.showClock && !centeredClockActive,
     weather: clockWeather.settings.showWeather && clockWeather.settings.location !== null };
   const isDefault = settings.collapsedLayout.join() === COLLAPSED_SLOTS.join() && settings.collapsedHidden.length === 0;
 

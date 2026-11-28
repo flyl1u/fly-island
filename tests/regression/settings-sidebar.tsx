@@ -63,7 +63,8 @@ try {
     && [...lastGroup.querySelectorAll<HTMLElement>("[data-category]")].map(item => item.dataset.category).join() === "plugins,about"
     && lastGroup.previousElementSibling?.querySelector("li:last-child [data-category='agentConnect']"),
     "Plugins then About share the final untitled group below Connection, not pinned to a footer");
-  check(settingsCategoryFor("plugins") === "plugins" && settingsCategoryFor("clockWeather") === "clockWeather", "Plugin routes remain available, including Clock & Weather");
+  check(settingsCategoryFor("plugins") === "plugins" && settingsCategoryFor("clockWeather") === "clockWeather"
+    && settingsCategoryFor("centeredClock") === "centeredClock", "Plugin routes remain available, including optional clock pages");
   check(element(".settings-sidebar__item--active").dataset.category === "general", "The open page is marked");
   await act(async () => { element<HTMLButtonElement>("[data-category='clipboard']").click(); });
   check(opened[opened.length - 1] === "clipboard" && element(".settings-sidebar__item--active").dataset.category === "clipboard"

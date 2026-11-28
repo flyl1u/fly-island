@@ -17,6 +17,7 @@ import * as clipboard from "../sections/clipboard.ts";
 import * as fileShelf from "../sections/fileShelf.ts";
 import * as eyeCare from "../sections/eyeCare.ts";
 import * as pluginPanel from "../sections/pluginPanel.ts";
+import * as screenshot from "../sections/screenshot.ts";
 import * as settings from "../sections/settings/index.ts";
 
 const zhCN: Translations = {
@@ -53,6 +54,8 @@ const zhCN: Translations = {
   pluginPanel: pluginPanel.zhCN,
   eyeCare: eyeCare.zhCN,
   deviceBattery,
+
+  screenshot: screenshot.zhCN,
 
   settings: settings.zhCN,
 };

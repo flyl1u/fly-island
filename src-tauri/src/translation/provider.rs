@@ -153,6 +153,11 @@ fn validate_custom_base_url(raw: &str) -> Result<String, String> {
 
 pub(super) fn resolve_model(provider: &Provider, model: Option<&str>) -> Result<String, String> {
     let model = model.map(str::trim).filter(|model| !model.is_empty());
+    // The product/display name differs from the official API id. Preserve custom
+    // gateway model ids; only known DeepSeek display names are canonicalized here.
+    if provider.id == "deepseek" && model.is_some_and(|name| {
+        name.eq_ignore_ascii_case("DeepSeek-V4.1-Flash") || name.eq_ignore_ascii_case("DeepSeek-V4.1-Flash-1017")
+    }) { return Ok("deepseek-flash".into()); }
     match model.or(provider.default_model) {
         Some(model) if model.chars().count() <= MAX_MODEL_LENGTH => Ok(model.to_string()),
         Some(_) => Err("模型名称过长。".to_string()),

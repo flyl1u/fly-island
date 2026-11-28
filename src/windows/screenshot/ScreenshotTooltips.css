@@ -1,0 +1,4 @@
+.screenshot-tooltip-host { display: contents; }
+.screenshot-tooltip { position: fixed; z-index: 100; transform: translate(-50%, -100%); max-width: min(260px, calc(100vw - 16px));
+  border: 1px solid rgba(255,255,255,.18); border-radius: 7px; padding: 7px 10px; background: #25262c; color: #fff;
+  font: 12px/1.5 var(--font-system); text-align: center; white-space: pre-line; pointer-events: none; box-shadow: 0 3px 12px #0004; }

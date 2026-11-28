@@ -53,6 +53,15 @@ pub(crate) struct Readback {
     pub(crate) bgra: Vec<u8>,
 }
 
+/// A full-resolution region read back for screenshots (the glass reads at 1/4 size instead).
+pub(crate) struct FullReadback {
+    pub(crate) rect: ScreenRect,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    /// Rows of BGRA with no padding.
+    pub(crate) bgra: Vec<u8>,
+}
+
 struct RegionTextures {
     size: (u32, u32),
     mips: ID3D11Texture2D,
@@ -259,8 +268,75 @@ impl Duplication {
         Ok(Some(Readback { rect: clamped, width: out_width, height: out_height, bgra }))
     }
 
-    fn region_textures(&mut self, size: (u32, u32)) -> windows::core::Result<RegionTextures> {
-        if let Some(textures) = &self.region {
+    /// Whether a desktop image has been captured yet. The first frame after opening may report
+    /// only a pointer move (`LastPresentTime == 0`), in which case there is nothing to read back.
+    pub(crate) fn has_captured_frame(&self) -> bool {
+        self.desktop.is_some()
+    }
+
+    /// The region (screen pixels, clamped to the monitor) from the last frame, at full size.
+    /// Used by screenshots; the glass path above stays at 1/4 size to keep the cost down.
+    pub(crate) fn read_region_full(&mut self, region: ScreenRect) -> windows::core::Result<Option<FullReadback>> {
+        let Some(desktop) = self.desktop.clone() else { return Ok(None) };
+        let clamped = (
+            region.0.max(self.monitor.0),
+            region.1.max(self.monitor.1),
+            region.2.min(self.monitor.2),
+            region.3.min(self.monitor.3),
+        );
+        let width = (clamped.2 - clamped.0).max(0) as u32;
+        let height = (clamped.3 - clamped.1).max(0) as u32;
+        if width == 0 || height == 0 {
+            return Ok(None);
+        }
+        let description = D3D11_TEXTURE2D_DESC {
+            Width: width,
+            Height: height,
+            MipLevels: 1,
+            ArraySize: 1,
+            Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+            SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+            Usage: D3D11_USAGE_STAGING,
+            BindFlags: 0,
+            CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
+            MiscFlags: 0,
+        };
+        let mut staging = None;
+        // SAFETY: a valid description; the out pointer is a live local.
+        unsafe { self.device.CreateTexture2D(&description, None, Some(&mut staging)) }?;
+        let Some(staging) = staging else {
+            return Err(windows::core::Error::from_hresult(windows::Win32::Foundation::E_FAIL));
+        };
+        let source = D3D11_BOX {
+            left: (clamped.0 - self.monitor.0) as u32,
+            top: (clamped.1 - self.monitor.1) as u32,
+            front: 0,
+            right: (clamped.2 - self.monitor.0) as u32,
+            bottom: (clamped.3 - self.monitor.1) as u32,
+            back: 1,
+        };
+        let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+        // SAFETY: the box lies inside the desktop copy (clamped above) and the staging texture is
+        // exactly the box's size; the mapping is released below on every path.
+        unsafe {
+            self.context.CopySubresourceRegion(&staging, 0, 0, 0, 0, &desktop, 0, Some(&source));
+            self.context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))?;
+        }
+        let row = width as usize * 4;
+        let mut bgra = vec![0u8; row * height as usize];
+        for (line, target) in bgra.chunks_exact_mut(row).enumerate() {
+            // SAFETY: the mapping holds `height` rows of RowPitch bytes, each at least `row` long.
+            let source = unsafe {
+                std::slice::from_raw_parts((mapped.pData as *const u8).add(line * mapped.RowPitch as usize), row)
+            };
+            target.copy_from_slice(source);
+        }
+        // SAFETY: mapped just above.
+        unsafe { self.context.Unmap(&staging, 0) };
+        Ok(Some(FullReadback { rect: clamped, width, height, bgra }))
+    }
+
+    fn region_textures(&mut self, size: (u32, u32)) -> windows::core::Result<RegionTextures> {        if let Some(textures) = &self.region {
             if textures.size == size {
                 return Ok(RegionTextures { size, mips: textures.mips.clone(), view: textures.view.clone(), staging: textures.staging.clone() });
             }
@@ -317,6 +393,12 @@ struct CompositionData {
 }
 
 type SetCompositionFn = unsafe extern "system" fn(HWND, *mut CompositionData) -> BOOL;
+
+/// Wait until preceding window visibility changes have reached desktop composition.
+pub(crate) fn wait_for_compositor() {
+    // SAFETY: DwmFlush has no pointer arguments and is called off the UI thread.
+    let _ = unsafe { windows::Win32::Graphics::Dwm::DwmFlush() };
+}
 
 /// WCA_EXCLUDED_FROM_DDA (Windows 10 1709+): the window is left out of Desktop Duplication only.
 const WCA_EXCLUDED_FROM_DDA: u32 = 24;

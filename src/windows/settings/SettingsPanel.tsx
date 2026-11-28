@@ -15,6 +15,8 @@ import { usePlacedPlugins } from "../../features/plugins/usePlacedPlugins";
 import { PluginPageGroups } from "./PluginSettingsGroup";
 import { useAvailableCategory, useOpenPluginSettings } from "./usePluginPageNavigation";
 import { ClockWeatherSettingsPage } from "./ClockWeatherSettingsPage";
+import { CenteredClockSettingsPage } from "./CenteredClockSettingsPage";
+import { ScreenshotPluginSettings } from "./ScreenshotPluginSettings";
 import { BatterySettings } from "../../features/battery/BatterySettings";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
@@ -37,6 +39,8 @@ type PluginSettingsPageProps = {
 /** Plugin pages with controls of their own; a packaged plugin's manifest settings follow below. */
 const STANDALONE_SETTINGS_PAGES: Partial<Record<SettingsCategory, ComponentType<PluginSettingsPageProps>>> = {
   clockWeather: ClockWeatherSettingsPage,
+  centeredClock: CenteredClockSettingsPage,
+  screenshot: ScreenshotPluginSettings,
   devices: DeviceBatterySettings,
   battery: ({ settings, onSettingsChange }) => <BatterySettings preferences={settings}
     onChange={(patch) => onSettingsChange((current) => ({ ...current, ...patch }))} />,

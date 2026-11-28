@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { MediaState } from "../api";
-import { getLyrics } from "./api";
+import { getLyrics, listenAppleMusicTokenChanged } from "./api";
+import { useNativePlugins } from "../../plugins";
 import { parseLrc, trackKey, withTranslations, type LyricLine } from "./lrc";
 
-export type LyricsSettings = { lyricsFolder: string; lyricsOnline: boolean; lyricsChinese?: boolean; lyricWordFill?: boolean };
+export type LyricsSettings = { lyricsFolder: string; lyricsOnline: boolean; lyricsChinese?: boolean; lyricWordFill?: boolean; lyricsAppleMusic?: boolean };
 
 type Found = { lookup: string; lines: LyricLine[]; durationMs: number; expiresAt: number };
 // The last few lookups' answers. The music page mounts again on every visit; without these its
@@ -17,6 +18,39 @@ function remember(lookup: string, found: Found) {
   recent.delete(lookup);
   recent.set(lookup, found);
   if (recent.size > RECENT_LIMIT) recent.delete(recent.keys().next().value ?? lookup);
+}
+
+// Bumped when the held answers stop being valid; it is part of every lookup so the islands
+// and the music page ask again instead of reading the old answer.
+let generation = 0;
+const listeners = new Set<() => void>();
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+const readGeneration = () => generation;
+
+/**
+ * Drops every answer held in memory. The Apple Music token changed, and an answer asked with
+ * the old one (official lyrics, or none because there was no token) must not be shown again.
+ */
+export function forgetLyrics() {
+  recent.clear();
+  pending.clear();
+  generation += 1;
+  listeners.forEach((listener) => listener());
+}
+
+// The token is saved from the settings window, so the native side tells this one (main).
+function listenForTokenChanges() {
+  let disposed = false;
+  let stop: (() => void) | undefined;
+  void listenAppleMusicTokenChanged(forgetLyrics)
+    .then((unlisten) => { if (disposed) unlisten(); else stop = unlisten; })
+    .catch((error: unknown) => console.error("Failed to listen for the Apple Music token", error));
+  return () => { disposed = true; stop?.(); };
 }
 
 /**
@@ -38,7 +72,11 @@ export function useLyrics(
   const { title, artist, album, durationMs, trackId, sourceApp: sourceAppId } = mediaState;
   const chinese = settings.lyricsChinese === true;
   const wordFill = settings.lyricWordFill === true;
-  const lookup = [key, folder, settings.lyricsOnline, chinese, trackId, sourceAppId, wordFill].join("\u001f");
+  const appleMusic = useNativePlugins().appleMusicLyrics && settings.lyricsAppleMusic === true;
+  const held = useSyncExternalStore(subscribe, readGeneration, () => 0);
+  const lookup = [key, folder, settings.lyricsOnline, chinese, appleMusic, trackId, sourceAppId, wordFill, held].join("\u001f");
+
+  useEffect(listenForTokenChanges, []);
 
   useEffect(() => {
     if (!active || !key || !title) return;
@@ -47,7 +85,7 @@ export function useLyrics(
     let cancelled = false;
     let request = pending.get(lookup);
     if (!request) {
-      request = getLyrics({ title, artist: artist ?? "", album: album ?? "", durationMs, folder, online: settings.lyricsOnline, chinese, trackId: trackId ?? null, sourceAppId, wordFill })
+      request = getLyrics({ title, artist: artist ?? "", album: album ?? "", durationMs, folder, online: settings.lyricsOnline, chinese, appleMusic, trackId: trackId ?? null, sourceAppId, wordFill })
       .then((lyrics) => {
         const parsed = lyrics ? parseLrc(lyrics.lrc).filter((line, index, all) => line.text || index < all.length - 1) : [];
         const lines = withTranslations(parsed, lyrics?.translation ? parseLrc(lyrics.translation) : []);
@@ -71,7 +109,7 @@ export function useLyrics(
     };
     // Duration/album refine the request, but late metadata must not restart the same lookup.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, key, folder, settings.lyricsOnline, chinese, trackId, sourceAppId, wordFill]);
+  }, [active, key, folder, settings.lyricsOnline, chinese, appleMusic, trackId, sourceAppId, wordFill, held]);
 
   const current = recent.get(lookup) ?? (found?.lookup === lookup ? found : null);
   if (!active || !current) return { lines: null, notFound: false, durationMs: 0 };

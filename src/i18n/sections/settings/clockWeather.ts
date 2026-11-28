@@ -1,7 +1,7 @@
 export type ClockWeatherText = {
   showClock: string; showWeather: string; city: string; currentCity: (name: string) => string;
   noCity: string; cityPlaceholder: string; otherCityPlaceholder: string;
-  search: string; searching: string; noCities: string; searchFailed: string; saveFailed: string; privacy: string;
+  search: string; searching: string; noCities: string; searchFailed: string; saveFailed: string; privacy: string; clockReplaced: string;
   locate: string; locating: string; locatedByIp: string; locationFailed: string; openLocationSettings: string;
   weatherChecking: string; weatherOk: (temperature: string) => string; weatherFailed: (reason: string) => string; locationDetail: (reason: string) => string;
   timeLabel: (time: string) => string;
@@ -17,6 +17,7 @@ export const zhCN: ClockWeatherText = {
   locate: "定位", locating: "正在定位…", locatedByIp: "已按网络位置定位到城市。如果不对（例如开了代理），直接在上面搜索城市。",
   locationFailed: "定位失败。请在 Windows 设置中开启定位后重试。", openLocationSettings: "打开定位设置",
   privacy: "天气由 Open-Meteo 提供，每 30 分钟刷新。只有点击定位时才会读取位置；网络兜底为大致位置。",
+  clockReplaced: "居中时钟已接管时间显示；天气照常显示。",
   weatherChecking: "正在获取天气…", weatherOk: (temperature) => `已获取天气：${temperature}C`, weatherFailed: (reason) => `获取天气失败，岛上会稍后自动重试：${reason}`,
   locationDetail: (reason) => `原因：${reason}`,
   timeLabel: (time) => `当前时间 ${time}`,
@@ -33,6 +34,7 @@ export const en: ClockWeatherText = {
   locate: "Locate", locating: "Locating…", locatedByIp: "Located your city from your network. If it's wrong (for example behind a VPN), search for your city above.",
   locationFailed: "Location failed. Turn on Windows location in Settings and try again.", openLocationSettings: "Open location settings",
   privacy: "Weather by Open-Meteo, refreshed every 30 minutes. Location is read only when you click Locate; the network fallback is approximate.",
+  clockReplaced: "Centered Clock owns the time display; weather still works.",
   weatherChecking: "Fetching weather…", weatherOk: (temperature) => `Weather received: ${temperature}C`, weatherFailed: (reason) => `Could not fetch the weather; the island retries shortly: ${reason}`,
   locationDetail: (reason) => `Reason: ${reason}`,
   timeLabel: (time) => `Current time ${time}`,

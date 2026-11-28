@@ -10,7 +10,7 @@ const page = (list, id) => list.find((item) => item.id === id);
 test("every catalog plugin declares where its settings go, or that it has none", () => {
   for (const entry of [...NATIVE_PLUGINS, ...PACKAGED_MARKET_PLUGINS]) {
     assert.ok("settings" in entry, entry.id);
-    if (entry.settings) assert.match(entry.settings.placement, /^(standalone|agentSessions|agentConnect|messages)$/, entry.id);
+    if (entry.settings) assert.match(entry.settings.placement, /^(standalone|agentSessions|agentConnect|messages|music)$/, entry.id);
   }
 });
 
@@ -21,7 +21,9 @@ test("built-in plugins go by their kind of feature", () => {
   assert.equal(page(placed, "clockWeather").category, "clockWeather");
   assert.equal(page(placed, "battery").category, "battery");
   assert.equal(page(placed, "calendarMarks"), undefined);
-  assert.deepEqual(standalonePages(placed).map((item) => item.id), ["clockWeather", "battery"]);
+  assert.equal(page(placed, "appleMusicLyrics").category, "music");
+  assert.equal(page(placed, "relay").category, "agents");
+  assert.deepEqual(standalonePages(placed).map((item) => item.id), ["centeredClock", "screenshot", "clockWeather", "battery"]);
 });
 
 test("packaged plugins get their own page or an Agent group", () => {

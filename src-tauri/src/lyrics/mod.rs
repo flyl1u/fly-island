@@ -6,6 +6,8 @@
 //! `lyrics-cache/` in the app data folder, so a track is asked for once. The text is returned as
 //! LRC, with the translation as a second LRC when the source has one; the island parses both.
 
+mod applemusic;
+mod ttml;
 mod artist_match;
 mod found;
 mod krc;
@@ -39,6 +41,7 @@ use matching::{cache_key, named_in_simplified, stable_hash, traditional_chars};
 use crate::win32::chinese::to_simplified;
 
 const CACHE_DIR_NAME: &str = "lyrics-cache";
+const APPLE_TOKEN_CHANGED: &str = "apple-music-token-changed";
 /// A track no source had lyrics for is asked about again after a week.
 const MISSING_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 /// Past this many cached tracks, the oldest are removed.
@@ -71,6 +74,8 @@ pub struct LyricsQuery {
     source_app_id: Option<String>,
     #[serde(default)]
     word_fill: bool,
+    #[serde(default)]
+    apple_music: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -119,6 +124,7 @@ fn source_name(name: &str) -> &'static str {
         "kugou" => "kugou",
         "netease" => "netease",
         "qqmusic" => "qqmusic",
+        "applemusic" => "applemusic",
         "soda" => "soda",
         _ => "lrclib",
     }
@@ -240,12 +246,22 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     if query.chinese {
         key.push_str("\u{1f}cn");
     }
+    let apple_allowed = query.apple_music && applemusic::read_token().is_some();
+    if query.apple_music {
+        // Account/storefront changes must not reuse another token's positive or negative cache.
+        let fingerprint = applemusic::read_token().map(|token| {
+            ring::digest::digest(&ring::digest::SHA256, token.as_bytes()).as_ref().iter()
+                .map(|byte| format!("{byte:02x}")).collect::<String>()
+        }).unwrap_or_else(|| "no-token".into());
+        key.push_str(&format!("\u{1f}apple-v2:{fingerprint}"));
+    }
     let legacy_key = key.clone();
     // Preserve the old key for fallback; scope new entries to the actual recording and player id.
     key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
     if query.word_fill { key.push_str("\u{1f}words"); }
     let now = now_secs();
-    let cached = read_cache(&cache_dir, &key, now).or_else(|| read_cache(&cache_dir, &legacy_key, now));
+    let cached = read_cache(&cache_dir, &key, now).or_else(|| read_cache(&cache_dir, &legacy_key, now))
+        .filter(|answer| apple_allowed || !matches!(answer, Some(("applemusic", _))));
     let fresh = fs::read_to_string(cache_path(&cache_dir, &key)).ok()
         .and_then(|text| serde_json::from_str::<CacheEntry>(&text).ok())
         .is_some_and(|entry| entry.key == key && entry.schema_version >= 3
@@ -266,11 +282,29 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     Ok(answer.map(|(source, found)| for_display(source, found, &query.title, &query.artist)))
 }
 
+#[tauri::command]
+pub async fn set_apple_music_token(app: AppHandle, token: String) -> Result<(), String> {
+    applemusic::write_token(&token)?;
+    use tauri::Emitter;
+    app.emit(APPLE_TOKEN_CHANGED, ()).map_err(|error| error.to_string())
+}
+#[tauri::command]
+pub async fn clear_apple_music_token(app: AppHandle) -> Result<(), String> {
+    applemusic::clear_token()?;
+    use tauri::Emitter;
+    app.emit(APPLE_TOKEN_CHANGED, ()).map_err(|error| error.to_string())
+}
+#[tauri::command]
+pub async fn has_apple_music_token() -> bool { applemusic::read_token().is_some() }
+
 /// This module's Tauri commands, chained into `lib.rs`'s `generate_handler!`.
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
             crate::lyrics::get_lyrics,
+            crate::lyrics::set_apple_music_token,
+            crate::lyrics::clear_apple_music_token,
+            crate::lyrics::has_apple_music_token,
         ] $($rest)*)
     };
 }

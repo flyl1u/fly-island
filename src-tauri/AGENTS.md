@@ -35,6 +35,7 @@ src-tauri/src/
 ├── wechat_reminders/        # source.rs 统一微信进程解析、窗口选择和任务栏提醒（被示例复用）；可选的 UI Automation 摘要与 Qt 标志恢复
 ├── weather/                 # 时间与天气：Open-Meteo 城市搜索与当前天气异步命令，不自动定位、不写原生数据文件
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）
+├── screenshot/              # runtime.rs：可选插件门控与扩展能力；全分辨率抓屏、空闲 OCR 缓存、保存、快捷键、按需覆盖层与贴图/翻译窗口生命周期
 ├── settings_window/         # 设置窗口：按需创建与显示（mod.rs）；sizing.rs 按屏幕缩放窗口尺寸，剪贴板窗口共用
 ├── clipboard_window/        # 剪贴板历史独立窗口：按需创建、显示、关闭与位置记忆
 ├── legacy_migration/        # 改名前安装的一次性迁移（数据目录、自启、凭据、日志名、Hook 文本），在 tauri::Builder 前运行；唯一允许出现旧产品名的 Rust 模块

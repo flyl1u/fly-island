@@ -66,6 +66,10 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 其他文档
 
+截图插件的 `features/screenshot/` 提供标注算法、类型化 IPC、坐标换算、有界翻译队列及 OCR 自然行模型；`windows/screenshot/` 组合覆盖层并提供自适应文字行，`windows/pinned-image/` 组合桌面贴图，`windows/screenshot-translation/` 提供原图与逐段原文/译文对照，`windows/screenshot-ocr/` 提供原图与可编辑顺序文字的独立窗口。文字行根据内容和可用宽度增长，不按图像坐标定位文字。Rust 的 `screenshot/` 持有抓屏、OCR、快捷键与窗口生命周期，Windows API 仍位于 `win32/`。翻译通过 `features/translation/index.ts` 复用现有设置和请求，没有平行服务。见 [截图插件](../plugins/screenshot.md)。
+
+截图以 `native/screenshot` 安装状态独立门控，插件卡片打开 `ScreenshotPluginSettings`；`useIslandScreenshot` 将安装开关和快捷键偏好同步到 Rust `screenshot/runtime.rs`，关闭和卸载保留偏好。截图相关窗口前端通过动态导入按需加载，原生窗口首次创建使用就绪握手，空闲 30 秒释放。抓屏 worker 与 OCR 模型分别在空闲后释放重资源，未安装不预建窗口或预热驱动。`screenshot_capabilities` 与 `screenshot_start_task` 为长截图/录屏预留能力版本和统一入口，未实现时明确不可用。见 [资源与扩展规划](../plugins/screenshot-roadmap.md)。
+
 - [data-storage.md](data-storage.md)：每项数据存在哪里、由哪个模块负责
 - [contracts.md](contracts.md)：对外契约清单（localStorage key、事件、命令与文件格式）
 - [migration-map.md](migration-map.md)：结构重构时旧文件到新位置的对照
@@ -84,6 +88,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 ## 时间与天气及排列预览（2026-11-19）
 
 插件设置放在哪一页由插件目录（`features/plugins/native/catalog.ts` 的 `settings`）声明，`features/plugins/placement.ts` 算出已启用插件的栏目与分组，设置面板、侧栏和插件卡片只读这份结果。内置插件 `clockWeather` 通过 `features/plugins/native` 的安装态启用，并声明独立的时间与天气设置页。`features/weather/` 收口城市与缓存存储、IPC、WMO 纯映射及时间/天气叶子组件；`src-tauri/src/weather/` 封装 Open-Meteo 请求。主窗口 `useCollapsedTodo` 低频预留状态位宽度，自动长度时 `useCollapsedChrome` 测量收起栏里文字以外的部分（状态位、留白、间距），`collapsedTextMeasure` 用画布按收起栏字体量文字，宽度本身由纯函数 `collapsedWidth.ts` 计算。时间的分钟状态留在叶子中，不驱动窗口重渲染。数据与契约见对应文档。
+
+内置 `centeredClock` 插件由 `features/centered-clock/` 提供本地格式化、设置和折叠态叶子；`useCollapsedTodo` 负责展示优先级与尺寸估算，`IslandCollapsedBar` 负责居中组合。分钟/秒更新仅留在时钟叶子，不驱动主窗口重渲染。
 
 排列编辑器和 `IslandPreview` 共享 `features/appearance/islandPreviewStyle.ts` 的外观变量。通用排序 hook 的 FLIP/指针跟随为可选参数，仅编辑器启用；页面入口与其它调用者保持原有交互。
 ### 护眼休息窗口（插件 0.2.0）

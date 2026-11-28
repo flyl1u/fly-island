@@ -10,7 +10,7 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
   for (const input of inputs) await act(async () => input.click());
   const settings = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}");
   // Kimi Code, Z Code and Antigravity have no box until installed; their saved choice is left as it was.
-  check(settings.agentQuotaSources.every((source: string) => source === "kimiCode" || source === "zcode" || source === "antigravity") && settings.agentShowDsh === true,
+  check(settings.agentQuotaSources.every((source: string) => source === "kimiCode" || source === "zcode" || source === "antigravity" || source === "relay") && settings.agentShowDsh === true,
     "Clearing all rings persists independently of DSH sessions");
 
   // WorkBuddy's sign-in sits under its session source, and only while that source is on.

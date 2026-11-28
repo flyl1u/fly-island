@@ -85,6 +85,8 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 
 WebView2 localStorage 的 `fly-island-native-plugins` 记录安装的内置插件 id，`fly-island-native-plugins-disabled` 记录已安装但手动关闭的 id。旧配置缺少关闭清单时，已安装的插件均启用。关闭仅暂停功能，保留插件的设置；卸载清除对应的关闭标记，重装时默认启用。
 
+截图使用上述清单的 `screenshot` id，默认未安装。`fly-island-screenshot-settings` 保存快捷键（默认 Alt+A）、快捷键开关、放大镜、窗口自动框选和操作提示，缺失和损坏字段回退安全默认值；关闭或卸载不删除偏好。不新增原生配置文件或密钥，主窗口按偏好同步原生运行状态，截图和识别资源仅在使用时创建。热键注册失败时在同一记录保存 `shortcutIssue: { shortcut, reason }`，修复成功清除；停用时仅为修复保留设置入口。长截图与录屏暂不保存可启用配置。
+
 ## 插件 API v1
 
 原生应用数据目录下 `plugins-state.json` 保存安装清单、启用状态、非秘密插件 settings、开发模式与索引 URL；临时原子写文件 `plugins-state.json.tmp`。这是需要在前端启动前恢复进程的安装注册表，不扩展或迁移现有 fly-island-settings。秘密存 Windows 凭据管理器 service `com.flyisland.app.plugins`，account `<id>/<setting-key>`，只经 stdin 发给对应插件，不返回前端。
@@ -120,3 +122,13 @@ Rust `weather/` 只按显式城市搜索或已保存坐标请求 Open-Meteo；�
 插件市场作者头像从 GitHub 头像 CDN 加载，每个 URL 的并发请求合并，解码后保存为当前 WebView 内存中的 blob URL；离开、重新进入市场时直接复用。初次请求使用 HTTP 缓存且不发送凭据或 referrer，失败显示姓名首字母，下次进入可重试。不新增 localStorage key。
 
 Antigravity 额度缓存升级为版本 2，在原字段外增加 `fiveHour`、`sevenDay`（窗口对象或 null）。兼容读取版本 1 的模型数据，但不将它们转换成 5 小时／每周；成功查询后原子写入版本 2，损坏或过期缓存仍忽略。
+
+## 居中时钟、中转站与 Apple Music 歌词
+
+居中时钟偏好保存在 `fly-island-centered-clock`，默认 24 小时制、不显示秒和日期；卸载保留。折叠内容优先级 `collapsedPriority` 缺少 `centeredClock` 时在末尾补齐。
+
+中转站账号整体保存在 Windows 凭据管理器 service `com.flyisland.app.relay-accounts`。索引 `index` 为 `{ chunks, generation }`；新分片命名 `chunk-<generation>-<n>`，成功切换索引后删除旧代。兼容没有 generation 的 `chunk-<n>`。账号不写入 localStorage 或日志，IPC 只返回配置和遮罩，保留非秘密 `userId`；余额仅在内存缓存。
+
+Apple Music 媒体令牌保存在凭据 service `com.flyisland.app.apple-music-lyrics`、account `media-user-token`。`lyricsAppleMusic` 布尔开关沿用 `fly-island-settings`，缺失默认 false。歌词仍缓存于 `lyrics-cache/`，使用令牌 SHA-256 区分账号；不保存原始令牌到文件。
+
+增强 OCR 资源仅在显式下载后写入 `app_data_dir()/screenshot-ocr/ppocr-v4-ort-1.22/`，固定模型、字典、DLL 和许可证；`.download` 是未完成的暂存目录，完整校验后一次改名生效。卸载插件保留下载，模型不进入安装包，识别图片不上传。截图贴图临时 PNG 沿用 `app_data_dir()/pinned-images/`，关闭窗口清理。

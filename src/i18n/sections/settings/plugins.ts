@@ -2,9 +2,11 @@ import type { MarketPluginId } from "../../../features/plugins/native/catalog";
 import type { PluginFailure } from "../../../features/plugins/errors";
 
 import { zhCN as clockWeatherZh, en as clockWeatherEn, type ClockWeatherText } from "./clockWeather.ts";
+import { zhCN as centeredClockZh, en as centeredClockEn, type CenteredClockText } from "./centeredClock.ts";
 
 export type SettingsPluginsText = {
   clockWeather: ClockWeatherText;
+  centeredClock: CenteredClockText;
   empty: string; installed: string; available: string; install: string; update: string;
   uninstall: string; enabled: string; permissions: string; retry: string; save: string;
   developer: string; developerMode: string; develop: string; unavailable: string; index: string; directory: string; load: string; secret: string;
@@ -30,6 +32,7 @@ export type SettingsPluginMarketText = {
 
 export const zhCN: SettingsPluginsText = {
   clockWeather: clockWeatherZh,
+  centeredClock: centeredClockZh,
   checkUpdate: "检查更新", runAction: "执行", openSettings: "打开设置", guide: "插件开发规范", guideHint: "插件是什么、怎么改造小岛源码、提交 PR 要附的演示和信息，以及审核上线流程。",
   readGuide: "查看规范", openGuideFailed: "没能打开开发规范，请再试一次。",
   empty: "暂无插件", installed: "已安装", available: "可安装", install: "安装", update: "更新",
@@ -67,11 +70,14 @@ export const zhCN: SettingsPluginsText = {
       plugin_install_cancelled: "已取消安装。",
     },
     items: {
+      appleMusicLyrics: { name: "Apple Music 官方歌词", description: "为 Apple Music 播放的歌曲显示官方逐字歌词和翻译。" },
+      screenshot: { name: "截图", description: "截图、标注、识别文字、翻译与桌面贴图；支持自定义快捷键。" },
       minimax: { name: "MiniMax Code", description: "在 AI 会话和消息页查看额度、任务进度和待审批提醒。" },
       "eye-care": { name: "护眼提醒", description: "在岛上查看用眼倒计时，休息时在各显示器上收到提醒。" },
       "device-battery": { name: "设备电量与音频", description: "查看支持的无线设备电量和低电量提醒，快速切换音频输出。" },
       calendarMarks: { name: "日历标记", description: "在中文界面的待办日历显示中国大陆节假日、调休、节气、纪念日和农历。" },
       clockWeather: { name: "时间与天气", description: "在收起的岛上显示时间与所选城市的天气，可分别开关和调整位置。" },
+      centeredClock: { name: "居中时钟", description: "在折叠小岛中央显示时间与日期，按展示优先级让位。" },
       battery: { name: "电池", description: "在收起的岛上显示笔记本电量，点开看剩余时间、电池健康和电量曲线。" },
       dingtalk: { name: "钉钉", description: "钉钉有新消息时岛上提醒，消息页多一个钉钉标签，点一下回到钉钉。" },
       feishu: { name: "飞书", description: "飞书有新消息时岛上提醒，消息页多一个飞书标签，点一下回到飞书。" },
@@ -82,6 +88,7 @@ export const zhCN: SettingsPluginsText = {
       codebuddy: { name: "CodeBuddy", description: "在 AI 会话里显示 CodeBuddy CLI 的运行、完成与关闭状态，点一下回到运行它的终端。" },
       antigravity: { name: "Antigravity", description: "在 AI 会话里显示 Google Antigravity 的运行与完成状态，并按模型显示剩余额度。" },
       zcode: { name: "Z Code", description: "显示 Z Code 的套餐剩余额度和重置时间。" },
+      relay: { name: "第三方中转站", description: "读取 New API、Sub2API 或自定义中转站的账户余额与花费，在 Agent 页显示金额环。" },
       hermes: { name: "Hermes", description: "显示 Nous Research Hermes Agent 的本地会话。" },
     },
   },
@@ -89,6 +96,7 @@ export const zhCN: SettingsPluginsText = {
 
 export const en: SettingsPluginsText = {
   clockWeather: clockWeatherEn,
+  centeredClock: centeredClockEn,
   checkUpdate: "Check for updates", runAction: "Run", openSettings: "Open settings", guide: "Plugin development guide", guideHint: "What a plugin is, how to change the island's source, the demo and details a PR needs, and how review and release work.",
   readGuide: "Read guide", openGuideFailed: "Could not open the guide. Please try again.",
   empty: "No plugins yet", installed: "Installed", available: "Available", install: "Install", update: "Update",
@@ -126,11 +134,14 @@ export const en: SettingsPluginsText = {
       plugin_install_cancelled: "Installation cancelled.",
     },
     items: {
+      appleMusicLyrics: { name: "Apple Music lyrics", description: "Show official word-synced lyrics and translations for Apple Music." },
+      screenshot: { name: "Screenshot", description: "Capture, annotate, recognize, translate and pin images, with a customizable shortcut." },
       minimax: { name: "MiniMax Code", description: "See quota, session progress and pending approvals on the island." },
       "eye-care": { name: "Eye Care", description: "Track screen time on the island and get break reminders on each display." },
       "device-battery": { name: "Device Battery & Audio", description: "Check battery levels for supported wireless devices and switch audio outputs." },
       calendarMarks: { name: "Calendar Marks", description: "Adds mainland China holidays, make-up workdays, solar terms, observances and lunar dates when the app language is Chinese." },
       clockWeather: { name: "Clock & Weather", description: "Show the time and your city’s weather on the collapsed island, with separate switches and positions." },
+      centeredClock: { name: "Centered Clock", description: "Display the time and date at the center of the collapsed island." },
       battery: { name: "Battery", description: "Show laptop charge on the collapsed island; open it for time left, health and a chart." },
       dingtalk: { name: "DingTalk", description: "Get a heads-up on the island for new DingTalk messages, with a DingTalk tab in Messages." },
       feishu: { name: "Feishu", description: "Get a heads-up on the island for new Feishu messages, with a Feishu tab in Messages." },
@@ -141,6 +152,7 @@ export const en: SettingsPluginsText = {
       codebuddy: { name: "CodeBuddy", description: "Show CodeBuddy CLI sessions, running or finished, and open the terminal running one." },
       antigravity: { name: "Antigravity", description: "Show Google Antigravity sessions, running or finished, and how much quota each model has left." },
       zcode: { name: "Z Code", description: "Show how much of your Z Code plan is left and when it resets." },
+      relay: { name: "Third-party relays", description: "Read balances and spend from New API, Sub2API or custom relays and show them as amount rings on the Agent page." },
       hermes: { name: "Hermes", description: "Show local sessions of Nous Research's Hermes Agent." },
     },
   },
